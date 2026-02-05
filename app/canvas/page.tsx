@@ -251,36 +251,6 @@ function BottomToolbarExternal({ editor }: { editor: Editor }) {
     }
   };
 
-  const createCharacterCard = () => {
-    console.log('点击角色设计按钮');
-    try {
-      const viewportPageBounds = editor.getViewportPageBounds();
-      const centerX = viewportPageBounds.center.x;
-      const centerY = viewportPageBounds.center.y;
-      const id = createShapeId();
-
-      editor.createShape({
-        id,
-        type: 'custom-card',
-        x: centerX - 190,
-        y: centerY - 190,
-        props: {
-          w: 380,
-          h: 500,
-          cardType: 'character',
-          title: 'Character Design',
-          prompt: '',
-          model: '',
-        },
-      });
-
-      console.log('角色卡片创建成功');
-      editor.select(id);
-      editor.setCurrentTool('select');
-    } catch (error) {
-      console.error('创建角色卡片失败:', error);
-    }
-  };
 
   return (
     <div
@@ -322,19 +292,6 @@ function BottomToolbarExternal({ editor }: { editor: Editor }) {
           </svg>
         </div>
         <span className="text-xs text-gray-400">Video</span>
-      </button>
-
-      {/* 角色设计按钮 */}
-      <button
-        onClick={createCharacterCard}
-        className="flex flex-col items-center justify-center w-20 h-20 rounded-xl hover:bg-white/5 transition-all group"
-      >
-        <div className="w-10 h-10 rounded-lg bg-gray-600/20 flex items-center justify-center mb-1 group-hover:bg-gray-600/30 transition-all">
-          <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
-        </div>
-        <span className="text-xs text-gray-400">角色设计</span>
       </button>
 
       {/* 分隔线 */}
