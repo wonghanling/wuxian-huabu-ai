@@ -224,10 +224,14 @@ export type CustomCardShape = TLBaseShape<
     characterKeywords?: string;
     characterForbiddenWords?: string;
     characterReferenceImage?: string;
-    characterStep?: 'front-view' | 'three-view';
-    characterFrontImage?: string;
-    characterThreeViewImages?: string;
-    characterJsonPrompt?: string;
+    characterStep?: 'analyze' | 'three-view-json' | 'generate';
+    characterAnalyzeImage?: string;
+    characterAnchorJson?: string;
+    characterThreeViewJson?: string;
+    characterThreeViewImage?: string;
+    characterGeneratedImage?: string;
+    characterImageModel?: string;
+    showCharacterOutput?: boolean;
   }
 >;
 
@@ -263,9 +267,13 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
     characterForbiddenWords: T.string,
     characterReferenceImage: T.string,
     characterStep: T.string,
-    characterFrontImage: T.string,
-    characterThreeViewImages: T.string,
-    characterJsonPrompt: T.string,
+    characterAnalyzeImage: T.string,
+    characterAnchorJson: T.string,
+    characterThreeViewJson: T.string,
+    characterThreeViewImage: T.string,
+    characterGeneratedImage: T.string,
+    characterImageModel: T.string,
+    showCharacterOutput: T.boolean,
   };
 
   override isAspectRatioLocked = () => false;
@@ -319,15 +327,19 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
       characterKeywords: '',
       characterForbiddenWords: '',
       characterReferenceImage: '',
-      characterStep: 'front-view',
-      characterFrontImage: '',
-      characterThreeViewImages: '',
-      characterJsonPrompt: '',
+      characterStep: 'analyze',
+      characterAnalyzeImage: '',
+      characterAnchorJson: '',
+      characterThreeViewJson: '',
+      characterThreeViewImage: '',
+      characterGeneratedImage: '',
+      characterImageModel: 'Nano Banana Pro',
+      showCharacterOutput: false,
     };
   }
 
   component(shape: CustomCardShape) {
-    const { cardType, title, prompt, model, w, h, uploadedImage, cameraVertical, cameraHorizontal, showCameraControl, generatedImage, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showVideoOutput, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterFrontImage, characterThreeViewImages, characterJsonPrompt } = shape.props;
+    const { cardType, title, prompt, model, w, h, uploadedImage, cameraVertical, cameraHorizontal, showCameraControl, generatedImage, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showVideoOutput, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterAnalyzeImage, characterAnchorJson, characterThreeViewJson, characterThreeViewImage, characterGeneratedImage, characterImageModel, showCharacterOutput } = shape.props;
     const editor = useEditor();
 
     // 根据卡片类型设置颜色和渐变
@@ -560,10 +572,10 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
               {cardType === 'character' && (
                 <div className="space-y-2">
                   {/* 步骤切换按钮 */}
-                  <div className="flex gap-2 mb-3">
+                  <div className="flex gap-1 mb-3">
                     <button
-                      className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all ${
-                        (characterStep || 'front-view') === 'front-view'
+                      className={`flex-1 py-2 px-2 rounded-lg text-[10px] font-semibold transition-all ${
+                        (characterStep || 'analyze') === 'analyze'
                           ? 'bg-blue-500/80 text-white'
                           : 'bg-black/30 text-gray-400 hover:bg-black/40'
                       }`}
@@ -572,16 +584,16 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         editor.updateShape({
                           id: shape.id,
                           type: 'custom-card',
-                          props: { ...shape.props, characterStep: 'front-view' },
+                          props: { ...shape.props, characterStep: 'analyze' },
                         });
                       }}
                       onPointerDown={(e) => e.stopPropagation()}
                     >
-                      1. 正面视图
+                      1.分析图片
                     </button>
                     <button
-                      className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all ${
-                        characterStep === 'three-view'
+                      className={`flex-1 py-2 px-2 rounded-lg text-[10px] font-semibold transition-all ${
+                        characterStep === 'three-view-json'
                           ? 'bg-blue-500/80 text-white'
                           : 'bg-black/30 text-gray-400 hover:bg-black/40'
                       }`}
@@ -590,330 +602,450 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         editor.updateShape({
                           id: shape.id,
                           type: 'custom-card',
-                          props: { ...shape.props, characterStep: 'three-view' },
+                          props: { ...shape.props, characterStep: 'three-view-json' },
                         });
                       }}
                       onPointerDown={(e) => e.stopPropagation()}
                     >
-                      2. 三视角
+                      2.三视角JSON
+                    </button>
+                    <button
+                      className={`flex-1 py-2 px-2 rounded-lg text-[10px] font-semibold transition-all ${
+                        characterStep === 'generate'
+                          ? 'bg-blue-500/80 text-white'
+                          : 'bg-black/30 text-gray-400 hover:bg-black/40'
+                      }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        editor.updateShape({
+                          id: shape.id,
+                          type: 'custom-card',
+                          props: { ...shape.props, characterStep: 'generate' },
+                        });
+                      }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >
+                      3.生成图片
                     </button>
                   </div>
 
-                  {/* 步骤1: 正面视图 */}
-                  {(characterStep || 'front-view') === 'front-view' && (
-                    <div className="space-y-2 overflow-y-auto max-h-[240px]">
-                      {/* 角色名称 */}
+                  {/* 步骤1: 分析图片 */}
+                  {(characterStep || 'analyze') === 'analyze' && (
+                    <div className="space-y-2 overflow-y-auto overflow-x-hidden max-h-[260px] pr-1">
+                      {/* 上传图片 */}
                       <div>
-                        <label className="text-gray-400 text-xs mb-1 block">角色名称</label>
+                        <label className="text-gray-400 text-xs mb-1 block">上传图片</label>
                         <input
-                          type="text"
-                          className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all placeholder-gray-500"
-                          placeholder="输入角色名称..."
-                          value={characterName || ''}
+                          type="file"
+                          accept="image/*"
+                          className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
                           onClick={(e) => e.stopPropagation()}
                           onPointerDown={(e) => e.stopPropagation()}
                           onChange={(e) => {
-                            editor.updateShape({
-                              id: shape.id,
-                              type: 'custom-card',
-                              props: { ...shape.props, characterName: e.target.value },
-                            });
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onload = (event) => {
+                                const imageData = event.target?.result as string;
+                                editor.updateShape({
+                                  id: shape.id,
+                                  type: 'custom-card',
+                                  props: { ...shape.props, characterAnalyzeImage: imageData },
+                                });
+                              };
+                              reader.readAsDataURL(file);
+                            }
                           }}
                         />
+                        {characterAnalyzeImage && (
+                          <div className="mt-2 relative w-full h-32 bg-black/30 rounded-lg overflow-hidden">
+                            <img src={characterAnalyzeImage} alt="Analyze" className="w-full h-full object-cover" />
+                          </div>
+                        )}
                       </div>
 
-                      {/* 外貌特征 */}
+                      {/* 固定指令说明 */}
+                      <div className="p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                        <p className="text-[10px] text-blue-400 leading-relaxed">
+                          💡 固定指令：根据这张图片，只做单人分析，反推出一个【单人成功范式 JSON】。不要加三视角、不要加转面、不要做设定稿，只保证这是一个稳定可复现的人物 JSON
+                        </p>
+                      </div>
+
+                      {/* 选择模型 */}
                       <div>
-                        <label className="text-gray-400 text-xs mb-1 block">外貌特征</label>
-                        <textarea
-                          className="w-full h-16 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs resize-none focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all placeholder-gray-500"
-                          placeholder="描述角色的外貌..."
-                          value={characterAppearance || ''}
+                        <label className="text-gray-400 text-xs mb-1 block">选择模型</label>
+                        <select
+                          className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all"
+                          value={model || 'ChatGPT'}
                           onClick={(e) => e.stopPropagation()}
                           onPointerDown={(e) => e.stopPropagation()}
                           onChange={(e) => {
                             editor.updateShape({
                               id: shape.id,
                               type: 'custom-card',
-                              props: { ...shape.props, characterAppearance: e.target.value },
+                              props: { ...shape.props, model: e.target.value },
                             });
                           }}
-                        />
+                        >
+                          <option value="ChatGPT">ChatGPT</option>
+                          <option value="Claude">Claude</option>
+                          <option value="Gemini">Gemini</option>
+                        </select>
                       </div>
 
-                      {/* 服装 */}
-                      <div>
-                        <label className="text-gray-400 text-xs mb-1 block">服装</label>
-                        <input
-                          type="text"
-                          className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all placeholder-gray-500"
-                          placeholder="描述角色的服装..."
-                          value={characterClothing || ''}
-                          onClick={(e) => e.stopPropagation()}
-                          onPointerDown={(e) => e.stopPropagation()}
-                          onChange={(e) => {
-                            editor.updateShape({
-                              id: shape.id,
-                              type: 'custom-card',
-                              props: { ...shape.props, characterClothing: e.target.value },
-                            });
-                          }}
-                        />
-                      </div>
-
-                      {/* 性格 */}
-                      <div>
-                        <label className="text-gray-400 text-xs mb-1 block">性格</label>
-                        <input
-                          type="text"
-                          className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all placeholder-gray-500"
-                          placeholder="描述角色的性格..."
-                          value={characterPersonality || ''}
-                          onClick={(e) => e.stopPropagation()}
-                          onPointerDown={(e) => e.stopPropagation()}
-                          onChange={(e) => {
-                            editor.updateShape({
-                              id: shape.id,
-                              type: 'custom-card',
-                              props: { ...shape.props, characterPersonality: e.target.value },
-                            });
-                          }}
-                        />
-                      </div>
-
-                      {/* 背景故事 */}
-                      <div>
-                        <label className="text-gray-400 text-xs mb-1 block">背景故事</label>
-                        <textarea
-                          className="w-full h-16 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs resize-none focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all placeholder-gray-500"
-                          placeholder="描述角色的背景故事..."
-                          value={characterBackground || ''}
-                          onClick={(e) => e.stopPropagation()}
-                          onPointerDown={(e) => e.stopPropagation()}
-                          onChange={(e) => {
-                            editor.updateShape({
-                              id: shape.id,
-                              type: 'custom-card',
-                              props: { ...shape.props, characterBackground: e.target.value },
-                            });
-                          }}
-                        />
-                      </div>
-
-                      {/* 固定关键词 */}
-                      <div>
-                        <label className="text-gray-400 text-xs mb-1 block">固定关键词</label>
-                        <input
-                          type="text"
-                          className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all placeholder-gray-500"
-                          placeholder="用逗号分隔关键词..."
-                          value={characterKeywords || ''}
-                          onClick={(e) => e.stopPropagation()}
-                          onPointerDown={(e) => e.stopPropagation()}
-                          onChange={(e) => {
-                            editor.updateShape({
-                              id: shape.id,
-                              type: 'custom-card',
-                              props: { ...shape.props, characterKeywords: e.target.value },
-                            });
-                          }}
-                        />
-                      </div>
-
-                      {/* 禁用词 */}
-                      <div>
-                        <label className="text-gray-400 text-xs mb-1 block">禁用词</label>
-                        <input
-                          type="text"
-                          className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all placeholder-gray-500"
-                          placeholder="用逗号分隔禁用词..."
-                          value={characterForbiddenWords || ''}
-                          onClick={(e) => e.stopPropagation()}
-                          onPointerDown={(e) => e.stopPropagation()}
-                          onChange={(e) => {
-                            editor.updateShape({
-                              id: shape.id,
-                              type: 'custom-card',
-                              props: { ...shape.props, characterForbiddenWords: e.target.value },
-                            });
-                          }}
-                        />
-                      </div>
-
-                      {/* 生成正面视图按钮 */}
+                      {/* 分析按钮 */}
                       <button
-                        className="w-full py-2 mt-2 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-green-500/80 to-green-600/80 hover:from-green-500 hover:to-green-600"
+                        className="w-full py-2 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-purple-500/80 to-purple-600/80 hover:from-purple-500 hover:to-purple-600"
                         onClick={(e) => {
                           e.stopPropagation();
-                          console.log('生成正面视图');
-                          // 模拟生成正面图片
-                          const mockFrontImage = 'https://picsum.photos/800/1000';
+                          console.log('分析图片生成Anchor JSON');
+                          // 模拟生成Anchor JSON
+                          const mockJson = JSON.stringify({
+                            character: "anime girl",
+                            appearance: "long silver hair, blue eyes, fair skin",
+                            clothing: "white dress with blue ribbons",
+                            style: "anime, high quality, detailed",
+                            body_type: "slender, average height"
+                          }, null, 2);
                           editor.updateShape({
                             id: shape.id,
                             type: 'custom-card',
                             props: {
                               ...shape.props,
-                              characterFrontImage: mockFrontImage,
+                              characterAnchorJson: mockJson,
                             },
                           });
                         }}
                         onPointerDown={(e) => e.stopPropagation()}
+                        disabled={!characterAnalyzeImage}
                       >
-                        生成正面视图
+                        分析生成 Anchor JSON
                       </button>
 
-                      {/* 显示生成的正面图片 */}
-                      {characterFrontImage && (
-                        <div className="mt-2 bg-black/40 border border-white/10 rounded-lg overflow-hidden">
-                          <img src={characterFrontImage} alt="Front View" className="w-full h-auto" />
-                          <div className="p-2 text-center">
-                            <p className="text-xs text-green-400">✓ 正面视图已生成</p>
+                      {/* 模型输出结果 - Anchor JSON */}
+                      {characterAnchorJson && (
+                        <div className="mt-2">
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="text-gray-400 text-xs">模型输出 - Anchor JSON</label>
+                            <button
+                              className="px-2 py-1 bg-green-500/80 hover:bg-green-600 rounded text-white text-[10px] font-semibold transition-all"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigator.clipboard.writeText(characterAnchorJson);
+                                alert('JSON已复制到剪贴板');
+                              }}
+                              onPointerDown={(e) => e.stopPropagation()}
+                            >
+                              复制
+                            </button>
                           </div>
+                          <textarea
+                            className="w-full h-32 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-[10px] font-mono resize-none focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all"
+                            value={characterAnchorJson}
+                            onClick={(e) => e.stopPropagation()}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            readOnly
+                          />
                         </div>
                       )}
                     </div>
                   )}
 
-                  {/* 步骤2: 三视角 */}
-                  {characterStep === 'three-view' && (
-                    <div className="space-y-2 overflow-y-auto max-h-[240px]">
-                      {/* 检查是否有正面图片 */}
-                      {!characterFrontImage && (
-                        <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-                          <p className="text-xs text-yellow-400">⚠️ 请先在"正面视图"步骤中生成正面人物图片</p>
+                  {/* 步骤2: 生成三视角JSON */}
+                  {characterStep === 'three-view-json' && (
+                    <div className="space-y-2 overflow-y-auto overflow-x-hidden max-h-[260px] pr-1">
+                      {/* 粘贴Anchor JSON */}
+                      <div>
+                        <label className="text-gray-400 text-xs mb-1 block">粘贴 Anchor JSON</label>
+                        <textarea
+                          className="w-full h-24 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-[10px] font-mono resize-none focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all placeholder-gray-500"
+                          placeholder="粘贴步骤1生成的Anchor JSON..."
+                          value={characterAnchorJson || ''}
+                          onClick={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onChange={(e) => {
+                            editor.updateShape({
+                              id: shape.id,
+                              type: 'custom-card',
+                              props: { ...shape.props, characterAnchorJson: e.target.value },
+                            });
+                          }}
+                        />
+                      </div>
+
+                      {/* 固定指令说明 */}
+                      <div className="p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                        <p className="text-[10px] text-blue-400 leading-relaxed">
+                          💡 固定指令：基于上面的 Anchor JSON，生成一份【稳定的三视角（正/侧/背）完整 JSON】。要求：同一人物、同一服装、同一发型、同一身材比例；使用 character turnaround 工程化方式，不要摄影模式；必须避免重复正面或换人，按上次成功的方式来。
+                        </p>
+                      </div>
+
+                      {/* 选择模型 */}
+                      <div>
+                        <label className="text-gray-400 text-xs mb-1 block">选择模型</label>
+                        <select
+                          className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all"
+                          value={model || 'ChatGPT'}
+                          onClick={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onChange={(e) => {
+                            editor.updateShape({
+                              id: shape.id,
+                              type: 'custom-card',
+                              props: { ...shape.props, model: e.target.value },
+                            });
+                          }}
+                        >
+                          <option value="ChatGPT">ChatGPT</option>
+                          <option value="Claude">Claude</option>
+                          <option value="Gemini">Gemini</option>
+                        </select>
+                      </div>
+
+                      {/* 生成三视角JSON按钮 */}
+                      <button
+                        className="w-full py-2 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-purple-500/80 to-purple-600/80 hover:from-purple-500 hover:to-purple-600"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          console.log('生成三视角JSON');
+                          // 模拟生成三视角JSON
+                          const mockThreeViewJson = JSON.stringify({
+                            character: "anime girl",
+                            appearance: "long silver hair, blue eyes, fair skin",
+                            clothing: "white dress with blue ribbons",
+                            style: "anime, high quality, detailed, character turnaround",
+                            body_type: "slender, average height",
+                            views: {
+                              front: "front view, facing camera",
+                              side: "side view, profile",
+                              back: "back view, rear"
+                            },
+                            consistency: "same character, same outfit, same hairstyle, same proportions"
+                          }, null, 2);
+                          editor.updateShape({
+                            id: shape.id,
+                            type: 'custom-card',
+                            props: {
+                              ...shape.props,
+                              characterThreeViewJson: mockThreeViewJson,
+                            },
+                          });
+                        }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        disabled={!characterAnchorJson}
+                      >
+                        生成三视角 JSON
+                      </button>
+
+                      {/* 模型输出结果 - 三视角完整JSON */}
+                      {characterThreeViewJson && (
+                        <div className="mt-2">
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="text-gray-400 text-xs">模型输出 - 三视角完整 JSON</label>
+                            <button
+                              className="px-2 py-1 bg-green-500/80 hover:bg-green-600 rounded text-white text-[10px] font-semibold transition-all"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigator.clipboard.writeText(characterThreeViewJson);
+                                alert('JSON已复制到剪贴板');
+                              }}
+                              onPointerDown={(e) => e.stopPropagation()}
+                            >
+                              复制
+                            </button>
+                          </div>
+                          <textarea
+                            className="w-full h-40 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-[10px] font-mono resize-none focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all"
+                            value={characterThreeViewJson}
+                            onClick={(e) => e.stopPropagation()}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            readOnly
+                          />
                         </div>
                       )}
+                    </div>
+                  )}
 
-                      {characterFrontImage && (
-                        <>
-                          {/* 上传正面图片 */}
-                          <div>
-                            <label className="text-gray-400 text-xs mb-1 block">上传正面人物图片</label>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
-                              onClick={(e) => e.stopPropagation()}
-                              onPointerDown={(e) => e.stopPropagation()}
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                  const reader = new FileReader();
-                                  reader.onload = (event) => {
-                                    const imageData = event.target?.result as string;
-                                    editor.updateShape({
-                                      id: shape.id,
-                                      type: 'custom-card',
-                                      props: { ...shape.props, characterReferenceImage: imageData },
-                                    });
-                                  };
-                                  reader.readAsDataURL(file);
-                                }
-                              }}
-                            />
-                            {characterReferenceImage && (
-                              <div className="mt-1 relative w-full h-24 bg-black/30 rounded-lg overflow-hidden">
-                                <img src={characterReferenceImage} alt="Reference" className="w-full h-full object-cover" />
-                              </div>
-                            )}
+                  {/* 步骤3: 生成三视角图片 */}
+                  {characterStep === 'generate' && (
+                    <div className="space-y-2 overflow-y-auto overflow-x-hidden max-h-[260px] pr-1">
+                      {/* 上传图片 */}
+                      <div>
+                        <label className="text-gray-400 text-xs mb-1 block">上传参考图片</label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
+                          onClick={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onload = (event) => {
+                                const imageData = event.target?.result as string;
+                                editor.updateShape({
+                                  id: shape.id,
+                                  type: 'custom-card',
+                                  props: { ...shape.props, characterThreeViewImage: imageData },
+                                });
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                        />
+                        {characterThreeViewImage && (
+                          <div className="mt-2 relative w-full h-24 bg-black/30 rounded-lg overflow-hidden">
+                            <img src={characterThreeViewImage} alt="Reference" className="w-full h-full object-cover" />
                           </div>
+                        )}
+                      </div>
 
-                          {/* 步骤说明 */}
-                          <div className="p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                            <p className="text-[10px] text-blue-400 leading-relaxed">
-                              💡 流程：上传图片 → ChatGPT反推JSON → 添加三视角关键词 → 生成三视角图片
-                            </p>
-                          </div>
+                      {/* 粘贴完整JSON */}
+                      <div>
+                        <label className="text-gray-400 text-xs mb-1 block">粘贴完整 JSON</label>
+                        <textarea
+                          className="w-full h-24 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-[10px] font-mono resize-none focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all placeholder-gray-500"
+                          placeholder="粘贴步骤2生成的三视角JSON..."
+                          value={characterThreeViewJson || ''}
+                          onClick={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onChange={(e) => {
+                            editor.updateShape({
+                              id: shape.id,
+                              type: 'custom-card',
+                              props: { ...shape.props, characterThreeViewJson: e.target.value },
+                            });
+                          }}
+                        />
+                      </div>
 
-                          {/* 反推JSON按钮 */}
-                          <button
-                            className="w-full py-2 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-purple-500/80 to-purple-600/80 hover:from-purple-500 hover:to-purple-600"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              console.log('ChatGPT反推JSON');
-                              // 模拟ChatGPT反推JSON
-                              const mockJson = JSON.stringify({
-                                character: characterName || 'Character',
-                                appearance: characterAppearance || 'detailed appearance',
-                                clothing: characterClothing || 'clothing description',
-                                style: 'anime, high quality',
-                              }, null, 2);
-                              editor.updateShape({
-                                id: shape.id,
-                                type: 'custom-card',
-                                props: {
-                                  ...shape.props,
-                                  characterJsonPrompt: mockJson,
-                                },
-                              });
-                            }}
-                            onPointerDown={(e) => e.stopPropagation()}
-                            disabled={!characterReferenceImage}
-                          >
-                            ChatGPT反推JSON
-                          </button>
+                      {/* 选择图片生成模型 */}
+                      <div>
+                        <label className="text-gray-400 text-xs mb-1 block">选择图片生成模型</label>
+                        <select
+                          className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all"
+                          value={characterImageModel || 'Nano Banana Pro'}
+                          onClick={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onChange={(e) => {
+                            editor.updateShape({
+                              id: shape.id,
+                              type: 'custom-card',
+                              props: { ...shape.props, characterImageModel: e.target.value },
+                            });
+                          }}
+                        >
+                          <option value="Nano Banana Pro">Nano Banana Pro</option>
+                          <option value="DALL-E 3">DALL-E 3</option>
+                          <option value="Midjourney">Midjourney</option>
+                          <option value="Stable Diffusion">Stable Diffusion</option>
+                        </select>
+                      </div>
 
-                          {/* 显示反推的JSON */}
-                          {characterJsonPrompt && (
-                            <div className="mt-2">
-                              <label className="text-gray-400 text-xs mb-1 block">反推的JSON</label>
-                              <textarea
-                                className="w-full h-24 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-[10px] font-mono resize-none focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all"
-                                value={characterJsonPrompt}
-                                onClick={(e) => e.stopPropagation()}
-                                onPointerDown={(e) => e.stopPropagation()}
-                                onChange={(e) => {
-                                  editor.updateShape({
-                                    id: shape.id,
-                                    type: 'custom-card',
-                                    props: { ...shape.props, characterJsonPrompt: e.target.value },
-                                  });
+                      {/* 生成三视角图片按钮 */}
+                      <button
+                        className="w-full py-2 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-green-500/80 to-green-600/80 hover:from-green-500 hover:to-green-600"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          console.log('生成三视角图片');
+                          console.log('使用模型:', characterImageModel);
+                          console.log('JSON:', characterThreeViewJson);
+                          // 模拟生成三视角图片
+                          const mockGeneratedImage = 'https://picsum.photos/1200/400';
+                          editor.updateShape({
+                            id: shape.id,
+                            type: 'custom-card',
+                            props: {
+                              ...shape.props,
+                              characterGeneratedImage: mockGeneratedImage,
+                              showCharacterOutput: true,
+                            },
+                          });
+                        }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        disabled={!characterThreeViewImage || !characterThreeViewJson}
+                      >
+                        生成三视角图片
+                      </button>
+
+                      {/* 查看生成图片按钮 */}
+                      {characterGeneratedImage && (
+                        <button
+                          className="w-full py-2 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-blue-500/80 to-blue-600/80 hover:from-blue-500 hover:to-blue-600"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            editor.updateShape({
+                              id: shape.id,
+                              type: 'custom-card',
+                              props: {
+                                ...shape.props,
+                                showCharacterOutput: !showCharacterOutput,
+                              },
+                            });
+                          }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                        >
+                          {showCharacterOutput ? '隐藏图片' : '查看生成图片'}
+                        </button>
+                      )}
+
+                      {/* 显示生成的图片 */}
+                      {showCharacterOutput && characterGeneratedImage && (
+                        <div className="mt-2 bg-black/40 border border-white/10 rounded-lg overflow-hidden">
+                          <div className="relative group">
+                            <img src={characterGeneratedImage} alt="Generated Three Views" className="w-full h-auto" />
+
+                            {/* 悬停时显示的操作按钮 */}
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                              {/* 查看大图按钮 */}
+                              <button
+                                className="px-3 py-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  window.open(characterGeneratedImage, '_blank');
                                 }}
-                              />
-                            </div>
-                          )}
+                                onPointerDown={(e) => e.stopPropagation()}
+                                title="查看大图"
+                              >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                                </svg>
+                                查看
+                              </button>
 
-                          {/* 生成三视角按钮 */}
-                          <button
-                            className="w-full py-2 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-green-500/80 to-green-600/80 hover:from-green-500 hover:to-green-600"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              console.log('生成三视角');
-                              console.log('JSON + 三视角关键词:', characterJsonPrompt);
-                              // 模拟生成三视角图片
-                              const mockThreeViewImage = 'https://picsum.photos/1200/400';
-                              editor.updateShape({
-                                id: shape.id,
-                                type: 'custom-card',
-                                props: {
-                                  ...shape.props,
-                                  characterThreeViewImages: mockThreeViewImage,
-                                },
-                              });
-                            }}
-                            onPointerDown={(e) => e.stopPropagation()}
-                            disabled={!characterJsonPrompt}
-                          >
-                            生成三视角图片
-                          </button>
-
-                          {/* 显示生成的三视角图片 */}
-                          {characterThreeViewImages && (
-                            <div className="mt-2 bg-black/40 border border-white/10 rounded-lg overflow-hidden">
-                              <img src={characterThreeViewImages} alt="Three Views" className="w-full h-auto" />
-                              <div className="p-2 text-center">
-                                <p className="text-xs text-green-400">✓ 三视角已生成</p>
-                              </div>
+                              {/* 下载按钮 */}
+                              <button
+                                className="px-3 py-2 bg-green-500/90 hover:bg-green-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const link = document.createElement('a');
+                                  link.href = characterGeneratedImage;
+                                  link.download = `character-three-view-${Date.now()}.png`;
+                                  link.click();
+                                }}
+                                onPointerDown={(e) => e.stopPropagation()}
+                                title="下载图片"
+                              >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                下载
+                              </button>
                             </div>
-                          )}
-                        </>
+
+                            {/* 图片信息 */}
+                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 pointer-events-none">
+                              <p className="text-white text-[10px] truncate">✨ 三视角生成成功</p>
+                            </div>
+                          </div>
+                        </div>
                       )}
                     </div>
                   )}
                 </div>
               )}
             </div>
-
             {/* 模型选择 */}
             {cardType !== 'character' && (
               <div className="mb-2">
