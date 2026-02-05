@@ -551,7 +551,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                 }}
                 onPointerDown={(e) => e.stopPropagation()}
               >
-                {showVideoModePanel ? '隐藏模式设置' : '🎬 视频模式设置'}
+                {showVideoModePanel ? '隐藏模式设置' : '视频模式设置'}
               </button>
             )}
 
@@ -741,7 +741,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                 }}
                 onPointerDown={(e) => e.stopPropagation()}
               >
-                {showCameraControl ? '隐藏镜头控制' : '📷 镜头控制器'}
+                {showCameraControl ? '隐藏镜头控制' : '镜头控制器'}
               </button>
             )}
 
@@ -988,7 +988,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
             {/* 视频输出按钮 - 仅视频卡片显示 */}
             {cardType === 'video' && generatedVideo && (
               <button
-                className="w-full py-2 mt-2 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-yellow-500/80 to-yellow-600/80 hover:from-yellow-500 hover:to-yellow-600"
+                className="w-full py-2 mt-2 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-yellow-400/80 to-yellow-500/80 hover:from-yellow-400 hover:to-yellow-500"
                 onClick={(e) => {
                   e.stopPropagation();
                   editor.updateShape({
