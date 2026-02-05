@@ -199,7 +199,7 @@ export type CustomCardShape = TLBaseShape<
   {
     w: number;
     h: number;
-    cardType: 'text' | 'image' | 'video';
+    cardType: 'text' | 'image' | 'video' | 'character';
     title: string;
     prompt: string;
     model: string;
@@ -215,6 +215,19 @@ export type CustomCardShape = TLBaseShape<
     showVideoModePanel?: boolean;
     showImageOutput?: boolean;
     showVideoOutput?: boolean;
+    // 角色卡片专属字段
+    characterName?: string;
+    characterAppearance?: string;
+    characterClothing?: string;
+    characterPersonality?: string;
+    characterBackground?: string;
+    characterKeywords?: string;
+    characterForbiddenWords?: string;
+    characterReferenceImage?: string;
+    characterStep?: 'front-view' | 'three-view';
+    characterFrontImage?: string;
+    characterThreeViewImages?: string;
+    characterJsonPrompt?: string;
   }
 >;
 
@@ -241,6 +254,18 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
     showVideoModePanel: T.boolean,
     showImageOutput: T.boolean,
     showVideoOutput: T.boolean,
+    characterName: T.string,
+    characterAppearance: T.string,
+    characterClothing: T.string,
+    characterPersonality: T.string,
+    characterBackground: T.string,
+    characterKeywords: T.string,
+    characterForbiddenWords: T.string,
+    characterReferenceImage: T.string,
+    characterStep: T.string,
+    characterFrontImage: T.string,
+    characterThreeViewImages: T.string,
+    characterJsonPrompt: T.string,
   };
 
   override isAspectRatioLocked = () => false;
@@ -286,11 +311,23 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
       showVideoModePanel: false,
       showImageOutput: false,
       showVideoOutput: false,
+      characterName: '',
+      characterAppearance: '',
+      characterClothing: '',
+      characterPersonality: '',
+      characterBackground: '',
+      characterKeywords: '',
+      characterForbiddenWords: '',
+      characterReferenceImage: '',
+      characterStep: 'front-view',
+      characterFrontImage: '',
+      characterThreeViewImages: '',
+      characterJsonPrompt: '',
     };
   }
 
   component(shape: CustomCardShape) {
-    const { cardType, title, prompt, model, w, h, uploadedImage, cameraVertical, cameraHorizontal, showCameraControl, generatedImage, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showVideoOutput } = shape.props;
+    const { cardType, title, prompt, model, w, h, uploadedImage, cameraVertical, cameraHorizontal, showCameraControl, generatedImage, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showVideoOutput, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterFrontImage, characterThreeViewImages, characterJsonPrompt } = shape.props;
     const editor = useEditor();
 
     // 根据卡片类型设置颜色和渐变
@@ -314,6 +351,15 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
         handleColor: 'rgba(192, 192, 192, 0.8)',
       },
       video: {
+        gradient: 'linear-gradient(135deg, rgba(192, 192, 192, 0.15) 0%, rgba(169, 169, 169, 0.12) 50%, rgba(128, 128, 128, 0.08) 100%)',
+        border: 'rgba(192, 192, 192, 0.3)',
+        glow: '0 0 40px rgba(192, 192, 192, 0.15)',
+        icon: 'text-gray-300',
+        iconBg: 'bg-gradient-to-br from-gray-400/20 to-gray-500/20',
+        buttonBg: 'bg-gradient-to-r from-gray-500/80 to-gray-600/80 hover:from-gray-500 hover:to-gray-600',
+        handleColor: 'rgba(192, 192, 192, 0.8)',
+      },
+      character: {
         gradient: 'linear-gradient(135deg, rgba(192, 192, 192, 0.15) 0%, rgba(169, 169, 169, 0.12) 50%, rgba(128, 128, 128, 0.08) 100%)',
         border: 'rgba(192, 192, 192, 0.3)',
         glow: '0 0 40px rgba(192, 192, 192, 0.15)',
@@ -449,6 +495,11 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                   </svg>
                 )}
+                {cardType === 'character' && (
+                  <svg className={`w-4 h-4 ${color.icon}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-white font-semibold text-sm truncate">{title}</h3>
@@ -456,88 +507,452 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   {cardType === 'text' && '文本生成'}
                   {cardType === 'image' && '图片生成'}
                   {cardType === 'video' && '视频生成'}
+                  {cardType === 'character' && '角色设计'}
                 </p>
               </div>
             </div>
 
             {/* 输入区域 */}
             <div className="mb-2 flex-1">
-              <label className="text-gray-400 text-xs mb-1 block">Prompt</label>
-              <textarea
-                className="w-full h-20 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs resize-none focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all placeholder-gray-500"
-                placeholder={
-                  cardType === 'text'
-                    ? 'Enter your text prompt...'
-                    : cardType === 'image'
-                    ? 'Describe the image...'
-                    : 'Describe the video...'
-                }
-                value={cardType === 'image' && (cameraVertical !== 0 || cameraHorizontal !== 0)
-                  ? `${prompt} [Camera: vertical ${cameraVertical >= 0 ? '+' : ''}${cameraVertical}°, horizontal ${cameraHorizontal >= 0 ? '+' : ''}${cameraHorizontal}°]`
-                  : prompt}
-                onClick={(e) => e.stopPropagation()}
-                onPointerDown={(e) => e.stopPropagation()}
-                onChange={(e) => {
-                  // 移除镜头参数，只保存用户输入的文本
-                  const userInput = e.target.value.replace(/\[Camera: vertical [+-]?\d+°, horizontal [+-]?\d+°\]/g, '').trim();
-                  editor.updateShape({
-                    id: shape.id,
-                    type: 'custom-card',
-                    props: {
-                      ...shape.props,
-                      prompt: userInput,
-                    },
-                  });
-                }}
-              />
-              {/* 镜头参数提示 */}
-              {cardType === 'image' && (cameraVertical !== 0 || cameraHorizontal !== 0) && (
-                <div className="text-[10px] text-blue-400 mt-1 flex items-center gap-1">
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span>镜头参数已自动添加</span>
+              {cardType !== 'character' && (
+                <>
+                  <label className="text-gray-400 text-xs mb-1 block">Prompt</label>
+                  <textarea
+                    className="w-full h-20 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs resize-none focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all placeholder-gray-500"
+                    placeholder={
+                      cardType === 'text'
+                        ? 'Enter your text prompt...'
+                        : cardType === 'image'
+                        ? 'Describe the image...'
+                        : 'Describe the video...'
+                    }
+                    value={cardType === 'image' && (cameraVertical !== 0 || cameraHorizontal !== 0)
+                      ? `${prompt} [Camera: vertical ${cameraVertical >= 0 ? '+' : ''}${cameraVertical}°, horizontal ${cameraHorizontal >= 0 ? '+' : ''}${cameraHorizontal}°]`
+                      : prompt}
+                    onClick={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onChange={(e) => {
+                      // 移除镜头参数，只保存用户输入的文本
+                      const userInput = e.target.value.replace(/\[Camera: vertical [+-]?\d+°, horizontal [+-]?\d+°\]/g, '').trim();
+                      editor.updateShape({
+                        id: shape.id,
+                        type: 'custom-card',
+                        props: {
+                          ...shape.props,
+                          prompt: userInput,
+                        },
+                      });
+                    }}
+                  />
+                  {/* 镜头参数提示 */}
+                  {cardType === 'image' && (cameraVertical !== 0 || cameraHorizontal !== 0) && (
+                    <div className="text-[10px] text-blue-400 mt-1 flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span>镜头参数已自动添加</span>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* 角色卡片专属输入区域 */}
+              {cardType === 'character' && (
+                <div className="space-y-2">
+                  {/* 步骤切换按钮 */}
+                  <div className="flex gap-2 mb-3">
+                    <button
+                      className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all ${
+                        (characterStep || 'front-view') === 'front-view'
+                          ? 'bg-blue-500/80 text-white'
+                          : 'bg-black/30 text-gray-400 hover:bg-black/40'
+                      }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        editor.updateShape({
+                          id: shape.id,
+                          type: 'custom-card',
+                          props: { ...shape.props, characterStep: 'front-view' },
+                        });
+                      }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >
+                      1. 正面视图
+                    </button>
+                    <button
+                      className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all ${
+                        characterStep === 'three-view'
+                          ? 'bg-blue-500/80 text-white'
+                          : 'bg-black/30 text-gray-400 hover:bg-black/40'
+                      }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        editor.updateShape({
+                          id: shape.id,
+                          type: 'custom-card',
+                          props: { ...shape.props, characterStep: 'three-view' },
+                        });
+                      }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >
+                      2. 三视角
+                    </button>
+                  </div>
+
+                  {/* 步骤1: 正面视图 */}
+                  {(characterStep || 'front-view') === 'front-view' && (
+                    <div className="space-y-2 overflow-y-auto max-h-[240px]">
+                      {/* 角色名称 */}
+                      <div>
+                        <label className="text-gray-400 text-xs mb-1 block">角色名称</label>
+                        <input
+                          type="text"
+                          className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all placeholder-gray-500"
+                          placeholder="输入角色名称..."
+                          value={characterName || ''}
+                          onClick={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onChange={(e) => {
+                            editor.updateShape({
+                              id: shape.id,
+                              type: 'custom-card',
+                              props: { ...shape.props, characterName: e.target.value },
+                            });
+                          }}
+                        />
+                      </div>
+
+                      {/* 外貌特征 */}
+                      <div>
+                        <label className="text-gray-400 text-xs mb-1 block">外貌特征</label>
+                        <textarea
+                          className="w-full h-16 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs resize-none focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all placeholder-gray-500"
+                          placeholder="描述角色的外貌..."
+                          value={characterAppearance || ''}
+                          onClick={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onChange={(e) => {
+                            editor.updateShape({
+                              id: shape.id,
+                              type: 'custom-card',
+                              props: { ...shape.props, characterAppearance: e.target.value },
+                            });
+                          }}
+                        />
+                      </div>
+
+                      {/* 服装 */}
+                      <div>
+                        <label className="text-gray-400 text-xs mb-1 block">服装</label>
+                        <input
+                          type="text"
+                          className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all placeholder-gray-500"
+                          placeholder="描述角色的服装..."
+                          value={characterClothing || ''}
+                          onClick={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onChange={(e) => {
+                            editor.updateShape({
+                              id: shape.id,
+                              type: 'custom-card',
+                              props: { ...shape.props, characterClothing: e.target.value },
+                            });
+                          }}
+                        />
+                      </div>
+
+                      {/* 性格 */}
+                      <div>
+                        <label className="text-gray-400 text-xs mb-1 block">性格</label>
+                        <input
+                          type="text"
+                          className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all placeholder-gray-500"
+                          placeholder="描述角色的性格..."
+                          value={characterPersonality || ''}
+                          onClick={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onChange={(e) => {
+                            editor.updateShape({
+                              id: shape.id,
+                              type: 'custom-card',
+                              props: { ...shape.props, characterPersonality: e.target.value },
+                            });
+                          }}
+                        />
+                      </div>
+
+                      {/* 背景故事 */}
+                      <div>
+                        <label className="text-gray-400 text-xs mb-1 block">背景故事</label>
+                        <textarea
+                          className="w-full h-16 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs resize-none focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all placeholder-gray-500"
+                          placeholder="描述角色的背景故事..."
+                          value={characterBackground || ''}
+                          onClick={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onChange={(e) => {
+                            editor.updateShape({
+                              id: shape.id,
+                              type: 'custom-card',
+                              props: { ...shape.props, characterBackground: e.target.value },
+                            });
+                          }}
+                        />
+                      </div>
+
+                      {/* 固定关键词 */}
+                      <div>
+                        <label className="text-gray-400 text-xs mb-1 block">固定关键词</label>
+                        <input
+                          type="text"
+                          className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all placeholder-gray-500"
+                          placeholder="用逗号分隔关键词..."
+                          value={characterKeywords || ''}
+                          onClick={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onChange={(e) => {
+                            editor.updateShape({
+                              id: shape.id,
+                              type: 'custom-card',
+                              props: { ...shape.props, characterKeywords: e.target.value },
+                            });
+                          }}
+                        />
+                      </div>
+
+                      {/* 禁用词 */}
+                      <div>
+                        <label className="text-gray-400 text-xs mb-1 block">禁用词</label>
+                        <input
+                          type="text"
+                          className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all placeholder-gray-500"
+                          placeholder="用逗号分隔禁用词..."
+                          value={characterForbiddenWords || ''}
+                          onClick={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onChange={(e) => {
+                            editor.updateShape({
+                              id: shape.id,
+                              type: 'custom-card',
+                              props: { ...shape.props, characterForbiddenWords: e.target.value },
+                            });
+                          }}
+                        />
+                      </div>
+
+                      {/* 生成正面视图按钮 */}
+                      <button
+                        className="w-full py-2 mt-2 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-green-500/80 to-green-600/80 hover:from-green-500 hover:to-green-600"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          console.log('生成正面视图');
+                          // 模拟生成正面图片
+                          const mockFrontImage = 'https://picsum.photos/800/1000';
+                          editor.updateShape({
+                            id: shape.id,
+                            type: 'custom-card',
+                            props: {
+                              ...shape.props,
+                              characterFrontImage: mockFrontImage,
+                            },
+                          });
+                        }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                      >
+                        生成正面视图
+                      </button>
+
+                      {/* 显示生成的正面图片 */}
+                      {characterFrontImage && (
+                        <div className="mt-2 bg-black/40 border border-white/10 rounded-lg overflow-hidden">
+                          <img src={characterFrontImage} alt="Front View" className="w-full h-auto" />
+                          <div className="p-2 text-center">
+                            <p className="text-xs text-green-400">✓ 正面视图已生成</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 步骤2: 三视角 */}
+                  {characterStep === 'three-view' && (
+                    <div className="space-y-2 overflow-y-auto max-h-[240px]">
+                      {/* 检查是否有正面图片 */}
+                      {!characterFrontImage && (
+                        <div className="p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                          <p className="text-xs text-yellow-400">⚠️ 请先在"正面视图"步骤中生成正面人物图片</p>
+                        </div>
+                      )}
+
+                      {characterFrontImage && (
+                        <>
+                          {/* 上传正面图片 */}
+                          <div>
+                            <label className="text-gray-400 text-xs mb-1 block">上传正面人物图片</label>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
+                              onClick={(e) => e.stopPropagation()}
+                              onPointerDown={(e) => e.stopPropagation()}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  const reader = new FileReader();
+                                  reader.onload = (event) => {
+                                    const imageData = event.target?.result as string;
+                                    editor.updateShape({
+                                      id: shape.id,
+                                      type: 'custom-card',
+                                      props: { ...shape.props, characterReferenceImage: imageData },
+                                    });
+                                  };
+                                  reader.readAsDataURL(file);
+                                }
+                              }}
+                            />
+                            {characterReferenceImage && (
+                              <div className="mt-1 relative w-full h-24 bg-black/30 rounded-lg overflow-hidden">
+                                <img src={characterReferenceImage} alt="Reference" className="w-full h-full object-cover" />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* 步骤说明 */}
+                          <div className="p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                            <p className="text-[10px] text-blue-400 leading-relaxed">
+                              💡 流程：上传图片 → ChatGPT反推JSON → 添加三视角关键词 → 生成三视角图片
+                            </p>
+                          </div>
+
+                          {/* 反推JSON按钮 */}
+                          <button
+                            className="w-full py-2 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-purple-500/80 to-purple-600/80 hover:from-purple-500 hover:to-purple-600"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              console.log('ChatGPT反推JSON');
+                              // 模拟ChatGPT反推JSON
+                              const mockJson = JSON.stringify({
+                                character: characterName || 'Character',
+                                appearance: characterAppearance || 'detailed appearance',
+                                clothing: characterClothing || 'clothing description',
+                                style: 'anime, high quality',
+                              }, null, 2);
+                              editor.updateShape({
+                                id: shape.id,
+                                type: 'custom-card',
+                                props: {
+                                  ...shape.props,
+                                  characterJsonPrompt: mockJson,
+                                },
+                              });
+                            }}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            disabled={!characterReferenceImage}
+                          >
+                            ChatGPT反推JSON
+                          </button>
+
+                          {/* 显示反推的JSON */}
+                          {characterJsonPrompt && (
+                            <div className="mt-2">
+                              <label className="text-gray-400 text-xs mb-1 block">反推的JSON</label>
+                              <textarea
+                                className="w-full h-24 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-[10px] font-mono resize-none focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all"
+                                value={characterJsonPrompt}
+                                onClick={(e) => e.stopPropagation()}
+                                onPointerDown={(e) => e.stopPropagation()}
+                                onChange={(e) => {
+                                  editor.updateShape({
+                                    id: shape.id,
+                                    type: 'custom-card',
+                                    props: { ...shape.props, characterJsonPrompt: e.target.value },
+                                  });
+                                }}
+                              />
+                            </div>
+                          )}
+
+                          {/* 生成三视角按钮 */}
+                          <button
+                            className="w-full py-2 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-green-500/80 to-green-600/80 hover:from-green-500 hover:to-green-600"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              console.log('生成三视角');
+                              console.log('JSON + 三视角关键词:', characterJsonPrompt);
+                              // 模拟生成三视角图片
+                              const mockThreeViewImage = 'https://picsum.photos/1200/400';
+                              editor.updateShape({
+                                id: shape.id,
+                                type: 'custom-card',
+                                props: {
+                                  ...shape.props,
+                                  characterThreeViewImages: mockThreeViewImage,
+                                },
+                              });
+                            }}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            disabled={!characterJsonPrompt}
+                          >
+                            生成三视角图片
+                          </button>
+
+                          {/* 显示生成的三视角图片 */}
+                          {characterThreeViewImages && (
+                            <div className="mt-2 bg-black/40 border border-white/10 rounded-lg overflow-hidden">
+                              <img src={characterThreeViewImages} alt="Three Views" className="w-full h-auto" />
+                              <div className="p-2 text-center">
+                                <p className="text-xs text-green-400">✓ 三视角已生成</p>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
 
             {/* 模型选择 */}
-            <div className="mb-2">
-              <label className="text-gray-400 text-xs mb-1 block">Model</label>
-              <select
-                className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all"
-                defaultValue={model}
-                onClick={(e) => e.stopPropagation()}
-                onPointerDown={(e) => e.stopPropagation()}
-              >
-                {cardType === 'text' && (
-                  <>
-                    <option value="GPT-4">GPT-4</option>
-                    <option value="GPT-3.5">GPT-3.5</option>
-                    <option value="Claude">Claude</option>
-                  </>
-                )}
-                {cardType === 'image' && (
-                  <>
-                    <option value="DALL-E 3">DALL-E 3</option>
-                    <option value="Midjourney">Midjourney</option>
-                    <option value="Stable Diffusion">Stable Diffusion</option>
-                  </>
-                )}
-                {cardType === 'video' && (
-                  <>
-                    <option value="Sora">Sora</option>
-                    <option value="Runway">Runway</option>
-                    <option value="Pika">Pika</option>
-                  </>
-                )}
-              </select>
-            </div>
+            {cardType !== 'character' && (
+              <div className="mb-2">
+                <label className="text-gray-400 text-xs mb-1 block">Model</label>
+                <select
+                  className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all"
+                  defaultValue={model}
+                  onClick={(e) => e.stopPropagation()}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >
+                  {cardType === 'text' && (
+                    <>
+                      <option value="GPT-4">GPT-4</option>
+                      <option value="GPT-3.5">GPT-3.5</option>
+                      <option value="Claude">Claude</option>
+                    </>
+                  )}
+                  {cardType === 'image' && (
+                    <>
+                      <option value="DALL-E 3">DALL-E 3</option>
+                      <option value="Midjourney">Midjourney</option>
+                      <option value="Stable Diffusion">Stable Diffusion</option>
+                    </>
+                  )}
+                  {cardType === 'video' && (
+                    <>
+                      <option value="Sora">Sora</option>
+                      <option value="Runway">Runway</option>
+                      <option value="Pika">Pika</option>
+                    </>
+                  )}
+                </select>
+              </div>
+            )}
 
             {/* 视频模式控制按钮 - 仅视频卡片显示 */}
             {cardType === 'video' && (
               <button
-                className="w-full py-2 mt-2 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-purple-500/80 to-purple-600/80 hover:from-purple-500 hover:to-purple-600"
+                className="w-full py-2 mt-2 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-blue-500/80 to-blue-600/80 hover:from-blue-500 hover:to-blue-600"
                 onClick={(e) => {
                   e.stopPropagation();
                   editor.updateShape({
