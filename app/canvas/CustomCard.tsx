@@ -232,6 +232,9 @@ export type CustomCardShape = TLBaseShape<
     characterGeneratedImage?: string;
     characterImageModel?: string;
     showCharacterOutput?: boolean;
+    showAnalyzePanel?: boolean;
+    showThreeViewJsonPanel?: boolean;
+    showGeneratePanel?: boolean;
   }
 >;
 
@@ -274,6 +277,9 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
     characterGeneratedImage: T.string,
     characterImageModel: T.string,
     showCharacterOutput: T.boolean,
+    showAnalyzePanel: T.boolean,
+    showThreeViewJsonPanel: T.boolean,
+    showGeneratePanel: T.boolean,
   };
 
   override isAspectRatioLocked = () => false;
@@ -335,11 +341,14 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
       characterGeneratedImage: '',
       characterImageModel: 'Nano Banana Pro',
       showCharacterOutput: false,
+      showAnalyzePanel: false,
+      showThreeViewJsonPanel: false,
+      showGeneratePanel: false,
     };
   }
 
   component(shape: CustomCardShape) {
-    const { cardType, title, prompt, model, w, h, uploadedImage, cameraVertical, cameraHorizontal, showCameraControl, generatedImage, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showVideoOutput, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterAnalyzeImage, characterAnchorJson, characterThreeViewJson, characterThreeViewImage, characterGeneratedImage, characterImageModel, showCharacterOutput } = shape.props;
+    const { cardType, title, prompt, model, w, h, uploadedImage, cameraVertical, cameraHorizontal, showCameraControl, generatedImage, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showVideoOutput, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterAnalyzeImage, characterAnchorJson, characterThreeViewJson, characterThreeViewImage, characterGeneratedImage, characterImageModel, showCharacterOutput, showAnalyzePanel, showThreeViewJsonPanel, showGeneratePanel } = shape.props;
     const editor = useEditor();
 
     // 根据卡片类型设置颜色和渐变
@@ -632,8 +641,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   {/* 步骤1: 分析图片 */}
                   {(characterStep || 'analyze') === 'analyze' && (
                     <div className="relative">
-                      <div className="space-y-2 overflow-y-auto overflow-x-hidden max-h-[260px] pr-1">
-                        {/* 上传图片 */}
+                      <div className="space-y-2">{/* 上传图片 */}
                         <div>
                           <label className="text-gray-400 text-xs mb-1 block">上传图片</label>
                           <input
@@ -696,35 +704,49 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
                       {/* 分析按钮 */}
                       <button
-                        className="w-full py-2 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-purple-500/80 to-purple-600/80 hover:from-purple-500 hover:to-purple-600"
+                        className="w-full py-2 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-blue-500/80 to-blue-600/80 hover:from-blue-500 hover:to-blue-600"
                         onClick={(e) => {
                           e.stopPropagation();
-                          console.log('分析图片生成Anchor JSON');
-                          // 模拟生成Anchor JSON
-                          const mockJson = JSON.stringify({
-                            character: "anime girl",
-                            appearance: "long silver hair, blue eyes, fair skin",
-                            clothing: "white dress with blue ribbons",
-                            style: "anime, high quality, detailed",
-                            body_type: "slender, average height"
-                          }, null, 2);
-                          editor.updateShape({
-                            id: shape.id,
-                            type: 'custom-card',
-                            props: {
-                              ...shape.props,
-                              characterAnchorJson: mockJson,
-                            },
-                          });
+
+                          // 如果已经有输出结果，则切换显示/隐藏
+                          if (characterAnchorJson) {
+                            editor.updateShape({
+                              id: shape.id,
+                              type: 'custom-card',
+                              props: {
+                                ...shape.props,
+                                showAnalyzePanel: !showAnalyzePanel,
+                              },
+                            });
+                          } else {
+                            // 第一次点击，生成结果并显示
+                            console.log('分析图片生成Anchor JSON');
+                            const mockJson = JSON.stringify({
+                              character: "anime girl",
+                              appearance: "long silver hair, blue eyes, fair skin",
+                              clothing: "white dress with blue ribbons",
+                              style: "anime, high quality, detailed",
+                              body_type: "slender, average height"
+                            }, null, 2);
+                            editor.updateShape({
+                              id: shape.id,
+                              type: 'custom-card',
+                              props: {
+                                ...shape.props,
+                                characterAnchorJson: mockJson,
+                                showAnalyzePanel: true,
+                              },
+                            });
+                          }
                         }}
                         onPointerDown={(e) => e.stopPropagation()}
                         disabled={!characterAnalyzeImage}
                       >
-                        分析生成 Anchor JSON
+                        {characterAnchorJson && showAnalyzePanel ? '收起 Anchor JSON' : '分析生成 Anchor JSON'}
                       </button>
 
                       {/* 模型输出结果 - Anchor JSON */}
-                      {characterAnchorJson && (
+                      {characterAnchorJson && showAnalyzePanel && (
                         <div className="mt-2">
                           <div className="flex items-center justify-between mb-1">
                             <label className="text-gray-400 text-xs">模型输出 - Anchor JSON</label>
@@ -752,10 +774,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     </div>
                     {/* 滚动提示 - 步骤1 */}
                     {characterAnchorJson && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/80 to-transparent pt-8 pb-2 pointer-events-none">
-                        <div className="text-center">
-                          <p className="text-[10px] text-yellow-400 animate-bounce">👇 向下滚动查看输出结果</p>
-                        </div>
+                      <div className="mt-2 text-center">
+                        <p className="text-[10px] text-yellow-400 animate-bounce">👇 向下滚动查看更多内容</p>
                       </div>
                     )}
                   </div>
@@ -764,7 +784,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   {/* 步骤2: 生成三视角JSON */}
                   {characterStep === 'three-view-json' && (
                     <div className="relative">
-                      <div className="space-y-2 overflow-y-auto overflow-x-hidden max-h-[260px] pr-1">
+                      <div className="space-y-2">
                       {/* 粘贴Anchor JSON */}
                       <div>
                         <label className="text-gray-400 text-xs mb-1 block">粘贴 Anchor JSON</label>
@@ -815,41 +835,55 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
                       {/* 生成三视角JSON按钮 */}
                       <button
-                        className="w-full py-2 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-purple-500/80 to-purple-600/80 hover:from-purple-500 hover:to-purple-600"
+                        className="w-full py-2 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-blue-500/80 to-blue-600/80 hover:from-blue-500 hover:to-blue-600"
                         onClick={(e) => {
                           e.stopPropagation();
-                          console.log('生成三视角JSON');
-                          // 模拟生成三视角JSON
-                          const mockThreeViewJson = JSON.stringify({
-                            character: "anime girl",
-                            appearance: "long silver hair, blue eyes, fair skin",
-                            clothing: "white dress with blue ribbons",
-                            style: "anime, high quality, detailed, character turnaround",
-                            body_type: "slender, average height",
-                            views: {
-                              front: "front view, facing camera",
-                              side: "side view, profile",
-                              back: "back view, rear"
-                            },
-                            consistency: "same character, same outfit, same hairstyle, same proportions"
-                          }, null, 2);
-                          editor.updateShape({
-                            id: shape.id,
-                            type: 'custom-card',
-                            props: {
-                              ...shape.props,
-                              characterThreeViewJson: mockThreeViewJson,
-                            },
-                          });
+
+                          // 如果已经有输出结果，则切换显示/隐藏
+                          if (characterThreeViewJson) {
+                            editor.updateShape({
+                              id: shape.id,
+                              type: 'custom-card',
+                              props: {
+                                ...shape.props,
+                                showThreeViewJsonPanel: !showThreeViewJsonPanel,
+                              },
+                            });
+                          } else {
+                            // 第一次点击，生成结果并显示
+                            console.log('生成三视角JSON');
+                            const mockThreeViewJson = JSON.stringify({
+                              character: "anime girl",
+                              appearance: "long silver hair, blue eyes, fair skin",
+                              clothing: "white dress with blue ribbons",
+                              style: "anime, high quality, detailed, character turnaround",
+                              body_type: "slender, average height",
+                              views: {
+                                front: "front view, facing camera",
+                                side: "side view, profile",
+                                back: "back view, rear"
+                              },
+                              consistency: "same character, same outfit, same hairstyle, same proportions"
+                            }, null, 2);
+                            editor.updateShape({
+                              id: shape.id,
+                              type: 'custom-card',
+                              props: {
+                                ...shape.props,
+                                characterThreeViewJson: mockThreeViewJson,
+                                showThreeViewJsonPanel: true,
+                              },
+                            });
+                          }
                         }}
                         onPointerDown={(e) => e.stopPropagation()}
                         disabled={!characterAnchorJson}
                       >
-                        生成三视角 JSON
+                        {characterThreeViewJson && showThreeViewJsonPanel ? '收起三视角JSON' : '生成三视角 JSON'}
                       </button>
 
                       {/* 模型输出结果 - 三视角完整JSON */}
-                      {characterThreeViewJson && (
+                      {characterThreeViewJson && showThreeViewJsonPanel && (
                         <div className="mt-2">
                           <div className="flex items-center justify-between mb-1">
                             <label className="text-gray-400 text-xs">模型输出 - 三视角完整 JSON</label>
@@ -877,10 +911,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     </div>
                     {/* 滚动提示 - 步骤2 */}
                     {characterThreeViewJson && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/80 to-transparent pt-8 pb-2 pointer-events-none">
-                        <div className="text-center">
-                          <p className="text-[10px] text-yellow-400 animate-bounce">👇 向下滚动查看输出结果</p>
-                        </div>
+                      <div className="mt-2 text-center">
+                        <p className="text-[10px] text-yellow-400 animate-bounce">👇 向下滚动查看更多内容</p>
                       </div>
                     )}
                   </div>
@@ -889,7 +921,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   {/* 步骤3: 生成三视角图片 */}
                   {characterStep === 'generate' && (
                     <div className="relative">
-                      <div className="space-y-2 overflow-y-auto overflow-x-hidden max-h-[260px] pr-1">
+                      <div className="space-y-2">
                       {/* 上传图片 */}
                       <div>
                         <label className="text-gray-400 text-xs mb-1 block">上传参考图片</label>
@@ -969,29 +1001,42 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         className="w-full py-2 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-green-500/80 to-green-600/80 hover:from-green-500 hover:to-green-600"
                         onClick={(e) => {
                           e.stopPropagation();
-                          console.log('生成三视角图片');
-                          console.log('使用模型:', characterImageModel);
-                          console.log('JSON:', characterThreeViewJson);
-                          // 模拟生成三视角图片
-                          const mockGeneratedImage = 'https://picsum.photos/1200/400';
-                          editor.updateShape({
-                            id: shape.id,
-                            type: 'custom-card',
-                            props: {
-                              ...shape.props,
-                              characterGeneratedImage: mockGeneratedImage,
-                              showCharacterOutput: true,
-                            },
-                          });
+
+                          // 如果已经有输出结果，则切换显示/隐藏
+                          if (characterGeneratedImage) {
+                            editor.updateShape({
+                              id: shape.id,
+                              type: 'custom-card',
+                              props: {
+                                ...shape.props,
+                                showGeneratePanel: !showGeneratePanel,
+                              },
+                            });
+                          } else {
+                            // 第一次点击，生成结果并显示
+                            console.log('生成三视角图片');
+                            console.log('使用模型:', characterImageModel);
+                            console.log('JSON:', characterThreeViewJson);
+                            const mockGeneratedImage = 'https://picsum.photos/1200/400';
+                            editor.updateShape({
+                              id: shape.id,
+                              type: 'custom-card',
+                              props: {
+                                ...shape.props,
+                                characterGeneratedImage: mockGeneratedImage,
+                                showGeneratePanel: true,
+                              },
+                            });
+                          }
                         }}
                         onPointerDown={(e) => e.stopPropagation()}
                         disabled={!characterThreeViewImage || !characterThreeViewJson}
                       >
-                        生成三视角图片
+                        {characterGeneratedImage && showGeneratePanel ? '收起三视角图片' : '生成三视角图片'}
                       </button>
 
-                      {/* 查看生成图片按钮 */}
-                      {characterGeneratedImage && (
+                      {/* 查看生成图片 */}
+                      {characterGeneratedImage && showGeneratePanel && (
                         <button
                           className="w-full py-2 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-blue-500/80 to-blue-600/80 hover:from-blue-500 hover:to-blue-600"
                           onClick={(e) => {
@@ -1405,7 +1450,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
               </div>
             )}
 
-            {/* 生成按钮 */}
+            {/* 生成按钮 - 仅非角色卡片显示 */}
+            {cardType !== 'character' && (
             <button
               className={`w-full py-2 ${showCameraControl && cardType === 'image' ? 'mt-2' : 'mt-0'} rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm ${color.buttonBg}`}
               onClick={(e) => {
@@ -1458,6 +1504,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
             >
               Generate
             </button>
+            )}
 
             {/* 图片输出按钮 - 仅图片卡片显示 */}
             {cardType === 'image' && generatedImage && (
