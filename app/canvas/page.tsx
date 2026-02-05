@@ -789,8 +789,8 @@ export default function CanvasPage() {
         .tl-background {
           background-color: #000000 !important;
           background-image:
-            linear-gradient(rgba(68, 68, 68, 0.3) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(68, 68, 68, 0.3) 1px, transparent 1px);
+            linear-gradient(rgba(100, 100, 100, 0.4) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(100, 100, 100, 0.4) 1px, transparent 1px);
           background-size: ${30 * cameraZoom}px ${30 * cameraZoom}px;
           background-position: ${-cameraPos.x * cameraZoom}px ${-cameraPos.y * cameraZoom}px;
         }
