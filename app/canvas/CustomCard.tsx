@@ -631,32 +631,33 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
                   {/* 步骤1: 分析图片 */}
                   {(characterStep || 'analyze') === 'analyze' && (
-                    <div className="space-y-2 overflow-y-auto overflow-x-hidden max-h-[260px] pr-1">
-                      {/* 上传图片 */}
-                      <div>
-                        <label className="text-gray-400 text-xs mb-1 block">上传图片</label>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
-                          onClick={(e) => e.stopPropagation()}
-                          onPointerDown={(e) => e.stopPropagation()}
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              const reader = new FileReader();
-                              reader.onload = (event) => {
-                                const imageData = event.target?.result as string;
-                                editor.updateShape({
-                                  id: shape.id,
-                                  type: 'custom-card',
-                                  props: { ...shape.props, characterAnalyzeImage: imageData },
-                                });
-                              };
-                              reader.readAsDataURL(file);
-                            }
-                          }}
-                        />
+                    <div className="relative">
+                      <div className="space-y-2 overflow-y-auto overflow-x-hidden max-h-[260px] pr-1">
+                        {/* 上传图片 */}
+                        <div>
+                          <label className="text-gray-400 text-xs mb-1 block">上传图片</label>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
+                            onClick={(e) => e.stopPropagation()}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = (event) => {
+                                  const imageData = event.target?.result as string;
+                                  editor.updateShape({
+                                    id: shape.id,
+                                    type: 'custom-card',
+                                    props: { ...shape.props, characterAnalyzeImage: imageData },
+                                  });
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                          />
                         {characterAnalyzeImage && (
                           <div className="mt-2 relative w-full h-32 bg-black/30 rounded-lg overflow-hidden">
                             <img src={characterAnalyzeImage} alt="Analyze" className="w-full h-full object-cover" />
@@ -749,11 +750,21 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         </div>
                       )}
                     </div>
+                    {/* 滚动提示 - 步骤1 */}
+                    {characterAnchorJson && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/80 to-transparent pt-8 pb-2 pointer-events-none">
+                        <div className="text-center">
+                          <p className="text-[10px] text-yellow-400 animate-bounce">👇 向下滚动查看输出结果</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   )}
 
                   {/* 步骤2: 生成三视角JSON */}
                   {characterStep === 'three-view-json' && (
-                    <div className="space-y-2 overflow-y-auto overflow-x-hidden max-h-[260px] pr-1">
+                    <div className="relative">
+                      <div className="space-y-2 overflow-y-auto overflow-x-hidden max-h-[260px] pr-1">
                       {/* 粘贴Anchor JSON */}
                       <div>
                         <label className="text-gray-400 text-xs mb-1 block">粘贴 Anchor JSON</label>
@@ -864,11 +875,21 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         </div>
                       )}
                     </div>
+                    {/* 滚动提示 - 步骤2 */}
+                    {characterThreeViewJson && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/80 to-transparent pt-8 pb-2 pointer-events-none">
+                        <div className="text-center">
+                          <p className="text-[10px] text-yellow-400 animate-bounce">👇 向下滚动查看输出结果</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   )}
 
                   {/* 步骤3: 生成三视角图片 */}
                   {characterStep === 'generate' && (
-                    <div className="space-y-2 overflow-y-auto overflow-x-hidden max-h-[260px] pr-1">
+                    <div className="relative">
+                      <div className="space-y-2 overflow-y-auto overflow-x-hidden max-h-[260px] pr-1">
                       {/* 上传图片 */}
                       <div>
                         <label className="text-gray-400 text-xs mb-1 block">上传参考图片</label>
@@ -1042,6 +1063,15 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         </div>
                       )}
                     </div>
+                    {/* 滚动提示 - 步骤3 */}
+                    {characterGeneratedImage && showCharacterOutput && (
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/80 to-transparent pt-8 pb-2 pointer-events-none">
+                        <div className="text-center">
+                          <p className="text-[10px] text-yellow-400 animate-bounce">👇 向下滚动查看生成图片</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   )}
                 </div>
               )}
