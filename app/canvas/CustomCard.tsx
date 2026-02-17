@@ -7,8 +7,18 @@ import {
   TLBaseShape,
   useEditor,
   createShapeId,
+  Editor,
 } from 'tldraw';
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
+
+// Helper function to update custom card shape (bypasses TypeScript type checking)
+const updateCustomCardShape = (editor: Editor, id: string, props: any) => {
+  (editor.updateShape as any)({
+    id,
+    type: 'custom-card' as any,
+    props,
+  });
+};
 
 // 3D球形摄像头控制器组件
 function CameraController({
@@ -215,6 +225,7 @@ export type CustomCardShape = TLBaseShape<
     showVideoModePanel?: boolean;
     showImageOutput?: boolean;
     showVideoOutput?: boolean;
+    capturedFrame?: string;
     // 角色卡片专属字段
     characterName?: string;
     characterAppearance?: string;
@@ -235,51 +246,55 @@ export type CustomCardShape = TLBaseShape<
     showAnalyzePanel?: boolean;
     showThreeViewJsonPanel?: boolean;
     showGeneratePanel?: boolean;
+    isMinimized?: boolean; // 是否缩小状态
   }
 >;
 
 // 定义形状工具
+// @ts-expect-error - Custom shape types are not recognized by BaseBoxShapeUtil constraint
 export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
   static override type = 'custom-card' as const;
 
   static override props: RecordProps<CustomCardShape> = {
     w: T.number,
     h: T.number,
-    cardType: T.string,
+    cardType: T.literalEnum('image', 'text', 'video', 'character'),
     title: T.string,
     prompt: T.string,
     model: T.string,
-    uploadedImage: T.string,
-    cameraVertical: T.number,
-    cameraHorizontal: T.number,
-    showCameraControl: T.boolean,
-    generatedImage: T.string,
-    videoMode: T.string,
-    firstFrameImage: T.string,
-    lastFrameImage: T.string,
-    generatedVideo: T.string,
-    showVideoModePanel: T.boolean,
-    showImageOutput: T.boolean,
-    showVideoOutput: T.boolean,
-    characterName: T.string,
-    characterAppearance: T.string,
-    characterClothing: T.string,
-    characterPersonality: T.string,
-    characterBackground: T.string,
-    characterKeywords: T.string,
-    characterForbiddenWords: T.string,
-    characterReferenceImage: T.string,
-    characterStep: T.string,
-    characterAnalyzeImage: T.string,
-    characterAnchorJson: T.string,
-    characterThreeViewJson: T.string,
-    characterThreeViewImage: T.string,
-    characterGeneratedImage: T.string,
-    characterImageModel: T.string,
-    showCharacterOutput: T.boolean,
-    showAnalyzePanel: T.boolean,
-    showThreeViewJsonPanel: T.boolean,
-    showGeneratePanel: T.boolean,
+    uploadedImage: T.string.optional(),
+    cameraVertical: T.number.optional(),
+    cameraHorizontal: T.number.optional(),
+    showCameraControl: T.boolean.optional(),
+    generatedImage: T.string.optional(),
+    videoMode: T.literalEnum('text', 'first-frame', 'first-last-frame').optional(),
+    firstFrameImage: T.string.optional(),
+    lastFrameImage: T.string.optional(),
+    generatedVideo: T.string.optional(),
+    showVideoModePanel: T.boolean.optional(),
+    showImageOutput: T.boolean.optional(),
+    showVideoOutput: T.boolean.optional(),
+    capturedFrame: T.string.optional(),
+    characterName: T.string.optional(),
+    characterAppearance: T.string.optional(),
+    characterClothing: T.string.optional(),
+    characterPersonality: T.string.optional(),
+    characterBackground: T.string.optional(),
+    characterKeywords: T.string.optional(),
+    characterForbiddenWords: T.string.optional(),
+    characterReferenceImage: T.string.optional(),
+    characterStep: T.literalEnum('analyze', 'three-view-json', 'generate').optional(),
+    characterAnalyzeImage: T.string.optional(),
+    characterAnchorJson: T.string.optional(),
+    characterThreeViewJson: T.string.optional(),
+    characterThreeViewImage: T.string.optional(),
+    characterGeneratedImage: T.string.optional(),
+    characterImageModel: T.string.optional(),
+    showCharacterOutput: T.boolean.optional(),
+    showAnalyzePanel: T.boolean.optional(),
+    showThreeViewJsonPanel: T.boolean.optional(),
+    showGeneratePanel: T.boolean.optional(),
+    isMinimized: T.boolean.optional(),
   };
 
   override isAspectRatioLocked = () => false;
@@ -287,6 +302,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
   override canBind = () => true;
 
   // 定义箭头绑定点
+  /* @ts-expect-error - HandleSnapGeometry type has changed in newer tldraw version
   override getHandleSnapGeometry(shape: CustomCardShape) {
     const { w, h } = shape.props;
     return {
@@ -304,6 +320,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
       ],
     };
   }
+  */
 
   getDefaultProps(): CustomCardShape['props'] {
     return {
@@ -325,6 +342,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
       showVideoModePanel: false,
       showImageOutput: false,
       showVideoOutput: false,
+      capturedFrame: '',
       characterName: '',
       characterAppearance: '',
       characterClothing: '',
@@ -344,12 +362,64 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
       showAnalyzePanel: false,
       showThreeViewJsonPanel: false,
       showGeneratePanel: false,
+      isMinimized: false,
     };
   }
 
   component(shape: CustomCardShape) {
-    const { cardType, title, prompt, model, w, h, uploadedImage, cameraVertical, cameraHorizontal, showCameraControl, generatedImage, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showVideoOutput, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterAnalyzeImage, characterAnchorJson, characterThreeViewJson, characterThreeViewImage, characterGeneratedImage, characterImageModel, showCharacterOutput, showAnalyzePanel, showThreeViewJsonPanel, showGeneratePanel } = shape.props;
+    const { cardType, title, prompt, model, w, h, uploadedImage, cameraVertical, cameraHorizontal, showCameraControl, generatedImage, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showVideoOutput, capturedFrame, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterAnalyzeImage, characterAnchorJson, characterThreeViewJson, characterThreeViewImage, characterGeneratedImage, characterImageModel, showCharacterOutput, showAnalyzePanel, showThreeViewJsonPanel, showGeneratePanel, isMinimized } = shape.props;
     const editor = useEditor();
+    const videoRef = useRef<HTMLVideoElement>(null);
+
+    // 切换缩放
+    const toggleMinimize = (e: React.MouseEvent) => {
+      e.stopPropagation();
+
+      const newMinimized = !isMinimized;
+      const newW = newMinimized ? 150 : 380;
+      const newH = newMinimized ? 80 : 380;
+
+      editor.updateShape({
+        id: shape.id,
+        type: 'custom-card' as any,
+        props: {
+          ...shape.props,
+          w: newW,
+          h: newH,
+          isMinimized: newMinimized,
+        },
+      });
+    };
+
+    // 捕获视频当前帧
+    const captureCurrentFrame = useCallback(() => {
+      const video = videoRef.current;
+      if (!video) return;
+
+      // 创建canvas元素
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      // 将视频当前帧绘制到canvas
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // 转换为base64图片
+      const frameImage = canvas.toDataURL('image/png');
+
+      // 更新shape状态
+      editor.updateShape({
+        id: shape.id,
+        type: 'custom-card' as any,
+        props: {
+          ...shape.props,
+          capturedFrame: frameImage,
+        },
+      });
+    }, [editor, shape.id, shape.props]);
 
     // 根据卡片类型设置颜色和渐变
     const colors = {
@@ -487,7 +557,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
         </div>
 
         <div
-          className="w-full h-full backdrop-blur-xl rounded-2xl shadow-2xl"
+          className="w-full h-full backdrop-blur-xl rounded-2xl shadow-2xl transition-all duration-300"
           style={{
             background: color.gradient,
             border: `1px solid ${color.border}`,
@@ -499,7 +569,37 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
             height: `${100 / scale}%`,
           }}
         >
-          <div className="p-4 h-full flex flex-col">
+          {/* 缩放按钮 */}
+          <button
+            onClick={toggleMinimize}
+            onPointerDown={(e) => e.stopPropagation()}
+            className="absolute top-2 right-2 w-7 h-7 bg-zinc-800/90 hover:bg-zinc-700/90 border border-white/20 rounded flex items-center justify-center text-white text-lg transition-all z-10"
+            style={{
+              transform: `scale(${1 / scale})`,
+              transformOrigin: 'center',
+            }}
+            title={isMinimized ? "展开" : "缩小"}
+          >
+            {isMinimized ? '+' : '−'}
+          </button>
+
+          {/* 缩小状态 - 只显示标题 */}
+          {isMinimized ? (
+            <div className="p-4 h-full flex items-center justify-center">
+              <div className="text-center">
+                <div className="text-white text-sm font-semibold">{title}</div>
+                <div className="text-gray-400 text-xs mt-1">
+                  {cardType === 'text' && '文本生成'}
+                  {cardType === 'image' && '图片生成'}
+                  {cardType === 'video' && '视频生成'}
+                  {cardType === 'character' && '角色设计'}
+                </div>
+                <div className="text-gray-500 text-[10px] mt-2">点击+展开</div>
+              </div>
+            </div>
+          ) : (
+            /* 正常状态 - 显示所有内容 */
+            <div className="p-4 h-full flex flex-col">
             {/* 标题栏 */}
             <div className="flex items-center gap-2 mb-3">
               <div className={`w-8 h-8 rounded-lg ${color.iconBg} flex items-center justify-center flex-shrink-0 backdrop-blur-sm`}>
@@ -547,8 +647,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         ? 'Describe the image...'
                         : 'Describe the video...'
                     }
-                    value={cardType === 'image' && (cameraVertical !== 0 || cameraHorizontal !== 0)
-                      ? `${prompt} [Camera: vertical ${cameraVertical >= 0 ? '+' : ''}${cameraVertical}°, horizontal ${cameraHorizontal >= 0 ? '+' : ''}${cameraHorizontal}°]`
+                    value={cardType === 'image' && ((cameraVertical ?? 0) !== 0 || (cameraHorizontal ?? 0) !== 0)
+                      ? `${prompt} [Camera: vertical ${(cameraVertical ?? 0) >= 0 ? '+' : ''}${cameraVertical ?? 0}°, horizontal ${(cameraHorizontal ?? 0) >= 0 ? '+' : ''}${cameraHorizontal ?? 0}°]`
                       : prompt}
                     onClick={(e) => e.stopPropagation()}
                     onPointerDown={(e) => e.stopPropagation()}
@@ -557,7 +657,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       const userInput = e.target.value.replace(/\[Camera: vertical [+-]?\d+°, horizontal [+-]?\d+°\]/g, '').trim();
                       editor.updateShape({
                         id: shape.id,
-                        type: 'custom-card',
+                        type: 'custom-card' as any,
                         props: {
                           ...shape.props,
                           prompt: userInput,
@@ -592,7 +692,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         e.stopPropagation();
                         editor.updateShape({
                           id: shape.id,
-                          type: 'custom-card',
+                          type: 'custom-card' as any,
                           props: { ...shape.props, characterStep: 'analyze' },
                         });
                       }}
@@ -610,7 +710,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         e.stopPropagation();
                         editor.updateShape({
                           id: shape.id,
-                          type: 'custom-card',
+                          type: 'custom-card' as any,
                           props: { ...shape.props, characterStep: 'three-view-json' },
                         });
                       }}
@@ -628,7 +728,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         e.stopPropagation();
                         editor.updateShape({
                           id: shape.id,
-                          type: 'custom-card',
+                          type: 'custom-card' as any,
                           props: { ...shape.props, characterStep: 'generate' },
                         });
                       }}
@@ -658,7 +758,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                                   const imageData = event.target?.result as string;
                                   editor.updateShape({
                                     id: shape.id,
-                                    type: 'custom-card',
+                                    type: 'custom-card' as any,
                                     props: { ...shape.props, characterAnalyzeImage: imageData },
                                   });
                                 };
@@ -676,7 +776,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       {/* 固定指令说明 */}
                       <div className="p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
                         <p className="text-[10px] text-blue-400 leading-relaxed">
-                          💡 固定指令：根据这张图片，只做单人分析，反推出一个【单人成功范式 JSON】。不要加三视角、不要加转面、不要做设定稿，只保证这是一个稳定可复现的人物 JSON
+                          固定指令：根据这张图片，只做单人分析，反推出一个【单人成功范式 JSON】。不要加三视角、不要加转面、不要做设定稿，只保证这是一个稳定可复现的人物 JSON
                         </p>
                       </div>
 
@@ -691,7 +791,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           onChange={(e) => {
                             editor.updateShape({
                               id: shape.id,
-                              type: 'custom-card',
+                              type: 'custom-card' as any,
                               props: { ...shape.props, model: e.target.value },
                             });
                           }}
@@ -712,7 +812,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           if (characterAnchorJson) {
                             editor.updateShape({
                               id: shape.id,
-                              type: 'custom-card',
+                              type: 'custom-card' as any,
                               props: {
                                 ...shape.props,
                                 showAnalyzePanel: !showAnalyzePanel,
@@ -730,7 +830,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                             }, null, 2);
                             editor.updateShape({
                               id: shape.id,
-                              type: 'custom-card',
+                              type: 'custom-card' as any,
                               props: {
                                 ...shape.props,
                                 characterAnchorJson: mockJson,
@@ -797,7 +897,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           onChange={(e) => {
                             editor.updateShape({
                               id: shape.id,
-                              type: 'custom-card',
+                              type: 'custom-card' as any,
                               props: { ...shape.props, characterAnchorJson: e.target.value },
                             });
                           }}
@@ -807,7 +907,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       {/* 固定指令说明 */}
                       <div className="p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg">
                         <p className="text-[10px] text-blue-400 leading-relaxed">
-                          💡 固定指令：基于上面的 Anchor JSON，生成一份【稳定的三视角（正/侧/背）完整 JSON】。要求：同一人物、同一服装、同一发型、同一身材比例；使用 character turnaround 工程化方式，不要摄影模式；必须避免重复正面或换人，按上次成功的方式来。
+                          固定指令：基于上面的 Anchor JSON，生成一份【稳定的三视角（正/侧/背）完整 JSON】。要求：同一人物、同一服装、同一发型、同一身材比例；使用 character turnaround 工程化方式，不要摄影模式；必须避免重复正面或换人，按上次成功的方式来。
                         </p>
                       </div>
 
@@ -822,7 +922,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           onChange={(e) => {
                             editor.updateShape({
                               id: shape.id,
-                              type: 'custom-card',
+                              type: 'custom-card' as any,
                               props: { ...shape.props, model: e.target.value },
                             });
                           }}
@@ -843,7 +943,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           if (characterThreeViewJson) {
                             editor.updateShape({
                               id: shape.id,
-                              type: 'custom-card',
+                              type: 'custom-card' as any,
                               props: {
                                 ...shape.props,
                                 showThreeViewJsonPanel: !showThreeViewJsonPanel,
@@ -867,7 +967,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                             }, null, 2);
                             editor.updateShape({
                               id: shape.id,
-                              type: 'custom-card',
+                              type: 'custom-card' as any,
                               props: {
                                 ...shape.props,
                                 characterThreeViewJson: mockThreeViewJson,
@@ -939,7 +1039,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                                 const imageData = event.target?.result as string;
                                 editor.updateShape({
                                   id: shape.id,
-                                  type: 'custom-card',
+                                  type: 'custom-card' as any,
                                   props: { ...shape.props, characterThreeViewImage: imageData },
                                 });
                               };
@@ -966,7 +1066,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           onChange={(e) => {
                             editor.updateShape({
                               id: shape.id,
-                              type: 'custom-card',
+                              type: 'custom-card' as any,
                               props: { ...shape.props, characterThreeViewJson: e.target.value },
                             });
                           }}
@@ -984,7 +1084,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           onChange={(e) => {
                             editor.updateShape({
                               id: shape.id,
-                              type: 'custom-card',
+                              type: 'custom-card' as any,
                               props: { ...shape.props, characterImageModel: e.target.value },
                             });
                           }}
@@ -1006,7 +1106,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           if (characterGeneratedImage) {
                             editor.updateShape({
                               id: shape.id,
-                              type: 'custom-card',
+                              type: 'custom-card' as any,
                               props: {
                                 ...shape.props,
                                 showGeneratePanel: !showGeneratePanel,
@@ -1020,7 +1120,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                             const mockGeneratedImage = 'https://picsum.photos/1200/400';
                             editor.updateShape({
                               id: shape.id,
-                              type: 'custom-card',
+                              type: 'custom-card' as any,
                               props: {
                                 ...shape.props,
                                 characterGeneratedImage: mockGeneratedImage,
@@ -1035,32 +1135,11 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         {characterGeneratedImage && showGeneratePanel ? '收起三视角图片' : '生成三视角图片'}
                       </button>
 
-                      {/* 查看生成图片 */}
-                      {characterGeneratedImage && showGeneratePanel && (
-                        <button
-                          className="w-full py-2 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-blue-500/80 to-blue-600/80 hover:from-blue-500 hover:to-blue-600"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            editor.updateShape({
-                              id: shape.id,
-                              type: 'custom-card',
-                              props: {
-                                ...shape.props,
-                                showCharacterOutput: !showCharacterOutput,
-                              },
-                            });
-                          }}
-                          onPointerDown={(e) => e.stopPropagation()}
-                        >
-                          {showCharacterOutput ? '隐藏图片' : '查看生成图片'}
-                        </button>
-                      )}
-
                       {/* 显示生成的图片 */}
-                      {showCharacterOutput && characterGeneratedImage && (
-                        <div className="mt-2 bg-black/40 border border-white/10 rounded-lg overflow-hidden">
+                      {showGeneratePanel && characterGeneratedImage && (
+                        <div className="mt-2 bg-black/40 border border-white/10 rounded-lg overflow-visible">
                           <div className="relative group">
-                            <img src={characterGeneratedImage} alt="Generated Three Views" className="w-full h-auto" />
+                            <img src={characterGeneratedImage} alt="Generated Three Views" className="w-full h-auto max-h-[250px] object-contain bg-black/20" />
 
                             {/* 悬停时显示的操作按钮 */}
                             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
@@ -1102,7 +1181,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
                             {/* 图片信息 */}
                             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 pointer-events-none">
-                              <p className="text-white text-[10px] truncate">✨ 三视角生成成功</p>
+                              <p className="text-white text-[10px] truncate">三视角生成成功</p>
                             </div>
                           </div>
                         </div>
@@ -1164,7 +1243,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   e.stopPropagation();
                   editor.updateShape({
                     id: shape.id,
-                    type: 'custom-card',
+                    type: 'custom-card' as any,
                     props: {
                       ...shape.props,
                       showVideoModePanel: !showVideoModePanel,
@@ -1194,7 +1273,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         e.stopPropagation();
                         editor.updateShape({
                           id: shape.id,
-                          type: 'custom-card',
+                          type: 'custom-card' as any,
                           props: { ...shape.props, videoMode: 'text' },
                         });
                       }}
@@ -1212,7 +1291,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         e.stopPropagation();
                         editor.updateShape({
                           id: shape.id,
-                          type: 'custom-card',
+                          type: 'custom-card' as any,
                           props: { ...shape.props, videoMode: 'first-frame' },
                         });
                       }}
@@ -1230,7 +1309,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         e.stopPropagation();
                         editor.updateShape({
                           id: shape.id,
-                          type: 'custom-card',
+                          type: 'custom-card' as any,
                           props: { ...shape.props, videoMode: 'first-last-frame' },
                         });
                       }}
@@ -1259,7 +1338,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                             const imageData = event.target?.result as string;
                             editor.updateShape({
                               id: shape.id,
-                              type: 'custom-card',
+                              type: 'custom-card' as any,
                               props: { ...shape.props, firstFrameImage: imageData },
                             });
                           };
@@ -1295,7 +1374,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                               const imageData = event.target?.result as string;
                               editor.updateShape({
                                 id: shape.id,
-                                type: 'custom-card',
+                                type: 'custom-card' as any,
                                 props: { ...shape.props, firstFrameImage: imageData },
                               });
                             };
@@ -1327,7 +1406,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                               const imageData = event.target?.result as string;
                               editor.updateShape({
                                 id: shape.id,
-                                type: 'custom-card',
+                                type: 'custom-card' as any,
                                 props: { ...shape.props, lastFrameImage: imageData },
                               });
                             };
@@ -1354,7 +1433,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   e.stopPropagation();
                   editor.updateShape({
                     id: shape.id,
-                    type: 'custom-card',
+                    type: 'custom-card' as any,
                     props: {
                       ...shape.props,
                       showCameraControl: !showCameraControl,
@@ -1387,7 +1466,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           const imageData = event.target?.result as string;
                           editor.updateShape({
                             id: shape.id,
-                            type: 'custom-card',
+                            type: 'custom-card' as any,
                             props: {
                               ...shape.props,
                               uploadedImage: imageData,
@@ -1420,7 +1499,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     onAngleChange={(vertical, horizontal) => {
                       editor.updateShape({
                         id: shape.id,
-                        type: 'custom-card',
+                        type: 'custom-card' as any,
                         props: {
                           ...shape.props,
                           cameraVertical: vertical,
@@ -1445,8 +1524,38 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
                 {/* 镜头信息提示 */}
                 <div className="text-[10px] text-gray-500 bg-black/30 p-2 rounded">
-                  💡 拖动摄像头图标旋转，参数自动添加到生成词
+                  拖动摄像头图标旋转，参数自动添加到生成词
                 </div>
+              </div>
+            )}
+
+            {/* 临时测试：上传本地视频 - 仅视频卡片且无视频时显示 */}
+            {cardType === 'video' && !generatedVideo && (
+              <div className="mt-2">
+                <label className="text-gray-400 text-xs mb-1 block">临时测试：上传本地视频</label>
+                <input
+                  type="file"
+                  accept="video/*"
+                  className="w-full text-xs text-gray-400 file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:bg-purple-600/50 file:text-white hover:file:bg-purple-600/70 file:cursor-pointer transition-all"
+                  onClick={(e) => e.stopPropagation()}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const videoUrl = URL.createObjectURL(file);
+                      editor.updateShape({
+                        id: shape.id,
+                        type: 'custom-card' as any,
+                        props: {
+                          ...shape.props,
+                          generatedVideo: videoUrl,
+                          showVideoOutput: true,
+                        },
+                      });
+                    }
+                  }}
+                />
+                <p className="text-[10px] text-gray-500 mt-1">上传视频后可以测试保存帧功能</p>
               </div>
             )}
 
@@ -1459,8 +1568,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
                 if (cardType === 'image') {
                   // 图片生成逻辑
-                  const fullPrompt = (cameraVertical !== 0 || cameraHorizontal !== 0)
-                    ? `${prompt} [Camera: vertical ${cameraVertical >= 0 ? '+' : ''}${cameraVertical}°, horizontal ${cameraHorizontal >= 0 ? '+' : ''}${cameraHorizontal}°]`
+                  const fullPrompt = ((cameraVertical ?? 0) !== 0 || (cameraHorizontal ?? 0) !== 0)
+                    ? `${prompt} [Camera: vertical ${(cameraVertical ?? 0) >= 0 ? '+' : ''}${cameraVertical ?? 0}°, horizontal ${(cameraHorizontal ?? 0) >= 0 ? '+' : ''}${cameraHorizontal ?? 0}°]`
                     : prompt;
                   console.log('生成图片，完整Prompt:', fullPrompt);
                   console.log('上传的图片:', uploadedImage ? '已上传' : '未上传');
@@ -1469,7 +1578,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   const mockGeneratedImage = 'https://picsum.photos/800/600';
                   editor.updateShape({
                     id: shape.id,
-                    type: 'custom-card',
+                    type: 'custom-card' as any,
                     props: {
                       ...shape.props,
                       generatedImage: mockGeneratedImage,
@@ -1491,7 +1600,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   const mockGeneratedVideo = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
                   editor.updateShape({
                     id: shape.id,
-                    type: 'custom-card',
+                    type: 'custom-card' as any,
                     props: {
                       ...shape.props,
                       generatedVideo: mockGeneratedVideo,
@@ -1514,7 +1623,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   e.stopPropagation();
                   editor.updateShape({
                     id: shape.id,
-                    type: 'custom-card',
+                    type: 'custom-card' as any,
                     props: {
                       ...shape.props,
                       showImageOutput: !showImageOutput,
@@ -1529,7 +1638,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
             {/* 图片输出面板 */}
             {cardType === 'image' && showImageOutput && generatedImage && (
-              <div className="mt-2 bg-black/40 border border-white/10 rounded-lg overflow-hidden">
+              <div className="mt-2 bg-black/40 border border-white/10 rounded-lg overflow-visible">
                 <div className="relative group">
                   {/* 生成的图片 */}
                   <img
@@ -1578,12 +1687,12 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
                     {/* 删除按钮 */}
                     <button
-                      className="px-3 py-2 bg-red-500/90 hover:bg-red-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
+                      className="px-3 py-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
                       onClick={(e) => {
                         e.stopPropagation();
                         editor.updateShape({
                           id: shape.id,
-                          type: 'custom-card',
+                          type: 'custom-card' as any,
                           props: {
                             ...shape.props,
                             generatedImage: '',
@@ -1603,7 +1712,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
                   {/* 图片信息 */}
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 pointer-events-none">
-                    <p className="text-white text-[10px] truncate">✨ 生成成功</p>
+                    <p className="text-white text-[10px] truncate">生成成功</p>
                   </div>
                 </div>
               </div>
@@ -1617,7 +1726,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   e.stopPropagation();
                   editor.updateShape({
                     id: shape.id,
-                    type: 'custom-card',
+                    type: 'custom-card' as any,
                     props: {
                       ...shape.props,
                       showVideoOutput: !showVideoOutput,
@@ -1632,13 +1741,15 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
             {/* 视频输出面板 */}
             {cardType === 'video' && showVideoOutput && generatedVideo && (
-              <div className="mt-2 bg-black/40 border border-white/10 rounded-lg overflow-hidden">
-                <div className="relative group">
+              <div className="mt-2 bg-black/40 border border-white/10 rounded-lg overflow-visible">
+                <div className="relative group" style={{ minHeight: '200px' }}>
                   {/* 生成的视频播放器 */}
                   <video
+                    ref={videoRef}
                     src={generatedVideo}
                     controls
-                    className="w-full h-auto max-h-[250px] bg-black"
+                    className="w-full bg-black"
+                    style={{ minHeight: '200px', maxHeight: '250px' }}
                     onClick={(e) => e.stopPropagation()}
                     onPointerDown={(e) => e.stopPropagation()}
                   >
@@ -1647,6 +1758,22 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
                   {/* 悬停时显示的操作按钮 */}
                   <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {/* 保存当前帧按钮 */}
+                    <button
+                      className="p-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white transition-all"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        captureCurrentFrame();
+                      }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      title="保存当前帧"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </button>
+
                     {/* 全屏播放按钮 */}
                     <button
                       className="p-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white transition-all"
@@ -1662,7 +1789,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       </svg>
                     </button>
 
-                    {/* 下载按钮 */}
+                    {/* 下载视频按钮 */}
                     <button
                       className="p-2 bg-green-500/90 hover:bg-green-600 rounded-lg text-white transition-all"
                       onClick={(e) => {
@@ -1680,14 +1807,14 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       </svg>
                     </button>
 
-                    {/* 删除按钮 */}
+                    {/* 删除视频按钮 */}
                     <button
-                      className="p-2 bg-red-500/90 hover:bg-red-600 rounded-lg text-white transition-all"
+                      className="p-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white transition-all"
                       onClick={(e) => {
                         e.stopPropagation();
                         editor.updateShape({
                           id: shape.id,
-                          type: 'custom-card',
+                          type: 'custom-card' as any,
                           props: {
                             ...shape.props,
                             generatedVideo: '',
@@ -1707,10 +1834,93 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   {/* 视频信息 */}
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 pointer-events-none">
                     <p className="text-white text-[10px] truncate">
-                      🎬 生成成功 · {videoMode === 'text' ? '文本生成' : videoMode === 'first-frame' ? '首帧生成' : '首尾帧生成'}
+                      生成成功 · {videoMode === 'text' ? '文本生成' : videoMode === 'first-frame' ? '首帧生成' : '首尾帧生成'}
                     </p>
                   </div>
                 </div>
+
+                {/* 捕获的帧图片显示 */}
+                {capturedFrame && (
+                  <div className="mt-2 bg-black/40 border border-purple-500/30 rounded-lg overflow-hidden">
+                    <div className="p-2 bg-purple-500/10 border-b border-purple-500/20">
+                      <p className="text-purple-400 text-[10px] font-semibold">捕获的视频帧</p>
+                    </div>
+                    <div className="relative group">
+                      <img
+                        src={capturedFrame}
+                        alt="Captured Frame"
+                        className="w-full h-auto max-h-[200px] object-contain bg-black/20"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+
+                      {/* 悬停时显示的操作按钮 */}
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        {/* 查看大图按钮 */}
+                        <button
+                          className="px-3 py-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(capturedFrame, '_blank');
+                          }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          title="查看大图"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                          </svg>
+                          查看
+                        </button>
+
+                        {/* 下载按钮 */}
+                        <button
+                          className="px-3 py-2 bg-green-500/90 hover:bg-green-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const link = document.createElement('a');
+                            link.href = capturedFrame;
+                            link.download = `video-frame-${Date.now()}.png`;
+                            link.click();
+                          }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          title="下载图片"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                          </svg>
+                          下载
+                        </button>
+
+                        {/* 删除按钮 */}
+                        <button
+                          className="px-3 py-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            editor.updateShape({
+                              id: shape.id,
+                              type: 'custom-card' as any,
+                              props: {
+                                ...shape.props,
+                                capturedFrame: '',
+                              },
+                            });
+                          }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          title="删除图片"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          删除
+                        </button>
+                      </div>
+
+                      {/* 图片信息 */}
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 pointer-events-none">
+                        <p className="text-white text-[10px] truncate">已保存视频帧</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -1721,6 +1931,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
               </div>
             )}
           </div>
+          )}
         </div>
 
         {/* 镜头控制滑块样式 */}

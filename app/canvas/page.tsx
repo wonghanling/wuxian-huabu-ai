@@ -7,6 +7,9 @@ import { CustomCardShapeUtil } from './CustomCard';
 import { ConnectionShapeUtil } from './ConnectionShapeUtil';
 import { ConnectionBindingUtil } from './ConnectionBindingUtil';
 import { PortTool } from './PortTool';
+import { TimelineShapeUtil } from './TimelineShape';
+import { ShotCardShapeUtil } from './ShotCard';
+import { PromptOptimizerCardUtil } from './PromptOptimizerCard';
 
 // 自定义缩放控制器组件 - 外部版本
 function ZoomControlsExternal({ editor }: { editor: Editor }) {
@@ -156,8 +159,11 @@ function ZoomControlsExternal({ editor }: { editor: Editor }) {
   );
 }
 
-// 底部工具栏 - 外部版本（重新设计）
+// 底部工具栏 - 外部版本（重新设计 - 可折叠抽屉式）
 function BottomToolbarExternal({ editor }: { editor: Editor }) {
+  const [isExpanded, setIsExpanded] = useState(true);
+  const [showShotTypePanel, setShowShotTypePanel] = useState(false); // 景别类型面板显示状态
+
   const createTextCard = () => {
     console.log('点击文本生成按钮');
     try {
@@ -168,7 +174,7 @@ function BottomToolbarExternal({ editor }: { editor: Editor }) {
 
       editor.createShape({
         id,
-        type: 'custom-card',
+        type: 'custom-card' as any,
         x: centerX - 190,
         y: centerY - 190,
         props: {
@@ -199,7 +205,7 @@ function BottomToolbarExternal({ editor }: { editor: Editor }) {
 
       editor.createShape({
         id,
-        type: 'custom-card',
+        type: 'custom-card' as any,
         x: centerX - 190,
         y: centerY - 190,
         props: {
@@ -230,7 +236,7 @@ function BottomToolbarExternal({ editor }: { editor: Editor }) {
 
       editor.createShape({
         id,
-        type: 'custom-card',
+        type: 'custom-card' as any,
         x: centerX - 190,
         y: centerY - 190,
         props: {
@@ -261,7 +267,7 @@ function BottomToolbarExternal({ editor }: { editor: Editor }) {
 
       editor.createShape({
         id,
-        type: 'custom-card',
+        type: 'custom-card' as any,
         x: centerX - 190,
         y: centerY - 250,
         props: {
@@ -282,73 +288,332 @@ function BottomToolbarExternal({ editor }: { editor: Editor }) {
     }
   };
 
+  const createDirectorTimeline = () => {
+    console.log('点击导演流程按钮');
+    try {
+      const viewportPageBounds = editor.getViewportPageBounds();
+      const centerX = viewportPageBounds.center.x;
+      const centerY = viewportPageBounds.center.y;
+      const id = createShapeId();
+
+      editor.createShape({
+        id,
+        type: 'timeline' as any,
+        x: centerX - 400,
+        y: centerY - 50,
+        props: {
+          w: 800,
+          h: 100,
+          duration: 60,
+          zoom: 1,
+          shotType: '全景',
+        },
+      });
+
+      console.log('导演流程创建成功');
+      editor.select(id);
+      editor.setCurrentTool('select');
+    } catch (error) {
+      console.error('创建导演流程失败:', error);
+    }
+  };
+
+  // 处理景别类型选择（创建景别卡片）
+  const handleShotTypeSelect = (shotType: '超远景' | '远景' | '全景' | '中远景' | '中景' | '中近景' | '特写') => {
+    console.log('选择了景别类型:', shotType);
+    try {
+      const viewportPageBounds = editor.getViewportPageBounds();
+      const centerX = viewportPageBounds.center.x;
+      const centerY = viewportPageBounds.center.y;
+      const id = createShapeId();
+
+      // 根据景别类型设置默认值
+      let defaultCameraMovement = 'Static';
+
+      switch (shotType) {
+        case '超远景':
+          defaultCameraMovement = 'Static';
+          break;
+        case '远景':
+        case '全景':
+          defaultCameraMovement = 'Follow/Tracking';
+          break;
+        case '中远景':
+          defaultCameraMovement = 'Follow';
+          break;
+        case '中景':
+          defaultCameraMovement = 'Static';
+          break;
+        case '中近景':
+          defaultCameraMovement = 'Static';
+          break;
+        case '特写':
+          defaultCameraMovement = 'Absolute Static';
+          break;
+      }
+
+      editor.createShape({
+        id,
+        type: 'shot-card' as any,
+        x: centerX - 110,
+        y: centerY - 80,
+        props: {
+          w: 220,
+          h: 160,
+          shotType: shotType,
+          cameraMovement: defaultCameraMovement,
+          directorThinking: '未完成',
+          composition: '',
+          subjectScale: '',
+          spaceType: '',
+          timeFeeling: '',
+          lighting: '',
+          motionSource: '',
+          semantic: '',
+          isMinimized: false,
+        },
+      });
+
+      console.log('景别卡片创建成功，景别:', shotType);
+      editor.select(id);
+      editor.setCurrentTool('select');
+    } catch (error) {
+      console.error('创建景别卡片失败:', error);
+    }
+    setShowShotTypePanel(false);
+  };
+
+  const createPromptOptimizerCard = () => {
+    console.log('点击Prompt优化器按钮');
+    try {
+      const viewportPageBounds = editor.getViewportPageBounds();
+      const centerX = viewportPageBounds.center.x;
+      const centerY = viewportPageBounds.center.y;
+      const id = createShapeId();
+
+      editor.createShape({
+        id,
+        type: 'prompt-optimizer-card' as any,
+        x: centerX - 190,
+        y: centerY - 240,
+        props: {
+          w: 380,
+          h: 480,
+          userInput: '',
+          duration: '13-15秒',
+          ratio: '16:9',
+          optimizedPrompt: '',
+          isGenerating: false,
+          isMinimized: false,
+        },
+      });
+
+      console.log('Prompt优化卡片创建成功');
+      editor.select(id);
+      editor.setCurrentTool('select');
+    } catch (error) {
+      console.error('创建Prompt优化卡片失败:', error);
+    }
+  };
+
   return (
     <div
-      className="fixed bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-[#1a1a1a] rounded-2xl p-3 border border-white/10"
-      style={{ zIndex: 99999 }}
+      className="fixed bottom-32 left-6 transition-all duration-300"
+      style={{ zIndex: 9998 }}
     >
-      {/* 文本生成按钮 */}
-      <button
-        onClick={createTextCard}
-        className="flex flex-col items-center justify-center w-20 h-20 rounded-xl hover:bg-white/5 transition-all group"
+      <div
+        className="relative flex flex-col gap-2"
+        onMouseLeave={() => setShowShotTypePanel(false)}
       >
-        <div className="w-10 h-10 rounded-lg bg-gray-500/20 flex items-center justify-center mb-1 group-hover:bg-gray-500/30 transition-all">
-          <span className="text-gray-300 text-xl font-bold">T</span>
-        </div>
-        <span className="text-xs text-gray-400">Text</span>
-      </button>
-
-      {/* 图片生成按钮 */}
-      <button
-        onClick={createImageCard}
-        className="flex flex-col items-center justify-center w-20 h-20 rounded-xl hover:bg-white/5 transition-all group"
-      >
-        <div className="w-10 h-10 rounded-lg bg-gray-600/20 flex items-center justify-center mb-1 group-hover:bg-gray-600/30 transition-all">
-          <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        {/* 展开/收起按钮 */}
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="w-12 h-12 bg-zinc-900/90 backdrop-blur-md border border-white/10 rounded-full flex items-center justify-center hover:bg-zinc-800/90 transition-all shadow-xl"
+          title={isExpanded ? '收起工具栏' : '展开工具栏'}
+        >
+          <svg
+            className={`w-5 h-5 text-white transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
-        </div>
-        <span className="text-xs text-gray-400">Image</span>
-      </button>
+        </button>
 
-      {/* 视频生成按钮 */}
-      <button
-        onClick={createVideoCard}
-        className="flex flex-col items-center justify-center w-20 h-20 rounded-xl hover:bg-white/5 transition-all group"
-      >
-        <div className="w-10 h-10 rounded-lg bg-gray-700/20 flex items-center justify-center mb-1 group-hover:bg-gray-700/30 transition-all">
-          <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-          </svg>
-        </div>
-        <span className="text-xs text-gray-400">Video</span>
-      </button>
+        {/* 工具栏内容 - 可折叠 */}
+        <div
+          className={`flex flex-col gap-2 bg-zinc-900/90 backdrop-blur-md border border-white/10 rounded-2xl p-2 shadow-xl transition-all duration-300 origin-bottom ${
+            isExpanded ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'
+          }`}
+        >
+        {/* 文本生成按钮 */}
+        <button
+          onClick={createTextCard}
+          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
+          title="Text Generation"
+        >
+          <div className="w-8 h-8 rounded-lg bg-gray-500/20 flex items-center justify-center group-hover:bg-gray-500/30 transition-all flex-shrink-0">
+            <span className="text-gray-300 text-base font-bold">T</span>
+          </div>
+          <div className="flex flex-col items-start">
+            <span className="text-sm text-gray-300 whitespace-nowrap">Text</span>
+            <span className="text-xs text-gray-500 whitespace-nowrap">文本生成</span>
+          </div>
+        </button>
 
-      {/* 角色设计按钮 */}
-      <button
-        onClick={createCharacterCard}
-        className="flex flex-col items-center justify-center w-20 h-20 rounded-xl hover:bg-white/5 transition-all group"
-      >
-        <div className="w-10 h-10 rounded-lg bg-purple-600/20 flex items-center justify-center mb-1 group-hover:bg-purple-600/30 transition-all">
-          <svg className="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
-        </div>
-        <span className="text-xs text-gray-400">角色设计</span>
-      </button>
+        {/* 图片生成按钮 */}
+        <button
+          onClick={createImageCard}
+          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
+          title="Image Generation"
+        >
+          <div className="w-8 h-8 rounded-lg bg-gray-600/20 flex items-center justify-center group-hover:bg-gray-600/30 transition-all flex-shrink-0">
+            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <div className="flex flex-col items-start">
+            <span className="text-sm text-gray-300 whitespace-nowrap">Image</span>
+            <span className="text-xs text-gray-500 whitespace-nowrap">图片生成</span>
+          </div>
+        </button>
 
-      {/* 分隔线 */}
-      <div className="w-px h-12 bg-white/10 mx-2"></div>
+        {/* 视频生成按钮 */}
+        <button
+          onClick={createVideoCard}
+          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
+          title="Video Generation"
+        >
+          <div className="w-8 h-8 rounded-lg bg-gray-700/20 flex items-center justify-center group-hover:bg-gray-700/30 transition-all flex-shrink-0">
+            <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <div className="flex flex-col items-start">
+            <span className="text-sm text-gray-300 whitespace-nowrap">Video</span>
+            <span className="text-xs text-gray-500 whitespace-nowrap">视频生成</span>
+          </div>
+        </button>
 
-      {/* 更多按钮 */}
-      <button className="flex flex-col items-center justify-center w-20 h-20 rounded-xl hover:bg-white/5 transition-all group">
-        <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center mb-1 group-hover:bg-white/10 transition-all">
-          <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-          </svg>
+        {/* 角色设计按钮 */}
+        <button
+          onClick={createCharacterCard}
+          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
+          title="Character Design"
+        >
+          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
+            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </div>
+          <div className="flex flex-col items-start">
+            <span className="text-sm text-gray-300 whitespace-nowrap">Character Design</span>
+            <span className="text-xs text-gray-500 whitespace-nowrap">角色设计</span>
+          </div>
+        </button>
+
+        {/* 导演流程按钮 */}
+        <button
+          onClick={createDirectorTimeline}
+          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
+          title="Director Timeline"
+        >
+          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
+            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </div>
+          <div className="flex flex-col items-start">
+            <span className="text-sm text-gray-300 whitespace-nowrap">Director Timeline</span>
+            <span className="text-xs text-gray-500 whitespace-nowrap">导演流程</span>
+          </div>
+        </button>
+
+        {/* 电影控制器按钮 */}
+        <button
+          onMouseEnter={() => setShowShotTypePanel(true)}
+          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
+          title="Film Controller"
+        >
+          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
+            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
+            </svg>
+          </div>
+          <div className="flex flex-col items-start">
+            <span className="text-sm text-gray-300 whitespace-nowrap">Film Controller</span>
+            <span className="text-xs text-gray-500 whitespace-nowrap">电影控制器</span>
+          </div>
+        </button>
+
+        {/* Prompt按钮 */}
+        <button
+          onClick={createPromptOptimizerCard}
+          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
+          title="Prompt"
+        >
+          <div className="w-8 h-8 rounded-lg bg-yellow-500/20 flex items-center justify-center group-hover:bg-yellow-500/30 transition-all flex-shrink-0">
+            <svg className="w-4 h-4 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <div className="flex flex-col items-start">
+            <span className="text-sm text-gray-300 whitespace-nowrap">Prompt</span>
+            <span className="text-xs text-gray-500 whitespace-nowrap">快速编译视频生成词</span>
+          </div>
+        </button>
+
+        {/* 分隔线 */}
+        <div className="h-px bg-white/10 my-1"></div>
+
+        {/* 更多按钮 */}
+        <button
+          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
+          title="More Options"
+        >
+          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
+            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+            </svg>
+          </div>
+          <span className="text-sm text-gray-400 whitespace-nowrap">More</span>
+        </button>
+      </div>
+
+      {/* 景别类型选择面板 */}
+      {showShotTypePanel && (
+        <div className="absolute left-full bottom-0 z-50">
+          <div className="bg-zinc-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-4 w-64">
+            {/* 标题栏 */}
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-white font-semibold text-sm">选择景别类型</h3>
+              <button
+                onClick={() => setShowShotTypePanel(false)}
+                className="w-6 h-6 rounded-lg hover:bg-white/10 flex items-center justify-center transition-all"
+              >
+                <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* 景别选项列表 */}
+            <div className="space-y-2">
+              {(['超远景', '远景', '全景', '中远景', '中景', '中近景', '特写'] as const).map((shotType) => (
+                <button
+                  key={shotType}
+                  onClick={() => handleShotTypeSelect(shotType)}
+                  className="w-full px-4 py-3 bg-white/5 hover:bg-white/10 rounded-xl text-white text-sm font-medium transition-all text-left border border-white/5 hover:border-white/20"
+                >
+                  {shotType}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
-        <span className="text-xs text-gray-400">More</span>
-      </button>
+      )}
+      </div>
     </div>
   );
 }
@@ -373,14 +638,14 @@ function ZoomControls() {
   const handleZoomChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newZoom = parseInt(e.target.value);
     setZoom(newZoom);
-    editor.setZoomLevel(newZoom / 100);
+    editor.setCamera({ ...editor.getCamera(), z: newZoom / 100 });
   };
 
   const handleZoomIn = () => {
     console.log('点击放大按钮，当前缩放:', zoom);
     const newZoom = Math.min(zoom + 10, 200);
     setZoom(newZoom);
-    editor.setZoomLevel(newZoom / 100);
+    editor.setCamera({ ...editor.getCamera(), z: newZoom / 100 });
     console.log('新缩放:', newZoom);
   };
 
@@ -388,7 +653,7 @@ function ZoomControls() {
     console.log('点击缩小按钮，当前缩放:', zoom);
     const newZoom = Math.max(zoom - 10, 25);
     setZoom(newZoom);
-    editor.setZoomLevel(newZoom / 100);
+    editor.setCamera({ ...editor.getCamera(), z: newZoom / 100 });
     console.log('新缩放:', newZoom);
   };
 
@@ -507,23 +772,23 @@ function BottomToolbar() {
   const createTextCard = () => {
     console.log('点击文本生成按钮');
     try {
-      const viewportCenter = editor.getViewportPageCenter();
+      const viewportCenter = editor.getViewportScreenCenter();
       console.log('视口中心:', viewportCenter);
       const id = createShapeId();
       console.log('生成的ID:', id);
 
       editor.createShape({
         id,
-        type: 'geo',
+        type: 'custom-card' as any,
         x: viewportCenter.x - 150,
         y: viewportCenter.y - 100,
         props: {
-          w: 300,
-          h: 200,
-          geo: 'rectangle',
-          color: 'blue',
-          fill: 'solid',
-          text: '文本生成卡片\n\n点击编辑...',
+          w: 380,
+          h: 380,
+          cardType: 'text',
+          title: 'Text Generation',
+          prompt: '',
+          model: 'GPT-4',
         },
       });
 
@@ -539,21 +804,21 @@ function BottomToolbar() {
   const createImageCard = () => {
     console.log('点击图片生成按钮');
     try {
-      const viewportCenter = editor.getViewportPageCenter();
+      const viewportCenter = editor.getViewportScreenCenter();
       const id = createShapeId();
 
       editor.createShape({
         id,
-        type: 'geo',
+        type: 'custom-card' as any,
         x: viewportCenter.x - 150,
         y: viewportCenter.y - 100,
         props: {
-          w: 300,
-          h: 200,
-          geo: 'rectangle',
-          color: 'violet',
-          fill: 'solid',
-          text: '图片生成卡片\n\n点击编辑...',
+          w: 380,
+          h: 380,
+          cardType: 'image',
+          title: 'Image Generation',
+          prompt: '',
+          model: 'DALL-E 3',
         },
       });
 
@@ -568,21 +833,21 @@ function BottomToolbar() {
   const createVideoCard = () => {
     console.log('点击视频生成按钮');
     try {
-      const viewportCenter = editor.getViewportPageCenter();
+      const viewportCenter = editor.getViewportScreenCenter();
       const id = createShapeId();
 
       editor.createShape({
         id,
-        type: 'geo',
+        type: 'custom-card' as any,
         x: viewportCenter.x - 150,
         y: viewportCenter.y - 100,
         props: {
-          w: 300,
-          h: 200,
-          geo: 'rectangle',
-          color: 'red',
-          fill: 'solid',
-          text: '视频生成卡片\n\n点击编辑...',
+          w: 380,
+          h: 380,
+          cardType: 'video',
+          title: 'Video Generation',
+          prompt: '',
+          model: 'Runway Gen-2',
         },
       });
 
@@ -669,7 +934,7 @@ export default function CanvasPage() {
   const [showIntro, setShowIntro] = useState(true);
 
   // 自定义形状工具和绑定工具
-  const customShapeUtils = [CustomCardShapeUtil, ConnectionShapeUtil];
+  const customShapeUtils = [CustomCardShapeUtil, ConnectionShapeUtil, TimelineShapeUtil, ShotCardShapeUtil, PromptOptimizerCardUtil];
   const customBindingUtils = [ConnectionBindingUtil];
   const customTools = [PortTool];
 
@@ -817,6 +1082,7 @@ export default function CanvasPage() {
         bindingUtils={customBindingUtils}
         tools={customTools}
         onMount={handleMount}
+        licenseKey={process.env.NEXT_PUBLIC_TLDRAW_LICENSE_KEY || ''}
       />
 
       {/* 将控件放在 Tldraw 外面 */}

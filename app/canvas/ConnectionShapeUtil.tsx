@@ -9,6 +9,7 @@ import {
   TLHandle,
   TLHandleDragInfo,
   TLShape,
+  TLShapeId,
   Vec,
   VecLike,
   VecModel,
@@ -112,8 +113,8 @@ export class ConnectionShapeUtil extends ShapeUtil<ConnectionShape> {
     const shapeTransform = this.editor.getShapePageTransform(connection);
     const handlePagePosition = shapeTransform.applyToPoint(handle);
 
-    // Find target card at handle position
-    const target = this.findCardAtPoint(handlePagePosition, draggingTerminal);
+    // Find target shape at handle position
+    const target = this.findShapeAtPoint(handlePagePosition, draggingTerminal);
 
     if (!target) {
       removeConnectionBinding(this.editor, connection.id, draggingTerminal);
@@ -126,10 +127,17 @@ export class ConnectionShapeUtil extends ShapeUtil<ConnectionShape> {
     }
 
     // Create or update binding
-    createOrUpdateConnectionBinding(this.editor, connection.id, target.id, {
+    const bindingProps: any = {
       portId: draggingTerminal === 'start' ? 'output' : 'input',
       terminal: draggingTerminal,
-    });
+    };
+
+    // Add tickIndex for timeline connections
+    if (target.tickIndex !== undefined) {
+      bindingProps.tickIndex = target.tickIndex;
+    }
+
+    createOrUpdateConnectionBinding(this.editor, connection.id, target.shapeId, bindingProps);
 
     return connection;
   }
@@ -146,24 +154,59 @@ export class ConnectionShapeUtil extends ShapeUtil<ConnectionShape> {
     }
   }
 
-  private findCardAtPoint(point: VecLike, terminal: 'start' | 'end') {
+  private findShapeAtPoint(point: VecLike, terminal: 'start' | 'end'): { shapeId: TLShapeId; tickIndex?: number } | null {
     const shapes = this.editor.getCurrentPageShapes();
 
     for (const shape of shapes) {
-      if (!this.editor.isShapeOfType(shape, 'custom-card')) continue;
-
       const bounds = this.editor.getShapePageBounds(shape);
       if (!bounds) continue;
 
-      // Check if point is near the appropriate port
-      const portX = terminal === 'start' ? bounds.maxX : bounds.minX;
-      const portY = bounds.midY;
-      const distance = Math.sqrt(
-        Math.pow(point.x - portX, 2) + Math.pow(point.y - portY, 2)
-      );
+      const shapeType = (shape as any).type;
 
-      if (distance < 20) {
-        return shape;
+      // Check for timeline shape - 大幅扩展检测范围
+      if (shapeType === 'timeline') {
+        const { duration, zoom, w } = (shape as any).props;
+        const pixelsPerSecond = (w / 60) * zoom;
+
+        // 时间轴横线在 top: 40px，大刻度高度24px，圆点在刻度线顶端
+        // 需要大幅扩展Y轴检测范围
+        const expandedMinY = bounds.minY - 100; // 向上扩展100像素
+        const expandedMaxY = bounds.maxY + 100; // 向下扩展100像素
+
+        // Check if point is within expanded timeline bounds
+        if (point.y >= expandedMinY && point.y <= expandedMaxY &&
+            point.x >= bounds.minX - 50 && point.x <= bounds.maxX + 50) {
+
+          // Calculate which tick is closest
+          const relativeX = point.x - bounds.minX;
+          const tickIndex = Math.round(relativeX / pixelsPerSecond);
+
+          // Only allow connection to ticks that are multiples of 5 (where the blue dots are)
+          if (tickIndex >= 0 && tickIndex <= duration && tickIndex % 5 === 0) {
+            const tickX = bounds.minX + tickIndex * pixelsPerSecond;
+            const distanceX = Math.abs(point.x - tickX);
+
+            // Allow connection within 50 pixels horizontally
+            if (distanceX < 50) {
+              console.log('✅ 找到时间轴连接点:', { tickIndex, tickX, distanceX });
+              return { shapeId: shape.id, tickIndex };
+            }
+          }
+        }
+      }
+
+      // Check for custom-card shape
+      if (shapeType === 'custom-card') {
+        // Check if point is near the appropriate port
+        const portX = terminal === 'start' ? bounds.maxX : bounds.minX;
+        const portY = bounds.midY;
+        const distance = Math.sqrt(
+          Math.pow(point.x - portX, 2) + Math.pow(point.y - portY, 2)
+        );
+
+        if (distance < 20) {
+          return { shapeId: shape.id };
+        }
       }
     }
 

@@ -17,6 +17,7 @@ declare module 'tldraw' {
     [CONNECTION_TYPE]: {
       portId: string;
       terminal: 'start' | 'end';
+      tickIndex?: number; // For timeline connections
     };
   }
 }
@@ -28,6 +29,7 @@ export class ConnectionBindingUtil extends BindingUtil<ConnectionBinding> {
   static override props = {
     portId: T.string,
     terminal: T.literalEnum('start', 'end'),
+    tickIndex: T.number.optional(),
   };
 
   override getDefaultProps() {
@@ -62,9 +64,10 @@ export function getConnectionBindings(
 
 const connectionBindingsCache = createComputedCache(
   'connection bindings',
-  (editor: Editor, connectionId: TLShapeId) => {
+  (editor: Editor, record: any) => {
+    const connectionId = typeof record === 'string' ? record : record?.id;
     const connection = editor.getShape(connectionId);
-    if (!connection || !editor.isShapeOfType(connection, 'connection')) {
+    if (!connection || (connection as any).type !== 'connection') {
       return {};
     }
 
@@ -90,19 +93,70 @@ export function getConnectionBindingPosition(
   binding: ConnectionBinding
 ) {
   const targetShape = editor.getShape(binding.toId);
-  if (!targetShape || !editor.isShapeOfType(targetShape, 'custom-card')) return null;
+  if (!targetShape) return null;
 
   const bounds = editor.getShapePageBounds(targetShape);
   if (!bounds) return null;
 
-  // Return port position based on terminal type
-  if (binding.props.terminal === 'start') {
-    // Output port on right side
-    return { x: bounds.maxX, y: bounds.midY };
-  } else {
-    // Input port on left side
-    return { x: bounds.minX, y: bounds.midY };
+  const shapeType = (targetShape as any).type;
+
+  // Handle timeline shape connections
+  if (shapeType === 'timeline') {
+    const tickIndex = binding.props.tickIndex ?? 0;
+    const { duration, zoom, w } = (targetShape as any).props;
+    const pixelsPerSecond = (w / 60) * zoom;
+    const tickPosition = tickIndex * pixelsPerSecond;
+
+    // 计算锯齿顶端的位置
+    // 横线在 bounds.minY + 40px
+    // 大刻度（每5秒）高度是 24px
+    // 所以锯齿顶端在 bounds.minY + 40 - 24 = bounds.minY + 16
+    const isLargeTick = tickIndex % 5 === 0;
+    const tickHeight = isLargeTick ? 24 : 6;
+    const tickTopY = bounds.minY + 40 - tickHeight;
+
+    return {
+      x: bounds.minX + tickPosition,
+      y: tickTopY  // 连接到锯齿顶端
+    };
   }
+
+  // Handle custom-card shape connections (default behavior)
+  if (shapeType === 'custom-card') {
+    // Return port position based on terminal type
+    if (binding.props.terminal === 'start') {
+      // Output port on right side
+      return { x: bounds.maxX, y: bounds.midY };
+    } else {
+      // Input port on left side
+      return { x: bounds.minX, y: bounds.midY };
+    }
+  }
+
+  // Handle shot-card shape connections
+  if (shapeType === 'shot-card') {
+    // Shot card has both input and output ports
+    if (binding.props.terminal === 'start') {
+      // Output port on right side
+      return { x: bounds.maxX, y: bounds.midY };
+    } else {
+      // Input port on left side
+      return { x: bounds.minX, y: bounds.midY };
+    }
+  }
+
+  // Handle prompt-optimizer-card shape connections
+  if (shapeType === 'prompt-optimizer-card') {
+    if (binding.props.terminal === 'start') {
+      // Output port on right side
+      return { x: bounds.maxX, y: bounds.midY };
+    } else {
+      // Input port on left side
+      return { x: bounds.minX, y: bounds.midY };
+    }
+  }
+
+  return null;
 }
 
 export function createOrUpdateConnectionBinding(

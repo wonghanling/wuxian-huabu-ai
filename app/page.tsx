@@ -39,14 +39,18 @@ export default function Home() {
           </div>
 
           <div className="flex items-center space-x-4">
-            <button className="text-sm font-medium text-zinc-400 hover:text-white transition-colors flex flex-col items-center">
-              <span>Log in</span>
-              <span className="text-xs text-zinc-500">登录</span>
-            </button>
-            <button className="px-4 py-2 text-sm font-semibold rounded-full btn-primary flex flex-col items-center">
-              <span>Sign up</span>
-              <span className="text-xs">注册</span>
-            </button>
+            <Link href="/auth">
+              <button className="text-sm font-medium text-zinc-400 hover:text-white transition-colors flex flex-col items-center">
+                <span>Log in</span>
+                <span className="text-xs text-zinc-500">登录</span>
+              </button>
+            </Link>
+            <Link href="/auth">
+              <button className="px-4 py-2 text-sm font-semibold rounded-full btn-primary flex flex-col items-center">
+                <span>Sign up</span>
+                <span className="text-xs">注册</span>
+              </button>
+            </Link>
           </div>
         </div>
       </nav>
