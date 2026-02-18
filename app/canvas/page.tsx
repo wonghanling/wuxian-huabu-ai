@@ -3,6 +3,7 @@
 import { Tldraw, TLComponents, Editor, useEditor, createShapeId } from 'tldraw';
 import 'tldraw/tldraw.css';
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { CustomCardShapeUtil } from './CustomCard';
 import { ConnectionShapeUtil } from './ConnectionShapeUtil';
 import { ConnectionBindingUtil } from './ConnectionBindingUtil';
@@ -10,6 +11,7 @@ import { PortTool } from './PortTool';
 import { TimelineShapeUtil } from './TimelineShape';
 import { ShotCardShapeUtil } from './ShotCard';
 import { PromptOptimizerCardUtil } from './PromptOptimizerCard';
+import TutorialOverlay from './TutorialOverlay';
 
 // 自定义缩放控制器组件 - 外部版本
 function ZoomControlsExternal({ editor }: { editor: Editor }) {
@@ -420,6 +422,7 @@ function BottomToolbarExternal({ editor }: { editor: Editor }) {
     <div
       className="fixed bottom-32 left-6 transition-all duration-300"
       style={{ zIndex: 9998 }}
+      data-tutorial="toolbar"
     >
       <div
         className="relative flex flex-col gap-2"
@@ -452,6 +455,7 @@ function BottomToolbarExternal({ editor }: { editor: Editor }) {
           onClick={createTextCard}
           className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
           title="Text Generation"
+          data-tutorial="text-button"
         >
           <div className="w-8 h-8 rounded-lg bg-gray-500/20 flex items-center justify-center group-hover:bg-gray-500/30 transition-all flex-shrink-0">
             <span className="text-gray-300 text-base font-bold">T</span>
@@ -467,6 +471,7 @@ function BottomToolbarExternal({ editor }: { editor: Editor }) {
           onClick={createImageCard}
           className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
           title="Image Generation"
+          data-tutorial="image-button"
         >
           <div className="w-8 h-8 rounded-lg bg-gray-600/20 flex items-center justify-center group-hover:bg-gray-600/30 transition-all flex-shrink-0">
             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -928,10 +933,14 @@ function BottomToolbar() {
 }
 
 export default function CanvasPage() {
+  const searchParams = useSearchParams();
+  const isTutorial = searchParams.get('tutorial') === 'true';
+
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
   const [cameraZoom, setCameraZoom] = useState(1);
   const [cameraPos, setCameraPos] = useState({ x: 0, y: 0 });
   const [showIntro, setShowIntro] = useState(true);
+  const [showTutorial, setShowTutorial] = useState(isTutorial);
 
   // 自定义形状工具和绑定工具
   const customShapeUtils = [CustomCardShapeUtil, ConnectionShapeUtil, TimelineShapeUtil, ShotCardShapeUtil, PromptOptimizerCardUtil];
@@ -1091,6 +1100,15 @@ export default function CanvasPage() {
           <ZoomControlsExternal editor={editorInstance} />
           <BottomToolbarExternal editor={editorInstance} />
         </>
+      )}
+
+      {/* Tutorial Overlay */}
+      {showTutorial && editorInstance && (
+        <TutorialOverlay
+          editor={editorInstance}
+          onComplete={() => setShowTutorial(false)}
+          onSkip={() => setShowTutorial(false)}
+        />
       )}
 
       {/* 自定义样式 - 纯黑色主题 */}

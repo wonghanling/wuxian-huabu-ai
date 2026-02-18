@@ -151,6 +151,12 @@ export default function Home() {
                 <span className="text-xs opacity-80">体验无限画布</span>
               </button>
             </Link>
+            <Link href="/canvas?tutorial=true">
+              <button className="px-8 py-4 rounded-full font-semibold text-base min-w-[200px] flex flex-col items-center bg-white/5 hover:bg-white/10 border border-white/10 transition-all">
+                <span>View Tutorial</span>
+                <span className="text-xs opacity-80">查看教程</span>
+              </button>
+            </Link>
           </div>
 
           {/* Dashboard Preview */}
