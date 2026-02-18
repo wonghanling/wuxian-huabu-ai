@@ -29,7 +29,7 @@ export default function Home() {
 
     // 监听登录状态变化
     if (supabase) {
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
         setUser(session?.user ?? null);
       });
 
