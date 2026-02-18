@@ -144,6 +144,7 @@ export default function TutorialOverlay({ editor, onComplete, onSkip }: Tutorial
   }, [step.target]);
 
   const handleNext = () => {
+    console.log('点击下一步，当前步骤:', currentStep, 'isFirstStep:', isFirstStep, 'isLastStep:', isLastStep);
     if (isFirstStep) {
       setCurrentStep(currentStep + 1);
     } else if (isLastStep) {
