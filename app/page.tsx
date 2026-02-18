@@ -1,7 +1,49 @@
+'use client';
+
 import Link from 'next/link';
 import { Infinity, Sparkles } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const supabase = createClient();
+
+  useEffect(() => {
+    // 检查登录状态
+    const checkUser = async () => {
+      if (!supabase) {
+        setLoading(false);
+        return;
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      setLoading(false);
+    };
+
+    checkUser();
+
+    // 监听登录状态变化
+    if (supabase) {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        setUser(session?.user ?? null);
+      });
+
+      return () => subscription.unsubscribe();
+    }
+  }, []);
+
+  // 登出
+  const handleLogout = async () => {
+    if (!supabase) return;
+    await supabase.auth.signOut();
+    setUser(null);
+  };
+
   return (
     <div className="relative bg-[#09090b] text-white overflow-hidden">
       {/* Animated Grid Background */}
@@ -39,18 +81,41 @@ export default function Home() {
           </div>
 
           <div className="flex items-center space-x-4">
-            <Link href="/auth">
-              <button className="text-sm font-medium text-zinc-400 hover:text-white transition-colors flex flex-col items-center">
-                <span>Log in</span>
-                <span className="text-xs text-zinc-500">登录</span>
-              </button>
-            </Link>
-            <Link href="/auth">
-              <button className="px-4 py-2 text-sm font-semibold rounded-full btn-primary flex flex-col items-center">
-                <span>Sign up</span>
-                <span className="text-xs">注册</span>
-              </button>
-            </Link>
+            {loading ? (
+              <div className="text-sm text-zinc-400">加载中...</div>
+            ) : user ? (
+              <>
+                <div className="text-sm text-zinc-400">
+                  {user.email}
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="text-sm font-medium text-zinc-400 hover:text-white transition-colors"
+                >
+                  登出 / Logout
+                </button>
+                <Link href="/canvas">
+                  <button className="px-4 py-2 text-sm font-semibold rounded-full btn-primary">
+                    进入画布 / Canvas
+                  </button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/auth">
+                  <button className="text-sm font-medium text-zinc-400 hover:text-white transition-colors flex flex-col items-center">
+                    <span>Log in</span>
+                    <span className="text-xs text-zinc-500">登录</span>
+                  </button>
+                </Link>
+                <Link href="/auth">
+                  <button className="px-4 py-2 text-sm font-semibold rounded-full btn-primary flex flex-col items-center">
+                    <span>Sign up</span>
+                    <span className="text-xs">注册</span>
+                  </button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </nav>

@@ -83,22 +83,27 @@ export default function AuthPage() {
     setMessage('');
 
     try {
-      // 先验证 OTP
-      const { error: verifyError } = await supabase.auth.verifyOtp({
+      // 使用 OTP 验证并同时设置密码
+      const { error } = await supabase.auth.verifyOtp({
         email,
         token: otp,
         type: 'email',
+        options: {
+          // 验证成功后自动设置密码
+          data: {
+            password: password,
+          },
+        },
       });
 
-      if (verifyError) throw verifyError;
+      if (error) throw error;
 
-      // OTP 验证成功后，使用密码注册
-      const { error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
+      // 验证成功后，更新用户密码
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: password,
       });
 
-      if (signUpError) throw signUpError;
+      if (updateError) throw updateError;
 
       setMessage('注册成功！正在跳转...');
       setTimeout(() => router.push('/canvas'), 1500);
