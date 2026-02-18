@@ -173,8 +173,8 @@ export default function TutorialOverlay({ editor, onComplete, onSkip }: Tutorial
       </div>
 
       {/* Tutorial Card */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-auto">
-        <div className="glass-card p-6 max-w-md w-[90vw] sm:w-[450px] shadow-2xl">
+      <div className="absolute top-20 right-6 pointer-events-auto">
+        <div className="glass-card p-6 max-w-md w-[90vw] sm:w-[400px] shadow-2xl">
           {/* Header */}
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
