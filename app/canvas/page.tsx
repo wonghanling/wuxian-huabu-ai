@@ -2,7 +2,7 @@
 
 import { Tldraw, TLComponents, Editor, useEditor, createShapeId } from 'tldraw';
 import 'tldraw/tldraw.css';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { CustomCardShapeUtil } from './CustomCard';
 import { ConnectionShapeUtil } from './ConnectionShapeUtil';
@@ -934,7 +934,7 @@ function BottomToolbar() {
   );
 }
 
-export default function CanvasPage() {
+function CanvasPageContent() {
   const searchParams = useSearchParams();
   const isTutorial = searchParams.get('tutorial') === 'true';
 
@@ -1351,5 +1351,17 @@ export default function CanvasPage() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function CanvasPage() {
+  return (
+    <Suspense fallback={
+      <div className="fixed inset-0 bg-black flex items-center justify-center">
+        <div className="text-white text-lg">Loading...</div>
+      </div>
+    }>
+      <CanvasPageContent />
+    </Suspense>
   );
 }

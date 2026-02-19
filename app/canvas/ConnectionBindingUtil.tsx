@@ -71,7 +71,7 @@ const connectionBindingsCache = createComputedCache(
       return {};
     }
 
-    const bindings = editor.getBindingsFromShape(connection.id, CONNECTION_TYPE);
+    const bindings = editor.getBindingsFromShape<ConnectionBinding>(connection.id, CONNECTION_TYPE);
     let start, end;
     for (const binding of bindings) {
       if (binding.props.terminal === 'start') {
@@ -166,7 +166,7 @@ export function createOrUpdateConnectionBinding(
   props: ConnectionBinding['props']
 ) {
   const existingMany = editor
-    .getBindingsFromShape(connectionId, CONNECTION_TYPE)
+    .getBindingsFromShape<ConnectionBinding>(connectionId, CONNECTION_TYPE)
     .filter((b) => b.props.terminal === props.terminal);
 
   if (existingMany.length > 1) {
@@ -196,7 +196,7 @@ export function removeConnectionBinding(
   terminal: 'start' | 'end'
 ) {
   const existing = editor
-    .getBindingsFromShape(connectionId, CONNECTION_TYPE)
+    .getBindingsFromShape<ConnectionBinding>(connectionId, CONNECTION_TYPE)
     .filter((b) => b.props.terminal === terminal);
 
   editor.deleteBindings(existing);
