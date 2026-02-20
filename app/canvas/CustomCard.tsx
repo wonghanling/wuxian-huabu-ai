@@ -1251,9 +1251,32 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   )}
                   {cardType === 'video' && (
                     <>
-                      <option value="Sora">Sora</option>
-                      <option value="Runway">Runway</option>
-                      <option value="Pika">Pika</option>
+                      <optgroup label="Google Veo">
+                        <option value="veo3.1-4k">Veo 3.1 4K (10积分)</option>
+                        <option value="veo3.1-components-4k">Veo 3.1 Components 4K (10积分)</option>
+                        <option value="veo3.1-pro-4k">Veo 3.1 Pro 4K (30积分)</option>
+                        <option value="veo_3_1-4K">Veo 3.1 4K OpenAI (9积分)</option>
+                        <option value="veo_3_1-fast-4K">Veo 3.1 Fast 4K (5积分)</option>
+                        <option value="veo_3_1-fast">Veo 3.1 Fast (3积分)</option>
+                        <option value="veo3.1">Veo 3.1 (7积分)</option>
+                        <option value="veo3.1-pro">Veo 3.1 Pro (30积分)</option>
+                        <option value="veo3-pro">Veo 3 Pro (35积分)</option>
+                      </optgroup>
+                      <optgroup label="OpenAI Sora">
+                        <option value="sora-2-all">Sora 2 All (3积分)</option>
+                        <option value="sora-2-pro-all">Sora 2 Pro All (31积分)</option>
+                        <option value="sora-2-4s">Sora 2 4s (20积分)</option>
+                        <option value="sora-2-8s">Sora 2 8s (40积分)</option>
+                        <option value="sora-2-12s">Sora 2 12s (60积分)</option>
+                      </optgroup>
+                      <optgroup label="其他">
+                        <option value="grok-video-3">Grok Video 3 (3积分)</option>
+                        <option value="luma_video_api">Luma Video API (30积分)</option>
+                        <option value="runwayml-gen3a_turbo-10">Runway Gen-3A Turbo 10s (25积分)</option>
+                        <option value="runwayml-gen3a_turbo-5">Runway Gen-3A Turbo 5s (15积分)</option>
+                        <option value="runwayml-gen4_turbo-10">Runway Gen-4 Turbo 10s (25积分)</option>
+                        <option value="runwayml-gen4_turbo-5">Runway Gen-4 Turbo 5s (15积分)</option>
+                      </optgroup>
                     </>
                   )}
                 </select>
@@ -1712,24 +1735,91 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   // 视频生成逻辑
                   console.log('生成视频，模式:', videoMode || 'text');
                   console.log('Prompt:', prompt);
-                  if (videoMode === 'first-frame') {
-                    console.log('首帧图片:', firstFrameImage ? '已上传' : '未上传');
-                  } else if (videoMode === 'first-last-frame') {
-                    console.log('首帧图片:', firstFrameImage ? '已上传' : '未上传');
-                    console.log('尾帧图片:', lastFrameImage ? '已上传' : '未上传');
-                  }
+                  console.log('模型:', model);
 
-                  // 模拟生成视频（使用示例视频）
-                  const mockGeneratedVideo = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+                  // 设置生成中状态
                   editor.updateShape({
                     id: shape.id,
                     type: 'custom-card' as any,
                     props: {
                       ...shape.props,
-                      generatedVideo: mockGeneratedVideo,
-                      showVideoOutput: true, // 自动展开查看
+                      isGenerating: true,
                     },
                   });
+
+                  try {
+                    // 调用视频生成 API
+                    const response = await fetch('/api/video/generate', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        prompt: prompt,
+                        model: model || 'veo_3_1-fast',
+                        aspectRatio: '16:9',
+                        duration: 5,
+                        startFrameImage: videoMode === 'first-frame' || videoMode === 'first-last-frame' ? firstFrameImage : undefined,
+                        endFrameImage: videoMode === 'first-last-frame' ? lastFrameImage : undefined,
+                      }),
+                    });
+
+                    if (!response.ok) {
+                      throw new Error('视频生成请求失败');
+                    }
+
+                    const data = await response.json();
+                    const taskId = data.taskId;
+
+                    // 轮询查询视频状态
+                    const maxAttempts = 60;
+                    let attempts = 0;
+
+                    const poll = async (): Promise<void> => {
+                      if (attempts >= maxAttempts) {
+                        throw new Error('视频生成超时，请稍后重试');
+                      }
+
+                      attempts++;
+                      await new Promise(resolve => setTimeout(resolve, 5000));
+
+                      const queryResponse = await fetch(`/api/video/query?taskId=${encodeURIComponent(taskId)}`);
+                      if (!queryResponse.ok) return poll();
+
+                      const queryData = await queryResponse.json();
+
+                      if (queryData.status === 'completed' && queryData.videoUrl) {
+                        editor.updateShape({
+                          id: shape.id,
+                          type: 'custom-card' as any,
+                          props: {
+                            ...shape.props,
+                            generatedVideo: queryData.videoUrl,
+                            showVideoOutput: true,
+                            isGenerating: false,
+                          },
+                        });
+                      } else if (queryData.status === 'failed') {
+                        throw new Error('视频生成失败');
+                      } else {
+                        return poll();
+                      }
+                    };
+
+                    await poll();
+
+                  } catch (error) {
+                    console.error('视频生成错误:', error);
+                    editor.updateShape({
+                      id: shape.id,
+                      type: 'custom-card' as any,
+                      props: {
+                        ...shape.props,
+                        isGenerating: false,
+                      },
+                    });
+                    alert('视频生成失败，请重试');
+                  }
                 }
               }}
               onPointerDown={(e) => e.stopPropagation()}
