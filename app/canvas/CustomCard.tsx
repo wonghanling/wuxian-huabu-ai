@@ -825,24 +825,45 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                               },
                             });
                           } else {
-                            // 第一次点击，生成结果并显示
+                            // 第一次点击，调用 API 分析图片生成 Anchor JSON
                             console.log('分析图片生成Anchor JSON');
-                            const mockJson = JSON.stringify({
-                              character: "anime girl",
-                              appearance: "long silver hair, blue eyes, fair skin",
-                              clothing: "white dress with blue ribbons",
-                              style: "anime, high quality, detailed",
-                              body_type: "slender, average height"
-                            }, null, 2);
+
                             editor.updateShape({
                               id: shape.id,
                               type: 'custom-card' as any,
-                              props: {
-                                ...shape.props,
-                                characterAnchorJson: mockJson,
-                                showAnalyzePanel: true,
-                              },
+                              props: { ...shape.props, isGenerating: true },
                             });
+
+                            try {
+                              const res = await fetch('/api/chat', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                  model: 'gpt-5.1-thinking-all',
+                                  prompt: `请分析这张图片中的角色，生成一个【单人成功范式 JSON】。只做单人分析，反推出稳定可复现的人物 JSON。不要加三视角、不要加转面、不要做设定稿。\n\n图片（base64）：${characterAnalyzeImage}\n\n请直接输出 JSON，不要解释。`,
+                                  stream: false,
+                                }),
+                              });
+                              const data = await res.json();
+                              editor.updateShape({
+                                id: shape.id,
+                                type: 'custom-card' as any,
+                                props: {
+                                  ...shape.props,
+                                  characterAnchorJson: data.content || '',
+                                  showAnalyzePanel: true,
+                                  isGenerating: false,
+                                },
+                              });
+                            } catch (err) {
+                              console.error('分析失败:', err);
+                              editor.updateShape({
+                                id: shape.id,
+                                type: 'custom-card' as any,
+                                props: { ...shape.props, isGenerating: false },
+                              });
+                              alert('分析失败，请重试');
+                            }
                           }
                         }}
                         onPointerDown={(e) => e.stopPropagation()}
@@ -956,30 +977,45 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                               },
                             });
                           } else {
-                            // 第一次点击，生成结果并显示
+                            // 第一次点击，调用 API 生成三视角 JSON
                             console.log('生成三视角JSON');
-                            const mockThreeViewJson = JSON.stringify({
-                              character: "anime girl",
-                              appearance: "long silver hair, blue eyes, fair skin",
-                              clothing: "white dress with blue ribbons",
-                              style: "anime, high quality, detailed, character turnaround",
-                              body_type: "slender, average height",
-                              views: {
-                                front: "front view, facing camera",
-                                side: "side view, profile",
-                                back: "back view, rear"
-                              },
-                              consistency: "same character, same outfit, same hairstyle, same proportions"
-                            }, null, 2);
+
                             editor.updateShape({
                               id: shape.id,
                               type: 'custom-card' as any,
-                              props: {
-                                ...shape.props,
-                                characterThreeViewJson: mockThreeViewJson,
-                                showThreeViewJsonPanel: true,
-                              },
+                              props: { ...shape.props, isGenerating: true },
                             });
+
+                            try {
+                              const res = await fetch('/api/chat', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                  model: 'gpt-5.1-thinking-all',
+                                  prompt: `基于下面的 Anchor JSON，生成一份【稳定的三视角（正/侧/背）完整 JSON】。要求：同一人物、同一服装、同一发型、同一身材比例；使用 character turnaround 工程化方式，不要摄影模式；必须避免重复正面或换人，按上次成功的方式来。\n\nAnchor JSON：\n${characterAnchorJson}\n\n请直接输出 JSON，不要解释。`,
+                                  stream: false,
+                                }),
+                              });
+                              const data = await res.json();
+                              editor.updateShape({
+                                id: shape.id,
+                                type: 'custom-card' as any,
+                                props: {
+                                  ...shape.props,
+                                  characterThreeViewJson: data.content || '',
+                                  showThreeViewJsonPanel: true,
+                                  isGenerating: false,
+                                },
+                              });
+                            } catch (err) {
+                              console.error('三视角JSON生成失败:', err);
+                              editor.updateShape({
+                                id: shape.id,
+                                type: 'custom-card' as any,
+                                props: { ...shape.props, isGenerating: false },
+                              });
+                              alert('生成失败，请重试');
+                            }
                           }
                         }}
                         onPointerDown={(e) => e.stopPropagation()}
@@ -1096,9 +1132,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           }}
                         >
                           <option value="Nano Banana Pro">Nano Banana Pro</option>
-                          <option value="DALL-E 3">DALL-E 3</option>
-                          <option value="Midjourney">Midjourney</option>
-                          <option value="Stable Diffusion">Stable Diffusion</option>
+                          <option value="doubao-seedream-4-5-251128">豆包 Seecream</option>
                         </select>
                       </div>
 
@@ -1119,20 +1153,53 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                               },
                             });
                           } else {
-                            // 第一次点击，生成结果并显示
+                            // 第一次点击，调用图片 API 生成三视角图片
                             console.log('生成三视角图片');
                             console.log('使用模型:', characterImageModel);
                             console.log('JSON:', characterThreeViewJson);
-                            const mockGeneratedImage = 'https://picsum.photos/1200/400';
+
                             editor.updateShape({
                               id: shape.id,
                               type: 'custom-card' as any,
-                              props: {
-                                ...shape.props,
-                                characterGeneratedImage: mockGeneratedImage,
-                                showGeneratePanel: true,
-                              },
+                              props: { ...shape.props, isGenerating: true },
                             });
+
+                            try {
+                              const imageModel = characterImageModel === 'Nano Banana Pro'
+                                ? 'flux.1.1-pro'  // Nano Banana Pro 对应 Flux 1.1 Pro
+                                : 'doubao-seedream-4-5-251128'; // 豆包 Seecream
+
+                              const res = await fetch('/api/image/generate', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                  model: imageModel,
+                                  prompt: `Character three-view sheet (front, side, back), same character, same outfit, same hairstyle. Based on: ${characterThreeViewJson}`,
+                                  aspectRatio: '16:9',
+                                  imageBase64: characterThreeViewImage || undefined,
+                                }),
+                              });
+                              const data = await res.json();
+                              if (!res.ok) throw new Error(data.error || '生成失败');
+                              editor.updateShape({
+                                id: shape.id,
+                                type: 'custom-card' as any,
+                                props: {
+                                  ...shape.props,
+                                  characterGeneratedImage: data.imageUrl,
+                                  showGeneratePanel: true,
+                                  isGenerating: false,
+                                },
+                              });
+                            } catch (err) {
+                              console.error('三视角图片生成失败:', err);
+                              editor.updateShape({
+                                id: shape.id,
+                                type: 'custom-card' as any,
+                                props: { ...shape.props, isGenerating: false },
+                              });
+                              alert('图片生成失败，请重试');
+                            }
                           }
                         }}
                         onPointerDown={(e) => e.stopPropagation()}
