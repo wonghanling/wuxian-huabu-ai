@@ -185,7 +185,7 @@ function BottomToolbarExternal({ editor }: { editor: Editor }) {
           cardType: 'text',
           title: 'Text Generation',
           prompt: '',
-          model: 'GPT-4',
+          model: 'gpt-5.2',
         },
       });
 
@@ -795,7 +795,7 @@ function BottomToolbar() {
           cardType: 'text',
           title: 'Text Generation',
           prompt: '',
-          model: 'GPT-4',
+          model: 'gpt-5.2',
         },
       });
 
