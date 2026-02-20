@@ -247,6 +247,8 @@ export type CustomCardShape = TLBaseShape<
     showThreeViewJsonPanel?: boolean;
     showGeneratePanel?: boolean;
     isMinimized?: boolean; // 是否缩小状态
+    textOutput?: string; // 文本卡片输出
+    isGenerating?: boolean; // 是否正在生成
   }
 >;
 
@@ -295,6 +297,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
     showThreeViewJsonPanel: T.boolean.optional(),
     showGeneratePanel: T.boolean.optional(),
     isMinimized: T.boolean.optional(),
+    textOutput: T.string.optional(),
+    isGenerating: T.boolean.optional(),
   };
 
   override isAspectRatioLocked = () => false;
@@ -363,11 +367,13 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
       showThreeViewJsonPanel: false,
       showGeneratePanel: false,
       isMinimized: false,
+      textOutput: '',
+      isGenerating: false,
     };
   }
 
   component(shape: CustomCardShape) {
-    const { cardType, title, prompt, model, w, h, uploadedImage, cameraVertical, cameraHorizontal, showCameraControl, generatedImage, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showVideoOutput, capturedFrame, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterAnalyzeImage, characterAnchorJson, characterThreeViewJson, characterThreeViewImage, characterGeneratedImage, characterImageModel, showCharacterOutput, showAnalyzePanel, showThreeViewJsonPanel, showGeneratePanel, isMinimized } = shape.props;
+    const { cardType, title, prompt, model, w, h, uploadedImage, cameraVertical, cameraHorizontal, showCameraControl, generatedImage, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showVideoOutput, capturedFrame, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterAnalyzeImage, characterAnchorJson, characterThreeViewJson, characterThreeViewImage, characterGeneratedImage, characterImageModel, showCharacterOutput, showAnalyzePanel, showThreeViewJsonPanel, showGeneratePanel, isMinimized, textOutput, isGenerating } = shape.props;
     const editor = useEditor();
     const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -1563,10 +1569,66 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
             {cardType !== 'character' && (
             <button
               className={`w-full py-2 ${showCameraControl && cardType === 'image' ? 'mt-2' : 'mt-0'} rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm ${color.buttonBg}`}
-              onClick={(e) => {
+              onClick={async (e) => {
                 e.stopPropagation();
 
-                if (cardType === 'image') {
+                if (cardType === 'text') {
+                  // 文本生成逻辑
+                  console.log('生成文本，模型:', model);
+                  console.log('Prompt:', prompt);
+
+                  // 设置生成中状态
+                  editor.updateShape({
+                    id: shape.id,
+                    type: 'custom-card' as any,
+                    props: {
+                      ...shape.props,
+                      isGenerating: true,
+                      textOutput: '',
+                    },
+                  });
+
+                  try {
+                    const response = await fetch('/api/chat', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        model: model || 'gpt-5.2',
+                        prompt: prompt,
+                        stream: false,
+                      }),
+                    });
+
+                    if (!response.ok) {
+                      throw new Error('API 调用失败');
+                    }
+
+                    const data = await response.json();
+
+                    editor.updateShape({
+                      id: shape.id,
+                      type: 'custom-card' as any,
+                      props: {
+                        ...shape.props,
+                        textOutput: data.content,
+                        isGenerating: false,
+                      },
+                    });
+                  } catch (error) {
+                    console.error('文本生成错误:', error);
+                    editor.updateShape({
+                      id: shape.id,
+                      type: 'custom-card' as any,
+                      props: {
+                        ...shape.props,
+                        textOutput: '生成失败，请重试',
+                        isGenerating: false,
+                      },
+                    });
+                  }
+                } else if (cardType === 'image') {
                   // 图片生成逻辑
                   const fullPrompt = ((cameraVertical ?? 0) !== 0 || (cameraHorizontal ?? 0) !== 0)
                     ? `${prompt} [Camera: vertical ${(cameraVertical ?? 0) >= 0 ? '+' : ''}${cameraVertical ?? 0}°, horizontal ${(cameraHorizontal ?? 0) >= 0 ? '+' : ''}${cameraHorizontal ?? 0}°]`
@@ -1926,8 +1988,20 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
             {/* 文本输出区域 */}
             {cardType === 'text' && (
-              <div className="mt-2 p-2 bg-black/30 border border-white/8 rounded-lg min-h-[80px]">
-                <p className="text-gray-500 text-xs text-center">Text output will appear here...</p>
+              <div className="mt-2 p-3 bg-black/30 border border-white/8 rounded-lg min-h-[80px] max-h-[300px] overflow-y-auto">
+                {isGenerating ? (
+                  <div className="flex items-center justify-center py-4">
+                    <div className="flex gap-2">
+                      <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
+                      <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
+                      <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
+                    </div>
+                  </div>
+                ) : textOutput ? (
+                  <p className="text-white text-xs whitespace-pre-wrap leading-relaxed">{textOutput}</p>
+                ) : (
+                  <p className="text-gray-500 text-xs text-center">Text output will appear here...</p>
+                )}
               </div>
             )}
           </div>
