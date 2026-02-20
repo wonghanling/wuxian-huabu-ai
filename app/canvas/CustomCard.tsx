@@ -380,6 +380,39 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
     const editor = useEditor();
     const videoRef = useRef<HTMLVideoElement>(null);
 
+    // 获取连接到当前卡片的 ShotCard 指令
+    const getShotCardPrompt = (): string => {
+      // 找到所有绑定到当前卡片的连接线
+      const allBindings = editor.getBindingsToShape(shape.id, 'connection');
+      for (const binding of allBindings) {
+        // 只看 end 端（ShotCard 连到当前卡片）
+        if (binding.props.terminal !== 'end') continue;
+        const connection = editor.getShape(binding.fromId);
+        if (!connection) continue;
+        // 找连接线的另一端（start 端）
+        const otherBindings = editor.getBindingsFromShape(binding.fromId, 'connection');
+        for (const ob of otherBindings) {
+          if ((ob as any).props?.terminal !== 'start') continue;
+          const sourceShape = editor.getShape((ob as any).toId);
+          if (!sourceShape || (sourceShape as any).type !== 'shot-card') continue;
+          // 找到了连接的 ShotCard，拼指令
+          const sp = (sourceShape as any).props;
+          const parts: string[] = [];
+          if (sp.shotType) parts.push(`景别：${sp.shotType}`);
+          if (sp.cameraMovement && sp.cameraMovement !== 'Follow/Tracking') parts.push(`运镜：${sp.cameraMovement}`);
+          if (sp.composition) parts.push(`构图：${sp.composition}`);
+          if (sp.subjectScale) parts.push(`主体比例：${sp.subjectScale}`);
+          if (sp.spaceType) parts.push(`空间类型：${sp.spaceType}`);
+          if (sp.timeFeeling) parts.push(`时间感：${sp.timeFeeling}`);
+          if (sp.lighting) parts.push(`光影/天气：${sp.lighting}`);
+          if (sp.motionSource) parts.push(`动态来源：${sp.motionSource}`);
+          if (sp.semantic) parts.push(`语义：${sp.semantic}`);
+          if (parts.length > 0) return `[电影镜头指令] ${parts.join('，')}。`;
+        }
+      }
+      return '';
+    };
+
     // 切换缩放
     const toggleMinimize = (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -843,7 +876,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
                                   model: 'gpt-5.1-thinking-all',
-                                  prompt: `请分析这张图片中的角色，生成一个【单人成功范式 JSON】。只做单人分析，反推出稳定可复现的人物 JSON。不要加三视角、不要加转面、不要做设定稿。\n\n图片（base64）：${characterAnalyzeImage}\n\n请直接输出 JSON，不要解释。`,
+                                  prompt: '请分析这张图片中的角色，生成一个【单人成功范式 JSON】。只做单人分析，反推出稳定可复现的人物 JSON。不要加三视角、不要加转面、不要做设定稿。请直接输出 JSON，不要解释。',
+                                  imageUrl: characterAnalyzeImage,
                                   stream: false,
                                 }),
                               });
@@ -1809,9 +1843,11 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   }
                 } else if (cardType === 'image') {
                   // 图片生成逻辑
-                  const fullPrompt = ((cameraVertical ?? 0) !== 0 || (cameraHorizontal ?? 0) !== 0)
+                  const shotPrompt = getShotCardPrompt();
+                  const basePrompt = ((cameraVertical ?? 0) !== 0 || (cameraHorizontal ?? 0) !== 0)
                     ? `${prompt} [Camera: vertical ${(cameraVertical ?? 0) >= 0 ? '+' : ''}${cameraVertical ?? 0}°, horizontal ${(cameraHorizontal ?? 0) >= 0 ? '+' : ''}${cameraHorizontal ?? 0}°]`
                     : prompt;
+                  const fullPrompt = shotPrompt ? `${shotPrompt}\n${basePrompt}` : basePrompt;
                   console.log('生成图片，完整Prompt:', fullPrompt);
                   console.log('模型:', model);
                   console.log('上传的图片:', uploadedImage ? '已上传' : '未上传');
@@ -1870,8 +1906,10 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   }
                 } else if (cardType === 'video') {
                   // 视频生成逻辑
+                  const shotPrompt = getShotCardPrompt();
+                  const videoPrompt = shotPrompt ? `${shotPrompt}\n${prompt}` : prompt;
                   console.log('生成视频，模式:', videoMode || 'text');
-                  console.log('Prompt:', prompt);
+                  console.log('Prompt:', videoPrompt);
                   console.log('模型:', model);
 
                   // 设置生成中状态
@@ -1892,7 +1930,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         'Content-Type': 'application/json',
                       },
                       body: JSON.stringify({
-                        prompt: prompt,
+                        prompt: videoPrompt,
                         model: model || 'veo_3_1-fast',
                         aspectRatio: aspectRatio || '16:9',
                         duration: 5,

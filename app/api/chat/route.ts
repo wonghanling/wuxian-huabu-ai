@@ -26,7 +26,7 @@ const MODEL_MAP: Record<string, { yunwuModel: string; tier: 'advanced' | 'basic'
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { model, prompt, stream = false } = body;
+    const { model, prompt, imageUrl, stream = false } = body;
 
     if (!model || !prompt) {
       return NextResponse.json({ error: '缺少必要参数' }, { status: 400 });
@@ -36,6 +36,21 @@ export async function POST(req: NextRequest) {
     const modelConfig = MODEL_MAP[model];
     if (!modelConfig) {
       return NextResponse.json({ error: '无效的模型' }, { status: 400 });
+    }
+
+    // 构建消息内容，支持图片
+    let messageContent: any = prompt;
+    if (imageUrl) {
+      messageContent = [
+        {
+          type: 'image_url',
+          image_url: { url: imageUrl }
+        },
+        {
+          type: 'text',
+          text: prompt
+        }
+      ];
     }
 
     // 调用云雾 API
@@ -50,7 +65,7 @@ export async function POST(req: NextRequest) {
         messages: [
           {
             role: 'user',
-            content: prompt,
+            content: messageContent,
           },
         ],
         stream: stream,
