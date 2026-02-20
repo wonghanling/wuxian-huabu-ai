@@ -1308,6 +1308,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   )}
                   {cardType === 'image' && (
                     <>
+                      <option value="nano-banana-pro">Nano Banana Pro (7积分)</option>
+                      <option value="nano-banana">Nano Banana (5积分)</option>
                       <option value="stability-ai/sdxl">Stable Diffusion XL (3积分)</option>
                       <option value="mj_imagine">Midjourney Imagine (6积分)</option>
                       <option value="flux.1.1-pro">Flux 1.1 Pro (10积分)</option>
