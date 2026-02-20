@@ -218,6 +218,7 @@ export type CustomCardShape = TLBaseShape<
     cameraHorizontal?: number;
     showCameraControl?: boolean;
     generatedImage?: string;
+    aspectRatio?: string; // 图片/视频比例
     videoMode?: 'text' | 'first-frame' | 'first-last-frame';
     firstFrameImage?: string;
     lastFrameImage?: string;
@@ -269,6 +270,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
     cameraHorizontal: T.number.optional(),
     showCameraControl: T.boolean.optional(),
     generatedImage: T.string.optional(),
+    aspectRatio: T.string.optional(),
     videoMode: T.literalEnum('text', 'first-frame', 'first-last-frame').optional(),
     firstFrameImage: T.string.optional(),
     lastFrameImage: T.string.optional(),
@@ -339,6 +341,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
       cameraHorizontal: 0,
       showCameraControl: false,
       generatedImage: '',
+      aspectRatio: '1:1',
       videoMode: 'text',
       firstFrameImage: '',
       lastFrameImage: '',
@@ -373,7 +376,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
   }
 
   component(shape: CustomCardShape) {
-    const { cardType, title, prompt, model, w, h, uploadedImage, cameraVertical, cameraHorizontal, showCameraControl, generatedImage, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showVideoOutput, capturedFrame, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterAnalyzeImage, characterAnchorJson, characterThreeViewJson, characterThreeViewImage, characterGeneratedImage, characterImageModel, showCharacterOutput, showAnalyzePanel, showThreeViewJsonPanel, showGeneratePanel, isMinimized, textOutput, isGenerating } = shape.props;
+    const { cardType, title, prompt, model, w, h, uploadedImage, cameraVertical, cameraHorizontal, showCameraControl, generatedImage, aspectRatio, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showVideoOutput, capturedFrame, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterAnalyzeImage, characterAnchorJson, characterThreeViewJson, characterThreeViewImage, characterGeneratedImage, characterImageModel, showCharacterOutput, showAnalyzePanel, showThreeViewJsonPanel, showGeneratePanel, isMinimized, textOutput, isGenerating } = shape.props;
     const editor = useEditor();
     const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -1352,6 +1355,71 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
               </div>
             )}
 
+            {/* 比例选择 - 图片卡片 */}
+            {cardType === 'image' && (
+              <div className="mb-2">
+                <label className="text-gray-400 text-xs mb-1 block">比例</label>
+                <select
+                  className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all"
+                  value={aspectRatio || '1:1'}
+                  onClick={(e) => e.stopPropagation()}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onChange={(e) => {
+                    editor.updateShape({
+                      id: shape.id,
+                      type: 'custom-card' as any,
+                      props: { ...shape.props, aspectRatio: e.target.value },
+                    });
+                  }}
+                >
+                  <option value="1:1">1:1 正方形</option>
+                  <option value="4:3">4:3 横图</option>
+                  <option value="3:4">3:4 竖图</option>
+                  <option value="16:9">16:9 宽屏</option>
+                  <option value="9:16">9:16 竖屏</option>
+                  <option value="3:2">3:2 横图</option>
+                  <option value="2:3">2:3 竖图</option>
+                  <option value="21:9">21:9 超宽</option>
+                </select>
+              </div>
+            )}
+
+            {/* 比例选择 - 视频卡片（按钮组） */}
+            {cardType === 'video' && (
+              <div className="mb-2">
+                <label className="text-gray-400 text-xs mb-1 block">比例</label>
+                <div className="grid grid-cols-4 gap-1">
+                  {[
+                    { label: '16:9', value: '16:9', icon: 'w-6 h-4' },
+                    { label: '9:16', value: '9:16', icon: 'w-4 h-6' },
+                    { label: '1:1', value: '1:1', icon: 'w-5 h-5' },
+                    { label: '2.4:1', value: '2.4:1', icon: 'w-7 h-3' },
+                  ].map((ratio) => (
+                    <button
+                      key={ratio.value}
+                      className={`flex flex-col items-center justify-center gap-1 py-2 rounded-lg border text-[10px] transition-all ${
+                        (aspectRatio || '16:9') === ratio.value
+                          ? 'bg-blue-500/20 border-blue-500/50 text-blue-400'
+                          : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'
+                      }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        editor.updateShape({
+                          id: shape.id,
+                          type: 'custom-card' as any,
+                          props: { ...shape.props, aspectRatio: ratio.value },
+                        });
+                      }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >
+                      <div className={`border border-current rounded-sm ${ratio.icon}`} />
+                      {ratio.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* 视频模式控制按钮 - 仅视频卡片显示 */}
             {cardType === 'video' && (
               <button
@@ -1767,7 +1835,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       body: JSON.stringify({
                         model: model || 'flux-schnell',
                         prompt: fullPrompt,
-                        aspectRatio: '1:1',
+                        aspectRatio: aspectRatio || '1:1',
                         imageBase64: uploadedImage || undefined,
                       }),
                     });
@@ -1826,7 +1894,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       body: JSON.stringify({
                         prompt: prompt,
                         model: model || 'veo_3_1-fast',
-                        aspectRatio: '16:9',
+                        aspectRatio: aspectRatio || '16:9',
                         duration: 5,
                         startFrameImage: videoMode === 'first-frame' || videoMode === 'first-last-frame' ? firstFrameImage : undefined,
                         endFrameImage: videoMode === 'first-last-frame' ? lastFrameImage : undefined,
