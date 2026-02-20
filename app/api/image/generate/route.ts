@@ -7,10 +7,20 @@ const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
 // 图片模型配置
 const IMAGE_MODELS: Record<string, {
   yunwuModel: string;
-  apiType: 'chat' | 'midjourney' | 'replicate' | 'image-generation';
+  apiType: 'chat' | 'midjourney' | 'replicate' | 'image-generation' | 'gemini-native';
   requiresImage?: boolean;
   supportsImage?: boolean;
 }> = {
+  'nano-banana': {
+    yunwuModel: 'gemini-2.5-flash-image',
+    apiType: 'gemini-native',
+    supportsImage: true,
+  },
+  'nano-banana-pro': {
+    yunwuModel: 'gemini-3-pro-image-preview',
+    apiType: 'gemini-native',
+    supportsImage: true,
+  },
   'stability-ai/sdxl': {
     yunwuModel: 'stability-ai/stable-diffusion-img2img',
     apiType: 'replicate',
@@ -67,7 +77,66 @@ export async function POST(req: NextRequest) {
     let imageUrl = '';
 
     // 根据 API 类型选择不同的调用方式
-    if (modelConfig.apiType === 'midjourney') {
+    if (modelConfig.apiType === 'gemini-native') {
+      // Nano Banana / Nano Banana Pro 使用 Gemini 原生格式
+      const parts: any[] = [];
+
+      if (imageBase64) {
+        const base64Match = imageBase64.match(/^data:image\/(jpeg|jpg|png|webp);base64,(.+)$/);
+        if (base64Match) {
+          parts.push({
+            inline_data: {
+              mime_type: `image/${base64Match[1]}`,
+              data: base64Match[2]
+            }
+          });
+        }
+      }
+
+      parts.push({ text: prompt });
+
+      const requestBody = {
+        contents: [{ role: 'user', parts }],
+        generationConfig: {
+          responseModalities: ['TEXT', 'IMAGE'],
+          imageConfig: { aspectRatio },
+        }
+      };
+
+      const response = await fetch(`${YUNWU_BASE_URL}/v1beta/models/${modelConfig.yunwuModel}:generateContent`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${YUNWU_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API 错误: ${response.status} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      const responseParts = data.candidates?.[0]?.content?.parts;
+
+      if (!responseParts) throw new Error('响应中没有 parts');
+
+      for (const part of responseParts) {
+        const inlineData = part.inlineData || part.inline_data;
+        if (inlineData?.data) {
+          const mimeType = inlineData.mimeType || inlineData.mime_type || 'image/png';
+          imageUrl = `data:${mimeType};base64,${inlineData.data}`;
+          break;
+        } else if (part.text?.startsWith('http')) {
+          imageUrl = part.text;
+          break;
+        }
+      }
+
+      if (!imageUrl) throw new Error('无法解析图片');
+
+    } else if (modelConfig.apiType === 'midjourney') {
       // Midjourney 专用接口
       const response = await fetch(`${YUNWU_BASE_URL}/mj/submit/imagine`, {
         method: 'POST',

@@ -361,7 +361,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
       characterThreeViewJson: '',
       characterThreeViewImage: '',
       characterGeneratedImage: '',
-      characterImageModel: 'Nano Banana Pro',
+      characterImageModel: 'nano-banana-pro',
       showCharacterOutput: false,
       showAnalyzePanel: false,
       showThreeViewJsonPanel: false,
@@ -811,7 +811,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       {/* 分析按钮 */}
                       <button
                         className="w-full py-2 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-blue-500/80 to-blue-600/80 hover:from-blue-500 hover:to-blue-600"
-                        onClick={(e) => {
+                        onClick={async (e) => {
                           e.stopPropagation();
 
                           // 如果已经有输出结果，则切换显示/隐藏
@@ -963,7 +963,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       {/* 生成三视角JSON按钮 */}
                       <button
                         className="w-full py-2 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-blue-500/80 to-blue-600/80 hover:from-blue-500 hover:to-blue-600"
-                        onClick={(e) => {
+                        onClick={async (e) => {
                           e.stopPropagation();
 
                           // 如果已经有输出结果，则切换显示/隐藏
@@ -1131,7 +1131,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                             });
                           }}
                         >
-                          <option value="Nano Banana Pro">Nano Banana Pro</option>
+                          <option value="nano-banana-pro">Nano Banana Pro</option>
                           <option value="doubao-seedream-4-5-251128">豆包 Seecream</option>
                         </select>
                       </div>
@@ -1139,7 +1139,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       {/* 生成三视角图片按钮 */}
                       <button
                         className="w-full py-2 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-green-500/80 to-green-600/80 hover:from-green-500 hover:to-green-600"
-                        onClick={(e) => {
+                        onClick={async (e) => {
                           e.stopPropagation();
 
                           // 如果已经有输出结果，则切换显示/隐藏
@@ -1165,9 +1165,9 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                             });
 
                             try {
-                              const imageModel = characterImageModel === 'Nano Banana Pro'
-                                ? 'flux.1.1-pro'  // Nano Banana Pro 对应 Flux 1.1 Pro
-                                : 'doubao-seedream-4-5-251128'; // 豆包 Seecream
+                              const imageModel = characterImageModel === 'doubao-seedream-4-5-251128'
+                                ? 'doubao-seedream-4-5-251128'
+                                : 'nano-banana-pro'; // 默认 Nano Banana Pro
 
                               const res = await fetch('/api/image/generate', {
                                 method: 'POST',
