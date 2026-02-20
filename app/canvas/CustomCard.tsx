@@ -1218,9 +1218,25 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                 >
                   {cardType === 'text' && (
                     <>
-                      <option value="GPT-4">GPT-4</option>
-                      <option value="GPT-3.5">GPT-3.5</option>
-                      <option value="Claude">Claude</option>
+                      <optgroup label="高级模型">
+                        <option value="gpt-5.2">GPT-5.2</option>
+                        <option value="gpt-5.1-2025-11-13">GPT-5.1-2025-11-13</option>
+                        <option value="gpt-5.1-thinking-all">GPT-5.1-thinking-all</option>
+                        <option value="gemini-3-pro-preview">Gemini 3 Pro Preview</option>
+                        <option value="gemini-3-flash-preview">Gemini 3 Flash Preview</option>
+                        <option value="gemini-2.5-flash-all">Gemini 2.5 Flash All</option>
+                        <option value="gemini-2.5-pro-all">Gemini 2.5 Pro All</option>
+                        <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku</option>
+                        <option value="claude-3-sonnet-all">Claude 3 Sonnet All</option>
+                        <option value="grok-4.1">Grok 4.1</option>
+                        <option value="grok-4">Grok 4</option>
+                        <option value="gpt-5.1-chat">GPT-5.1 Chat</option>
+                      </optgroup>
+                      <optgroup label="普通模型">
+                        <option value="grok-3-mini">Grok 3 Mini</option>
+                        <option value="gemini-2.5-flash-lite-preview-06-17">Gemini 2.5 Flash Lite</option>
+                        <option value="gpt-4o-mini">GPT-4o Mini</option>
+                      </optgroup>
                     </>
                   )}
                   {cardType === 'image' && (
