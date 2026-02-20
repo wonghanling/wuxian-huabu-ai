@@ -1225,9 +1225,12 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   )}
                   {cardType === 'image' && (
                     <>
-                      <option value="DALL-E 3">DALL-E 3</option>
-                      <option value="Midjourney">Midjourney</option>
-                      <option value="Stable Diffusion">Stable Diffusion</option>
+                      <option value="stability-ai/sdxl">Stable Diffusion XL (3积分)</option>
+                      <option value="mj_imagine">Midjourney Imagine (6积分)</option>
+                      <option value="flux.1.1-pro">Flux 1.1 Pro (10积分)</option>
+                      <option value="flux-pro">Flux Pro (6积分)</option>
+                      <option value="flux-schnell">Flux Schnell (3积分)</option>
+                      <option value="doubao-seedream-4-5-251128">豆包 Seecream (3积分)</option>
                     </>
                   )}
                   {cardType === 'video' && (
@@ -1634,19 +1637,61 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     ? `${prompt} [Camera: vertical ${(cameraVertical ?? 0) >= 0 ? '+' : ''}${cameraVertical ?? 0}°, horizontal ${(cameraHorizontal ?? 0) >= 0 ? '+' : ''}${cameraHorizontal ?? 0}°]`
                     : prompt;
                   console.log('生成图片，完整Prompt:', fullPrompt);
+                  console.log('模型:', model);
                   console.log('上传的图片:', uploadedImage ? '已上传' : '未上传');
 
-                  // 模拟生成图片
-                  const mockGeneratedImage = 'https://picsum.photos/800/600';
+                  // 设置生成中状态
                   editor.updateShape({
                     id: shape.id,
                     type: 'custom-card' as any,
                     props: {
                       ...shape.props,
-                      generatedImage: mockGeneratedImage,
-                      showImageOutput: true, // 自动展开查看
+                      isGenerating: true,
                     },
                   });
+
+                  try {
+                    const response = await fetch('/api/image/generate', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        model: model || 'flux-schnell',
+                        prompt: fullPrompt,
+                        aspectRatio: '1:1',
+                        imageBase64: uploadedImage || undefined,
+                      }),
+                    });
+
+                    if (!response.ok) {
+                      throw new Error('API 调用失败');
+                    }
+
+                    const data = await response.json();
+
+                    editor.updateShape({
+                      id: shape.id,
+                      type: 'custom-card' as any,
+                      props: {
+                        ...shape.props,
+                        generatedImage: data.imageUrl,
+                        showImageOutput: true,
+                        isGenerating: false,
+                      },
+                    });
+                  } catch (error) {
+                    console.error('图片生成错误:', error);
+                    editor.updateShape({
+                      id: shape.id,
+                      type: 'custom-card' as any,
+                      props: {
+                        ...shape.props,
+                        isGenerating: false,
+                      },
+                    });
+                    alert('图片生成失败，请重试');
+                  }
                 } else if (cardType === 'video') {
                   // 视频生成逻辑
                   console.log('生成视频，模式:', videoMode || 'text');
