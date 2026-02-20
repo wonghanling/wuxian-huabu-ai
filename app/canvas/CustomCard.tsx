@@ -1316,9 +1316,16 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                 <label className="text-gray-400 text-xs mb-1 block">Model</label>
                 <select
                   className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all"
-                  defaultValue={model}
+                  value={model || (cardType === 'text' ? 'gpt-5.2' : cardType === 'image' ? 'nano-banana-pro' : 'veo_3_1-fast')}
                   onClick={(e) => e.stopPropagation()}
                   onPointerDown={(e) => e.stopPropagation()}
+                  onChange={(e) => {
+                    editor.updateShape({
+                      id: shape.id,
+                      type: 'custom-card' as any,
+                      props: { ...shape.props, model: e.target.value },
+                    });
+                  }}
                 >
                   {cardType === 'text' && (
                     <>
