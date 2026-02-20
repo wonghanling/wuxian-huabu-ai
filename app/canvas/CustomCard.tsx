@@ -335,7 +335,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
       cardType: 'text',
       title: 'Text Generation',
       prompt: '',
-      model: 'GPT-4',
+      model: 'gpt-5.2',
       uploadedImage: '',
       cameraVertical: 0,
       cameraHorizontal: 0,

@@ -216,7 +216,7 @@ function BottomToolbarExternal({ editor }: { editor: Editor }) {
           cardType: 'image',
           title: 'Image Generation',
           prompt: '',
-          model: 'DALL-E 3',
+          model: 'nano-banana-pro',
         },
       });
 
@@ -247,7 +247,7 @@ function BottomToolbarExternal({ editor }: { editor: Editor }) {
           cardType: 'video',
           title: 'Video Generation',
           prompt: '',
-          model: 'Sora',
+          model: 'veo_3_1-fast',
         },
       });
 
@@ -825,7 +825,7 @@ function BottomToolbar() {
           cardType: 'image',
           title: 'Image Generation',
           prompt: '',
-          model: 'DALL-E 3',
+          model: 'nano-banana-pro',
         },
       });
 
