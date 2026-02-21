@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// 云雾 API 配置
-const YUNWU_BASE_URL = 'https://allapi.store';
 const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
 
 export async function POST(req: NextRequest) {
@@ -21,7 +19,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '缺少必要参数' }, { status: 400 });
     }
 
-    // 准备云雾API请求参数
     const images = [];
     if (startFrameImage) images.push(startFrameImage);
     if (endFrameImage) images.push(endFrameImage);
@@ -51,7 +48,6 @@ export async function POST(req: NextRequest) {
       videoRequest.ratio = aspectRatio === '16:9' ? '1280:768' : '768:1280';
     }
 
-    // 调用云雾API创建视频任务
     const apiUrl = model.includes('runway')
       ? 'https://allapi.store/runwayml/v1/image_to_video'
       : model.includes('luma')
@@ -77,6 +73,7 @@ export async function POST(req: NextRequest) {
     }
 
     const taskData = await apiResponse.json();
+    console.log('视频任务创建成功:', JSON.stringify(taskData, null, 2));
 
     return NextResponse.json({
       success: true,

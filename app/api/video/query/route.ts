@@ -23,13 +23,13 @@ export async function GET(request: NextRequest) {
 
     if (!apiResponse.ok) {
       const errorData = await apiResponse.json();
+      console.error('查询云雾API错误:', errorData);
       return NextResponse.json({ error: '查询任务状态失败', details: errorData }, { status: 500 });
     }
 
     const taskData = await apiResponse.json();
-    console.log('云雾API响应:', JSON.stringify(taskData, null, 2));
+    console.log('云雾API完整响应:', JSON.stringify(taskData, null, 2));
 
-    // 映射状态
     let status = 'processing';
     let progress = 0;
     let videoUrl = null;
@@ -47,6 +47,7 @@ export async function GET(request: NextRequest) {
     } else if (taskData.status === 'failed' || taskData.status === 'error') {
       status = 'failed';
       progress = 0;
+      console.error('视频生成失败:', taskData.detail?.error || taskData.error || '未知错误');
     } else if (taskData.status === 'video_generating' || taskData.status === 'processing') {
       status = 'processing';
       progress = 60;
@@ -56,6 +57,7 @@ export async function GET(request: NextRequest) {
     } else {
       status = 'processing';
       progress = 40;
+      console.warn('未知的任务状态:', taskData.status);
     }
 
     return NextResponse.json({
@@ -64,6 +66,7 @@ export async function GET(request: NextRequest) {
       status: status,
       progress: progress,
       videoUrl: videoUrl,
+      rawData: taskData
     });
 
   } catch (error: any) {
