@@ -1,76 +1,66 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
+const FAL_KEY = process.env.FAL_KEY!;
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const taskId = searchParams.get('taskId');
+    const taskId   = searchParams.get('taskId');
+    const endpoint = searchParams.get('endpoint'); // 前端传来的原始 endpoint
 
-    if (!taskId) {
-      return NextResponse.json({ error: '缺少任务ID' }, { status: 400 });
+    if (!taskId || !endpoint) {
+      return NextResponse.json({ error: '缺少 taskId 或 endpoint' }, { status: 400 });
     }
 
-    const apiUrl = `https://allapi.store/v1/video/query?id=${encodeURIComponent(taskId)}`;
+    // appId 只取前两段，避免 SDK 路径截断 bug
+    const appId = endpoint.split('/').slice(0, 2).join('/');
 
-    const apiResponse = await fetch(apiUrl, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${YUNWU_API_KEY}`
-      }
-    });
+    // 查询状态
+    const statusRes = await fetch(
+      `https://queue.fal.run/${appId}/requests/${taskId}/status`,
+      { headers: { 'Authorization': `Key ${FAL_KEY}` } }
+    );
 
-    if (!apiResponse.ok) {
-      const errorData = await apiResponse.json();
-      console.error('查询云雾API错误:', errorData);
-      return NextResponse.json({ error: '查询任务状态失败', details: errorData }, { status: 500 });
+    if (!statusRes.ok) {
+      const err = await statusRes.text();
+      return NextResponse.json({ error: '查询状态失败', details: err }, { status: 500 });
     }
 
-    const taskData = await apiResponse.json();
-    console.log('云雾API完整响应:', JSON.stringify(taskData, null, 2));
+    const statusData = await statusRes.json();
+    const falStatus: string = statusData.status; // IN_QUEUE | IN_PROGRESS | COMPLETED | FAILED
 
     let status = 'processing';
     let progress = 0;
-    let videoUrl = null;
+    let videoUrl: string | null = null;
 
-    if (taskData.status === 'video_generation_completed' || taskData.status === 'completed') {
+    if (falStatus === 'COMPLETED') {
+      // 获取结果
+      const resultRes = await fetch(
+        `https://queue.fal.run/${appId}/requests/${taskId}`,
+        { headers: { 'Authorization': `Key ${FAL_KEY}` } }
+      );
+      if (resultRes.ok) {
+        const resultData = await resultRes.json();
+        videoUrl = resultData?.video?.url ?? resultData?.videos?.[0]?.url ?? null;
+      }
       status = 'completed';
       progress = 100;
-      videoUrl = taskData.video_url ||
-                 taskData.detail?.video?.url ||
-                 taskData.video?.url ||
-                 taskData.detail?.output?.video_url ||
-                 taskData.data?.video_url ||
-                 taskData.data?.url ||
-                 taskData.url;
-    } else if (taskData.status === 'failed' || taskData.status === 'error') {
+    } else if (falStatus === 'FAILED') {
       status = 'failed';
       progress = 0;
-      console.error('视频生成失败:', taskData.detail?.error || taskData.error || '未知错误');
-    } else if (taskData.status === 'video_generating' || taskData.status === 'processing') {
+    } else if (falStatus === 'IN_PROGRESS') {
       status = 'processing';
       progress = 60;
-    } else if (taskData.status === 'pending' || taskData.status === 'image_downloading') {
-      status = 'pending';
-      progress = 20;
     } else {
-      status = 'processing';
-      progress = 40;
-      console.warn('未知的任务状态:', taskData.status);
+      // IN_QUEUE
+      status = 'pending';
+      progress = 10;
     }
 
-    return NextResponse.json({
-      success: true,
-      taskId: taskId,
-      status: status,
-      progress: progress,
-      videoUrl: videoUrl,
-      rawData: taskData
-    });
+    return NextResponse.json({ success: true, taskId, status, progress, videoUrl });
 
   } catch (error: any) {
     console.error('查询视频错误:', error);
-    return NextResponse.json({ error: '服务器错误', details: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message || '服务器错误' }, { status: 500 });
   }
 }

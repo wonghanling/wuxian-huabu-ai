@@ -827,7 +827,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         <label className="text-gray-400 text-xs mb-1 block">选择模型</label>
                         <select
                           className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all"
-                          value={model || 'ChatGPT'}
+                          value={model || 'gpt-5.2'}
                           onClick={(e) => e.stopPropagation()}
                           onPointerDown={(e) => e.stopPropagation()}
                           onChange={(e) => {
@@ -838,9 +838,11 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                             });
                           }}
                         >
-                          <option value="ChatGPT">ChatGPT</option>
-                          <option value="Claude">Claude</option>
-                          <option value="Gemini">Gemini</option>
+                          <option value="gpt-5.2">GPT-5.2</option>
+                          <option value="gpt-5.1-thinking-all">GPT-5.1 Thinking</option>
+                          <option value="gemini-3-pro-preview">Gemini 3 Pro</option>
+                          <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku</option>
+                          <option value="grok-4">Grok 4</option>
                         </select>
                       </div>
 
@@ -875,7 +877,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
-                                  model: 'gpt-5.1-thinking-all',
+                                  model: model || 'gpt-5.2',
                                   prompt: '请分析这张图片中的角色，生成一个【单人成功范式 JSON】。只做单人分析，反推出稳定可复现的人物 JSON。不要加三视角、不要加转面、不要做设定稿。请直接输出 JSON，不要解释。',
                                   imageUrl: characterAnalyzeImage,
                                   stream: false,
@@ -980,7 +982,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         <label className="text-gray-400 text-xs mb-1 block">选择模型</label>
                         <select
                           className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all"
-                          value={model || 'ChatGPT'}
+                          value={model || 'gpt-5.2'}
                           onClick={(e) => e.stopPropagation()}
                           onPointerDown={(e) => e.stopPropagation()}
                           onChange={(e) => {
@@ -991,9 +993,11 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                             });
                           }}
                         >
-                          <option value="ChatGPT">ChatGPT</option>
-                          <option value="Claude">Claude</option>
-                          <option value="Gemini">Gemini</option>
+                          <option value="gpt-5.2">GPT-5.2</option>
+                          <option value="gpt-5.1-thinking-all">GPT-5.1 Thinking</option>
+                          <option value="gemini-3-pro-preview">Gemini 3 Pro</option>
+                          <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku</option>
+                          <option value="grok-4">Grok 4</option>
                         </select>
                       </div>
 
@@ -1028,7 +1032,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
-                                  model: 'gpt-5.1-thinking-all',
+                                  model: model || 'gpt-5.2',
                                   prompt: `基于下面的 Anchor JSON，生成一份【稳定的三视角（正/侧/背）完整 JSON】。要求：同一人物、同一服装、同一发型、同一身材比例；使用 character turnaround 工程化方式，不要摄影模式；必须避免重复正面或换人，按上次成功的方式来。\n\nAnchor JSON：\n${characterAnchorJson}\n\n请直接输出 JSON，不要解释。`,
                                   stream: false,
                                 }),
@@ -1169,7 +1173,10 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           }}
                         >
                           <option value="nano-banana-pro">Nano Banana Pro</option>
-                          <option value="doubao-seedream-4-5-251128">豆包 Seecream</option>
+                          <option value="nano-banana">Nano Banana</option>
+                          <option value="flux-kontext">Flux Kontext (fal)</option>
+                          <option value="flux-kontext-max">Flux Kontext Max (fal)</option>
+                          <option value="doubao-seedream-4-5-251128">豆包 Seedream</option>
                         </select>
                       </div>
 
@@ -1202,15 +1209,11 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                             });
 
                             try {
-                              const imageModel = characterImageModel === 'doubao-seedream-4-5-251128'
-                                ? 'doubao-seedream-4-5-251128'
-                                : 'nano-banana-pro'; // 默认 Nano Banana Pro
-
                               const res = await fetch('/api/image/generate', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
-                                  model: imageModel,
+                                  model: characterImageModel || 'nano-banana-pro',
                                   prompt: `Character three-view sheet (front, side, back), same character, same outfit, same hairstyle. Based on: ${characterThreeViewJson}`,
                                   aspectRatio: '16:9',
                                   imageBase64: characterThreeViewImage || undefined,
@@ -1316,7 +1319,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                 <label className="text-gray-400 text-xs mb-1 block">Model</label>
                 <select
                   className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all"
-                  value={model || (cardType === 'text' ? 'gpt-5.2' : cardType === 'image' ? 'nano-banana-pro' : 'veo_3_1-fast')}
+                  value={model || (cardType === 'text' ? 'gpt-5.2' : cardType === 'image' ? 'nano-banana-pro' : 'veo3.1-fast-t2v')}
                   onClick={(e) => e.stopPropagation()}
                   onPointerDown={(e) => e.stopPropagation()}
                   onChange={(e) => {
@@ -1331,64 +1334,56 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     <>
                       <optgroup label="高级模型">
                         <option value="gpt-5.2">GPT-5.2</option>
-                        <option value="gpt-5.1-2025-11-13">GPT-5.1-2025-11-13</option>
-                        <option value="gpt-5.1-thinking-all">GPT-5.1-thinking-all</option>
-                        <option value="gemini-3-pro-preview">Gemini 3 Pro Preview</option>
-                        <option value="gemini-3-flash-preview">Gemini 3 Flash Preview</option>
-                        <option value="gemini-2.5-flash-all">Gemini 2.5 Flash All</option>
-                        <option value="gemini-2.5-pro-all">Gemini 2.5 Pro All</option>
+                        <option value="gpt-5.1-2025-11-13">GPT-5.1</option>
+                        <option value="gpt-5.1-thinking-all">GPT-5.1 Thinking</option>
+                        <option value="gemini-3-pro-preview">Gemini 3 Pro</option>
+                        <option value="gemini-3-flash-preview">Gemini 3 Flash</option>
+                        <option value="gemini-2.5-pro-all">Gemini 2.5 Pro</option>
                         <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku</option>
-                        <option value="claude-3-sonnet-all">Claude 3 Sonnet All</option>
                         <option value="grok-4.1">Grok 4.1</option>
                         <option value="grok-4">Grok 4</option>
                         <option value="gpt-5.1-chat">GPT-5.1 Chat</option>
                       </optgroup>
                       <optgroup label="普通模型">
-                        <option value="grok-3-mini">Grok 3 Mini</option>
-                        <option value="gemini-2.5-flash-lite-preview-06-17">Gemini 2.5 Flash Lite</option>
                         <option value="gpt-4o-mini">GPT-4o Mini</option>
                       </optgroup>
                     </>
                   )}
                   {cardType === 'image' && (
                     <>
-                      <option value="nano-banana-pro">Nano Banana Pro (7积分)</option>
-                      <option value="nano-banana">Nano Banana (5积分)</option>
-                      <option value="stability-ai/sdxl">Stable Diffusion XL (3积分)</option>
-                      <option value="mj_imagine">Midjourney Imagine (6积分)</option>
-                      <option value="flux.1.1-pro">Flux 1.1 Pro (10积分)</option>
-                      <option value="flux-pro">Flux Pro (6积分)</option>
-                      <option value="flux-schnell">Flux Schnell (3积分)</option>
-                      <option value="doubao-seedream-4-5-251128">豆包 Seecream (3积分)</option>
+                      <optgroup label="Gemini (n1n)">
+                        <option value="nano-banana-pro">Nano Banana Pro</option>
+                        <option value="nano-banana">Nano Banana</option>
+                      </optgroup>
+                      <optgroup label="Flux (fal.ai)">
+                        <option value="flux-kontext">Flux Kontext</option>
+                        <option value="flux-kontext-max">Flux Kontext Max</option>
+                      </optgroup>
+                      <optgroup label="其他 (n1n)">
+                        <option value="mj_imagine">Midjourney</option>
+                        <option value="doubao-seedream-4-5-251128">豆包 Seedream</option>
+                      </optgroup>
                     </>
                   )}
                   {cardType === 'video' && (
                     <>
-                      <optgroup label="Google Veo">
-                        <option value="veo3.1-4k">Veo 3.1 4K (10积分)</option>
-                        <option value="veo3.1-components-4k">Veo 3.1 Components 4K (10积分)</option>
-                        <option value="veo3.1-pro-4k">Veo 3.1 Pro 4K (30积分)</option>
-                        <option value="veo_3_1-4K">Veo 3.1 4K OpenAI (9积分)</option>
-                        <option value="veo_3_1-fast-4K">Veo 3.1 Fast 4K (5积分)</option>
-                        <option value="veo_3_1-fast">Veo 3.1 Fast (3积分)</option>
-                        <option value="veo3.1">Veo 3.1 (7积分)</option>
-                        <option value="veo3.1-pro">Veo 3.1 Pro (30积分)</option>
-                        <option value="veo3-pro">Veo 3 Pro (35积分)</option>
+                      <optgroup label="Google Veo 3.1 (fal.ai)">
+                        <option value="veo3.1-t2v">Veo 3.1 文生视频</option>
+                        <option value="veo3.1-i2v">Veo 3.1 图生视频</option>
+                        <option value="veo3.1-fast-t2v">Veo 3.1 Fast 文生视频</option>
+                        <option value="veo3.1-fast-i2v">Veo 3.1 Fast 图生视频</option>
+                        <option value="veo3.1-first-last">Veo 3.1 首尾帧</option>
                       </optgroup>
-                      <optgroup label="OpenAI Sora">
-                        <option value="sora-2-all">Sora 2 All (3积分)</option>
-                        <option value="sora-2-pro-all">Sora 2 Pro All (31积分)</option>
-                        <option value="sora-2-4s">Sora 2 4s (20积分)</option>
-                        <option value="sora-2-8s">Sora 2 8s (40积分)</option>
-                        <option value="sora-2-12s">Sora 2 12s (60积分)</option>
+                      <optgroup label="Wan 2.5 (fal.ai)">
+                        <option value="wan2.5-t2v">Wan 2.5 文生视频</option>
+                        <option value="wan2.5-i2v">Wan 2.5 图生视频</option>
                       </optgroup>
-                      <optgroup label="其他">
-                        <option value="grok-video-3">Grok Video 3 (3积分)</option>
-                        <option value="luma_video_api">Luma Video API (30积分)</option>
-                        <option value="runwayml-gen3a_turbo-10">Runway Gen-3A Turbo 10s (25积分)</option>
-                        <option value="runwayml-gen3a_turbo-5">Runway Gen-3A Turbo 5s (15积分)</option>
-                        <option value="runwayml-gen4_turbo-10">Runway Gen-4 Turbo 10s (25积分)</option>
-                        <option value="runwayml-gen4_turbo-5">Runway Gen-4 Turbo 5s (15积分)</option>
+                      <optgroup label="Kling (fal.ai)">
+                        <option value="kling2.6-i2v">Kling 2.6 Pro 图生视频</option>
+                        <option value="kling3-std-i2v">Kling 3 Standard 图生视频</option>
+                      </optgroup>
+                      <optgroup label="其他 (fal.ai)">
+                        <option value="ovi-i2v">Ovi 图生视频</option>
                       </optgroup>
                     </>
                   )}
@@ -1876,7 +1871,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         'Content-Type': 'application/json',
                       },
                       body: JSON.stringify({
-                        model: model || 'flux-schnell',
+                        model: model || 'nano-banana-pro',
                         prompt: fullPrompt,
                         aspectRatio: aspectRatio || '1:1',
                         imageBase64: uploadedImage || undefined,
@@ -1938,7 +1933,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       },
                       body: JSON.stringify({
                         prompt: videoPrompt,
-                        model: model || 'veo_3_1-fast',
+                        model: model || 'veo3.1-fast-t2v',
                         aspectRatio: aspectRatio || '16:9',
                         duration: 5,
                         startFrameImage: videoMode === 'first-frame' || videoMode === 'first-last-frame' ? firstFrameImage : undefined,
@@ -1952,6 +1947,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
                     const data = await response.json();
                     const taskId = data.taskId;
+                    const videoEndpoint = data.endpoint;
 
                     // 轮询查询视频状态
                     const maxAttempts = 60;
@@ -1965,7 +1961,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       attempts++;
                       await new Promise(resolve => setTimeout(resolve, 5000));
 
-                      const queryResponse = await fetch(`/api/video/query?taskId=${encodeURIComponent(taskId)}`);
+                      const queryResponse = await fetch(`/api/video/query?taskId=${encodeURIComponent(taskId)}&endpoint=${encodeURIComponent(videoEndpoint)}`);
                       if (!queryResponse.ok) return poll();
 
                       const queryData = await queryResponse.json();

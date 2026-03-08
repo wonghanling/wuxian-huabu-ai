@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { UNIVERSAL_VIDEO_SKILL } from './skill-content';
 
-const YUNWU_BASE_URL = 'https://allapi.store';
+const YUNWU_BASE_URL = 'https://api.n1n.ai';
 const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
 
 export async function POST(request: NextRequest) {
