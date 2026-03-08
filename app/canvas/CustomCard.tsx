@@ -1420,6 +1420,53 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
               </div>
             )}
 
+            {/* 图片上传 - 支持图生图的模型才显示 */}
+            {cardType === 'image' && ['nano-banana', 'nano-banana-pro', 'doubao-seedream-4-5-251128', 'flux-kontext'].includes(model || '') && (
+              <div className="mb-2">
+                <label className="text-gray-400 text-xs mb-1 block">
+                  参考图片{model === 'flux-kontext' ? '（必填）' : '（可选）'}
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
+                  onClick={(e) => e.stopPropagation()}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        editor.updateShape({
+                          id: shape.id,
+                          type: 'custom-card' as any,
+                          props: { ...shape.props, uploadedImage: event.target?.result as string },
+                        });
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                />
+                {uploadedImage && (
+                  <div className="mt-1 relative w-full h-20 bg-black/30 rounded-lg overflow-hidden group">
+                    <img src={uploadedImage} alt="参考图" className="w-full h-full object-cover" />
+                    <button
+                      className="absolute top-1 right-1 w-5 h-5 bg-black/60 hover:bg-red-500/80 rounded text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        editor.updateShape({
+                          id: shape.id,
+                          type: 'custom-card' as any,
+                          props: { ...shape.props, uploadedImage: '' },
+                        });
+                      }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >✕</button>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* 比例选择 - 视频卡片（按钮组） */}
             {cardType === 'video' && (
               <div className="mb-2">

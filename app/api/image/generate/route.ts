@@ -42,13 +42,13 @@ const IMAGE_MODELS: Record<string, {
   // --- fal.ai 模型 ---
   'flux-kontext': {
     provider: 'fal',
-    falEndpoint: 'fal-ai/flux-pro/kontext/max/text-to-image',
-    supportsImage: true, // 有图时走 kontext（图生图）
+    falEndpoint: 'fal-ai/flux-pro/kontext/max',
+    requiresImage: true, // 必须上传图片，专做图生图
   },
   'flux-kontext-max': {
     provider: 'fal',
     falEndpoint: 'fal-ai/flux-pro/kontext/max/text-to-image',
-    supportsImage: true,
+    // 纯文生图，不需要图片
   },
 };
 
@@ -74,12 +74,7 @@ export async function POST(req: NextRequest) {
 
     // ── fal.ai 路径 ──────────────────────────────────────────────
     if (modelConfig.provider === 'fal') {
-      const hasImage = !!imageBase64;
-      // 有图走 kontext（图生图），无图走 text-to-image
-      const endpoint = hasImage
-        ? 'fal-ai/flux-pro/kontext/max'
-        : (modelConfig.falEndpoint ?? 'fal-ai/flux-pro/kontext/max/text-to-image');
-
+      const endpoint = modelConfig.falEndpoint!;
       const input: Record<string, unknown> = {
         prompt,
         aspect_ratio: aspectRatio,
@@ -88,8 +83,8 @@ export async function POST(req: NextRequest) {
         safety_tolerance: '2',
       };
 
-      if (hasImage) {
-        input.image_url = imageBase64; // base64 data URL 或公开 URL
+      if (imageBase64) {
+        input.image_url = imageBase64;
       }
 
       const result = await fal.subscribe(endpoint, { input });
