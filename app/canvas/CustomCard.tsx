@@ -10,6 +10,8 @@ import {
   Editor,
 } from 'tldraw';
 import { useState, useRef, useCallback } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import { mirrorUrlToStorage } from '@/lib/canvas-storage';
 
 // Helper function to update custom card shape (bypasses TypeScript type checking)
 const updateCustomCardShape = (editor: Editor, id: string, props: any) => {
@@ -1931,12 +1933,24 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
                     const data = await response.json();
 
+                    // 上传到 Supabase Storage，获取永久 URL
+                    let finalImageUrl = data.imageUrl;
+                    try {
+                      const supabase = createClient();
+                      const { data: { user } } = await supabase.auth.getUser();
+                      if (user && data.imageUrl) {
+                        finalImageUrl = await mirrorUrlToStorage(user.id, data.imageUrl, 'image');
+                      }
+                    } catch (uploadErr) {
+                      console.warn('上传到 Storage 失败，使用原始 URL:', uploadErr);
+                    }
+
                     editor.updateShape({
                       id: shape.id,
                       type: 'custom-card' as any,
                       props: {
                         ...shape.props,
-                        generatedImage: data.imageUrl,
+                        generatedImage: finalImageUrl,
                         showImageOutput: true,
                         isGenerating: false,
                       },
@@ -2014,12 +2028,24 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       const queryData = await queryResponse.json();
 
                       if (queryData.status === 'completed' && queryData.videoUrl) {
+                        // 上传到 Supabase Storage，获取永久 URL
+                        let finalVideoUrl = queryData.videoUrl;
+                        try {
+                          const supabase = createClient();
+                          const { data: { user } } = await supabase.auth.getUser();
+                          if (user) {
+                            finalVideoUrl = await mirrorUrlToStorage(user.id, queryData.videoUrl, 'video');
+                          }
+                        } catch (uploadErr) {
+                          console.warn('视频上传到 Storage 失败，使用原始 URL:', uploadErr);
+                        }
+
                         editor.updateShape({
                           id: shape.id,
                           type: 'custom-card' as any,
                           props: {
                             ...shape.props,
-                            generatedVideo: queryData.videoUrl,
+                            generatedVideo: finalVideoUrl,
                             showVideoOutput: true,
                             isGenerating: false,
                           },

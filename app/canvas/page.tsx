@@ -1,8 +1,8 @@
 'use client';
 
-import { Tldraw, TLComponents, Editor, useEditor, createShapeId } from 'tldraw';
+import { Tldraw, TLComponents, Editor, useEditor, createShapeId, getSnapshot, loadSnapshot } from 'tldraw';
 import 'tldraw/tldraw.css';
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { CustomCardShapeUtil } from './CustomCard';
 import { ConnectionShapeUtil } from './ConnectionShapeUtil';
@@ -12,6 +12,8 @@ import { TimelineShapeUtil } from './TimelineShape';
 import { ShotCardShapeUtil } from './ShotCard';
 import { PromptOptimizerCardUtil } from './PromptOptimizerCard';
 import TutorialOverlay from './TutorialOverlay';
+import { createClient } from '@/lib/supabase/client';
+import { getOrCreateCanvas, loadSnapshot as loadCanvasSnapshot, saveSnapshot } from '@/lib/canvas-storage';
 
 // 自定义缩放控制器组件 - 外部版本
 function ZoomControlsExternal({ editor }: { editor: Editor }) {
@@ -943,6 +945,12 @@ function CanvasPageContent() {
   const [cameraPos, setCameraPos] = useState({ x: 0, y: 0 });
   const [showIntro, setShowIntro] = useState(true);
   const [showTutorial, setShowTutorial] = useState(isTutorial);
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
+
+  const canvasIdRef = useRef<string | null>(null);
+  const userIdRef = useRef<string | null>(null);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isRestoringRef = useRef(false);
 
   // 自定义形状工具和绑定工具
   const customShapeUtils = [CustomCardShapeUtil, ConnectionShapeUtil, TimelineShapeUtil, ShotCardShapeUtil, PromptOptimizerCardUtil];
@@ -976,18 +984,55 @@ function CanvasPageContent() {
 
     // 立即设置初始缩放为 60%
     setTimeout(() => {
-      editor.setCamera({
-        x: 0,
-        y: 0,
-        z: 0.6,
-      });
-      console.log('初始缩放已设置为60%');
+      editor.setCamera({ x: 0, y: 0, z: 0.6 });
     }, 0);
 
     // 3秒后隐藏介绍动画
-    setTimeout(() => {
-      setShowIntro(false);
-    }, 3000);
+    setTimeout(() => setShowIntro(false), 3000);
+
+    // ── 加载用户画布 ──────────────────────────────────────────────
+    (async () => {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (user) {
+          userIdRef.current = user.id;
+          const canvasId = await getOrCreateCanvas(user.id);
+          canvasIdRef.current = canvasId;
+
+          const snapshot = await loadCanvasSnapshot(canvasId);
+          if (snapshot) {
+            isRestoringRef.current = true;
+            loadSnapshot(editor.store, snapshot);
+            isRestoringRef.current = false;
+            console.log('画布已恢复');
+          }
+        }
+      } catch (err) {
+        console.error('加载画布失败:', err);
+      }
+    })();
+
+    // ── 自动保存：停止操作 800ms 后保存 ──────────────────────────
+    editor.store.listen(() => {
+      if (isRestoringRef.current) return;
+      if (!canvasIdRef.current) return;
+
+      setSaveStatus('unsaved');
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = setTimeout(async () => {
+        try {
+          setSaveStatus('saving');
+          const snapshot = getSnapshot(editor.store);
+          await saveSnapshot(canvasIdRef.current!, snapshot);
+          setSaveStatus('saved');
+        } catch (err) {
+          console.error('保存失败:', err);
+          setSaveStatus('unsaved');
+        }
+      }, 800);
+    });
 
     // 监听相机变化，更新缩放级别和位置
     const updateCamera = () => {
@@ -995,14 +1040,8 @@ function CanvasPageContent() {
       setCameraZoom(camera.z);
       setCameraPos({ x: camera.x, y: camera.y });
     };
-
-    // 初始更新
     updateCamera();
-
-    // 监听相机变化
-    editor.store.listen(() => {
-      updateCamera();
-    });
+    editor.store.listen(updateCamera);
 
     // 监听鼠标事件，实现右键拖动画布
     let isDraggingCanvas = false;
@@ -1099,6 +1138,20 @@ function CanvasPageContent() {
       {/* 将控件放在 Tldraw 外面 */}
       {editorInstance && (
         <>
+          {/* 保存状态指示器 */}
+          {userIdRef.current && (
+            <div className="fixed top-4 right-4 flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-zinc-900/80 backdrop-blur-md border border-white/10" style={{ zIndex: 99999 }}>
+              {saveStatus === 'saving' && (
+                <><div className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" /><span className="text-yellow-400">保存中...</span></>
+              )}
+              {saveStatus === 'saved' && (
+                <><div className="w-1.5 h-1.5 rounded-full bg-green-400" /><span className="text-green-400">已保存</span></>
+              )}
+              {saveStatus === 'unsaved' && (
+                <><div className="w-1.5 h-1.5 rounded-full bg-gray-400" /><span className="text-gray-400">未保存</span></>
+              )}
+            </div>
+          )}
           <ZoomControlsExternal editor={editorInstance} />
           <BottomToolbarExternal editor={editorInstance} />
         </>
