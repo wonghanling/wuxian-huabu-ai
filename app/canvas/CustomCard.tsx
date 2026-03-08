@@ -1174,8 +1174,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         >
                           <option value="nano-banana-pro">Nano Banana Pro</option>
                           <option value="nano-banana">Nano Banana</option>
-                          <option value="flux-kontext">Flux Kontext (fal)</option>
-                          <option value="flux-kontext-max">Flux Kontext Max (fal)</option>
+                          <option value="flux-kontext">Flux Kontext</option>
+                          <option value="flux-kontext-max">Flux Kontext Max</option>
                           <option value="doubao-seedream-4-5-251128">豆包 Seedream</option>
                         </select>
                       </div>
@@ -1351,15 +1351,15 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   )}
                   {cardType === 'image' && (
                     <>
-                      <optgroup label="Gemini (n1n)">
+                      <optgroup label="Gemini">
                         <option value="nano-banana-pro">Nano Banana Pro</option>
                         <option value="nano-banana">Nano Banana</option>
                       </optgroup>
-                      <optgroup label="Flux (fal.ai)">
+                      <optgroup label="Flux">
                         <option value="flux-kontext">Flux Kontext</option>
                         <option value="flux-kontext-max">Flux Kontext Max</option>
                       </optgroup>
-                      <optgroup label="其他 (n1n)">
+                      <optgroup label="其他">
                         <option value="mj_imagine">Midjourney</option>
                         <option value="doubao-seedream-4-5-251128">豆包 Seedream</option>
                       </optgroup>
@@ -1367,22 +1367,22 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   )}
                   {cardType === 'video' && (
                     <>
-                      <optgroup label="Google Veo 3.1 (fal.ai)">
+                      <optgroup label="Google Veo 3.1">
                         <option value="veo3.1-t2v">Veo 3.1 文生视频</option>
                         <option value="veo3.1-i2v">Veo 3.1 图生视频</option>
                         <option value="veo3.1-fast-t2v">Veo 3.1 Fast 文生视频</option>
                         <option value="veo3.1-fast-i2v">Veo 3.1 Fast 图生视频</option>
                         <option value="veo3.1-first-last">Veo 3.1 首尾帧</option>
                       </optgroup>
-                      <optgroup label="Wan 2.5 (fal.ai)">
+                      <optgroup label="Wan 2.5">
                         <option value="wan2.5-t2v">Wan 2.5 文生视频</option>
                         <option value="wan2.5-i2v">Wan 2.5 图生视频</option>
                       </optgroup>
-                      <optgroup label="Kling (fal.ai)">
+                      <optgroup label="Kling">
                         <option value="kling2.6-i2v">Kling 2.6 Pro 图生视频</option>
                         <option value="kling3-std-i2v">Kling 3 Standard 图生视频</option>
                       </optgroup>
-                      <optgroup label="其他 (fal.ai)">
+                      <optgroup label="其他">
                         <option value="ovi-i2v">Ovi 图生视频</option>
                       </optgroup>
                     </>
