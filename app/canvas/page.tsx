@@ -1223,7 +1223,8 @@ function CanvasPageContent() {
                             canvasIdRef.current = data.id;
                             if (editorInstance) {
                               isRestoringRef.current = true;
-                              editorInstance.store.loadSnapshot({ document: { schemaVersion: 2, sequences: {}, store: {} } as any, session: undefined });
+                              editorInstance.selectAll();
+                              editorInstance.deleteShapes(editorInstance.getSelectedShapeIds());
                               isRestoringRef.current = false;
                             }
                             setShowCanvasList(false);
@@ -1272,7 +1273,8 @@ function CanvasPageContent() {
                                   if (snapshot) {
                                     loadSnapshot(editorInstance.store, snapshot);
                                   } else {
-                                    editorInstance.store.loadSnapshot({ document: { schemaVersion: 2, sequences: {}, store: {} } as any, session: undefined });
+                                    editorInstance.selectAll();
+                                    editorInstance.deleteShapes(editorInstance.getSelectedShapeIds());
                                   }
                                   isRestoringRef.current = false;
                                 }
@@ -1315,7 +1317,8 @@ function CanvasPageContent() {
                                     if (snapshot) {
                                       loadSnapshot(editorInstance.store, snapshot);
                                     } else {
-                                      editorInstance.store.loadSnapshot({ document: { schemaVersion: 2, sequences: {}, store: {} } as any, session: undefined });
+                                      editorInstance.selectAll();
+                                      editorInstance.deleteShapes(editorInstance.getSelectedShapeIds());
                                     }
                                     isRestoringRef.current = false;
                                   }
