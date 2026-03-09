@@ -89,7 +89,7 @@ const VIDEO_MODELS: Record<string, ModelConfig> = {
     aspectRatios: ['16:9', '9:16'],
     resolutions: ['720p', '1080p', '4k'],
     defaultResolution: '720p',
-    supportsAudio: true,
+    supportsAudio: false,
     audioBuiltIn: false,
     supportsEndFrame: true,
     durationFormat: 'seconds',
