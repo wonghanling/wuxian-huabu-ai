@@ -230,17 +230,31 @@ export async function POST(req: NextRequest) {
       input.safety_tolerance = '4';
     }
 
-    // 图片参数
+    // 图片参数 - base64 先上传到 Storage 变成公开 URL
+    const toPublicUrl = async (base64: string): Promise<string> => {
+      if (!base64 || !base64.startsWith('data:')) return base64;
+      const match = base64.match(/^data:(image\/\w+);base64,(.+)$/);
+      if (!match) return base64;
+      const mimeType = match[1];
+      const ext = mimeType.split('/')[1] || 'jpg';
+      const buffer = Buffer.from(match[2], 'base64');
+      const filename = `frames/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error } = await supabaseAdmin.storage.from('assets').upload(filename, buffer, { contentType: mimeType, upsert: false });
+      if (error) throw new Error(`上传帧图片失败: ${error.message}`);
+      const { data } = supabaseAdmin.storage.from('assets').getPublicUrl(filename);
+      return data.publicUrl;
+    };
+
     if (cfg.mode === 'i2v' && cfg.imageParamName && startFrameImage) {
-      input[cfg.imageParamName] = startFrameImage;
+      input[cfg.imageParamName] = await toPublicUrl(startFrameImage);
     }
     if (cfg.mode === 'firstLastFrame') {
-      if (cfg.imageParamName && startFrameImage) input[cfg.imageParamName] = startFrameImage;
-      if (cfg.endImageParamName && endFrameImage) input[cfg.endImageParamName] = endFrameImage;
+      if (cfg.imageParamName && startFrameImage) input[cfg.imageParamName] = await toPublicUrl(startFrameImage);
+      if (cfg.endImageParamName && endFrameImage) input[cfg.endImageParamName] = await toPublicUrl(endFrameImage);
     }
     // Kling 尾帧
     if (cfg.supportsEndFrame && cfg.endImageParamName && endFrameImage && cfg.mode === 'i2v') {
-      input[cfg.endImageParamName] = endFrameImage;
+      input[cfg.endImageParamName] = await toPublicUrl(endFrameImage);
     }
 
     // 提交到 fal 队列
