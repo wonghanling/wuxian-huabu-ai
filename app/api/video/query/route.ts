@@ -40,9 +40,11 @@ export async function GET(request: NextRequest) {
       );
       if (resultRes.ok) {
         const data = await resultRes.json();
-        console.log('fal result keys:', Object.keys(data));
+        console.log('fal result full:', JSON.stringify(data).slice(0, 1000));
         videoUrl = data?.video?.url || data?.video_url || data?.url || data?.videos?.[0]?.url || null;
         console.log('视频URL:', videoUrl);
+      } else {
+        console.log('fal result fetch failed:', resultRes.status, await resultRes.text());
       }
       status = videoUrl ? 'completed' : 'failed';
       progress = videoUrl ? 100 : 0;
