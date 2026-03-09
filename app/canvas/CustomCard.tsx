@@ -1619,7 +1619,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
             {/* 视频模式控制按钮 - 仅视频卡片显示 */}
             {cardType === 'video' && (
               <button
-                className="w-full py-2 mt-1 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-gray-700/80 to-gray-800/80 hover:from-gray-700 hover:to-gray-800"
+                className="w-full py-2 mt-1 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-blue-500/80 to-blue-600/80 hover:from-blue-500 hover:to-blue-600"
                 onClick={(e) => {
                   e.stopPropagation();
                   editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, showVideoModePanel: !showVideoModePanel } });
