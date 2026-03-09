@@ -2349,12 +2349,17 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
             {/* 文本输出区域 */}
             {cardType === 'text' && (
-              <div
-                className="mt-2 p-3 bg-black/30 border border-white/8 rounded-lg min-h-[80px] max-h-[300px] overflow-y-auto"
-                style={{ userSelect: 'text', cursor: 'text' }}
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={(e) => e.stopPropagation()}
-              >
+              <div className="mt-2 bg-black/30 border border-white/8 rounded-lg min-h-[80px] max-h-[300px] overflow-y-auto">
+                {textOutput && !isGenerating && (
+                  <div className="flex justify-end px-2 pt-1.5">
+                    <button
+                      className="text-[10px] text-gray-400 hover:text-gray-300 transition-colors"
+                      onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(textOutput); }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >复制</button>
+                  </div>
+                )}
+                <div className="px-3 pb-3 pt-1">
                 {isGenerating ? (
                   <div className="flex items-center justify-center py-4">
                     <div className="flex gap-2">
@@ -2368,6 +2373,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                 ) : (
                   <p className="text-gray-500 text-xs text-center">Text output will appear here...</p>
                 )}
+                </div>
               </div>
             )}
           </div>
