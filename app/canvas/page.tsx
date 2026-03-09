@@ -946,6 +946,9 @@ function CanvasPageContent() {
   const [showIntro, setShowIntro] = useState(true);
   const [showTutorial, setShowTutorial] = useState(isTutorial);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [canvasList, setCanvasList] = useState<{id: string; title: string}[]>([]);
+  const [showCanvasList, setShowCanvasList] = useState(false);
 
   const canvasIdRef = useRef<string | null>(null);
   const userIdRef = useRef<string | null>(null);
@@ -996,18 +999,31 @@ function CanvasPageContent() {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
 
-        if (user) {
-          userIdRef.current = user.id;
-          const canvasId = await getOrCreateCanvas(user.id);
-          canvasIdRef.current = canvasId;
+        if (!user) {
+          setIsLoggedIn(false);
+          return;
+        }
 
-          const snapshot = await loadCanvasSnapshot(canvasId);
-          if (snapshot) {
-            isRestoringRef.current = true;
-            loadSnapshot(editor.store, snapshot);
-            isRestoringRef.current = false;
-            console.log('画布已恢复');
-          }
+        setIsLoggedIn(true);
+        userIdRef.current = user.id;
+
+        // 加载画布列表
+        const { data: canvases } = await supabase
+          .from('canvases')
+          .select('id, title')
+          .eq('user_id', user.id)
+          .order('updated_at', { ascending: false });
+        if (canvases) setCanvasList(canvases);
+
+        const canvasId = await getOrCreateCanvas(user.id);
+        canvasIdRef.current = canvasId;
+
+        const snapshot = await loadCanvasSnapshot(canvasId);
+        if (snapshot) {
+          isRestoringRef.current = true;
+          loadSnapshot(editor.store, snapshot);
+          isRestoringRef.current = false;
+          console.log('画布已恢复');
         }
       } catch (err) {
         console.error('加载画布失败:', err);
@@ -1138,20 +1154,103 @@ function CanvasPageContent() {
       {/* 将控件放在 Tldraw 外面 */}
       {editorInstance && (
         <>
-          {/* 保存状态指示器 */}
-          {userIdRef.current && (
-            <div className="fixed top-4 right-4 flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-zinc-900/80 backdrop-blur-md border border-white/10" style={{ zIndex: 99999 }}>
-              {saveStatus === 'saving' && (
-                <><div className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" /><span className="text-yellow-400">保存中...</span></>
-              )}
-              {saveStatus === 'saved' && (
-                <><div className="w-1.5 h-1.5 rounded-full bg-green-400" /><span className="text-green-400">已保存</span></>
-              )}
-              {saveStatus === 'unsaved' && (
-                <><div className="w-1.5 h-1.5 rounded-full bg-gray-400" /><span className="text-gray-400">未保存</span></>
-              )}
+          {/* 未登录提示 */}
+          {isLoggedIn === false && (
+            <div className="fixed inset-0 z-[200000] bg-black/80 backdrop-blur-sm flex items-center justify-center">
+              <div className="bg-zinc-900 border border-white/10 rounded-2xl p-8 max-w-sm w-full mx-4 text-center">
+                <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-6 h-6 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <h2 className="text-white text-lg font-semibold mb-2">登录后使用画布</h2>
+                <p className="text-gray-400 text-sm mb-6">登录后可保存画布、生成图片和视频</p>
+                <a
+                  href="/auth"
+                  className="block w-full py-3 rounded-xl bg-white text-black font-semibold text-sm hover:bg-gray-100 transition-all"
+                >
+                  去登录
+                </a>
+              </div>
             </div>
           )}
+
+          {/* 保存状态 + 画布切换 */}
+          {isLoggedIn && (
+            <div className="fixed top-4 right-4 flex items-center gap-2" style={{ zIndex: 99999 }}>
+              {/* 画布列表按钮 */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowCanvasList(!showCanvasList)}
+                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-zinc-900/80 backdrop-blur-md border border-white/10 text-gray-300 hover:border-white/20 transition-all"
+                >
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                  画布
+                </button>
+
+                {showCanvasList && (
+                  <div className="absolute top-8 right-0 w-56 bg-zinc-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden">
+                    <div className="p-2 border-b border-white/5">
+                      <button
+                        className="w-full text-left px-3 py-2 text-xs text-blue-400 hover:bg-white/5 rounded-lg transition-all"
+                        onClick={async () => {
+                          const supabase = createClient();
+                          const title = `画布 ${new Date().toLocaleDateString('zh-CN')}`;
+                          const { data } = await supabase
+                            .from('canvases')
+                            .insert({ user_id: userIdRef.current, title })
+                            .select('id, title')
+                            .single();
+                          if (data) {
+                            setCanvasList(prev => [data, ...prev]);
+                            canvasIdRef.current = data.id;
+                            if (editorInstance) {
+                              isRestoringRef.current = true;
+                              editorInstance.store.clear();
+                              isRestoringRef.current = false;
+                            }
+                            setShowCanvasList(false);
+                          }
+                        }}
+                      >
+                        + 新建画布
+                      </button>
+                    </div>
+                    <div className="max-h-48 overflow-y-auto">
+                      {canvasList.map((c) => (
+                        <button
+                          key={c.id}
+                          className={`w-full text-left px-3 py-2 text-xs transition-all hover:bg-white/5 ${canvasIdRef.current === c.id ? 'text-white' : 'text-gray-400'}`}
+                          onClick={async () => {
+                            canvasIdRef.current = c.id;
+                            const snapshot = await loadCanvasSnapshot(c.id);
+                            if (snapshot && editorInstance) {
+                              isRestoringRef.current = true;
+                              loadSnapshot(editorInstance.store, snapshot);
+                              isRestoringRef.current = false;
+                            }
+                            setShowCanvasList(false);
+                          }}
+                        >
+                          {canvasIdRef.current === c.id ? '● ' : '○ '}{c.title}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 保存状态 */}
+              <div className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-zinc-900/80 backdrop-blur-md border border-white/10">
+                {saveStatus === 'saving' && <><div className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" /><span className="text-yellow-400">保存中...</span></>}
+                {saveStatus === 'saved' && <><div className="w-1.5 h-1.5 rounded-full bg-green-400" /><span className="text-green-400">已保存</span></>}
+                {saveStatus === 'unsaved' && <><div className="w-1.5 h-1.5 rounded-full bg-gray-400" /><span className="text-gray-400">未保存</span></>}
+              </div>
+            </div>
+          )}
+
           <ZoomControlsExternal editor={editorInstance} />
           <BottomToolbarExternal editor={editorInstance} />
         </>

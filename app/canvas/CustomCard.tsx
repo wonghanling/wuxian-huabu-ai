@@ -229,6 +229,9 @@ export type CustomCardShape = TLBaseShape<
     showImageOutput?: boolean;
     showVideoOutput?: boolean;
     capturedFrame?: string;
+    videoDuration?: number;
+    videoResolution?: string;
+    videoGenerateAudio?: boolean;
     // 角色卡片专属字段
     characterName?: string;
     characterAppearance?: string;
@@ -281,6 +284,9 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
     showImageOutput: T.boolean.optional(),
     showVideoOutput: T.boolean.optional(),
     capturedFrame: T.string.optional(),
+    videoDuration: T.number.optional(),
+    videoResolution: T.string.optional(),
+    videoGenerateAudio: T.boolean.optional(),
     characterName: T.string.optional(),
     characterAppearance: T.string.optional(),
     characterClothing: T.string.optional(),
@@ -352,6 +358,9 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
       showImageOutput: false,
       showVideoOutput: false,
       capturedFrame: '',
+      videoDuration: 5,
+      videoResolution: '720p',
+      videoGenerateAudio: false,
       characterName: '',
       characterAppearance: '',
       characterClothing: '',
@@ -378,9 +387,31 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
   }
 
   component(shape: CustomCardShape) {
-    const { cardType, title, prompt, model, w, h, uploadedImage, cameraVertical, cameraHorizontal, showCameraControl, generatedImage, aspectRatio, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showVideoOutput, capturedFrame, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterAnalyzeImage, characterAnchorJson, characterThreeViewJson, characterThreeViewImage, characterGeneratedImage, characterImageModel, showCharacterOutput, showAnalyzePanel, showThreeViewJsonPanel, showGeneratePanel, isMinimized, textOutput, isGenerating } = shape.props;
+    const { cardType, title, prompt, model, w, h, uploadedImage, cameraVertical, cameraHorizontal, showCameraControl, generatedImage, aspectRatio, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showVideoOutput, capturedFrame, videoDuration, videoResolution, videoGenerateAudio, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterAnalyzeImage, characterAnchorJson, characterThreeViewJson, characterThreeViewImage, characterGeneratedImage, characterImageModel, showCharacterOutput, showAnalyzePanel, showThreeViewJsonPanel, showGeneratePanel, isMinimized, textOutput, isGenerating } = shape.props;
     const editor = useEditor();
     const videoRef = useRef<HTMLVideoElement>(null);
+
+    // 视频模型参数配置
+    const VIDEO_MODEL_CONFIG: Record<string, {
+      durations: number[];
+      resolutions: string[];
+      aspectRatios: string[];
+      supportsAudio: boolean;
+      audioBuiltIn?: boolean;
+      i2vNoAspectRatio?: boolean;
+    }> = {
+      'veo3.1-t2v':        { durations: [4,6,8], resolutions: ['720p','1080p','4k'], aspectRatios: ['16:9','9:16'], supportsAudio: true },
+      'veo3.1-i2v':        { durations: [4,6,8], resolutions: ['720p','1080p','4k'], aspectRatios: ['16:9','9:16'], supportsAudio: true },
+      'veo3.1-fast-t2v':   { durations: [4,6,8], resolutions: ['720p','1080p','4k'], aspectRatios: ['16:9','9:16'], supportsAudio: true },
+      'veo3.1-fast-i2v':   { durations: [4,6,8], resolutions: ['720p','1080p','4k'], aspectRatios: ['16:9','9:16'], supportsAudio: true },
+      'veo3.1-first-last': { durations: [4,6,8], resolutions: ['720p','1080p','4k'], aspectRatios: ['16:9','9:16'], supportsAudio: true },
+      'wan2.5-t2v':        { durations: [5,10],  resolutions: ['480p','720p','1080p'], aspectRatios: ['16:9','9:16','1:1'], supportsAudio: false, audioBuiltIn: true },
+      'wan2.5-i2v':        { durations: [5,10],  resolutions: ['480p','720p','1080p'], aspectRatios: [], supportsAudio: false, audioBuiltIn: true, i2vNoAspectRatio: true },
+      'kling2.6-i2v':      { durations: [5,10],  resolutions: [], aspectRatios: [], supportsAudio: true },
+      'kling3-std-i2v':    { durations: [5,10],  resolutions: [], aspectRatios: ['16:9','9:16','1:1'], supportsAudio: true },
+      'ovi-i2v':           { durations: [],       resolutions: [], aspectRatios: [], supportsAudio: false, audioBuiltIn: true },
+    };
+    const currentVideoModel = VIDEO_MODEL_CONFIG[model || ''] ?? null;
 
     // 获取连接到当前卡片的 ShotCard 指令
     const getShotCardPrompt = (): string => {
@@ -1692,10 +1723,79 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     </div>
                   </div>
                 )}
+                {/* 时长选择 */}
+                {currentVideoModel && currentVideoModel.durations.length > 0 && (
+                  <div>
+                    <label className="text-gray-400 text-xs mb-1 block">时长</label>
+                    <div className="flex gap-1 flex-wrap">
+                      {currentVideoModel.durations.map((dur) => (
+                        <button
+                          key={dur}
+                          className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
+                            (videoDuration ?? 5) === dur
+                              ? 'bg-blue-500/20 border-blue-500/50 text-blue-400'
+                              : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'
+                          }`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, videoDuration: dur } });
+                          }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                        >
+                          {dur}s
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 分辨率选择 */}
+                {currentVideoModel && currentVideoModel.resolutions.length > 0 && (
+                  <div>
+                    <label className="text-gray-400 text-xs mb-1 block">清晰度</label>
+                    <div className="flex gap-1 flex-wrap">
+                      {currentVideoModel.resolutions.map((res) => (
+                        <button
+                          key={res}
+                          className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
+                            (videoResolution ?? '720p') === res
+                              ? 'bg-blue-500/20 border-blue-500/50 text-blue-400'
+                              : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'
+                          }`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, videoResolution: res } });
+                          }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                        >
+                          {res.toUpperCase()}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 音频开关 */}
+                {currentVideoModel && currentVideoModel.supportsAudio && !currentVideoModel.audioBuiltIn && (
+                  <div className="flex items-center justify-between">
+                    <label className="text-gray-400 text-xs">生成音频</label>
+                    <button
+                      className={`relative w-10 h-5 rounded-full transition-colors ${videoGenerateAudio ? 'bg-blue-500' : 'bg-white/10'}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, videoGenerateAudio: !videoGenerateAudio } });
+                      }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >
+                      <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform ${videoGenerateAudio ? 'translate-x-5' : 'translate-x-0'}`} />
+                    </button>
+                  </div>
+                )}
+                {currentVideoModel?.audioBuiltIn && (
+                  <p className="text-[10px] text-gray-500">该模型自带音频</p>
+                )}
               </div>
             )}
-
-            {/* 镜头控制器按钮 - 仅图片卡片显示 */}
             {cardType === 'image' && (
               <button
                 className="w-full py-2 mt-2 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-blue-500/80 to-blue-600/80 hover:from-blue-500 hover:to-blue-600"
@@ -1996,7 +2096,9 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         prompt: videoPrompt,
                         model: model || 'veo3.1-fast-t2v',
                         aspectRatio: aspectRatio || '16:9',
-                        duration: 5,
+                        duration: videoDuration ?? 5,
+                        resolution: videoResolution ?? '720p',
+                        generateAudio: videoGenerateAudio ?? false,
                         startFrameImage: videoMode === 'first-frame' || videoMode === 'first-last-frame' ? firstFrameImage : undefined,
                         endFrameImage: videoMode === 'first-last-frame' ? lastFrameImage : undefined,
                       }),

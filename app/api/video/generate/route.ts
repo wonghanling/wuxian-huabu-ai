@@ -33,7 +33,8 @@ export async function POST(req: NextRequest) {
       model,
       aspectRatio = '16:9',
       duration = 5,
-      resolution = '1080p',
+      resolution = '720p',
+      generateAudio = false,
       startFrameImage,
       endFrameImage,
     } = body;
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
 
     if (cfg.hasAspectRatio) input.aspect_ratio = aspectRatio;
     if (cfg.hasResolution)  input.resolution = resolution;
-    if (cfg.hasAudio)       input.generate_audio = true;
+    if (cfg.hasAudio)       input.generate_audio = generateAudio;
 
     // Veo 系列需要 safety_tolerance
     if (cfg.endpoint.includes('veo')) {
