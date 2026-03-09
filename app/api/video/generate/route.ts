@@ -227,9 +227,10 @@ export async function POST(req: NextRequest) {
       input.generate_audio = generateAudio === true;
     }
 
-    // Veo 系列安全等级（数字类型）
+    // Veo 系列安全等级（数字类型）+ auto_fix
     if (cfg.endpoint.includes('veo')) {
       input.safety_tolerance = 4;
+      input.auto_fix = true;
     }
 
     // 图片参数 - base64 先上传到 Storage 变成公开 URL
