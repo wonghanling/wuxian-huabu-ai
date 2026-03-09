@@ -210,9 +210,11 @@ export async function POST(req: NextRequest) {
       input.duration = String(duration);
     }
 
-    // 比例（i2v 无比例的模型不传）
-    if (cfg.aspectRatios.length > 0 && aspectRatio && !cfg.i2vNoAspectRatio) {
+    // 比例：i2v/firstLastFrame 用 "auto"，t2v 用用户选的
+    if (cfg.mode === 't2v' && cfg.aspectRatios.length > 0 && aspectRatio) {
       input.aspect_ratio = aspectRatio;
+    } else if ((cfg.mode === 'i2v' || cfg.mode === 'firstLastFrame') && !cfg.i2vNoAspectRatio) {
+      input.aspect_ratio = 'auto';
     }
 
     // 分辨率
@@ -220,14 +222,14 @@ export async function POST(req: NextRequest) {
       input.resolution = resolution;
     }
 
-    // 音频（有开关的模型才传）
+    // 音频（有开关的模型才传，用户主动开启才传 true）
     if (cfg.supportsAudio && !cfg.audioBuiltIn) {
-      input.generate_audio = generateAudio;
+      input.generate_audio = generateAudio === true;
     }
 
-    // Veo 系列安全等级
+    // Veo 系列安全等级（数字类型）
     if (cfg.endpoint.includes('veo')) {
-      input.safety_tolerance = '4';
+      input.safety_tolerance = 4;
     }
 
     // 图片参数 - base64 先上传到 Storage 变成公开 URL
