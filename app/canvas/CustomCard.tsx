@@ -1977,8 +1977,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         duration: videoDuration ?? 5,
                         resolution: videoResolution ?? '720p',
                         generateAudio: videoGenerateAudio ?? false,
-                        startFrameImage: videoMode === 'first-frame' || videoMode === 'first-last-frame' ? firstFrameImage : undefined,
-                        endFrameImage: videoMode === 'first-last-frame' ? lastFrameImage : undefined,
+                        startFrameImage: (currentVideoModel?.mode === 'i2v' || currentVideoModel?.mode === 'firstLastFrame') ? firstFrameImage : undefined,
+                        endFrameImage: currentVideoModel?.mode === 'firstLastFrame' ? lastFrameImage : (currentVideoModel?.supportsEndFrame ? lastFrameImage : undefined),
                       }),
                     });
 
