@@ -1,28 +1,173 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fal } from '@fal-ai/client';
+import { createClient } from '@supabase/supabase-js';
 
 fal.config({ credentials: process.env.FAL_KEY! });
 
-// fal.ai 视频模型配置
-const VIDEO_MODELS: Record<string, {
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+type ModelConfig = {
+  name: string;
   endpoint: string;
   mode: 't2v' | 'i2v' | 'firstLastFrame';
-  durationFormat: 'veo' | 'wan' | 'none'; // veo="4s", wan="5", none=不传
-  hasAspectRatio: boolean;
-  hasResolution: boolean;
-  hasAudio: boolean;
-  imageParam?: string; // i2v 时图片参数名
-}> = {
-  'veo3.1-t2v':        { endpoint: 'fal-ai/veo3.1',                                        mode: 't2v',          durationFormat: 'veo', hasAspectRatio: true,  hasResolution: true,  hasAudio: true },
-  'veo3.1-i2v':        { endpoint: 'fal-ai/veo3.1/image-to-video',                         mode: 'i2v',          durationFormat: 'veo', hasAspectRatio: true,  hasResolution: true,  hasAudio: true,  imageParam: 'image_url' },
-  'veo3.1-fast-t2v':   { endpoint: 'fal-ai/veo3.1/fast',                                   mode: 't2v',          durationFormat: 'veo', hasAspectRatio: true,  hasResolution: true,  hasAudio: true },
-  'veo3.1-fast-i2v':   { endpoint: 'fal-ai/veo3.1/fast/image-to-video',                    mode: 'i2v',          durationFormat: 'veo', hasAspectRatio: true,  hasResolution: true,  hasAudio: true,  imageParam: 'image_url' },
-  'veo3.1-first-last': { endpoint: 'fal-ai/veo3.1/fast/first-last-frame-to-video',         mode: 'firstLastFrame', durationFormat: 'veo', hasAspectRatio: true, hasResolution: true,  hasAudio: true },
-  'wan2.5-t2v':        { endpoint: 'fal-ai/wan-25-preview/text-to-video',                  mode: 't2v',          durationFormat: 'wan', hasAspectRatio: true,  hasResolution: true,  hasAudio: false },
-  'wan2.5-i2v':        { endpoint: 'fal-ai/wan-25-preview/image-to-video',                 mode: 'i2v',          durationFormat: 'wan', hasAspectRatio: false, hasResolution: true,  hasAudio: false, imageParam: 'image_url' },
-  'kling2.6-i2v':      { endpoint: 'fal-ai/kling-video/v2.6/pro/image-to-video',           mode: 'i2v',          durationFormat: 'wan', hasAspectRatio: false, hasResolution: false, hasAudio: true,  imageParam: 'start_image_url' },
-  'kling3-std-i2v':    { endpoint: 'fal-ai/kling-video/v3/standard/image-to-video',        mode: 'i2v',          durationFormat: 'wan', hasAspectRatio: false, hasResolution: false, hasAudio: true,  imageParam: 'start_image_url' },
-  'ovi-i2v':           { endpoint: 'fal-ai/ovi/image-to-video',                            mode: 'i2v',          durationFormat: 'none', hasAspectRatio: false, hasResolution: false, hasAudio: false, imageParam: 'image_url' },
+  durations: number[];
+  aspectRatios: string[];
+  resolutions: string[];
+  defaultResolution: string;
+  supportsAudio: boolean;
+  audioBuiltIn: boolean;
+  supportsEndFrame: boolean;
+  durationFormat: 'seconds' | 'number' | 'none';
+  imageParamName?: string;
+  endImageParamName?: string;
+  i2vNoAspectRatio?: boolean;
+};
+
+const VIDEO_MODELS: Record<string, ModelConfig> = {
+  'veo3.1-t2v': {
+    name: 'Veo 3.1 文生视频',
+    endpoint: 'fal-ai/veo3.1',
+    mode: 't2v',
+    durations: [4, 6, 8],
+    aspectRatios: ['16:9', '9:16'],
+    resolutions: ['720p', '1080p', '4k'],
+    defaultResolution: '720p',
+    supportsAudio: true,
+    audioBuiltIn: false,
+    supportsEndFrame: false,
+    durationFormat: 'seconds',
+  },
+  'veo3.1-i2v': {
+    name: 'Veo 3.1 图生视频',
+    endpoint: 'fal-ai/veo3.1/image-to-video',
+    mode: 'i2v',
+    durations: [4, 6, 8],
+    aspectRatios: ['16:9', '9:16'],
+    resolutions: ['720p', '1080p', '4k'],
+    defaultResolution: '720p',
+    supportsAudio: true,
+    audioBuiltIn: false,
+    supportsEndFrame: false,
+    durationFormat: 'seconds',
+    imageParamName: 'image_url',
+  },
+  'veo3.1-fast-t2v': {
+    name: 'Veo 3.1 Fast 文生视频',
+    endpoint: 'fal-ai/veo3.1/fast',
+    mode: 't2v',
+    durations: [4, 6, 8],
+    aspectRatios: ['16:9', '9:16'],
+    resolutions: ['720p', '1080p', '4k'],
+    defaultResolution: '720p',
+    supportsAudio: true,
+    audioBuiltIn: false,
+    supportsEndFrame: false,
+    durationFormat: 'seconds',
+  },
+  'veo3.1-fast-i2v': {
+    name: 'Veo 3.1 Fast 图生视频',
+    endpoint: 'fal-ai/veo3.1/fast/image-to-video',
+    mode: 'i2v',
+    durations: [4, 6, 8],
+    aspectRatios: ['16:9', '9:16'],
+    resolutions: ['720p', '1080p', '4k'],
+    defaultResolution: '720p',
+    supportsAudio: true,
+    audioBuiltIn: false,
+    supportsEndFrame: false,
+    durationFormat: 'seconds',
+    imageParamName: 'image_url',
+  },
+  'veo3.1-first-last': {
+    name: 'Veo 3.1 首尾帧',
+    endpoint: 'fal-ai/veo3.1/fast/first-last-frame-to-video',
+    mode: 'firstLastFrame',
+    durations: [4, 6, 8],
+    aspectRatios: ['16:9', '9:16'],
+    resolutions: ['720p', '1080p', '4k'],
+    defaultResolution: '720p',
+    supportsAudio: true,
+    audioBuiltIn: false,
+    supportsEndFrame: true,
+    durationFormat: 'seconds',
+    imageParamName: 'first_frame_url',
+    endImageParamName: 'last_frame_url',
+  },
+  'wan2.5-t2v': {
+    name: 'Wan 2.5 文生视频',
+    endpoint: 'fal-ai/wan-25-preview/text-to-video',
+    mode: 't2v',
+    durations: [5, 10],
+    aspectRatios: ['16:9', '9:16', '1:1'],
+    resolutions: ['480p', '720p', '1080p'],
+    defaultResolution: '1080p',
+    supportsAudio: false,
+    audioBuiltIn: true,
+    supportsEndFrame: false,
+    durationFormat: 'number',
+  },
+  'wan2.5-i2v': {
+    name: 'Wan 2.5 图生视频',
+    endpoint: 'fal-ai/wan-25-preview/image-to-video',
+    mode: 'i2v',
+    durations: [5, 10],
+    aspectRatios: [],
+    resolutions: ['480p', '720p', '1080p'],
+    defaultResolution: '1080p',
+    supportsAudio: false,
+    audioBuiltIn: true,
+    supportsEndFrame: false,
+    durationFormat: 'number',
+    imageParamName: 'image_url',
+    i2vNoAspectRatio: true,
+  },
+  'kling2.6-i2v': {
+    name: 'Kling 2.6 Pro 图生视频',
+    endpoint: 'fal-ai/kling-video/v2.6/pro/image-to-video',
+    mode: 'i2v',
+    durations: [5, 10],
+    aspectRatios: [],
+    resolutions: [],
+    defaultResolution: '',
+    supportsAudio: true,
+    audioBuiltIn: false,
+    supportsEndFrame: true,
+    durationFormat: 'number',
+    imageParamName: 'start_image_url',
+    endImageParamName: 'end_image_url',
+  },
+  'kling3-std-i2v': {
+    name: 'Kling 3 Standard 图生视频',
+    endpoint: 'fal-ai/kling-video/v3/standard/image-to-video',
+    mode: 'i2v',
+    durations: [5, 10],
+    aspectRatios: ['16:9', '9:16', '1:1'],
+    resolutions: [],
+    defaultResolution: '',
+    supportsAudio: true,
+    audioBuiltIn: false,
+    supportsEndFrame: true,
+    durationFormat: 'number',
+    imageParamName: 'start_image_url',
+    endImageParamName: 'end_image_url',
+  },
+  'ovi-i2v': {
+    name: 'Ovi 图生视频',
+    endpoint: 'fal-ai/ovi/image-to-video',
+    mode: 'i2v',
+    durations: [],
+    aspectRatios: [],
+    resolutions: [],
+    defaultResolution: '',
+    supportsAudio: false,
+    audioBuiltIn: true,
+    supportsEndFrame: false,
+    durationFormat: 'none',
+    imageParamName: 'image_url',
+  },
 };
 
 export async function POST(req: NextRequest) {
@@ -31,12 +176,14 @@ export async function POST(req: NextRequest) {
     const {
       prompt,
       model,
-      aspectRatio = '16:9',
-      duration = 5,
-      resolution = '720p',
+      aspectRatio,
+      duration,
+      resolution,
       generateAudio = false,
       startFrameImage,
       endFrameImage,
+      userId,
+      canvasId,
     } = body;
 
     if (!prompt || !model) {
@@ -48,40 +195,77 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `不支持的视频模型: ${model}` }, { status: 400 });
     }
 
+    // i2v 模型必须有图片
+    if ((cfg.mode === 'i2v' || cfg.mode === 'firstLastFrame') && !startFrameImage) {
+      return NextResponse.json({ error: '该模型需要上传图片' }, { status: 400 });
+    }
+
     // 构建 fal 输入参数
     const input: Record<string, unknown> = { prompt };
 
-    // 时长格式
-    if (cfg.durationFormat === 'veo') {
+    // 时长
+    if (cfg.durationFormat === 'seconds' && duration) {
       input.duration = `${duration}s`;
-    } else if (cfg.durationFormat === 'wan') {
+    } else if (cfg.durationFormat === 'number' && duration) {
       input.duration = String(duration);
     }
 
-    if (cfg.hasAspectRatio) input.aspect_ratio = aspectRatio;
-    if (cfg.hasResolution)  input.resolution = resolution;
-    if (cfg.hasAudio)       input.generate_audio = generateAudio;
+    // 比例（i2v 无比例的模型不传）
+    if (cfg.aspectRatios.length > 0 && aspectRatio && !cfg.i2vNoAspectRatio) {
+      input.aspect_ratio = aspectRatio;
+    }
 
-    // Veo 系列需要 safety_tolerance
+    // 分辨率
+    if (cfg.resolutions.length > 0 && resolution) {
+      input.resolution = resolution;
+    }
+
+    // 音频（有开关的模型才传）
+    if (cfg.supportsAudio && !cfg.audioBuiltIn) {
+      input.generate_audio = generateAudio;
+    }
+
+    // Veo 系列安全等级
     if (cfg.endpoint.includes('veo')) {
       input.safety_tolerance = '4';
     }
 
     // 图片参数
-    if (cfg.mode === 'i2v' && cfg.imageParam && startFrameImage) {
-      input[cfg.imageParam] = startFrameImage;
+    if (cfg.mode === 'i2v' && cfg.imageParamName && startFrameImage) {
+      input[cfg.imageParamName] = startFrameImage;
     }
     if (cfg.mode === 'firstLastFrame') {
-      if (startFrameImage) input.first_frame_url = startFrameImage;
-      if (endFrameImage)   input.last_frame_url  = endFrameImage;
+      if (cfg.imageParamName && startFrameImage) input[cfg.imageParamName] = startFrameImage;
+      if (cfg.endImageParamName && endFrameImage) input[cfg.endImageParamName] = endFrameImage;
     }
     // Kling 尾帧
-    if ((model === 'kling2.6-i2v' || model === 'kling3-std-i2v') && endFrameImage) {
-      input.end_image_url = endFrameImage;
+    if (cfg.supportsEndFrame && cfg.endImageParamName && endFrameImage && cfg.mode === 'i2v') {
+      input[cfg.endImageParamName] = endFrameImage;
     }
 
     // 提交到 fal 队列
     const { request_id } = await fal.queue.submit(cfg.endpoint, { input });
+
+    // 写入数据库记录
+    if (userId) {
+      await supabaseAdmin.from('video_generations').insert({
+        user_id: userId,
+        canvas_id: canvasId || null,
+        prompt,
+        model,
+        duration: duration || null,
+        resolution: resolution || null,
+        aspect_ratio: aspectRatio || null,
+        generate_audio: generateAudio,
+        video_mode: cfg.mode === 'firstLastFrame' ? 'first-last-frame' : cfg.mode === 'i2v' ? 'first-frame' : 'text',
+        input_image_url: startFrameImage || null,
+        end_image_url: endFrameImage || null,
+        status: 'processing',
+        task_id: request_id,
+        endpoint: cfg.endpoint,
+        cost_credits: 0,
+      });
+    }
 
     return NextResponse.json({
       success: true,

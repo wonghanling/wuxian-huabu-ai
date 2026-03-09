@@ -393,23 +393,26 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
     // 视频模型参数配置
     const VIDEO_MODEL_CONFIG: Record<string, {
+      mode: 't2v' | 'i2v' | 'firstLastFrame';
       durations: number[];
       resolutions: string[];
       aspectRatios: string[];
       supportsAudio: boolean;
-      audioBuiltIn?: boolean;
+      audioBuiltIn: boolean;
+      supportsEndFrame: boolean;
       i2vNoAspectRatio?: boolean;
+      defaultResolution: string;
     }> = {
-      'veo3.1-t2v':        { durations: [4,6,8], resolutions: ['720p','1080p','4k'], aspectRatios: ['16:9','9:16'], supportsAudio: true },
-      'veo3.1-i2v':        { durations: [4,6,8], resolutions: ['720p','1080p','4k'], aspectRatios: ['16:9','9:16'], supportsAudio: true },
-      'veo3.1-fast-t2v':   { durations: [4,6,8], resolutions: ['720p','1080p','4k'], aspectRatios: ['16:9','9:16'], supportsAudio: true },
-      'veo3.1-fast-i2v':   { durations: [4,6,8], resolutions: ['720p','1080p','4k'], aspectRatios: ['16:9','9:16'], supportsAudio: true },
-      'veo3.1-first-last': { durations: [4,6,8], resolutions: ['720p','1080p','4k'], aspectRatios: ['16:9','9:16'], supportsAudio: true },
-      'wan2.5-t2v':        { durations: [5,10],  resolutions: ['480p','720p','1080p'], aspectRatios: ['16:9','9:16','1:1'], supportsAudio: false, audioBuiltIn: true },
-      'wan2.5-i2v':        { durations: [5,10],  resolutions: ['480p','720p','1080p'], aspectRatios: [], supportsAudio: false, audioBuiltIn: true, i2vNoAspectRatio: true },
-      'kling2.6-i2v':      { durations: [5,10],  resolutions: [], aspectRatios: [], supportsAudio: true },
-      'kling3-std-i2v':    { durations: [5,10],  resolutions: [], aspectRatios: ['16:9','9:16','1:1'], supportsAudio: true },
-      'ovi-i2v':           { durations: [],       resolutions: [], aspectRatios: [], supportsAudio: false, audioBuiltIn: true },
+      'veo3.1-t2v':        { mode: 't2v',          durations: [4,6,8], resolutions: ['720p','1080p','4k'],    aspectRatios: ['16:9','9:16'],        supportsAudio: true,  audioBuiltIn: false, supportsEndFrame: false, defaultResolution: '720p' },
+      'veo3.1-i2v':        { mode: 'i2v',          durations: [4,6,8], resolutions: ['720p','1080p','4k'],    aspectRatios: ['16:9','9:16'],        supportsAudio: true,  audioBuiltIn: false, supportsEndFrame: false, defaultResolution: '720p' },
+      'veo3.1-fast-t2v':   { mode: 't2v',          durations: [4,6,8], resolutions: ['720p','1080p','4k'],    aspectRatios: ['16:9','9:16'],        supportsAudio: true,  audioBuiltIn: false, supportsEndFrame: false, defaultResolution: '720p' },
+      'veo3.1-fast-i2v':   { mode: 'i2v',          durations: [4,6,8], resolutions: ['720p','1080p','4k'],    aspectRatios: ['16:9','9:16'],        supportsAudio: true,  audioBuiltIn: false, supportsEndFrame: false, defaultResolution: '720p' },
+      'veo3.1-first-last': { mode: 'firstLastFrame',durations: [4,6,8], resolutions: ['720p','1080p','4k'],    aspectRatios: ['16:9','9:16'],        supportsAudio: true,  audioBuiltIn: false, supportsEndFrame: true,  defaultResolution: '720p' },
+      'wan2.5-t2v':        { mode: 't2v',          durations: [5,10],  resolutions: ['480p','720p','1080p'],  aspectRatios: ['16:9','9:16','1:1'],  supportsAudio: false, audioBuiltIn: true,  supportsEndFrame: false, defaultResolution: '1080p' },
+      'wan2.5-i2v':        { mode: 'i2v',          durations: [5,10],  resolutions: ['480p','720p','1080p'],  aspectRatios: [],                     supportsAudio: false, audioBuiltIn: true,  supportsEndFrame: false, defaultResolution: '1080p', i2vNoAspectRatio: true },
+      'kling2.6-i2v':      { mode: 'i2v',          durations: [5,10],  resolutions: [],                       aspectRatios: [],                     supportsAudio: true,  audioBuiltIn: false, supportsEndFrame: true,  defaultResolution: '' },
+      'kling3-std-i2v':    { mode: 'i2v',          durations: [5,10],  resolutions: [],                       aspectRatios: ['16:9','9:16','1:1'],  supportsAudio: true,  audioBuiltIn: false, supportsEndFrame: true,  defaultResolution: '' },
+      'ovi-i2v':           { mode: 'i2v',          durations: [],      resolutions: [],                       aspectRatios: [],                     supportsAudio: false, audioBuiltIn: true,  supportsEndFrame: false, defaultResolution: '' },
     };
     const currentVideoModel = VIDEO_MODEL_CONFIG[model || ''] ?? null;
 
@@ -1560,231 +1563,141 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
             {/* 视频模式面板 */}
             {cardType === 'video' && showVideoModePanel && (
               <div className="mt-2 p-3 bg-black/40 border border-white/10 rounded-lg space-y-3">
-                {/* 视频生成模式选择 */}
+
+                {/* 生成模式 — 根据模型动态显示可用模式 */}
                 <div>
                   <label className="text-gray-400 text-xs mb-1 block">生成模式</label>
-                  <div className="grid grid-cols-3 gap-1">
-                    <button
-                      className={`py-2 px-2 rounded-lg text-xs font-semibold transition-all ${
-                        (videoMode || 'text') === 'text'
-                          ? 'bg-blue-500/80 text-white'
-                          : 'bg-black/30 text-gray-400 hover:bg-black/40'
-                      }`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        editor.updateShape({
-                          id: shape.id,
-                          type: 'custom-card' as any,
-                          props: { ...shape.props, videoMode: 'text' },
-                        });
-                      }}
-                      onPointerDown={(e) => e.stopPropagation()}
-                    >
-                      文本
-                    </button>
-                    <button
-                      className={`py-2 px-2 rounded-lg text-xs font-semibold transition-all ${
-                        videoMode === 'first-frame'
-                          ? 'bg-blue-500/80 text-white'
-                          : 'bg-black/30 text-gray-400 hover:bg-black/40'
-                      }`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        editor.updateShape({
-                          id: shape.id,
-                          type: 'custom-card' as any,
-                          props: { ...shape.props, videoMode: 'first-frame' },
-                        });
-                      }}
-                      onPointerDown={(e) => e.stopPropagation()}
-                    >
-                      首帧
-                    </button>
-                    <button
-                      className={`py-2 px-2 rounded-lg text-xs font-semibold transition-all ${
-                        videoMode === 'first-last-frame'
-                          ? 'bg-blue-500/80 text-white'
-                          : 'bg-black/30 text-gray-400 hover:bg-black/40'
-                      }`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        editor.updateShape({
-                          id: shape.id,
-                          type: 'custom-card' as any,
-                          props: { ...shape.props, videoMode: 'first-last-frame' },
-                        });
-                      }}
-                      onPointerDown={(e) => e.stopPropagation()}
-                    >
-                      首尾
-                    </button>
+                  <div className="flex gap-1 flex-wrap">
+                    {(!currentVideoModel || currentVideoModel.mode === 't2v') && (
+                      <button
+                        className={`py-1.5 px-3 rounded-lg text-xs font-semibold transition-all ${(videoMode || 'text') === 'text' ? 'bg-blue-500/80 text-white' : 'bg-black/30 text-gray-400 hover:bg-black/40'}`}
+                        onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, videoMode: 'text' } }); }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                      >文生视频</button>
+                    )}
+                    {currentVideoModel?.mode === 'i2v' && (
+                      <button
+                        className={`py-1.5 px-3 rounded-lg text-xs font-semibold transition-all ${videoMode === 'first-frame' ? 'bg-blue-500/80 text-white' : 'bg-black/30 text-gray-400 hover:bg-black/40'}`}
+                        onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, videoMode: 'first-frame' } }); }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                      >图生视频</button>
+                    )}
+                    {currentVideoModel?.mode === 'i2v' && currentVideoModel.supportsEndFrame && (
+                      <button
+                        className={`py-1.5 px-3 rounded-lg text-xs font-semibold transition-all ${videoMode === 'first-last-frame' ? 'bg-blue-500/80 text-white' : 'bg-black/30 text-gray-400 hover:bg-black/40'}`}
+                        onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, videoMode: 'first-last-frame' } }); }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                      >首尾帧</button>
+                    )}
+                    {currentVideoModel?.mode === 'firstLastFrame' && (
+                      <span className="py-1.5 px-3 rounded-lg text-xs bg-blue-500/20 text-blue-400">首尾帧模式</span>
+                    )}
                   </div>
                 </div>
 
-                {/* 视频首帧上传 - 首帧模式 */}
-                {videoMode === 'first-frame' && (
+                {/* 图片上传 — i2v 模型 */}
+                {(currentVideoModel?.mode === 'i2v' && (videoMode === 'first-frame' || videoMode === 'first-last-frame')) && (
                   <div>
-                    <label className="text-gray-400 text-xs mb-1 block">上传首帧图片</label>
-                    <input
-                      type="file"
-                      accept="image/*"
+                    <label className="text-gray-400 text-xs mb-1 block">首帧图片（必填）</label>
+                    <input type="file" accept="image/*"
                       className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
-                      onClick={(e) => e.stopPropagation()}
-                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onload = (event) => {
-                            const imageData = event.target?.result as string;
-                            editor.updateShape({
-                              id: shape.id,
-                              type: 'custom-card' as any,
-                              props: { ...shape.props, firstFrameImage: imageData },
-                            });
-                          };
-                          reader.readAsDataURL(file);
-                        }
+                        if (file) { const r = new FileReader(); r.onload = (ev) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, firstFrameImage: ev.target?.result as string } }); r.readAsDataURL(file); }
                       }}
                     />
-                    {firstFrameImage && (
-                      <div className="mt-1 relative w-full h-16 bg-black/30 rounded-lg overflow-hidden">
-                        <img src={firstFrameImage} alt="First Frame" className="w-full h-full object-cover" />
-                      </div>
-                    )}
+                    {firstFrameImage && <div className="mt-1 w-full h-16 bg-black/30 rounded-lg overflow-hidden"><img src={firstFrameImage} className="w-full h-full object-cover" /></div>}
                   </div>
                 )}
 
-                {/* 视频首尾帧上传 - 首尾帧模式 */}
-                {videoMode === 'first-last-frame' && (
-                  <div className="space-y-2">
-                    {/* 首帧 */}
-                    <div>
-                      <label className="text-gray-400 text-xs mb-1 block">首帧</label>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="w-full text-xs text-gray-400 file:mr-1 file:py-1 file:px-2 file:rounded file:border-0 file:text-[10px] file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
-                        onClick={(e) => e.stopPropagation()}
-                        onPointerDown={(e) => e.stopPropagation()}
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            const reader = new FileReader();
-                            reader.onload = (event) => {
-                              const imageData = event.target?.result as string;
-                              editor.updateShape({
-                                id: shape.id,
-                                type: 'custom-card' as any,
-                                props: { ...shape.props, firstFrameImage: imageData },
-                              });
-                            };
-                            reader.readAsDataURL(file);
-                          }
-                        }}
-                      />
-                      {firstFrameImage && (
-                        <div className="mt-1 relative w-full h-12 bg-black/30 rounded overflow-hidden">
-                          <img src={firstFrameImage} alt="First" className="w-full h-full object-cover" />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* 尾帧 */}
-                    <div>
-                      <label className="text-gray-400 text-xs mb-1 block">尾帧</label>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="w-full text-xs text-gray-400 file:mr-1 file:py-1 file:px-2 file:rounded file:border-0 file:text-[10px] file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
-                        onClick={(e) => e.stopPropagation()}
-                        onPointerDown={(e) => e.stopPropagation()}
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            const reader = new FileReader();
-                            reader.onload = (event) => {
-                              const imageData = event.target?.result as string;
-                              editor.updateShape({
-                                id: shape.id,
-                                type: 'custom-card' as any,
-                                props: { ...shape.props, lastFrameImage: imageData },
-                              });
-                            };
-                            reader.readAsDataURL(file);
-                          }
-                        }}
-                      />
-                      {lastFrameImage && (
-                        <div className="mt-1 relative w-full h-12 bg-black/30 rounded overflow-hidden">
-                          <img src={lastFrameImage} alt="Last" className="w-full h-full object-cover" />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-                {/* 时长选择 */}
-                {currentVideoModel && currentVideoModel.durations.length > 0 && (
+                {/* 尾帧上传 */}
+                {((currentVideoModel?.mode === 'i2v' && currentVideoModel.supportsEndFrame && videoMode === 'first-last-frame') || currentVideoModel?.mode === 'firstLastFrame') && (
                   <div>
-                    <label className="text-gray-400 text-xs mb-1 block">时长</label>
+                    <label className="text-gray-400 text-xs mb-1 block">尾帧图片（可选）</label>
+                    <input type="file" accept="image/*"
+                      className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
+                      onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) { const r = new FileReader(); r.onload = (ev) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, lastFrameImage: ev.target?.result as string } }); r.readAsDataURL(file); }
+                      }}
+                    />
+                    {lastFrameImage && <div className="mt-1 w-full h-16 bg-black/30 rounded-lg overflow-hidden"><img src={lastFrameImage} className="w-full h-full object-cover" /></div>}
+                  </div>
+                )}
+
+                {/* firstLastFrame 专属模型的首帧上传 */}
+                {currentVideoModel?.mode === 'firstLastFrame' && (
+                  <div>
+                    <label className="text-gray-400 text-xs mb-1 block">首帧图片（必填）</label>
+                    <input type="file" accept="image/*"
+                      className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
+                      onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) { const r = new FileReader(); r.onload = (ev) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, firstFrameImage: ev.target?.result as string } }); r.readAsDataURL(file); }
+                      }}
+                    />
+                    {firstFrameImage && <div className="mt-1 w-full h-16 bg-black/30 rounded-lg overflow-hidden"><img src={firstFrameImage} className="w-full h-full object-cover" /></div>}
+                  </div>
+                )}
+
+                {/* 比例 */}
+                {currentVideoModel && currentVideoModel.aspectRatios.length > 0 && !currentVideoModel.i2vNoAspectRatio && (
+                  <div>
+                    <label className="text-gray-400 text-xs mb-1 block">比例</label>
                     <div className="flex gap-1 flex-wrap">
-                      {currentVideoModel.durations.map((dur) => (
-                        <button
-                          key={dur}
-                          className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
-                            (videoDuration ?? 5) === dur
-                              ? 'bg-blue-500/20 border-blue-500/50 text-blue-400'
-                              : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'
-                          }`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, videoDuration: dur } });
-                          }}
+                      {currentVideoModel.aspectRatios.map((r) => (
+                        <button key={r}
+                          className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${(aspectRatio ?? '16:9') === r ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
+                          onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, aspectRatio: r } }); }}
                           onPointerDown={(e) => e.stopPropagation()}
-                        >
-                          {dur}s
-                        </button>
+                        >{r}</button>
                       ))}
                     </div>
                   </div>
                 )}
 
-                {/* 分辨率选择 */}
+                {/* 时长 */}
+                {currentVideoModel && currentVideoModel.durations.length > 0 && (
+                  <div>
+                    <label className="text-gray-400 text-xs mb-1 block">时长</label>
+                    <div className="flex gap-1 flex-wrap">
+                      {currentVideoModel.durations.map((dur) => (
+                        <button key={dur}
+                          className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${(videoDuration ?? currentVideoModel.durations[0]) === dur ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
+                          onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, videoDuration: dur } }); }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                        >{dur}s</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 清晰度 */}
                 {currentVideoModel && currentVideoModel.resolutions.length > 0 && (
                   <div>
                     <label className="text-gray-400 text-xs mb-1 block">清晰度</label>
                     <div className="flex gap-1 flex-wrap">
                       {currentVideoModel.resolutions.map((res) => (
-                        <button
-                          key={res}
-                          className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
-                            (videoResolution ?? '720p') === res
-                              ? 'bg-blue-500/20 border-blue-500/50 text-blue-400'
-                              : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'
-                          }`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, videoResolution: res } });
-                          }}
+                        <button key={res}
+                          className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${(videoResolution ?? currentVideoModel.defaultResolution) === res ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
+                          onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, videoResolution: res } }); }}
                           onPointerDown={(e) => e.stopPropagation()}
-                        >
-                          {res.toUpperCase()}
-                        </button>
+                        >{res.toUpperCase()}</button>
                       ))}
                     </div>
                   </div>
                 )}
 
                 {/* 音频开关 */}
-                {currentVideoModel && currentVideoModel.supportsAudio && !currentVideoModel.audioBuiltIn && (
+                {currentVideoModel?.supportsAudio && !currentVideoModel.audioBuiltIn && (
                   <div className="flex items-center justify-between">
-                    <label className="text-gray-400 text-xs">生成音频</label>
+                    <label className="text-gray-400 text-xs">生成音频（更贵）</label>
                     <button
                       className={`relative w-10 h-5 rounded-full transition-colors ${videoGenerateAudio ? 'bg-blue-500' : 'bg-white/10'}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, videoGenerateAudio: !videoGenerateAudio } });
-                      }}
+                      onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, videoGenerateAudio: !videoGenerateAudio } }); }}
                       onPointerDown={(e) => e.stopPropagation()}
                     >
                       <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform ${videoGenerateAudio ? 'translate-x-5' : 'translate-x-0'}`} />
