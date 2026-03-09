@@ -715,7 +715,18 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
             <div className="mb-2 flex-1">
               {cardType !== 'character' && (
                 <>
-                  <label className="text-gray-400 text-xs mb-1 block">Prompt</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-gray-400 text-xs">Prompt</label>
+                    <button
+                      className="text-[10px] text-gray-400 hover:text-gray-300 transition-colors"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        const text = await navigator.clipboard.readText();
+                        if (text) editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, prompt: (prompt ? prompt + '\n' : '') + text } });
+                      }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >粘贴</button>
+                  </div>
                   <textarea
                     className="w-full h-20 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs resize-none focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all placeholder-gray-500"
                     placeholder={
@@ -989,7 +1000,12 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       <div className="space-y-2">
                       {/* 粘贴Anchor JSON */}
                       <div>
-                        <label className="text-gray-400 text-xs mb-1 block">粘贴 Anchor JSON</label>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-gray-400 text-xs">粘贴 Anchor JSON</label>
+                          <button className="text-[10px] text-gray-400 hover:text-gray-300 transition-colors"
+                            onClick={async (e) => { e.stopPropagation(); const t = await navigator.clipboard.readText(); if (t) editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, characterAnchorJson: t } }); }}
+                            onPointerDown={(e) => e.stopPropagation()}>粘贴</button>
+                        </div>
                         <textarea
                           className="w-full h-24 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-[10px] font-mono resize-none focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all placeholder-gray-500"
                           placeholder="粘贴步骤1生成的Anchor JSON..."
@@ -1175,7 +1191,12 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
                       {/* 粘贴完整JSON */}
                       <div>
-                        <label className="text-gray-400 text-xs mb-1 block">粘贴完整 JSON</label>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-gray-400 text-xs">粘贴完整 JSON</label>
+                          <button className="text-[10px] text-gray-400 hover:text-gray-300 transition-colors"
+                            onClick={async (e) => { e.stopPropagation(); const t = await navigator.clipboard.readText(); if (t) editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, characterThreeViewJson: t } }); }}
+                            onPointerDown={(e) => e.stopPropagation()}>粘贴</button>
+                        </div>
                         <textarea
                           className="w-full h-24 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-[10px] font-mono resize-none focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all placeholder-gray-500 overflow-y-auto"
                           placeholder="粘贴步骤2生成的三视角JSON..."

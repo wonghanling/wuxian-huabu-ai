@@ -285,7 +285,24 @@ export class PromptOptimizerCardUtil extends BaseBoxShapeUtil<PromptOptimizerCar
 
               {/* 输入区域 */}
               <div className="mb-2 flex-1 flex flex-col">
-                <label className="text-gray-400 text-xs mb-1 block">视频描述</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-gray-400 text-xs">视频描述</label>
+                  <button
+                    className="text-[10px] text-gray-400 hover:text-gray-300 transition-colors"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      const text = await navigator.clipboard.readText();
+                      if (text) {
+                        editor.updateShape({
+                          id: shape.id,
+                          type: 'prompt-optimizer-card' as any,
+                          props: { ...shape.props, userInput: (userInput ? userInput + '\n' : '') + text },
+                        });
+                      }
+                    }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                  >粘贴</button>
+                </div>
                 <textarea
                   className="w-full h-20 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs resize-none focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all placeholder-gray-500"
                   placeholder="输入你想生成的视频内容，例如：一段仙侠战斗、奶茶产品广告..."
