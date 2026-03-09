@@ -252,8 +252,12 @@ export async function POST(req: NextRequest) {
       input[cfg.imageParamName] = await toPublicUrl(startFrameImage);
     }
     if (cfg.mode === 'firstLastFrame') {
-      if (cfg.imageParamName && startFrameImage) input[cfg.imageParamName] = await toPublicUrl(startFrameImage);
-      if (cfg.endImageParamName && endFrameImage) input[cfg.endImageParamName] = await toPublicUrl(endFrameImage);
+      // firstLastFrame 模式必须同时有首尾两帧
+      if (!startFrameImage || !endFrameImage) {
+        return NextResponse.json({ error: '该模型需要同时上传首帧和尾帧图片' }, { status: 400 });
+      }
+      if (cfg.imageParamName) input[cfg.imageParamName] = await toPublicUrl(startFrameImage);
+      if (cfg.endImageParamName) input[cfg.endImageParamName] = await toPublicUrl(endFrameImage);
     }
     // Kling 尾帧
     if (cfg.supportsEndFrame && cfg.endImageParamName && endFrameImage && cfg.mode === 'i2v') {
