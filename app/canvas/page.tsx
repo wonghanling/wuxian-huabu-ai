@@ -249,7 +249,7 @@ function BottomToolbarExternal({ editor }: { editor: Editor }) {
           cardType: 'video',
           title: 'Video Generation',
           prompt: '',
-          model: 'veo_3_1-fast',
+          model: 'veo3.1-fast-t2v',
         },
       });
 
@@ -856,7 +856,7 @@ function BottomToolbar() {
           cardType: 'video',
           title: 'Video Generation',
           prompt: '',
-          model: 'Runway Gen-2',
+          model: 'veo3.1-fast-t2v',
         },
       });
 
@@ -954,6 +954,7 @@ function CanvasPageContent() {
   const userIdRef = useRef<string | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isRestoringRef = useRef(false);
+  const hasUnsavedRef = useRef(false);
 
   // 自定义形状工具和绑定工具
   const customShapeUtils = [CustomCardShapeUtil, ConnectionShapeUtil, TimelineShapeUtil, ShotCardShapeUtil, PromptOptimizerCardUtil];
@@ -1030,25 +1031,34 @@ function CanvasPageContent() {
       }
     })();
 
-    // ── 自动保存：停止操作 800ms 后保存 ──────────────────────────
+    // ── 监听变化标记未保存 ──────────────────────────────────────
     editor.store.listen(() => {
       if (isRestoringRef.current) return;
       if (!canvasIdRef.current) return;
-
+      hasUnsavedRef.current = true;
       setSaveStatus('unsaved');
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = setTimeout(async () => {
-        try {
-          setSaveStatus('saving');
-          const snapshot = getSnapshot(editor.store);
-          await saveSnapshot(canvasIdRef.current!, snapshot);
-          setSaveStatus('saved');
-        } catch (err) {
-          console.error('保存失败:', err);
-          setSaveStatus('unsaved');
-        }
-      }, 800);
     });
+
+    // ── 自动保存：进入后30/60/90分钟各保存一次 ──────────────────
+    const doAutoSave = async () => {
+      if (!canvasIdRef.current || !hasUnsavedRef.current) return;
+      try {
+        setSaveStatus('saving');
+        const snapshot = getSnapshot(editor.store);
+        await saveSnapshot(canvasIdRef.current!, snapshot);
+        hasUnsavedRef.current = false;
+        setSaveStatus('saved');
+      } catch (err) {
+        console.error('自动保存失败:', err);
+        setSaveStatus('unsaved');
+      }
+    };
+
+    const t1 = setTimeout(doAutoSave, 30 * 60 * 1000);
+    const t2 = setTimeout(doAutoSave, 60 * 60 * 1000);
+    const t3 = setTimeout(doAutoSave, 90 * 60 * 1000);
+
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
 
     // 监听相机变化，更新缩放级别和位置
     const updateCamera = () => {
@@ -1242,12 +1252,32 @@ function CanvasPageContent() {
                 )}
               </div>
 
-              {/* 保存状态 */}
-              <div className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-zinc-900/80 backdrop-blur-md border border-white/10">
-                {saveStatus === 'saving' && <><div className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" /><span className="text-yellow-400">保存中...</span></>}
-                {saveStatus === 'saved' && <><div className="w-1.5 h-1.5 rounded-full bg-green-400" /><span className="text-green-400">已保存</span></>}
-                {saveStatus === 'unsaved' && <><div className="w-1.5 h-1.5 rounded-full bg-gray-400" /><span className="text-gray-400">未保存</span></>}
-              </div>
+              {/* 手动保存按钮 */}
+              <button
+                onClick={async () => {
+                  if (!canvasIdRef.current || !editorInstance || saveStatus === 'saving') return;
+                  try {
+                    setSaveStatus('saving');
+                    const snapshot = getSnapshot(editorInstance.store);
+                    await saveSnapshot(canvasIdRef.current, snapshot);
+                    hasUnsavedRef.current = false;
+                    setSaveStatus('saved');
+                  } catch (err) {
+                    console.error('保存失败:', err);
+                    setSaveStatus('unsaved');
+                  }
+                }}
+                disabled={saveStatus === 'saving' || saveStatus === 'saved'}
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-zinc-900/80 backdrop-blur-md border border-white/10 text-gray-300 hover:border-white/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {saveStatus === 'saving' ? (
+                  <><div className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" /><span className="text-yellow-400">保存中...</span></>
+                ) : saveStatus === 'saved' ? (
+                  <><div className="w-1.5 h-1.5 rounded-full bg-green-400" /><span className="text-green-400">已保存</span></>
+                ) : (
+                  <><svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg><span>保存</span></>
+                )}
+              </button>
             </div>
           )}
 
