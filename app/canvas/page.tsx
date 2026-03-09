@@ -949,6 +949,8 @@ function CanvasPageContent() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [canvasList, setCanvasList] = useState<{id: string; title: string}[]>([]);
   const [showCanvasList, setShowCanvasList] = useState(false);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
 
   const canvasIdRef = useRef<string | null>(null);
   const userIdRef = useRef<string | null>(null);
@@ -1016,7 +1018,10 @@ function CanvasPageContent() {
           .order('updated_at', { ascending: false });
         if (canvases) setCanvasList(canvases);
 
-        const canvasId = await getOrCreateCanvas(user.id);
+        // 用已有的第一个画布，没有才创建
+        const canvasId = canvases && canvases.length > 0
+          ? canvases[0].id
+          : await getOrCreateCanvas(user.id);
         canvasIdRef.current = canvasId;
 
         const snapshot = await loadCanvasSnapshot(canvasId);
@@ -1201,7 +1206,7 @@ function CanvasPageContent() {
                 </button>
 
                 {showCanvasList && (
-                  <div className="absolute top-8 right-0 w-56 bg-zinc-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden">
+                  <div className="absolute top-8 right-0 w-64 bg-zinc-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden">
                     <div className="p-2 border-b border-white/5">
                       <button
                         className="w-full text-left px-3 py-2 text-xs text-blue-400 hover:bg-white/5 rounded-lg transition-all"
@@ -1218,7 +1223,7 @@ function CanvasPageContent() {
                             canvasIdRef.current = data.id;
                             if (editorInstance) {
                               isRestoringRef.current = true;
-                              editorInstance.store.clear();
+                              editorInstance.store.loadSnapshot({ document: { schemaVersion: 2, sequences: {}, store: {} } as any, session: undefined });
                               isRestoringRef.current = false;
                             }
                             setShowCanvasList(false);
@@ -1228,24 +1233,102 @@ function CanvasPageContent() {
                         + 新建画布
                       </button>
                     </div>
-                    <div className="max-h-48 overflow-y-auto">
+                    <div className="max-h-64 overflow-y-auto">
                       {canvasList.map((c) => (
-                        <button
-                          key={c.id}
-                          className={`w-full text-left px-3 py-2 text-xs transition-all hover:bg-white/5 ${canvasIdRef.current === c.id ? 'text-white' : 'text-gray-400'}`}
-                          onClick={async () => {
-                            canvasIdRef.current = c.id;
-                            const snapshot = await loadCanvasSnapshot(c.id);
-                            if (snapshot && editorInstance) {
-                              isRestoringRef.current = true;
-                              loadSnapshot(editorInstance.store, snapshot);
-                              isRestoringRef.current = false;
-                            }
-                            setShowCanvasList(false);
-                          }}
-                        >
-                          {canvasIdRef.current === c.id ? '● ' : '○ '}{c.title}
-                        </button>
+                        <div key={c.id} className={`flex items-center gap-1 px-2 py-1 hover:bg-white/5 ${canvasIdRef.current === c.id ? 'bg-white/5' : ''}`}>
+                          {renamingId === c.id ? (
+                            <input
+                              autoFocus
+                              className="flex-1 bg-black/40 border border-white/20 rounded px-2 py-1 text-xs text-white outline-none"
+                              value={renameValue}
+                              onChange={e => setRenameValue(e.target.value)}
+                              onKeyDown={async (e) => {
+                                if (e.key === 'Enter') {
+                                  const supabase = createClient();
+                                  await supabase.from('canvases').update({ title: renameValue }).eq('id', c.id);
+                                  setCanvasList(prev => prev.map(x => x.id === c.id ? { ...x, title: renameValue } : x));
+                                  setRenamingId(null);
+                                } else if (e.key === 'Escape') {
+                                  setRenamingId(null);
+                                }
+                              }}
+                              onBlur={async () => {
+                                const supabase = createClient();
+                                await supabase.from('canvases').update({ title: renameValue }).eq('id', c.id);
+                                setCanvasList(prev => prev.map(x => x.id === c.id ? { ...x, title: renameValue } : x));
+                                setRenamingId(null);
+                              }}
+                              onClick={e => e.stopPropagation()}
+                              onPointerDown={e => e.stopPropagation()}
+                            />
+                          ) : (
+                            <button
+                              className={`flex-1 text-left text-xs py-1 px-1 truncate ${canvasIdRef.current === c.id ? 'text-white' : 'text-gray-400'}`}
+                              onClick={async () => {
+                                canvasIdRef.current = c.id;
+                                if (editorInstance) {
+                                  const snapshot = await loadCanvasSnapshot(c.id);
+                                  isRestoringRef.current = true;
+                                  if (snapshot) {
+                                    loadSnapshot(editorInstance.store, snapshot);
+                                  } else {
+                                    editorInstance.store.loadSnapshot({ document: { schemaVersion: 2, sequences: {}, store: {} } as any, session: undefined });
+                                  }
+                                  isRestoringRef.current = false;
+                                }
+                                setShowCanvasList(false);
+                              }}
+                            >
+                              {canvasIdRef.current === c.id ? '● ' : '○ '}{c.title}
+                            </button>
+                          )}
+                          {/* 重命名按钮 */}
+                          <button
+                            className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-white rounded transition-all flex-shrink-0"
+                            title="重命名"
+                            onClick={e => { e.stopPropagation(); setRenamingId(c.id); setRenameValue(c.title); }}
+                            onPointerDown={e => e.stopPropagation()}
+                          >
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          {/* 删除按钮 - 至少保留一个画布 */}
+                          {canvasList.length > 1 && (
+                            <button
+                              className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-red-400 rounded transition-all flex-shrink-0"
+                              title="删除画布"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (!confirm(`确定删除画布「${c.title}」？`)) return;
+                                const supabase = createClient();
+                                await supabase.from('canvas_snapshots').delete().eq('canvas_id', c.id);
+                                await supabase.from('canvases').delete().eq('id', c.id);
+                                const newList = canvasList.filter(x => x.id !== c.id);
+                                setCanvasList(newList);
+                                // 如果删的是当前画布，切换到第一个
+                                if (canvasIdRef.current === c.id && newList.length > 0) {
+                                  canvasIdRef.current = newList[0].id;
+                                  const snapshot = await loadCanvasSnapshot(newList[0].id);
+                                  if (editorInstance) {
+                                    isRestoringRef.current = true;
+                                    if (snapshot) {
+                                      loadSnapshot(editorInstance.store, snapshot);
+                                    } else {
+                                      editorInstance.store.loadSnapshot({ document: { schemaVersion: 2, sequences: {}, store: {} } as any, session: undefined });
+                                    }
+                                    isRestoringRef.current = false;
+                                  }
+                                }
+                              }}
+                              onPointerDown={e => e.stopPropagation()}
+                            >
+                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
                       ))}
                     </div>
                   </div>
