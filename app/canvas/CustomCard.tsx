@@ -2354,7 +2354,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   <div className="flex justify-end px-2 pt-1.5">
                     <button
                       className="text-[10px] text-gray-400 hover:text-gray-300 transition-colors"
-                      onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(textOutput); }}
+                      onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(textOutput); alert('已复制到剪贴板'); }}
                       onPointerDown={(e) => e.stopPropagation()}
                     >复制</button>
                   </div>
