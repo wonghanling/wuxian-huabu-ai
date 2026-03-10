@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
     let status = 'processing';
     let progress = 30;
     let videoUrl: string | null = null;
+    let errorDetail: any = null;
 
     if (statusData.status === 'COMPLETED') {
       const resultRes = await fetch(
@@ -44,7 +45,9 @@ export async function GET(request: NextRequest) {
         videoUrl = data?.video?.url || data?.video_url || data?.url || data?.videos?.[0]?.url || null;
         console.log('视频URL:', videoUrl);
       } else {
-        console.log('fal result fetch failed:', resultRes.status, await resultRes.text());
+        const errText = await resultRes.text();
+        console.log('fal result fetch failed:', resultRes.status, errText);
+        errorDetail = errText;
       }
       status = videoUrl ? 'completed' : 'failed';
       progress = videoUrl ? 100 : 0;
@@ -57,9 +60,10 @@ export async function GET(request: NextRequest) {
     } else {
       status = 'failed';
       progress = 0;
+      errorDetail = statusData;
     }
 
-    return NextResponse.json({ success: true, taskId, status, progress, videoUrl });
+    return NextResponse.json({ success: true, taskId, status, progress, videoUrl, errorDetail });
 
   } catch (error: any) {
     console.error('查询视频错误:', error);
