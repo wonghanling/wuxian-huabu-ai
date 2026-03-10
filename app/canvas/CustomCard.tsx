@@ -414,8 +414,15 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
       'wan2.6-i2v-flash':  { mode: 'i2v',          durations: [5,10,15], resolutions: ['720P','1080P'],         aspectRatios: [],                     supportsAudio: true,  audioBuiltIn: false, supportsEndFrame: false, defaultResolution: '720P', i2vNoAspectRatio: true },
       'wan2.5-i2v-preview':{ mode: 'i2v',          durations: [5,10],    resolutions: ['480P','720P','1080P'],  aspectRatios: [],                     supportsAudio: true,  audioBuiltIn: false, supportsEndFrame: false, defaultResolution: '720P', i2vNoAspectRatio: true },
       'wan2.2-kf2v-flash': { mode: 'firstLastFrame',durations: [5],       resolutions: ['480P','720P','1080P'],  aspectRatios: [],                     supportsAudio: false, audioBuiltIn: false, supportsEndFrame: true,  defaultResolution: '720P', i2vNoAspectRatio: true },
-      'kling2.6-i2v':      { mode: 'i2v',          durations: [5,10],  resolutions: [],                       aspectRatios: [],                     supportsAudio: true,  audioBuiltIn: false, supportsEndFrame: true,  defaultResolution: '' },
-      'kling3-std-i2v':    { mode: 'i2v',          durations: [5,10],  resolutions: [],                       aspectRatios: ['16:9','9:16','1:1'],  supportsAudio: true,  audioBuiltIn: false, supportsEndFrame: true,  defaultResolution: '' },
+      'jimeng-pro-t2v':    { mode: 't2v',          durations: [5,10],    resolutions: ['1080p'],               aspectRatios: ['16:9','4:3','1:1','3:4','9:16','21:9'], supportsAudio: false, audioBuiltIn: false, supportsEndFrame: false, defaultResolution: '1080p' },
+      'jimeng-pro-i2v':    { mode: 'i2v',          durations: [5,10],    resolutions: ['1080p'],               aspectRatios: [],                     supportsAudio: false, audioBuiltIn: false, supportsEndFrame: false, defaultResolution: '1080p', i2vNoAspectRatio: true },
+      'jimeng-t2v':        { mode: 't2v',          durations: [5,10],    resolutions: ['720p'],                aspectRatios: ['16:9','4:3','1:1','3:4','9:16','21:9'], supportsAudio: false, audioBuiltIn: false, supportsEndFrame: false, defaultResolution: '720p' },
+      'jimeng-i2v':        { mode: 'i2v',          durations: [5,10],    resolutions: ['720p'],                aspectRatios: [],                     supportsAudio: false, audioBuiltIn: false, supportsEndFrame: false, defaultResolution: '720p',  i2vNoAspectRatio: true },
+      'jimeng-first-last': { mode: 'firstLastFrame',durations: [5,10],    resolutions: ['720p'],                aspectRatios: [],                     supportsAudio: false, audioBuiltIn: false, supportsEndFrame: true,  defaultResolution: '720p',  i2vNoAspectRatio: true },
+      'jimeng-camera':     { mode: 'i2v',          durations: [5,10],    resolutions: ['720p'],                aspectRatios: [],                     supportsAudio: false, audioBuiltIn: false, supportsEndFrame: false, defaultResolution: '720p',  i2vNoAspectRatio: true },
+      'jimeng-1080-t2v':   { mode: 't2v',          durations: [5,10],    resolutions: ['1080p'],               aspectRatios: ['16:9','4:3','1:1','3:4','9:16','21:9'], supportsAudio: false, audioBuiltIn: false, supportsEndFrame: false, defaultResolution: '1080p' },
+      'jimeng-1080-i2v':   { mode: 'i2v',          durations: [5,10],    resolutions: ['1080p'],               aspectRatios: [],                     supportsAudio: false, audioBuiltIn: false, supportsEndFrame: false, defaultResolution: '1080p', i2vNoAspectRatio: true },
+      'jimeng-1080-first-last': { mode: 'firstLastFrame', durations: [5,10], resolutions: ['1080p'],           aspectRatios: [],                     supportsAudio: false, audioBuiltIn: false, supportsEndFrame: true,  defaultResolution: '1080p', i2vNoAspectRatio: true },
       'ovi-i2v':           { mode: 'i2v',          durations: [],      resolutions: [],                       aspectRatios: [],                     supportsAudio: false, audioBuiltIn: true,  supportsEndFrame: false, defaultResolution: '' },
     };
     const currentVideoModel = VIDEO_MODEL_CONFIG[model || ''] ?? null;
@@ -1447,9 +1454,20 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       <optgroup label="Wan 2.2">
                         <option value="wan2.2-kf2v-flash">Wan 2.2 首尾帧视频</option>
                       </optgroup>
-                      <optgroup label="Kling">
-                        <option value="kling2.6-i2v">Kling 2.6 Pro 图生视频</option>
-                        <option value="kling3-std-i2v">Kling 3 Standard 图生视频</option>
+                      <optgroup label="即梦 3.0 Pro（1080P）">
+                        <option value="jimeng-pro-t2v">即梦 Pro 文生视频</option>
+                        <option value="jimeng-pro-i2v">即梦 Pro 图生视频（首帧）</option>
+                      </optgroup>
+                      <optgroup label="即梦 3.0（720P）">
+                        <option value="jimeng-t2v">即梦 文生视频</option>
+                        <option value="jimeng-i2v">即梦 图生视频（首帧）</option>
+                        <option value="jimeng-first-last">即梦 首尾帧</option>
+                        <option value="jimeng-camera">即梦 运镜</option>
+                      </optgroup>
+                      <optgroup label="即梦 3.0（1080P）">
+                        <option value="jimeng-1080-t2v">即梦 文生视频 1080P</option>
+                        <option value="jimeng-1080-i2v">即梦 图生视频首帧 1080P</option>
+                        <option value="jimeng-1080-first-last">即梦 首尾帧 1080P</option>
                       </optgroup>
                       <optgroup label="其他">
                         <option value="ovi-i2v">Ovi 图生视频</option>

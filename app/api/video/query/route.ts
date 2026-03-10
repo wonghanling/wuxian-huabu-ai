@@ -1,7 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Service } from '@volcengine/openapi';
 
 const FAL_KEY = process.env.FAL_KEY!;
 const DASHSCOPE_KEY = process.env.DASHSCOPE_API_KEY!;
+
+const volcService = new Service({
+  host: 'visual.volcengineapi.com',
+  region: 'cn-north-1',
+  serviceName: 'cv',
+  accessKeyId: process.env.VOLC_ACCESS_KEY_ID!,
+  secretKey: process.env.VOLC_SECRET_ACCESS_KEY!,
+});
+const jimengQuery = volcService.createJSONAPI('CVSync2AsyncGetResult', { Version: '2022-08-31' });
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,7 +28,35 @@ export async function GET(request: NextRequest) {
     let videoUrl: string | null = null;
     let errorDetail: any = null;
 
-    if (endpoint.startsWith('dashscope:')) {
+    if (endpoint.startsWith('jimeng:')) {
+      // 即梦 火山引擎查询
+      const reqKey = endpoint.replace('jimeng:', '');
+      const jmRes = await jimengQuery({ req_key: reqKey, task_id: taskId }) as any;
+      console.log('即梦查询结果:', JSON.stringify(jmRes).slice(0, 500));
+
+      if (jmRes?.code !== 10000) {
+        status = 'failed';
+        progress = 0;
+        errorDetail = jmRes?.message;
+      } else {
+        const jmStatus = jmRes?.data?.status;
+        if (jmStatus === 'done') {
+          videoUrl = jmRes?.data?.video_url || null;
+          status = videoUrl ? 'completed' : 'failed';
+          progress = videoUrl ? 100 : 0;
+        } else if (jmStatus === 'in_queue') {
+          status = 'pending';
+          progress = 10;
+        } else if (jmStatus === 'generating') {
+          status = 'processing';
+          progress = 50;
+        } else {
+          status = 'failed';
+          progress = 0;
+          errorDetail = jmStatus;
+        }
+      }
+    } else if (endpoint.startsWith('dashscope:')) {
       // DashScope 官方 API 查询
       const res = await fetch(
         `https://dashscope.aliyuncs.com/api/v1/tasks/${taskId}`,

@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fal } from '@fal-ai/client';
 import { createClient } from '@supabase/supabase-js';
+import { Service } from '@volcengine/openapi';
+
+// 火山引擎即梦服务
+const volcService = new Service({
+  host: 'visual.volcengineapi.com',
+  region: 'cn-north-1',
+  serviceName: 'cv',
+  accessKeyId: process.env.VOLC_ACCESS_KEY_ID!,
+  secretKey: process.env.VOLC_SECRET_ACCESS_KEY!,
+});
+const jimengSubmit = volcService.createJSONAPI('CVSync2AsyncSubmitTask', { Version: '2022-08-31' });
+const jimengQuery  = volcService.createJSONAPI('CVSync2AsyncGetResult',  { Version: '2022-08-31' });
 
 fal.config({ credentials: process.env.FAL_KEY! });
 
@@ -24,8 +36,11 @@ type ModelConfig = {
   imageParamName?: string;
   endImageParamName?: string;
   i2vNoAspectRatio?: boolean;
-  provider?: 'fal' | 'dashscope';
+  provider?: 'fal' | 'dashscope' | 'jimeng';
   dashscopeModel?: string;
+  jimengReqKey?: string;
+  // 运镜模式专用
+  supportsCamera?: boolean;
 };
 
 const VIDEO_MODELS: Record<string, ModelConfig> = {
@@ -197,35 +212,150 @@ const VIDEO_MODELS: Record<string, ModelConfig> = {
     endImageParamName: 'img_url_last',
     i2vNoAspectRatio: true,
   },
-  'kling2.6-i2v': {
-    name: 'Kling 2.6 Pro 图生视频',
-    endpoint: 'fal-ai/kling-video/v2.6/pro/image-to-video',
+  // 即梦 3.0 Pro（1080P，文生+图生首帧）
+  'jimeng-pro-t2v': {
+    name: '即梦 3.0 Pro 文生视频',
+    endpoint: 'jimeng',
+    jimengReqKey: 'jimeng_ti2v_v30_pro',
+    provider: 'jimeng',
+    mode: 't2v',
+    durations: [5, 10],
+    aspectRatios: ['16:9', '4:3', '1:1', '3:4', '9:16', '21:9'],
+    resolutions: ['1080p'],
+    defaultResolution: '1080p',
+    supportsAudio: false,
+    audioBuiltIn: false,
+    supportsEndFrame: false,
+    durationFormat: 'number',
+  },
+  'jimeng-pro-i2v': {
+    name: '即梦 3.0 Pro 图生视频',
+    endpoint: 'jimeng',
+    jimengReqKey: 'jimeng_ti2v_v30_pro',
+    provider: 'jimeng',
     mode: 'i2v',
     durations: [5, 10],
     aspectRatios: [],
-    resolutions: [],
-    defaultResolution: '',
-    supportsAudio: true,
+    resolutions: ['1080p'],
+    defaultResolution: '1080p',
+    supportsAudio: false,
     audioBuiltIn: false,
-    supportsEndFrame: true,
+    supportsEndFrame: false,
     durationFormat: 'number',
-    imageParamName: 'start_image_url',
-    endImageParamName: 'end_image_url',
+    i2vNoAspectRatio: true,
   },
-  'kling3-std-i2v': {
-    name: 'Kling 3 Standard 图生视频',
-    endpoint: 'fal-ai/kling-video/v3/standard/image-to-video',
+  // 即梦 3.0 720P
+  'jimeng-t2v': {
+    name: '即梦 3.0 文生视频 720P',
+    endpoint: 'jimeng',
+    jimengReqKey: 'jimeng_t2v_v30',
+    provider: 'jimeng',
+    mode: 't2v',
+    durations: [5, 10],
+    aspectRatios: ['16:9', '4:3', '1:1', '3:4', '9:16', '21:9'],
+    resolutions: ['720p'],
+    defaultResolution: '720p',
+    supportsAudio: false,
+    audioBuiltIn: false,
+    supportsEndFrame: false,
+    durationFormat: 'number',
+  },
+  'jimeng-i2v': {
+    name: '即梦 3.0 图生视频首帧 720P',
+    endpoint: 'jimeng',
+    jimengReqKey: 'jimeng_i2v_first_v30',
+    provider: 'jimeng',
     mode: 'i2v',
     durations: [5, 10],
-    aspectRatios: ['16:9', '9:16', '1:1'],
-    resolutions: [],
-    defaultResolution: '',
-    supportsAudio: true,
+    aspectRatios: [],
+    resolutions: ['720p'],
+    defaultResolution: '720p',
+    supportsAudio: false,
+    audioBuiltIn: false,
+    supportsEndFrame: false,
+    durationFormat: 'number',
+    i2vNoAspectRatio: true,
+  },
+  'jimeng-first-last': {
+    name: '即梦 3.0 首尾帧 720P',
+    endpoint: 'jimeng',
+    jimengReqKey: 'jimeng_i2v_first_tail_v30',
+    provider: 'jimeng',
+    mode: 'firstLastFrame',
+    durations: [5, 10],
+    aspectRatios: [],
+    resolutions: ['720p'],
+    defaultResolution: '720p',
+    supportsAudio: false,
     audioBuiltIn: false,
     supportsEndFrame: true,
     durationFormat: 'number',
-    imageParamName: 'start_image_url',
-    endImageParamName: 'end_image_url',
+    i2vNoAspectRatio: true,
+  },
+  'jimeng-camera': {
+    name: '即梦 3.0 运镜 720P',
+    endpoint: 'jimeng',
+    jimengReqKey: 'jimeng_i2v_recamera_v30',
+    provider: 'jimeng',
+    mode: 'i2v',
+    durations: [5, 10],
+    aspectRatios: [],
+    resolutions: ['720p'],
+    defaultResolution: '720p',
+    supportsAudio: false,
+    audioBuiltIn: false,
+    supportsEndFrame: false,
+    durationFormat: 'number',
+    i2vNoAspectRatio: true,
+    supportsCamera: true,
+  },
+  // 即梦 3.0 1080P
+  'jimeng-1080-t2v': {
+    name: '即梦 3.0 文生视频 1080P',
+    endpoint: 'jimeng',
+    jimengReqKey: 'jimeng_t2v_v30_1080p',
+    provider: 'jimeng',
+    mode: 't2v',
+    durations: [5, 10],
+    aspectRatios: ['16:9', '4:3', '1:1', '3:4', '9:16', '21:9'],
+    resolutions: ['1080p'],
+    defaultResolution: '1080p',
+    supportsAudio: false,
+    audioBuiltIn: false,
+    supportsEndFrame: false,
+    durationFormat: 'number',
+  },
+  'jimeng-1080-i2v': {
+    name: '即梦 3.0 图生视频首帧 1080P',
+    endpoint: 'jimeng',
+    jimengReqKey: 'jimeng_i2v_first_v30_1080',
+    provider: 'jimeng',
+    mode: 'i2v',
+    durations: [5, 10],
+    aspectRatios: [],
+    resolutions: ['1080p'],
+    defaultResolution: '1080p',
+    supportsAudio: false,
+    audioBuiltIn: false,
+    supportsEndFrame: false,
+    durationFormat: 'number',
+    i2vNoAspectRatio: true,
+  },
+  'jimeng-1080-first-last': {
+    name: '即梦 3.0 首尾帧 1080P',
+    endpoint: 'jimeng',
+    jimengReqKey: 'jimeng_i2v_first_tail_v30_1080',
+    provider: 'jimeng',
+    mode: 'firstLastFrame',
+    durations: [5, 10],
+    aspectRatios: [],
+    resolutions: ['1080p'],
+    defaultResolution: '1080p',
+    supportsAudio: false,
+    audioBuiltIn: false,
+    supportsEndFrame: true,
+    durationFormat: 'number',
+    i2vNoAspectRatio: true,
   },
   'ovi-i2v': {
     name: 'Ovi 图生视频',
@@ -331,21 +461,58 @@ export async function POST(req: NextRequest) {
       if (cfg.imageParamName) input[cfg.imageParamName] = await toPublicUrl(startFrameImage);
       if (cfg.endImageParamName) input[cfg.endImageParamName] = await toPublicUrl(endFrameImage);
     }
-    // Kling 尾帧
-    if (cfg.supportsEndFrame && cfg.endImageParamName && endFrameImage && cfg.mode === 'i2v') {
-      input[cfg.endImageParamName] = await toPublicUrl(endFrameImage);
-    }
-
     let taskId: string;
     let taskEndpoint: string;
 
-    if (cfg.provider === 'dashscope') {
+    if (cfg.provider === 'jimeng') {
+      // 即梦 火山引擎 API
+      const jmBody: Record<string, unknown> = {
+        req_key: cfg.jimengReqKey,
+        prompt,
+        seed: -1,
+      };
+
+      // 时长转帧数：5s=121帧，10s=241帧
+      if (duration) jmBody.frames = Number(duration) === 10 ? 241 : 121;
+
+      // 比例（仅 t2v）
+      if (cfg.mode === 't2v' && aspectRatio) jmBody.aspect_ratio = aspectRatio;
+
+      // 图片（i2v 首帧）
+      if (cfg.mode === 'i2v' && startFrameImage) {
+        const url = await toPublicUrl(startFrameImage);
+        jmBody.image_urls = [url];
+      }
+
+      // 首尾帧
+      if (cfg.mode === 'firstLastFrame') {
+        const startUrl = await toPublicUrl(startFrameImage);
+        const endUrl   = await toPublicUrl(endFrameImage);
+        jmBody.image_urls = [startUrl, endUrl];
+      }
+
+      // 运镜模式额外参数（使用默认值，前端可扩展）
+      if (cfg.supportsCamera) {
+        jmBody.template_id = 'dynamic_orbit';
+        jmBody.camera_strength = 'medium';
+      }
+
+      const jmRes = await jimengSubmit(jmBody) as any;
+      console.log('即梦提交结果:', JSON.stringify(jmRes).slice(0, 500));
+
+      if (jmRes?.code !== 10000) {
+        throw new Error(`即梦提交失败: ${jmRes?.message || JSON.stringify(jmRes)}`);
+      }
+      taskId = jmRes?.data?.task_id;
+      if (!taskId) throw new Error(`即梦未返回 task_id: ${JSON.stringify(jmRes)}`);
+      taskEndpoint = `jimeng:${cfg.jimengReqKey}`;
+
+    } else if (cfg.provider === 'dashscope') {
       // DashScope 官方 API
       const DASHSCOPE_KEY = process.env.DASHSCOPE_API_KEY!;
       const dsInput: Record<string, unknown> = { prompt };
       const dsParams: Record<string, unknown> = { prompt_extend: true };
 
-      // 图片参数
       if (cfg.mode === 'i2v' && cfg.imageParamName) {
         dsInput[cfg.imageParamName] = input[cfg.imageParamName];
       }
@@ -354,13 +521,8 @@ export async function POST(req: NextRequest) {
         if (cfg.endImageParamName) dsInput[cfg.endImageParamName] = input[cfg.endImageParamName];
       }
 
-      // 时长
       if (duration) dsParams.duration = Number(duration);
-
-      // 分辨率
       if (resolution) dsParams.resolution = resolution;
-
-      // 音频：wan2.6 系列默认有声，用户不开启则显式关闭
       if (cfg.dashscopeModel?.startsWith('wan2.6')) {
         dsParams.audio = generateAudio === true;
       }
@@ -391,6 +553,7 @@ export async function POST(req: NextRequest) {
       taskId = dsData.output?.task_id;
       if (!taskId) throw new Error(`DashScope 未返回 task_id: ${JSON.stringify(dsData)}`);
       taskEndpoint = `dashscope:${cfg.dashscopeModel}`;
+
     } else {
       // fal 队列
       const { request_id } = await fal.queue.submit(cfg.endpoint, { input });
