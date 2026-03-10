@@ -24,6 +24,8 @@ type ModelConfig = {
   imageParamName?: string;
   endImageParamName?: string;
   i2vNoAspectRatio?: boolean;
+  provider?: 'fal' | 'dashscope';
+  dashscopeModel?: string;
 };
 
 const VIDEO_MODELS: Record<string, ModelConfig> = {
@@ -96,32 +98,103 @@ const VIDEO_MODELS: Record<string, ModelConfig> = {
     imageParamName: 'first_frame_url',
     endImageParamName: 'last_frame_url',
   },
-  'wan2.5-t2v': {
-    name: 'Wan 2.5 文生视频',
-    endpoint: 'fal-ai/wan-25-preview/text-to-video',
+  'wan2.6-t2v': {
+    name: 'Wan 2.6 文生视频',
+    endpoint: 'dashscope',
+    dashscopeModel: 'wan2.6-t2v',
+    provider: 'dashscope',
     mode: 't2v',
     durations: [5, 10],
     aspectRatios: ['16:9', '9:16', '1:1'],
-    resolutions: ['480p', '720p', '1080p'],
-    defaultResolution: '1080p',
-    supportsAudio: false,
-    audioBuiltIn: true,
+    resolutions: ['720P', '1080P'],
+    defaultResolution: '720P',
+    supportsAudio: true,
+    audioBuiltIn: false,
     supportsEndFrame: false,
     durationFormat: 'number',
   },
-  'wan2.5-i2v': {
+  'wan2.5-t2v-preview': {
+    name: 'Wan 2.5 文生视频',
+    endpoint: 'dashscope',
+    dashscopeModel: 'wan2.5-t2v-preview',
+    provider: 'dashscope',
+    mode: 't2v',
+    durations: [5, 10],
+    aspectRatios: ['16:9', '9:16', '1:1'],
+    resolutions: ['480P', '720P', '1080P'],
+    defaultResolution: '720P',
+    supportsAudio: true,
+    audioBuiltIn: false,
+    supportsEndFrame: false,
+    durationFormat: 'number',
+  },
+  'wan2.6-i2v': {
+    name: 'Wan 2.6 图生视频',
+    endpoint: 'dashscope',
+    dashscopeModel: 'wan2.6-i2v',
+    provider: 'dashscope',
+    mode: 'i2v',
+    durations: [5, 10, 15],
+    aspectRatios: [],
+    resolutions: ['720P', '1080P'],
+    defaultResolution: '720P',
+    supportsAudio: true,
+    audioBuiltIn: false,
+    supportsEndFrame: false,
+    durationFormat: 'number',
+    imageParamName: 'img_url',
+    i2vNoAspectRatio: true,
+  },
+  'wan2.6-i2v-flash': {
+    name: 'Wan 2.6 图生视频 Flash',
+    endpoint: 'dashscope',
+    dashscopeModel: 'wan2.6-i2v-flash',
+    provider: 'dashscope',
+    mode: 'i2v',
+    durations: [5, 10, 15],
+    aspectRatios: [],
+    resolutions: ['720P', '1080P'],
+    defaultResolution: '720P',
+    supportsAudio: true,
+    audioBuiltIn: false,
+    supportsEndFrame: false,
+    durationFormat: 'number',
+    imageParamName: 'img_url',
+    i2vNoAspectRatio: true,
+  },
+  'wan2.5-i2v-preview': {
     name: 'Wan 2.5 图生视频',
-    endpoint: 'fal-ai/wan-25-preview/image-to-video',
+    endpoint: 'dashscope',
+    dashscopeModel: 'wan2.5-i2v-preview',
+    provider: 'dashscope',
     mode: 'i2v',
     durations: [5, 10],
     aspectRatios: [],
-    resolutions: ['480p', '720p', '1080p'],
-    defaultResolution: '1080p',
-    supportsAudio: false,
-    audioBuiltIn: true,
+    resolutions: ['480P', '720P', '1080P'],
+    defaultResolution: '720P',
+    supportsAudio: true,
+    audioBuiltIn: false,
     supportsEndFrame: false,
     durationFormat: 'number',
-    imageParamName: 'image_url',
+    imageParamName: 'img_url',
+    i2vNoAspectRatio: true,
+  },
+  'wan2.2-kf2v-flash': {
+    name: 'Wan 2.2 首尾帧视频',
+    endpoint: 'dashscope',
+    dashscopeModel: 'wan2.2-kf2v-flash',
+    provider: 'dashscope',
+    mode: 'firstLastFrame',
+    durations: [5],
+    aspectRatios: [],
+    resolutions: ['480P', '720P', '1080P'],
+    defaultResolution: '720P',
+    supportsAudio: false,
+    audioBuiltIn: false,
+    supportsEndFrame: true,
+    durationFormat: 'number',
+    imageParamName: 'img_url',
+    endImageParamName: 'img_url_last',
     i2vNoAspectRatio: true,
   },
   'kling2.6-i2v': {
@@ -233,7 +306,7 @@ export async function POST(req: NextRequest) {
       input.auto_fix = true;
     }
 
-    // 图片参数 - base64 先上传到 Storage 变成公开 URL（fal 只接受 https URL）
+    // 图片参数 - base64 先上传到 Storage 变成公开 URL
     const toPublicUrl = async (base64: string): Promise<string> => {
       if (!base64 || !base64.startsWith('data:')) return base64;
       const match = base64.match(/^data:(image\/\w+);base64,(.+)$/);
@@ -252,7 +325,6 @@ export async function POST(req: NextRequest) {
       input[cfg.imageParamName] = await toPublicUrl(startFrameImage);
     }
     if (cfg.mode === 'firstLastFrame') {
-      // firstLastFrame 模式必须同时有首尾两帧
       if (!startFrameImage || !endFrameImage) {
         return NextResponse.json({ error: '该模型需要同时上传首帧和尾帧图片' }, { status: 400 });
       }
@@ -264,8 +336,67 @@ export async function POST(req: NextRequest) {
       input[cfg.endImageParamName] = await toPublicUrl(endFrameImage);
     }
 
-    // 提交到 fal 队列
-    const { request_id } = await fal.queue.submit(cfg.endpoint, { input });
+    let taskId: string;
+    let taskEndpoint: string;
+
+    if (cfg.provider === 'dashscope') {
+      // DashScope 官方 API
+      const DASHSCOPE_KEY = process.env.DASHSCOPE_API_KEY!;
+      const dsInput: Record<string, unknown> = { prompt };
+      const dsParams: Record<string, unknown> = { prompt_extend: true };
+
+      // 图片参数
+      if (cfg.mode === 'i2v' && cfg.imageParamName) {
+        dsInput[cfg.imageParamName] = input[cfg.imageParamName];
+      }
+      if (cfg.mode === 'firstLastFrame') {
+        if (cfg.imageParamName) dsInput[cfg.imageParamName] = input[cfg.imageParamName];
+        if (cfg.endImageParamName) dsInput[cfg.endImageParamName] = input[cfg.endImageParamName];
+      }
+
+      // 时长
+      if (duration) dsParams.duration = Number(duration);
+
+      // 分辨率
+      if (resolution) dsParams.resolution = resolution;
+
+      // 音频：wan2.6 系列默认有声，用户不开启则显式关闭
+      if (cfg.dashscopeModel?.startsWith('wan2.6')) {
+        dsParams.audio = generateAudio === true;
+      }
+
+      const dsRes = await fetch(
+        'https://dashscope.aliyuncs.com/api/v1/services/aigc/video-generation/video-synthesis',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${DASHSCOPE_KEY}`,
+            'Content-Type': 'application/json',
+            'X-DashScope-Async': 'enable',
+          },
+          body: JSON.stringify({
+            model: cfg.dashscopeModel,
+            input: dsInput,
+            parameters: dsParams,
+          }),
+        }
+      );
+
+      if (!dsRes.ok) {
+        const err = await dsRes.text();
+        throw new Error(`DashScope 提交失败: ${err}`);
+      }
+
+      const dsData = await dsRes.json();
+      taskId = dsData.output?.task_id;
+      if (!taskId) throw new Error(`DashScope 未返回 task_id: ${JSON.stringify(dsData)}`);
+      taskEndpoint = `dashscope:${cfg.dashscopeModel}`;
+    } else {
+      // fal 队列
+      const { request_id } = await fal.queue.submit(cfg.endpoint, { input });
+      taskId = request_id;
+      taskEndpoint = cfg.endpoint;
+    }
 
     // 写入数据库记录
     if (userId) {
@@ -282,16 +413,16 @@ export async function POST(req: NextRequest) {
         input_image_url: startFrameImage || null,
         end_image_url: endFrameImage || null,
         status: 'processing',
-        task_id: request_id,
-        endpoint: cfg.endpoint,
+        task_id: taskId,
+        endpoint: taskEndpoint,
         cost_credits: 0,
       });
     }
 
     return NextResponse.json({
       success: true,
-      taskId: request_id,
-      endpoint: cfg.endpoint,
+      taskId,
+      endpoint: taskEndpoint,
       status: 'queued',
     });
 

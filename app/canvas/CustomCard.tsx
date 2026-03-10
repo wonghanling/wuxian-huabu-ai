@@ -408,8 +408,12 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
       'veo3.1-fast-t2v':   { mode: 't2v',          durations: [4,6,8], resolutions: ['720p','1080p','4k'],    aspectRatios: ['16:9','9:16'],        supportsAudio: true,  audioBuiltIn: false, supportsEndFrame: false, defaultResolution: '720p' },
       'veo3.1-fast-i2v':   { mode: 'i2v',          durations: [4,6,8], resolutions: ['720p','1080p','4k'],    aspectRatios: ['16:9','9:16'],        supportsAudio: true,  audioBuiltIn: false, supportsEndFrame: false, defaultResolution: '720p' },
       'veo3.1-first-last': { mode: 'firstLastFrame',durations: [4,6,8], resolutions: ['720p','1080p','4k'],    aspectRatios: ['16:9','9:16'],        supportsAudio: true,  audioBuiltIn: false, supportsEndFrame: true,  defaultResolution: '720p' },
-      'wan2.5-t2v':        { mode: 't2v',          durations: [5,10],  resolutions: ['480p','720p','1080p'],  aspectRatios: ['16:9','9:16','1:1'],  supportsAudio: false, audioBuiltIn: true,  supportsEndFrame: false, defaultResolution: '1080p' },
-      'wan2.5-i2v':        { mode: 'i2v',          durations: [5,10],  resolutions: ['480p','720p','1080p'],  aspectRatios: [],                     supportsAudio: false, audioBuiltIn: true,  supportsEndFrame: false, defaultResolution: '1080p', i2vNoAspectRatio: true },
+      'wan2.6-t2v':        { mode: 't2v',          durations: [5,10],    resolutions: ['720P','1080P'],         aspectRatios: ['16:9','9:16','1:1'],  supportsAudio: true,  audioBuiltIn: false, supportsEndFrame: false, defaultResolution: '720P' },
+      'wan2.5-t2v-preview':{ mode: 't2v',          durations: [5,10],    resolutions: ['480P','720P','1080P'],  aspectRatios: ['16:9','9:16','1:1'],  supportsAudio: true,  audioBuiltIn: false, supportsEndFrame: false, defaultResolution: '720P' },
+      'wan2.6-i2v':        { mode: 'i2v',          durations: [5,10,15], resolutions: ['720P','1080P'],         aspectRatios: [],                     supportsAudio: true,  audioBuiltIn: false, supportsEndFrame: false, defaultResolution: '720P', i2vNoAspectRatio: true },
+      'wan2.6-i2v-flash':  { mode: 'i2v',          durations: [5,10,15], resolutions: ['720P','1080P'],         aspectRatios: [],                     supportsAudio: true,  audioBuiltIn: false, supportsEndFrame: false, defaultResolution: '720P', i2vNoAspectRatio: true },
+      'wan2.5-i2v-preview':{ mode: 'i2v',          durations: [5,10],    resolutions: ['480P','720P','1080P'],  aspectRatios: [],                     supportsAudio: true,  audioBuiltIn: false, supportsEndFrame: false, defaultResolution: '720P', i2vNoAspectRatio: true },
+      'wan2.2-kf2v-flash': { mode: 'firstLastFrame',durations: [5],       resolutions: ['480P','720P','1080P'],  aspectRatios: [],                     supportsAudio: false, audioBuiltIn: false, supportsEndFrame: true,  defaultResolution: '720P', i2vNoAspectRatio: true },
       'kling2.6-i2v':      { mode: 'i2v',          durations: [5,10],  resolutions: [],                       aspectRatios: [],                     supportsAudio: true,  audioBuiltIn: false, supportsEndFrame: true,  defaultResolution: '' },
       'kling3-std-i2v':    { mode: 'i2v',          durations: [5,10],  resolutions: [],                       aspectRatios: ['16:9','9:16','1:1'],  supportsAudio: true,  audioBuiltIn: false, supportsEndFrame: true,  defaultResolution: '' },
       'ovi-i2v':           { mode: 'i2v',          durations: [],      resolutions: [],                       aspectRatios: [],                     supportsAudio: false, audioBuiltIn: true,  supportsEndFrame: false, defaultResolution: '' },
@@ -1431,9 +1435,17 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         <option value="veo3.1-fast-i2v">Veo 3.1 Fast 图生视频</option>
                         <option value="veo3.1-first-last">Veo 3.1 首尾帧</option>
                       </optgroup>
+                      <optgroup label="Wan 2.6">
+                        <option value="wan2.6-t2v">Wan 2.6 文生视频</option>
+                        <option value="wan2.6-i2v">Wan 2.6 图生视频</option>
+                        <option value="wan2.6-i2v-flash">Wan 2.6 图生视频 Flash</option>
+                      </optgroup>
                       <optgroup label="Wan 2.5">
-                        <option value="wan2.5-t2v">Wan 2.5 文生视频</option>
-                        <option value="wan2.5-i2v">Wan 2.5 图生视频</option>
+                        <option value="wan2.5-t2v-preview">Wan 2.5 文生视频</option>
+                        <option value="wan2.5-i2v-preview">Wan 2.5 图生视频</option>
+                      </optgroup>
+                      <optgroup label="Wan 2.2">
+                        <option value="wan2.2-kf2v-flash">Wan 2.2 首尾帧视频</option>
                       </optgroup>
                       <optgroup label="Kling">
                         <option value="kling2.6-i2v">Kling 2.6 Pro 图生视频</option>
