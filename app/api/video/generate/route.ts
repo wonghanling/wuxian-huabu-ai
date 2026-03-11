@@ -208,8 +208,8 @@ const VIDEO_MODELS: Record<string, ModelConfig> = {
     audioBuiltIn: false,
     supportsEndFrame: true,
     durationFormat: 'number',
-    imageParamName: 'img_url',
-    endImageParamName: 'img_url_last',
+    imageParamName: 'first_frame_url',
+    endImageParamName: 'last_frame_url',
     i2vNoAspectRatio: true,
   },
   // 即梦 3.0 Pro（1080P，文生+图生首帧）
@@ -527,8 +527,9 @@ export async function POST(req: NextRequest) {
         dsParams.audio = generateAudio === true;
       }
 
+      const dsTask = cfg.dashscopeModel?.includes('kf2v') ? 'image2video' : 'video-generation';
       const dsRes = await fetch(
-        'https://dashscope.aliyuncs.com/api/v1/services/aigc/video-generation/video-synthesis',
+        `https://dashscope.aliyuncs.com/api/v1/services/aigc/${dsTask}/video-synthesis`,
         {
           method: 'POST',
           headers: {
@@ -569,7 +570,7 @@ export async function POST(req: NextRequest) {
         prompt,
         model,
         duration: duration || null,
-        resolution: resolution || null,
+        resolution: resolution ? resolution.toLowerCase() : null,
         aspect_ratio: aspectRatio || null,
         generate_audio: generateAudio,
         video_mode: cfg.mode === 'firstLastFrame' ? 'first-last-frame' : cfg.mode === 'i2v' ? 'first-frame' : 'text',
