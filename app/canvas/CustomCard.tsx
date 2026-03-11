@@ -2038,17 +2038,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       const queryData = await queryResponse.json();
 
                       if (queryData.status === 'completed' && queryData.videoUrl) {
-                        // 上传到 Supabase Storage，获取永久 URL
-                        let finalVideoUrl = queryData.videoUrl;
-                        try {
-                          const supabase = createClient();
-                          const { data: { user } } = await supabase.auth.getUser();
-                          if (user) {
-                            finalVideoUrl = await mirrorUrlToStorage(user.id, queryData.videoUrl, 'video');
-                          }
-                        } catch (uploadErr) {
-                          console.warn('视频上传到 Storage 失败，使用原始 URL:', uploadErr);
-                        }
+                        const finalVideoUrl = queryData.videoUrl;
 
                         editor.updateShape({
                           id: shape.id,

@@ -1,8 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Service } from '@volcengine/openapi';
+import { createClient } from '@supabase/supabase-js';
 
 const FAL_KEY = process.env.FAL_KEY!;
 const DASHSCOPE_KEY = process.env.DASHSCOPE_API_KEY!;
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+// 下载视频并上传到 Supabase Storage，返回公开 URL
+async function uploadVideoToStorage(sourceUrl: string): Promise<string> {
+  const res = await fetch(sourceUrl);
+  if (!res.ok) throw new Error(`下载视频失败: ${res.status}`);
+  const buffer = Buffer.from(await res.arrayBuffer());
+  const filename = `videos/${Date.now()}-${Math.random().toString(36).slice(2)}.mp4`;
+  const { error } = await supabase.storage
+    .from('assets')
+    .upload(filename, buffer, { contentType: 'video/mp4', upsert: false });
+  if (error) throw new Error(`上传视频失败: ${error.message}`);
+  const { data } = supabase.storage.from('assets').getPublicUrl(filename);
+  return data.publicUrl;
+}
 
 const volcService = new Service({
   host: 'visual.volcengineapi.com',
@@ -41,7 +61,15 @@ export async function GET(request: NextRequest) {
       } else {
         const jmStatus = jmRes?.data?.status;
         if (jmStatus === 'done') {
-          videoUrl = jmRes?.data?.video_url || null;
+          const rawUrl = jmRes?.data?.video_url || null;
+          if (rawUrl) {
+            try {
+              videoUrl = await uploadVideoToStorage(rawUrl);
+            } catch (e) {
+              console.warn('转存即梦视频失败，使用原始URL:', e);
+              videoUrl = rawUrl;
+            }
+          }
           status = videoUrl ? 'completed' : 'failed';
           progress = videoUrl ? 100 : 0;
         } else if (jmStatus === 'in_queue') {
@@ -73,7 +101,15 @@ export async function GET(request: NextRequest) {
       console.log('DashScope 状态:', taskStatus);
 
       if (taskStatus === 'SUCCEEDED') {
-        videoUrl = data?.output?.video_url || null;
+        const rawUrl = data?.output?.video_url || null;
+        if (rawUrl) {
+          try {
+            videoUrl = await uploadVideoToStorage(rawUrl);
+          } catch (e) {
+            console.warn('转存 DashScope 视频失败，使用原始URL:', e);
+            videoUrl = rawUrl;
+          }
+        }
         status = videoUrl ? 'completed' : 'failed';
         progress = videoUrl ? 100 : 0;
       } else if (taskStatus === 'PENDING') {
@@ -112,8 +148,16 @@ export async function GET(request: NextRequest) {
         if (resultRes.ok) {
           const data = await resultRes.json();
           console.log('fal result full:', JSON.stringify(data).slice(0, 1000));
-          videoUrl = data?.video?.url || data?.video_url || data?.url || data?.videos?.[0]?.url || null;
-          console.log('视频URL:', videoUrl);
+          const rawUrl = data?.video?.url || data?.video_url || data?.url || data?.videos?.[0]?.url || null;
+          console.log('视频URL:', rawUrl);
+          if (rawUrl) {
+            try {
+              videoUrl = await uploadVideoToStorage(rawUrl);
+            } catch (e) {
+              console.warn('转存 fal 视频失败，使用原始URL:', e);
+              videoUrl = rawUrl;
+            }
+          }
         } else {
           const errText = await resultRes.text();
           console.log('fal result fetch failed:', resultRes.status, errText);
