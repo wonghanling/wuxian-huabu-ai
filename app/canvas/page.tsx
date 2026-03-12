@@ -164,10 +164,9 @@ function ZoomControlsExternal({ editor }: { editor: Editor }) {
 }
 
 // 底部工具栏 - 外部版本（重新设计 - 可折叠抽屉式）
-function BottomToolbarExternal({ editor }: { editor: Editor }) {
+function BottomToolbarExternal({ editor, onOpenAssetPanel }: { editor: Editor; onOpenAssetPanel: () => void }) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [showShotTypePanel, setShowShotTypePanel] = useState(false);
-  const [showAssetPanel, setShowAssetPanel] = useState(false);
 
   const createTextCard = () => {
     console.log('点击文本生成按钮');
@@ -294,7 +293,7 @@ function BottomToolbarExternal({ editor }: { editor: Editor }) {
   };
 
   const createAssetCard = () => {
-    setShowAssetPanel(true);
+    onOpenAssetPanel();
   };
 
   const createDirectorTimeline = () => {
@@ -1529,7 +1528,7 @@ function CanvasPageContent() {
           )}
 
           <ZoomControlsExternal editor={editorInstance} />
-          <BottomToolbarExternal editor={editorInstance} />
+          <BottomToolbarExternal editor={editorInstance} onOpenAssetPanel={() => setShowAssetPanel(true)} />
         </>
       )}
 
