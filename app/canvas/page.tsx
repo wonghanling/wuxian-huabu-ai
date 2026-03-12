@@ -1095,7 +1095,7 @@ function CanvasPageContent() {
   const [cameraPos, setCameraPos] = useState({ x: 0, y: 0 });
   const [showIntro, setShowIntro] = useState(true);
   const [showTutorial, setShowTutorial] = useState(isTutorial);
-  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('saved');
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('unsaved');
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [canvasList, setCanvasList] = useState<{id: string; title: string}[]>([]);
   const [showCanvasList, setShowCanvasList] = useState(false);

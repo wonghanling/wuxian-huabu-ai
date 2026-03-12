@@ -738,8 +738,10 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       className="text-[10px] text-gray-400 hover:text-gray-300 transition-colors"
                       onClick={async (e) => {
                         e.stopPropagation();
-                        const text = await navigator.clipboard.readText();
-                        if (text) editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, prompt: (prompt ? prompt + '\n' : '') + text } });
+                        try {
+                          const text = await navigator.clipboard.readText();
+                          if (text) editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, prompt: (prompt ? prompt + '\n' : '') + text } });
+                        } catch {}
                       }}
                       onPointerDown={(e) => e.stopPropagation()}
                     >粘贴</button>
@@ -1025,7 +1027,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         <div className="flex items-center justify-between mb-1">
                           <label className="text-gray-400 text-xs">粘贴 Anchor JSON</label>
                           <button className="text-[10px] text-gray-400 hover:text-gray-300 transition-colors"
-                            onClick={async (e) => { e.stopPropagation(); const t = await navigator.clipboard.readText(); if (t) editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, characterAnchorJson: t } }); }}
+                            onClick={async (e) => { e.stopPropagation(); try { const t = await navigator.clipboard.readText(); if (t) editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, characterAnchorJson: t } }); } catch {} }}
                             onPointerDown={(e) => e.stopPropagation()}>粘贴</button>
                         </div>
                         <textarea
@@ -1221,7 +1223,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         <div className="flex items-center justify-between mb-1">
                           <label className="text-gray-400 text-xs">粘贴完整 JSON</label>
                           <button className="text-[10px] text-gray-400 hover:text-gray-300 transition-colors"
-                            onClick={async (e) => { e.stopPropagation(); const t = await navigator.clipboard.readText(); if (t) editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, characterThreeViewJson: t } }); }}
+                            onClick={async (e) => { e.stopPropagation(); try { const t = await navigator.clipboard.readText(); if (t) editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, characterThreeViewJson: t } }); } catch {} }}
                             onPointerDown={(e) => e.stopPropagation()}>粘贴</button>
                         </div>
                         <textarea
