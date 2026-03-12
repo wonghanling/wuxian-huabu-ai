@@ -255,6 +255,8 @@ export type CustomCardShape = TLBaseShape<
     isMinimized?: boolean; // 是否缩小状态
     textOutput?: string; // 文本卡片输出
     isGenerating?: boolean; // 是否正在生成
+    generationProgress?: number; // 生成进度 0-100
+    generationStatus?: string; // 生成状态文本
   }
 >;
 
@@ -266,7 +268,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
   static override props: RecordProps<CustomCardShape> = {
     w: T.number,
     h: T.number,
-    cardType: T.literalEnum('image', 'text', 'video', 'character'),
+    cardType: T.literalEnum('image', 'text', 'video', 'character', 'asset'),
     title: T.string,
     prompt: T.string,
     model: T.string,
@@ -309,6 +311,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
     isMinimized: T.boolean.optional(),
     textOutput: T.string.optional(),
     isGenerating: T.boolean.optional(),
+    generationProgress: T.number.optional(),
+    generationStatus: T.string.optional(),
   };
 
   override isAspectRatioLocked = () => false;
@@ -383,11 +387,13 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
       isMinimized: false,
       textOutput: '',
       isGenerating: false,
+      generationProgress: 0,
+      generationStatus: '',
     };
   }
 
   component(shape: CustomCardShape) {
-    const { cardType, title, prompt, model, w, h, uploadedImage, cameraVertical, cameraHorizontal, showCameraControl, generatedImage, aspectRatio, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showVideoOutput, capturedFrame, videoDuration, videoResolution, videoGenerateAudio, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterAnalyzeImage, characterAnchorJson, characterThreeViewJson, characterThreeViewImage, characterGeneratedImage, characterImageModel, showCharacterOutput, showAnalyzePanel, showThreeViewJsonPanel, showGeneratePanel, isMinimized, textOutput, isGenerating } = shape.props;
+    const { cardType, title, prompt, model, w, h, uploadedImage, cameraVertical, cameraHorizontal, showCameraControl, generatedImage, aspectRatio, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showVideoOutput, capturedFrame, videoDuration, videoResolution, videoGenerateAudio, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterAnalyzeImage, characterAnchorJson, characterThreeViewJson, characterThreeViewImage, characterGeneratedImage, characterImageModel, showCharacterOutput, showAnalyzePanel, showThreeViewJsonPanel, showGeneratePanel, isMinimized, textOutput, isGenerating, generationProgress, generationStatus } = shape.props;
     const editor = useEditor();
     const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -906,7 +912,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
                       {/* 分析按钮 */}
                       <button
-                        className="w-full py-2 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-blue-500/80 to-blue-600/80 hover:from-blue-500 hover:to-blue-600"
+                        className={`w-full py-2 rounded-lg font-semibold text-white text-xs transition-all shadow-lg backdrop-blur-sm ${isGenerating ? 'bg-gray-500 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-r from-blue-500/80 to-blue-600/80 hover:from-blue-500 hover:to-blue-600'}`}
+                        disabled={isGenerating}
                         onClick={async (e) => {
                           e.stopPropagation();
 
@@ -927,7 +934,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                             editor.updateShape({
                               id: shape.id,
                               type: 'custom-card' as any,
-                              props: { ...shape.props, isGenerating: true },
+                              props: { ...shape.props, isGenerating: true, generationProgress: 10, generationStatus: '分析图片中...' },
                             });
 
                             try {
@@ -966,7 +973,12 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         onPointerDown={(e) => e.stopPropagation()}
                         disabled={!characterAnalyzeImage}
                       >
-                        {characterAnchorJson && showAnalyzePanel ? '收起 Anchor JSON' : '分析生成 Anchor JSON'}
+                        {isGenerating ? (
+                          <div className="flex items-center justify-center gap-2">
+                            <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg>
+                            <span>分析中...</span>
+                          </div>
+                        ) : (characterAnchorJson && showAnalyzePanel ? '收起 Anchor JSON' : '分析生成 Anchor JSON')}
                       </button>
 
                       {/* 模型输出结果 - Anchor JSON */}
@@ -1066,7 +1078,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
                       {/* 生成三视角JSON按钮 */}
                       <button
-                        className="w-full py-2 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-blue-500/80 to-blue-600/80 hover:from-blue-500 hover:to-blue-600"
+                        className={`w-full py-2 rounded-lg font-semibold text-white text-xs transition-all shadow-lg backdrop-blur-sm ${isGenerating ? 'bg-gray-500 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-r from-blue-500/80 to-blue-600/80 hover:from-blue-500 hover:to-blue-600'}`}
+                        disabled={isGenerating}
                         onClick={async (e) => {
                           e.stopPropagation();
 
@@ -1087,7 +1100,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                             editor.updateShape({
                               id: shape.id,
                               type: 'custom-card' as any,
-                              props: { ...shape.props, isGenerating: true },
+                              props: { ...shape.props, isGenerating: true, generationProgress: 10, generationStatus: '分析图片中...' },
                             });
 
                             try {
@@ -1123,9 +1136,14 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           }
                         }}
                         onPointerDown={(e) => e.stopPropagation()}
-                        disabled={!characterAnchorJson}
+                        disabled={!characterAnchorJson || isGenerating}
                       >
-                        {characterThreeViewJson && showThreeViewJsonPanel ? '收起三视角JSON' : '生成三视角 JSON'}
+                        {isGenerating ? (
+                          <div className="flex items-center justify-center gap-2">
+                            <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg>
+                            <span>生成中...</span>
+                          </div>
+                        ) : (characterThreeViewJson && showThreeViewJsonPanel ? '收起三视角JSON' : '生成三视角 JSON')}
                       </button>
 
                       {/* 模型输出结果 - 三视角完整JSON */}
@@ -1250,7 +1268,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
                       {/* 生成三视角图片按钮 */}
                       <button
-                        className="w-full py-2 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-green-500/80 to-green-600/80 hover:from-green-500 hover:to-green-600"
+                        className={`w-full py-2 rounded-lg font-semibold text-white text-xs transition-all shadow-lg backdrop-blur-sm ${isGenerating ? 'bg-gray-500 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-r from-green-500/80 to-green-600/80 hover:from-green-500 hover:to-green-600'}`}
+                        disabled={isGenerating}
                         onClick={async (e) => {
                           e.stopPropagation();
 
@@ -1273,7 +1292,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                             editor.updateShape({
                               id: shape.id,
                               type: 'custom-card' as any,
-                              props: { ...shape.props, isGenerating: true },
+                              props: { ...shape.props, isGenerating: true, generationProgress: 10, generationStatus: '分析图片中...' },
                             });
 
                             try {
@@ -1311,9 +1330,14 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           }
                         }}
                         onPointerDown={(e) => e.stopPropagation()}
-                        disabled={!characterThreeViewImage || !characterThreeViewJson}
+                        disabled={!characterThreeViewImage || !characterThreeViewJson || isGenerating}
                       >
-                        {characterGeneratedImage && showGeneratePanel ? '收起三视角图片' : '生成三视角图片'}
+                        {isGenerating ? (
+                          <div className="flex items-center justify-center gap-2">
+                            <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/></svg>
+                            <span>生成中...</span>
+                          </div>
+                        ) : (characterGeneratedImage && showGeneratePanel ? '收起三视角图片' : '生成三视角图片')}
                       </button>
 
                       {/* 显示生成的图片 */}
@@ -1840,7 +1864,12 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
             {/* 生成按钮 - 仅非角色卡片显示 */}
             {cardType !== 'character' && (
             <button
-              className={`w-full py-2 ${showCameraControl && cardType === 'image' ? 'mt-2' : 'mt-0'} rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm ${color.buttonBg}`}
+              className={`w-full py-2 ${showCameraControl && cardType === 'image' ? 'mt-2' : 'mt-0'} rounded-lg font-semibold text-white text-xs transition-all shadow-lg backdrop-blur-sm ${
+                isGenerating
+                  ? 'bg-gray-500 cursor-not-allowed'
+                  : `hover:scale-[1.02] active:scale-[0.98] ${color.buttonBg}`
+              }`}
+              disabled={isGenerating}
               onClick={async (e) => {
                 e.stopPropagation();
 
@@ -1918,6 +1947,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     props: {
                       ...shape.props,
                       isGenerating: true,
+                      generationProgress: 10,
+                      generationStatus: '生成图片中...',
                     },
                   });
 
@@ -1990,6 +2021,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     props: {
                       ...shape.props,
                       isGenerating: true,
+                      generationProgress: 5,
+                      generationStatus: '提交任务中...',
                     },
                   });
 
@@ -2037,6 +2070,19 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
                       const queryData = await queryResponse.json();
 
+                      // 更新进度
+                      const progress = queryData.progress || 30;
+                      const statusText = queryData.status === 'pending' ? '排队中...' : queryData.status === 'processing' ? '生成中...' : '处理中...';
+                      editor.updateShape({
+                        id: shape.id,
+                        type: 'custom-card' as any,
+                        props: {
+                          ...shape.props,
+                          generationProgress: progress,
+                          generationStatus: statusText,
+                        },
+                      });
+
                       if (queryData.status === 'completed' && queryData.videoUrl) {
                         const finalVideoUrl = queryData.videoUrl;
 
@@ -2075,8 +2121,37 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
               }}
               onPointerDown={(e) => e.stopPropagation()}
             >
-              Generate
+              {isGenerating ? (
+                <div className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>Generating...</span>
+                </div>
+              ) : (
+                'Generate'
+              )}
             </button>
+            )}
+
+            {/* 生成进度条 */}
+            {isGenerating && generationProgress !== undefined && generationProgress > 0 && (
+              <div className="mt-2 bg-black/30 border border-white/10 rounded-lg p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-gray-400">生成进度</span>
+                  <span className="text-xs text-white font-semibold">{generationProgress}%</span>
+                </div>
+                <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300"
+                    style={{ width: `${generationProgress}%` }}
+                  />
+                </div>
+                {generationStatus && (
+                  <p className="text-xs text-gray-400 mt-2">{generationStatus}</p>
+                )}
+              </div>
             )}
 
             {/* 图片输出按钮 - 仅图片卡片显示 */}
