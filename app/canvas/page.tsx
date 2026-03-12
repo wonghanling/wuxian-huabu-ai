@@ -1192,7 +1192,7 @@ function CanvasPageContent() {
       container.removeEventListener('pointermove', handlePointerMove, { capture: true });
       container.removeEventListener('pointerup', handlePointerUp, { capture: true });
     };
-  }, [editor, user]);
+  };
 
   return (
     <div className="fixed inset-0 bg-black">

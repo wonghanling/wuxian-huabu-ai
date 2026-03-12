@@ -554,6 +554,15 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
         buttonBg: 'bg-gradient-to-r from-gray-500/80 to-gray-600/80 hover:from-gray-500 hover:to-gray-600',
         handleColor: 'rgba(192, 192, 192, 0.8)',
       },
+      asset: {
+        gradient: 'from-teal-500/20 to-cyan-500/20',
+        border: 'border-teal-400/30',
+        glow: 'shadow-teal-500/20',
+        icon: 'text-teal-400',
+        iconBg: 'bg-gradient-to-br from-teal-400/20 to-cyan-400/20',
+        buttonBg: 'bg-gradient-to-r from-teal-500/80 to-cyan-500/80 hover:from-teal-500 hover:to-cyan-500',
+        handleColor: 'rgba(20, 184, 166, 0.8)',
+      },
     };
 
     const color = colors[cardType];
@@ -913,7 +922,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       {/* 分析按钮 */}
                       <button
                         className={`w-full py-2 rounded-lg font-semibold text-white text-xs transition-all shadow-lg backdrop-blur-sm ${isGenerating ? 'bg-gray-500 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-r from-blue-500/80 to-blue-600/80 hover:from-blue-500 hover:to-blue-600'}`}
-                        disabled={isGenerating}
+                        disabled={isGenerating || !characterAnalyzeImage}
                         onClick={async (e) => {
                           e.stopPropagation();
 
@@ -971,7 +980,6 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           }
                         }}
                         onPointerDown={(e) => e.stopPropagation()}
-                        disabled={!characterAnalyzeImage}
                       >
                         {isGenerating ? (
                           <div className="flex items-center justify-center gap-2">
@@ -1079,7 +1087,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       {/* 生成三视角JSON按钮 */}
                       <button
                         className={`w-full py-2 rounded-lg font-semibold text-white text-xs transition-all shadow-lg backdrop-blur-sm ${isGenerating ? 'bg-gray-500 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-r from-blue-500/80 to-blue-600/80 hover:from-blue-500 hover:to-blue-600'}`}
-                        disabled={isGenerating}
+                        disabled={isGenerating || !characterAnchorJson}
                         onClick={async (e) => {
                           e.stopPropagation();
 
@@ -1136,7 +1144,6 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           }
                         }}
                         onPointerDown={(e) => e.stopPropagation()}
-                        disabled={!characterAnchorJson || isGenerating}
                       >
                         {isGenerating ? (
                           <div className="flex items-center justify-center gap-2">
@@ -1269,7 +1276,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       {/* 生成三视角图片按钮 */}
                       <button
                         className={`w-full py-2 rounded-lg font-semibold text-white text-xs transition-all shadow-lg backdrop-blur-sm ${isGenerating ? 'bg-gray-500 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-r from-green-500/80 to-green-600/80 hover:from-green-500 hover:to-green-600'}`}
-                        disabled={isGenerating}
+                        disabled={isGenerating || !characterThreeViewImage || !characterThreeViewJson}
                         onClick={async (e) => {
                           e.stopPropagation();
 
@@ -1330,7 +1337,6 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           }
                         }}
                         onPointerDown={(e) => e.stopPropagation()}
-                        disabled={!characterThreeViewImage || !characterThreeViewJson || isGenerating}
                       >
                         {isGenerating ? (
                           <div className="flex items-center justify-center gap-2">
