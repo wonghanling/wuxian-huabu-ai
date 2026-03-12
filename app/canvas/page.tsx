@@ -971,19 +971,32 @@ function AssetPanel({ onClose }: { onClose: () => void }) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const { data: files } = await supabase.storage
-          .from('assets')
-          .list(user.id, { limit: 100, sortBy: { column: 'created_at', order: 'desc' } });
-
         const imgs: string[] = [];
         const vids: string[] = [];
 
-        files?.forEach((file: any) => {
+        // 读用户目录下的图片
+        const { data: userFiles } = await supabase.storage
+          .from('assets')
+          .list(user.id, { limit: 100, sortBy: { column: 'created_at', order: 'desc' } });
+
+        userFiles?.forEach((file: any) => {
           const url = supabase.storage.from('assets').getPublicUrl(`${user.id}/${file.name}`).data.publicUrl;
           if (file.name.endsWith('.mp4')) {
             vids.push(url);
           } else if (file.name.match(/\.(jpg|jpeg|png|webp)$/i)) {
             imgs.push(url);
+          }
+        });
+
+        // 读 videos/ 目录下的视频
+        const { data: videoFiles } = await supabase.storage
+          .from('assets')
+          .list('videos', { limit: 100, sortBy: { column: 'created_at', order: 'desc' } });
+
+        videoFiles?.forEach((file: any) => {
+          if (file.name.endsWith('.mp4')) {
+            const url = supabase.storage.from('assets').getPublicUrl(`videos/${file.name}`).data.publicUrl;
+            vids.push(url);
           }
         });
 
