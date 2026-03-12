@@ -2212,6 +2212,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     ref={videoRef}
                     src={generatedVideo}
                     controls
+                    crossOrigin="anonymous"
                     className="w-full bg-black"
                     style={{ minHeight: '200px', maxHeight: '250px' }}
                     onClick={(e) => e.stopPropagation()}
