@@ -166,7 +166,8 @@ function ZoomControlsExternal({ editor }: { editor: Editor }) {
 // 底部工具栏 - 外部版本（重新设计 - 可折叠抽屉式）
 function BottomToolbarExternal({ editor }: { editor: Editor }) {
   const [isExpanded, setIsExpanded] = useState(true);
-  const [showShotTypePanel, setShowShotTypePanel] = useState(false); // 景别类型面板显示状态
+  const [showShotTypePanel, setShowShotTypePanel] = useState(false);
+  const [showAssetPanel, setShowAssetPanel] = useState(false);
 
   const createTextCard = () => {
     console.log('点击文本生成按钮');
@@ -293,32 +294,7 @@ function BottomToolbarExternal({ editor }: { editor: Editor }) {
   };
 
   const createAssetCard = () => {
-    try {
-      const viewportPageBounds = editor.getViewportPageBounds();
-      const centerX = viewportPageBounds.center.x;
-      const centerY = viewportPageBounds.center.y;
-      const id = createShapeId();
-
-      editor.createShape({
-        id,
-        type: 'custom-card' as any,
-        x: centerX - 220,
-        y: centerY - 250,
-        props: {
-          w: 440,
-          h: 500,
-          cardType: 'asset',
-          title: 'Assets',
-          prompt: '',
-          model: '',
-        },
-      });
-
-      editor.select(id);
-      editor.setCurrentTool('select');
-    } catch (error) {
-      console.error('创建资产卡片失败:', error);
-    }
+    setShowAssetPanel(true);
   };
 
   const createDirectorTimeline = () => {
@@ -982,6 +958,135 @@ function BottomToolbar() {
   );
 }
 
+// 资产面板组件
+function AssetPanel({ onClose }: { onClose: () => void }) {
+  const [activeTab, setActiveTab] = useState<'images' | 'videos'>('images');
+  const [images, setImages] = useState<string[]>([]);
+  const [videos, setVideos] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadAssets = async () => {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: files } = await supabase.storage
+          .from('assets')
+          .list(user.id, { limit: 100, sortBy: { column: 'created_at', order: 'desc' } });
+
+        const imgs: string[] = [];
+        const vids: string[] = [];
+
+        files?.forEach((file: any) => {
+          const url = supabase.storage.from('assets').getPublicUrl(`${user.id}/${file.name}`).data.publicUrl;
+          if (file.name.endsWith('.mp4')) {
+            vids.push(url);
+          } else if (file.name.match(/\.(jpg|jpeg|png|webp)$/i)) {
+            imgs.push(url);
+          }
+        });
+
+        setImages(imgs);
+        setVideos(vids);
+      } catch (err) {
+        console.error('加载资产失败:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAssets();
+  }, []);
+
+  return (
+    <div className="fixed top-0 right-0 h-full w-96 bg-zinc-900 border-l border-white/10 z-[9999] shadow-2xl flex flex-col">
+      {/* 头部 */}
+      <div className="flex items-center justify-between p-4 border-b border-white/10">
+        <h2 className="text-lg font-semibold text-white">资产库</h2>
+        <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-lg transition-all">
+          <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Tab 切换 */}
+      <div className="flex border-b border-white/10">
+        <button
+          onClick={() => setActiveTab('images')}
+          className={`flex-1 py-3 text-sm font-medium transition-all ${
+            activeTab === 'images'
+              ? 'text-white border-b-2 border-blue-500'
+              : 'text-gray-400 hover:text-gray-300'
+          }`}
+        >
+          图片 ({images.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('videos')}
+          className={`flex-1 py-3 text-sm font-medium transition-all ${
+            activeTab === 'videos'
+              ? 'text-white border-b-2 border-blue-500'
+              : 'text-gray-400 hover:text-gray-300'
+          }`}
+        >
+          视频 ({videos.length})
+        </button>
+      </div>
+
+      {/* 内容区 */}
+      <div className="flex-1 overflow-y-auto p-4">
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <svg className="animate-spin h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </div>
+        ) : activeTab === 'images' ? (
+          images.length === 0 ? (
+            <div className="text-center text-gray-400 py-16">暂无图片</div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {images.map((url, i) => (
+                <div key={i} className="relative group aspect-square bg-black/20 rounded-lg overflow-hidden border border-white/10 hover:border-white/30 transition-all">
+                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <a href={url} download className="p-2 bg-blue-500 hover:bg-blue-600 rounded-lg">
+                      <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        ) : (
+          videos.length === 0 ? (
+            <div className="text-center text-gray-400 py-16">暂无视频</div>
+          ) : (
+            <div className="space-y-3">
+              {videos.map((url, i) => (
+                <div key={i} className="relative group bg-black/20 rounded-lg overflow-hidden border border-white/10 hover:border-white/30 transition-all">
+                  <video src={url} controls crossOrigin="anonymous" className="w-full" />
+                  <a href={url} download className="absolute top-2 right-2 p-2 bg-blue-500 hover:bg-blue-600 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                  </a>
+                </div>
+              ))}
+            </div>
+          )
+        )}
+      </div>
+    </div>
+  );
+}
+
 function CanvasPageContent() {
   const searchParams = useSearchParams();
   const isTutorial = searchParams.get('tutorial') === 'true';
@@ -995,6 +1100,7 @@ function CanvasPageContent() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   const [canvasList, setCanvasList] = useState<{id: string; title: string}[]>([]);
   const [showCanvasList, setShowCanvasList] = useState(false);
+  const [showAssetPanel, setShowAssetPanel] = useState(false);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
 
@@ -1434,6 +1540,14 @@ function CanvasPageContent() {
           onComplete={() => setShowTutorial(false)}
           onSkip={() => setShowTutorial(false)}
         />
+      )}
+
+      {/* 资产面板 */}
+      {showAssetPanel && (
+        <>
+          <div className="fixed inset-0 bg-black/50 z-[9998]" onClick={() => setShowAssetPanel(false)} />
+          <AssetPanel onClose={() => setShowAssetPanel(false)} />
+        </>
       )}
 
       {/* 自定义样式 - 纯黑色主题 */}

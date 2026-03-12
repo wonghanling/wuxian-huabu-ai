@@ -211,7 +211,7 @@ export type CustomCardShape = TLBaseShape<
   {
     w: number;
     h: number;
-    cardType: 'text' | 'image' | 'video' | 'character' | 'asset';
+    cardType: 'text' | 'image' | 'video' | 'character';
     title: string;
     prompt: string;
     model: string;
@@ -268,7 +268,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
   static override props: RecordProps<CustomCardShape> = {
     w: T.number,
     h: T.number,
-    cardType: T.literalEnum('image', 'text', 'video', 'character', 'asset'),
+    cardType: T.literalEnum('image', 'text', 'video', 'character'),
     title: T.string,
     prompt: T.string,
     model: T.string,
@@ -553,15 +553,6 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
         iconBg: 'bg-gradient-to-br from-gray-400/20 to-gray-500/20',
         buttonBg: 'bg-gradient-to-r from-gray-500/80 to-gray-600/80 hover:from-gray-500 hover:to-gray-600',
         handleColor: 'rgba(192, 192, 192, 0.8)',
-      },
-      asset: {
-        gradient: 'from-teal-500/20 to-cyan-500/20',
-        border: 'border-teal-400/30',
-        glow: 'shadow-teal-500/20',
-        icon: 'text-teal-400',
-        iconBg: 'bg-gradient-to-br from-teal-400/20 to-cyan-400/20',
-        buttonBg: 'bg-gradient-to-r from-teal-500/80 to-cyan-500/80 hover:from-teal-500 hover:to-cyan-500',
-        handleColor: 'rgba(20, 184, 166, 0.8)',
       },
     };
 
@@ -2496,18 +2487,6 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                 ) : (
                   <p className="text-gray-500 text-xs text-center">Text output will appear here...</p>
                 )}
-                </div>
-              </div>
-            )}
-
-            {/* 资产卡片 */}
-            {cardType === 'asset' && (
-              <div className="mt-2 bg-black/30 border border-white/8 rounded-lg p-3 max-h-[400px] overflow-y-auto">
-                <p className="text-gray-400 text-xs mb-3">历史生成的图片和视频</p>
-                <div className="text-gray-500 text-xs text-center py-8">
-                  资产库功能开发中...
-                  <br />
-                  将显示 Supabase Storage 中的图片和视频
                 </div>
               </div>
             )}
