@@ -1109,8 +1109,6 @@ function CanvasPageContent() {
     const t2 = setTimeout(doAutoSave, 60 * 60 * 1000);
     const t3 = setTimeout(doAutoSave, 90 * 60 * 1000);
 
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
-
     // 监听相机变化，更新缩放级别和位置
     const updateCamera = () => {
       const camera = editor.getCamera();
@@ -1118,7 +1116,7 @@ function CanvasPageContent() {
       setCameraPos({ x: camera.x, y: camera.y });
     };
     updateCamera();
-    editor.store.listen(updateCamera);
+    const unsubscribe = editor.store.listen(updateCamera);
 
     // 监听鼠标事件，实现右键拖动画布
     let isDraggingCanvas = false;
@@ -1183,7 +1181,18 @@ function CanvasPageContent() {
     container.addEventListener('pointermove', handlePointerMove, { capture: true });
     container.addEventListener('pointerup', handlePointerUp, { capture: true });
     container.addEventListener('pointerleave', () => { isDraggingCanvas = false; });
-  };
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      unsubscribe();
+      container.removeEventListener('contextmenu', handleContextMenu);
+      container.removeEventListener('pointerdown', handlePointerDown, { capture: true });
+      container.removeEventListener('pointermove', handlePointerMove, { capture: true });
+      container.removeEventListener('pointerup', handlePointerUp, { capture: true });
+    };
+  }, [editor, user]);
 
   return (
     <div className="fixed inset-0 bg-black">

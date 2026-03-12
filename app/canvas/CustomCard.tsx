@@ -211,7 +211,7 @@ export type CustomCardShape = TLBaseShape<
   {
     w: number;
     h: number;
-    cardType: 'text' | 'image' | 'video' | 'character';
+    cardType: 'text' | 'image' | 'video' | 'character' | 'asset';
     title: string;
     prompt: string;
     model: string;
