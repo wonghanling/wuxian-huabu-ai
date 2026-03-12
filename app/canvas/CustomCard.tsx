@@ -2493,6 +2493,18 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                 </div>
               </div>
             )}
+
+            {/* 资产卡片 */}
+            {cardType === 'asset' && (
+              <div className="mt-2 bg-black/30 border border-white/8 rounded-lg p-3 max-h-[400px] overflow-y-auto">
+                <p className="text-gray-400 text-xs mb-3">历史生成的图片和视频</p>
+                <div className="text-gray-500 text-xs text-center py-8">
+                  资产库功能开发中...
+                  <br />
+                  将显示 Supabase Storage 中的图片和视频
+                </div>
+              </div>
+            )}
           </div>
           )}
         </div>
