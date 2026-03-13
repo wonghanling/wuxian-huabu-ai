@@ -250,6 +250,9 @@ export type CustomCardShape = TLBaseShape<
     characterThreeViewImage?: string;
     characterGeneratedImage?: string;
     characterImageModel?: string;
+    imageQuality?: string;
+    cameraTemplate?: string;
+    cameraStrength?: string;
     showCharacterOutput?: boolean;
     showAnalyzePanel?: boolean;
     showThreeViewJsonPanel?: boolean;
