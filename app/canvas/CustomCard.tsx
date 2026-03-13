@@ -2052,6 +2052,11 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     const taskId = data.taskId;
                     const videoEndpoint = data.endpoint;
 
+                    // 获取 token 用于轮询鉴权
+                    const supabase = createClient();
+                    const { data: { session } } = await supabase.auth.getSession();
+                    const authToken = session?.access_token || '';
+
                     // 轮询查询视频状态
                     const maxAttempts = 60;
                     let attempts = 0;
@@ -2064,10 +2069,17 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       attempts++;
                       await new Promise(resolve => setTimeout(resolve, 5000));
 
-                      const queryResponse = await fetch(`/api/video/query?taskId=${encodeURIComponent(taskId)}&endpoint=${encodeURIComponent(videoEndpoint)}`);
+                      const queryResponse = await fetch(`/api/video/query?taskId=${encodeURIComponent(taskId)}&endpoint=${encodeURIComponent(videoEndpoint)}`, {
+                        headers: authToken ? { 'Authorization': `Bearer ${authToken}` } : {},
+                      });
                       if (!queryResponse.ok) return poll();
 
                       const queryData = await queryResponse.json();
+
+                      // 用 getShape 获取最新 props，避免闭包旧值覆盖 isGenerating
+                      const latestShape = editor.getShape(shape.id);
+                      if (!latestShape) return;
+                      const latestProps = (latestShape as any).props;
 
                       // 更新进度
                       const progress = queryData.progress || 30;
@@ -2076,7 +2088,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         id: shape.id,
                         type: 'custom-card' as any,
                         props: {
-                          ...shape.props,
+                          ...latestProps,
                           generationProgress: progress,
                           generationStatus: statusText,
                         },
@@ -2084,15 +2096,19 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
                       if (queryData.status === 'completed' && queryData.videoUrl) {
                         const finalVideoUrl = queryData.videoUrl;
+                        const latestShape2 = editor.getShape(shape.id);
+                        const latestProps2 = latestShape2 ? (latestShape2 as any).props : latestProps;
 
                         editor.updateShape({
                           id: shape.id,
                           type: 'custom-card' as any,
                           props: {
-                            ...shape.props,
+                            ...latestProps2,
                             generatedVideo: finalVideoUrl,
                             showVideoOutput: true,
                             isGenerating: false,
+                            generationProgress: 100,
+                            generationStatus: '生成完成',
                           },
                         });
                       } else if (queryData.status === 'failed') {
@@ -2136,19 +2152,19 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
             {/* 生成进度条 */}
             {isGenerating && generationProgress !== undefined && generationProgress > 0 && (
-              <div className="mt-2 bg-black/30 border border-white/10 rounded-lg p-3">
+              <div className="mt-2 bg-black/40 border border-white/10 rounded-lg p-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs text-gray-400">生成进度</span>
-                  <span className="text-xs text-white font-semibold">{generationProgress}%</span>
+                  <span className="text-xs text-gray-300 font-semibold">{generationProgress}%</span>
                 </div>
-                <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                <div className="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300"
+                    className="h-full bg-gradient-to-r from-gray-400 to-white transition-all duration-500"
                     style={{ width: `${generationProgress}%` }}
                   />
                 </div>
                 {generationStatus && (
-                  <p className="text-xs text-gray-400 mt-2">{generationStatus}</p>
+                  <p className="text-xs text-gray-500 mt-2">{generationStatus}</p>
                 )}
               </div>
             )}

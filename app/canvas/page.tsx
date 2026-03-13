@@ -988,14 +988,14 @@ function AssetPanel({ onClose }: { onClose: () => void }) {
           }
         });
 
-        // 读 videos/ 目录下的视频
+        // 读 videos/{userId}/ 目录下的视频
         const { data: videoFiles } = await supabase.storage
           .from('assets')
-          .list('videos', { limit: 100, sortBy: { column: 'created_at', order: 'desc' } });
+          .list(`videos/${user.id}`, { limit: 100, sortBy: { column: 'created_at', order: 'desc' } });
 
         videoFiles?.forEach((file: any) => {
           if (file.name.endsWith('.mp4')) {
-            const url = supabase.storage.from('assets').getPublicUrl(`videos/${file.name}`).data.publicUrl;
+            const url = supabase.storage.from('assets').getPublicUrl(`videos/${user.id}/${file.name}`).data.publicUrl;
             vids.push(url);
           }
         });

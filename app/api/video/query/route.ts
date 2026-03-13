@@ -11,11 +11,11 @@ const supabase = createClient(
 );
 
 // 下载视频并上传到 Supabase Storage，返回公开 URL
-async function uploadVideoToStorage(sourceUrl: string): Promise<string> {
+async function uploadVideoToStorage(sourceUrl: string, userId: string): Promise<string> {
   const res = await fetch(sourceUrl);
   if (!res.ok) throw new Error(`下载视频失败: ${res.status}`);
   const buffer = Buffer.from(await res.arrayBuffer());
-  const filename = `videos/${Date.now()}-${Math.random().toString(36).slice(2)}.mp4`;
+  const filename = `videos/${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.mp4`;
   const { error } = await supabase.storage
     .from('assets')
     .upload(filename, buffer, { contentType: 'video/mp4', upsert: false });
@@ -43,6 +43,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '缺少 taskId 或 endpoint' }, { status: 400 });
     }
 
+    // 验证用户身份
+    const authHeader = request.headers.get('authorization');
+    let userId = 'anonymous';
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      const { data: { user } } = await supabase.auth.getUser(token);
+      if (user) userId = user.id;
+    }
+
     let status = 'processing';
     let progress = 30;
     let videoUrl: string | null = null;
@@ -64,7 +73,7 @@ export async function GET(request: NextRequest) {
           const rawUrl = jmRes?.data?.video_url || null;
           if (rawUrl) {
             try {
-              videoUrl = await uploadVideoToStorage(rawUrl);
+              videoUrl = await uploadVideoToStorage(rawUrl, userId);
             } catch (e) {
               console.warn('转存即梦视频失败，使用原始URL:', e);
               videoUrl = rawUrl;
@@ -104,7 +113,7 @@ export async function GET(request: NextRequest) {
         const rawUrl = data?.output?.video_url || null;
         if (rawUrl) {
           try {
-            videoUrl = await uploadVideoToStorage(rawUrl);
+            videoUrl = await uploadVideoToStorage(rawUrl, userId);
           } catch (e) {
             console.warn('转存 DashScope 视频失败，使用原始URL:', e);
             videoUrl = rawUrl;
@@ -152,7 +161,7 @@ export async function GET(request: NextRequest) {
           console.log('视频URL:', rawUrl);
           if (rawUrl) {
             try {
-              videoUrl = await uploadVideoToStorage(rawUrl);
+              videoUrl = await uploadVideoToStorage(rawUrl, userId);
             } catch (e) {
               console.warn('转存 fal 视频失败，使用原始URL:', e);
               videoUrl = rawUrl;
