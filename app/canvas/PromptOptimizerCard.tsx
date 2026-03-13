@@ -10,6 +10,7 @@ import {
 import { useState } from 'react';
 import { useMembership } from '@/lib/useMembership';
 import MembershipModal from './MembershipModal';
+import { createClient } from '@/lib/supabase/client';
 
 export type PromptOptimizerCardShape = TLBaseShape<
   'prompt-optimizer-card',
@@ -76,6 +77,27 @@ export class PromptOptimizerCardUtil extends BaseBoxShapeUtil<PromptOptimizerCar
     const editor = useEditor();
     const { isMember, loading: memberLoading } = useMembership();
     const [showMemberModal, setShowMemberModal] = useState(false);
+
+    const handlePay = async (plan: 'membership' | 'recharge', amount: number) => {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { alert('请先登录'); return; }
+      const res = await fetch('/api/payment/alipay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({ plan, amount }),
+      });
+      const data = await res.json();
+      if (data.paymentForm) {
+        const div = document.createElement('div');
+        div.innerHTML = data.paymentForm;
+        document.body.appendChild(div);
+        const form = div.querySelector('form');
+        form?.submit();
+      } else {
+        alert(data.error || '发起支付失败');
+      }
+    };
 
     // 切换缩放
     const toggleMinimize = (e: React.MouseEvent) => {
@@ -186,7 +208,7 @@ export class PromptOptimizerCardUtil extends BaseBoxShapeUtil<PromptOptimizerCar
           overflow: 'visible',
         }}
       >
-        {showMemberModal && <MembershipModal onClose={() => setShowMemberModal(false)} />}
+        {showMemberModal && <MembershipModal onClose={() => setShowMemberModal(false)} onPay={() => handlePay('membership', 115)} />}
         {/* 输出端口 - Right（灰色，只能主动发起连接）*/}
         <div
           className="absolute top-1/2 -translate-y-1/2 cursor-crosshair group"

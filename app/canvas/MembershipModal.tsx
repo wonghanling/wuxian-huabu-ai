@@ -5,9 +5,10 @@ import { MEMBERSHIP_PRICE } from '@/lib/pricing';
 
 interface MembershipModalProps {
   onClose: () => void;
+  onPay: () => void;
 }
 
-export default function MembershipModal({ onClose }: MembershipModalProps) {
+export default function MembershipModal({ onClose, onPay }: MembershipModalProps) {
   // ESC 关闭
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -72,10 +73,7 @@ export default function MembershipModal({ onClose }: MembershipModalProps) {
         {/* 按钮 */}
         <button
           className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold transition-all shadow-lg shadow-violet-500/20"
-          onClick={() => {
-            // TODO: 跳转支付页
-            alert('支付功能即将上线，请联系客服开通');
-          }}
+          onClick={onPay}
         >
           立即开通 ¥{MEMBERSHIP_PRICE}/月
         </button>

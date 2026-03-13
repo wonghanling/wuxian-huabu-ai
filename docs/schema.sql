@@ -107,3 +107,27 @@ begin
   return jsonb_build_object('success', true, 'balance_after', v_balance_after);
 end;
 $$;
+
+-- ============================================================
+-- 支付订单表
+-- ============================================================
+create table if not exists public.payment_orders (
+  id uuid primary key default gen_random_uuid(),
+  order_no text not null unique,           -- 商户订单号
+  user_id uuid not null references public.users(id) on delete cascade,
+  order_type text not null check (order_type in ('recharge', 'membership')),
+  amount_rmb numeric(10,2) not null,       -- 订单金额（元）
+  status text not null default 'pending' check (status in ('pending', 'paid', 'cancelled', 'refunded')),
+  payment_method text not null default 'alipay',
+  trade_no text,                           -- 支付宝交易号
+  paid_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+alter table public.payment_orders enable row level security;
+create policy "用户只能读自己的订单" on public.payment_orders
+  for select using (auth.uid() = user_id);
+
+create index if not exists idx_payment_orders_user_id on public.payment_orders(user_id);
+create index if not exists idx_payment_orders_order_no on public.payment_orders(order_no);
+create index if not exists idx_payment_orders_status on public.payment_orders(status);

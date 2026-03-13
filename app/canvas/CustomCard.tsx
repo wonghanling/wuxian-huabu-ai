@@ -407,6 +407,27 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
     const { isMember, userId } = useMembership();
     const [showMemberModal, setShowMemberModal] = useState(false);
 
+    const handlePay = async (plan: 'membership' | 'recharge', amount: number) => {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { alert('请先登录'); return; }
+      const res = await fetch('/api/payment/alipay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({ plan, amount }),
+      });
+      const data = await res.json();
+      if (data.paymentForm) {
+        const div = document.createElement('div');
+        div.innerHTML = data.paymentForm;
+        document.body.appendChild(div);
+        const form = div.querySelector('form');
+        form?.submit();
+      } else {
+        alert(data.error || '发起支付失败');
+      }
+    };
+
     // 视频模型参数配置
     const VIDEO_MODEL_CONFIG: Record<string, {
       mode: 't2v' | 'i2v' | 'firstLastFrame';
@@ -609,7 +630,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
           overflow: 'visible',
         }}
       >
-        {showMemberModal && <MembershipModal onClose={() => setShowMemberModal(false)} />}
+        {showMemberModal && <MembershipModal onClose={() => setShowMemberModal(false)} onPay={() => handlePay('membership', 115)} />}
         {/* 输出端口 - Right */}
         <div
           className="absolute top-1/2 -translate-y-1/2 cursor-crosshair group"

@@ -1117,7 +1117,29 @@ function CanvasPageContent() {
   const [showAssetPanel, setShowAssetPanel] = useState(false);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const [showRechargeModal, setShowRechargeModal] = useState(false);
   const { isMember, balance, refresh: refreshMembership } = useMembership();
+
+  const handlePay = async (plan: 'membership' | 'recharge', amount: number) => {
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { alert('请先登录'); return; }
+    const res = await fetch('/api/payment/alipay', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+      body: JSON.stringify({ plan, amount }),
+    });
+    const data = await res.json();
+    if (data.paymentForm) {
+      const div = document.createElement('div');
+      div.innerHTML = data.paymentForm;
+      document.body.appendChild(div);
+      const form = div.querySelector('form');
+      form?.submit();
+    } else {
+      alert(data.error || '发起支付失败');
+    }
+  };
 
   const canvasIdRef = useRef<string | null>(null);
   const userIdRef = useRef<string | null>(null);
@@ -1377,7 +1399,7 @@ function CanvasPageContent() {
                 ) : (
                   <button
                     className="text-yellow-400 hover:text-yellow-300 transition-colors"
-                    onClick={() => alert(`开通会员 ¥${MEMBERSHIP_PRICE}/月，请联系客服`)}
+                    onClick={() => handlePay('membership', MEMBERSHIP_PRICE)}
                   >
                     开通会员
                   </button>
@@ -1386,7 +1408,7 @@ function CanvasPageContent() {
                 <span className="text-white/60">¥{balance.toFixed(2)}</span>
                 <button
                   className="text-blue-400 hover:text-blue-300 transition-colors ml-0.5"
-                  onClick={() => alert('充值功能即将上线，请联系客服')}
+                  onClick={() => setShowRechargeModal(true)}
                 >
                   充值
                 </button>
@@ -1825,6 +1847,40 @@ function CanvasPageContent() {
           animation-delay: 0.2s;
         }
       `}</style>
+
+      {/* 充值弹窗 */}
+      {showRechargeModal && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowRechargeModal(false)}
+        >
+          <div
+            className="relative w-[360px] rounded-2xl bg-zinc-900 border border-white/10 p-8 shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              className="absolute top-4 right-4 text-white/40 hover:text-white/80 transition-colors"
+              onClick={() => setShowRechargeModal(false)}
+            >✕</button>
+            <h2 className="text-center text-xl font-semibold text-white mb-6">选择充值金额</h2>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { amount: 50, label: '¥50' },
+                { amount: 100, label: '¥100' },
+                { amount: 1000, label: '¥1000' },
+                { amount: 10000, label: '¥10000' },
+              ].map(({ amount, label }) => (
+                <button
+                  key={amount}
+                  className="py-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-white font-semibold text-lg transition-all"
+                  onClick={() => { setShowRechargeModal(false); handlePay('recharge', amount); }}
+                >{label}</button>
+              ))}
+            </div>
+            <p className="text-center text-xs text-white/30 mt-4">充值后余额可用于图片和视频生成</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

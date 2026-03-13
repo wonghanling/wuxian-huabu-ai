@@ -1,0 +1,98 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+import { AlipaySdk } from 'alipay-sdk';
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+const alipaySdk = new AlipaySdk({
+  appId: process.env.ALIPAY_APP_ID!,
+  privateKey: process.env.ALIPAY_PRIVATE_KEY!,
+  alipayPublicKey: process.env.ALIPAY_PUBLIC_KEY!,
+  gateway: 'https://openapi.alipay.com/gateway.do',
+  timeout: 5000,
+  camelcase: true,
+});
+
+export async function POST(req: NextRequest) {
+  try {
+    const formData = await req.formData();
+    const params: Record<string, string> = {};
+    formData.forEach((value, key) => { params[key] = value.toString(); });
+
+    console.log('Alipay notify params:', params);
+
+    const signVerified = alipaySdk.checkNotifySign(params);
+    if (!signVerified) {
+      console.error('Alipay signature verification failed');
+      return new NextResponse('fail', { status: 400 });
+    }
+
+    const outTradeNo = params.out_trade_no;
+    const tradeNo = params.trade_no;
+    const tradeStatus = params.trade_status;
+
+    if (!outTradeNo) {
+      return new NextResponse('fail', { status: 400 });
+    }
+
+    const { data: orderData } = await supabaseAdmin
+      .from('payment_orders')
+      .select('*')
+      .eq('order_no', outTradeNo)
+      .single();
+
+    if (!orderData) {
+      console.error('Order not found:', outTradeNo);
+      return new NextResponse('fail', { status: 404 });
+    }
+
+    if (tradeStatus === 'TRADE_SUCCESS' || tradeStatus === 'TRADE_FINISHED') {
+      // 更新订单状态
+      await supabaseAdmin
+        .from('payment_orders')
+        .update({ status: 'paid', trade_no: tradeNo, paid_at: new Date().toISOString() })
+        .eq('order_no', outTradeNo);
+
+      if (orderData.user_id) {
+        if (orderData.order_type === 'membership') {
+          // 开通会员：设置 is_member + member_expires_at（+1个月）
+          const expiresAt = new Date();
+          expiresAt.setMonth(expiresAt.getMonth() + 1);
+
+          await supabaseAdmin
+            .from('users')
+            .update({
+              is_member: true,
+              member_expires_at: expiresAt.toISOString(),
+            })
+            .eq('id', orderData.user_id);
+
+          console.log('Membership activated:', orderData.user_id);
+        } else if (orderData.order_type === 'recharge') {
+          // 余额充值：增加 balance
+          const { data: userData } = await supabaseAdmin
+            .from('users')
+            .select('balance')
+            .eq('id', orderData.user_id)
+            .single();
+
+          const currentBalance = userData?.balance || 0;
+          await supabaseAdmin
+            .from('users')
+            .update({ balance: currentBalance + orderData.amount_rmb })
+            .eq('id', orderData.user_id);
+
+          console.log(`Balance recharged: +${orderData.amount_rmb} for user ${orderData.user_id}`);
+        }
+      }
+    }
+
+    return new NextResponse('success');
+  } catch (error: any) {
+    console.error('Alipay notify error:', error);
+    return new NextResponse('fail', { status: 500 });
+  }
+}
