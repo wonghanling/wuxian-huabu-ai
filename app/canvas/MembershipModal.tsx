@@ -20,15 +20,18 @@ export default function MembershipModal({ onClose, onPay }: MembershipModalProps
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
       onClick={onClose}
+      onPointerDown={e => e.stopPropagation()}
     >
       <div
         className="relative w-[360px] rounded-2xl bg-zinc-900 border border-white/10 p-8 shadow-2xl"
         onClick={e => e.stopPropagation()}
+        onPointerDown={e => e.stopPropagation()}
       >
         {/* 关闭 */}
         <button
           className="absolute top-4 right-4 text-white/40 hover:text-white/80 transition-colors"
           onClick={onClose}
+          onPointerDown={e => e.stopPropagation()}
         >
           ✕
         </button>
@@ -74,6 +77,7 @@ export default function MembershipModal({ onClose, onPay }: MembershipModalProps
         <button
           className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold transition-all shadow-lg shadow-violet-500/20"
           onClick={onPay}
+          onPointerDown={e => e.stopPropagation()}
         >
           立即开通 ¥{MEMBERSHIP_PRICE}/月
         </button>
