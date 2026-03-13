@@ -8,6 +8,8 @@ import {
   Rectangle2d,
 } from 'tldraw';
 import { useState } from 'react';
+import { useMembership } from '@/lib/useMembership';
+import MembershipModal from './MembershipModal';
 
 export type PromptOptimizerCardShape = TLBaseShape<
   'prompt-optimizer-card',
@@ -72,6 +74,8 @@ export class PromptOptimizerCardUtil extends BaseBoxShapeUtil<PromptOptimizerCar
   component(shape: PromptOptimizerCardShape) {
     const { w, h, userInput, duration, ratio, optimizedPrompt, isGenerating, isMinimized, showOutput, uploadedImage } = shape.props;
     const editor = useEditor();
+    const { isMember, loading: memberLoading } = useMembership();
+    const [showMemberModal, setShowMemberModal] = useState(false);
 
     // 切换缩放
     const toggleMinimize = (e: React.MouseEvent) => {
@@ -92,7 +96,7 @@ export class PromptOptimizerCardUtil extends BaseBoxShapeUtil<PromptOptimizerCar
     };
 
     const generatePrompt = async () => {
-      // 每次点击都重新生成（不管有没有旧数据）
+      if (!isMember) { setShowMemberModal(true); return; }
       if (!userInput.trim()) {
         alert('请输入视频描述');
         return;
@@ -182,6 +186,7 @@ export class PromptOptimizerCardUtil extends BaseBoxShapeUtil<PromptOptimizerCar
           overflow: 'visible',
         }}
       >
+        {showMemberModal && <MembershipModal onClose={() => setShowMemberModal(false)} />}
         {/* 输出端口 - Right（灰色，只能主动发起连接）*/}
         <div
           className="absolute top-1/2 -translate-y-1/2 cursor-crosshair group"

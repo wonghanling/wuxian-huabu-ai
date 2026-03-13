@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { fal } from '@fal-ai/client';
 import { createClient } from '@supabase/supabase-js';
 import { Service } from '@volcengine/openapi';
+import { calcVideoPrice, OVI_PRICE } from '@/lib/pricing';
+import { deductBalance, refundBalance } from '@/lib/billing';
 
 // 火山引擎即梦服务
 const volcService = new Service({
@@ -374,8 +376,10 @@ const VIDEO_MODELS: Record<string, ModelConfig> = {
 };
 
 export async function POST(req: NextRequest) {
+  let body: any = {};
+  let videoPrice = 0;
   try {
-    const body = await req.json();
+    body = await req.json();
     const {
       prompt,
       model,
@@ -401,6 +405,38 @@ export async function POST(req: NextRequest) {
     // i2v 模型必须有图片
     if ((cfg.mode === 'i2v' || cfg.mode === 'firstLastFrame') && !startFrameImage) {
       return NextResponse.json({ error: '该模型需要上传图片' }, { status: 400 });
+    }
+
+    // ── 扣费 ──────────────────────────────────────────────────
+    if (userId) {
+      // 先查会员状态
+      const { data: userData } = await supabaseAdmin
+        .from('users')
+        .select('is_member, member_expires_at')
+        .eq('id', userId)
+        .single();
+      const isMember = !!(
+        userData?.is_member &&
+        userData?.member_expires_at &&
+        new Date(userData.member_expires_at) > new Date()
+      );
+
+      // OVI 按次，其余按秒
+      if (model === 'ovi-i2v') {
+        videoPrice = OVI_PRICE;
+      } else {
+        const res = (resolution || cfg.defaultResolution).toUpperCase();
+        videoPrice = calcVideoPrice(model, res, Number(duration) || 5, isMember, generateAudio === true);
+      }
+
+      const deduct = await deductBalance(
+        userId, videoPrice, 'video_deduct',
+        `视频生成 - ${cfg.name}`,
+        { model, duration, resolution, generateAudio },
+      );
+      if (!deduct.success) {
+        return NextResponse.json({ error: deduct.error || '余额不足，请充值' }, { status: 402 });
+      }
     }
 
     // 构建 fal 输入参数
@@ -592,6 +628,10 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error('视频生成错误:', error);
+    // 生成失败退款
+    if (body?.userId && videoPrice > 0) {
+      await refundBalance(body.userId, videoPrice, `视频生成失败退款 - ${body.model}`, { model: body.model });
+    }
     return NextResponse.json({ error: error.message || '服务器错误' }, { status: 500 });
   }
 }

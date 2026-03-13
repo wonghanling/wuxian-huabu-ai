@@ -74,7 +74,7 @@ export default function Home() {
               <span>Enterprise</span>
               <span className="text-xs text-zinc-500">企业版</span>
             </a>
-            <a href="#" className="hover:text-white transition-colors flex flex-col items-center">
+            <a href="#pricing" className="hover:text-white transition-colors flex flex-col items-center">
               <span>Pricing</span>
               <span className="text-xs text-zinc-500">定价</span>
             </a>
@@ -547,6 +547,95 @@ export default function Home() {
             <span className="text-2xl font-bold tracking-tighter">RAILWAY</span>
             <span className="text-2xl font-bold tracking-tighter">STRIPE</span>
             <span className="text-2xl font-bold tracking-tighter">REPLICATE</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section id="pricing" className="py-32 border-t border-white/5 relative z-10">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 mb-4">Pricing</p>
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">简单透明的定价</h2>
+            <p className="text-zinc-400 text-lg">按需付费，无隐藏费用</p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+            {/* 免费用户 */}
+            <div className="rounded-2xl border border-white/10 bg-zinc-900/50 p-8">
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-white mb-1">免费用户</h3>
+                <p className="text-zinc-500 text-sm">注册即可使用</p>
+              </div>
+              <div className="text-4xl font-bold text-white mb-6">¥0</div>
+              <ul className="space-y-3 text-sm text-zinc-400 mb-8">
+                <li className="flex items-center gap-2"><span className="text-zinc-600">✓</span> 无限画布创作</li>
+                <li className="flex items-center gap-2"><span className="text-zinc-600">✓</span> 图片生成 ¥0.3–1.5 / 次</li>
+                <li className="flex items-center gap-2"><span className="text-zinc-600">✓</span> 视频生成（普通价）</li>
+                <li className="flex items-center gap-2"><span className="text-zinc-600">✗</span> 文本卡片 / 角色设计</li>
+                <li className="flex items-center gap-2"><span className="text-zinc-600">✗</span> Prompt 优化</li>
+              </ul>
+              <a
+                href="/auth"
+                className="block w-full py-3 rounded-xl border border-white/10 text-white text-sm font-semibold text-center hover:bg-white/5 transition-all"
+              >
+                免费注册
+              </a>
+            </div>
+
+            {/* 会员 */}
+            <div className="rounded-2xl border border-violet-500/40 bg-gradient-to-b from-violet-950/40 to-zinc-900/80 p-8 relative overflow-hidden">
+              <div className="absolute top-4 right-4 text-xs font-semibold px-2.5 py-1 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30">
+                推荐
+              </div>
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-white mb-1">会员</h3>
+                <p className="text-zinc-400 text-sm">解锁全部 AI 能力</p>
+              </div>
+              <div className="flex items-end gap-1 mb-6">
+                <span className="text-4xl font-bold text-white">¥115</span>
+                <span className="text-zinc-400 text-sm mb-1">/月</span>
+              </div>
+              <ul className="space-y-3 text-sm text-zinc-300 mb-8">
+                <li className="flex items-center gap-2"><span className="text-violet-400">✓</span> 无限使用文本卡片（大模型）</li>
+                <li className="flex items-center gap-2"><span className="text-violet-400">✓</span> 角色设计 & Prompt 优化</li>
+                <li className="flex items-center gap-2"><span className="text-violet-400">✓</span> 图片生成 ¥0.3–1.5 / 次</li>
+                <li className="flex items-center gap-2"><span className="text-violet-400">✓</span> 视频生成每秒省 ¥0.2</li>
+                <li className="flex items-center gap-2"><span className="text-violet-400">✓</span> 优先客服支持</li>
+              </ul>
+              <button
+                onClick={() => alert('支付功能即将上线，请联系客服开通')}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white text-sm font-semibold transition-all shadow-lg shadow-violet-500/20"
+              >
+                立即开通
+              </button>
+            </div>
+          </div>
+
+          {/* 视频定价说明 */}
+          <div className="mt-12 rounded-2xl border border-white/5 bg-zinc-900/30 p-8">
+            <h4 className="text-white font-semibold mb-6 text-center">视频生成参考价格</h4>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-zinc-400">
+                <thead>
+                  <tr className="border-b border-white/5 text-zinc-500 text-xs uppercase tracking-wider">
+                    <th className="text-left pb-3 font-medium">模型</th>
+                    <th className="text-right pb-3 font-medium">时长</th>
+                    <th className="text-right pb-3 font-medium">会员价</th>
+                    <th className="text-right pb-3 font-medium">普通价</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  <tr><td className="py-3">即梦 3.0 720P</td><td className="text-right">5秒</td><td className="text-right text-violet-400">¥3.4</td><td className="text-right">¥4.4</td></tr>
+                  <tr><td className="py-3">即梦 3.0 1080P</td><td className="text-right">5秒</td><td className="text-right text-violet-400">¥5.15</td><td className="text-right">¥6.15</td></tr>
+                  <tr><td className="py-3">即梦 3.0 Pro</td><td className="text-right">5秒</td><td className="text-right text-violet-400">¥7.0</td><td className="text-right">¥8.0</td></tr>
+                  <tr><td className="py-3">Wan 2.6 720P</td><td className="text-right">5秒</td><td className="text-right text-violet-400">¥5.0</td><td className="text-right">¥6.0</td></tr>
+                  <tr><td className="py-3">Veo 3.1 Fast 720P</td><td className="text-right">5秒</td><td className="text-right text-violet-400">¥5.45</td><td className="text-right">¥6.45</td></tr>
+                  <tr><td className="py-3">Veo 3.1 720P</td><td className="text-right">5秒</td><td className="text-right text-violet-400">¥8.9</td><td className="text-right">¥9.9</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="text-zinc-600 text-xs text-center mt-4">完整定价以实际生成时长和分辨率为准</p>
           </div>
         </div>
       </section>

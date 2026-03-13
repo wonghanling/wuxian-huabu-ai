@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fal } from '@fal-ai/client';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { calcImagePrice } from '@/lib/pricing';
+import { deductBalance, refundBalance } from '@/lib/billing';
+
+const supabaseAdmin = createSupabaseClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 fal.config({ credentials: process.env.FAL_KEY! });
 
@@ -53,9 +61,10 @@ const IMAGE_MODELS: Record<string, {
 };
 
 export async function POST(req: NextRequest) {
+  let body: any = {};
   try {
-    const body = await req.json();
-    const { model, prompt, aspectRatio = '1:1', imageBase64 } = body;
+    body = await req.json();
+    const { model, prompt, aspectRatio = '1:1', imageBase64, userId } = body;
 
     if (!model || !prompt) {
       return NextResponse.json({ error: '缺少必要参数' }, { status: 400 });
@@ -68,6 +77,19 @@ export async function POST(req: NextRequest) {
 
     if (modelConfig.requiresImage && !imageBase64) {
       return NextResponse.json({ error: '该模型需要上传一张图片' }, { status: 400 });
+    }
+
+    // ── 扣费 ──────────────────────────────────────────────────
+    const price = calcImagePrice(model);
+    if (userId) {
+      const deduct = await deductBalance(
+        userId, price, 'image_deduct',
+        `图片生成 - ${model}`,
+        { model, aspectRatio },
+      );
+      if (!deduct.success) {
+        return NextResponse.json({ error: deduct.error || '余额不足，请充值' }, { status: 402 });
+      }
     }
 
     let imageUrl = '';
@@ -184,6 +206,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, imageUrl, model, prompt });
   } catch (error: any) {
     console.error('Image API error:', error);
+    // 生成失败退款
+    if (body?.userId) {
+      const price = calcImagePrice(body.model);
+      await refundBalance(body.userId, price, `图片生成失败退款 - ${body.model}`, { model: body.model });
+    }
     return NextResponse.json({ error: error.message || '服务器错误' }, { status: 500 });
   }
 }

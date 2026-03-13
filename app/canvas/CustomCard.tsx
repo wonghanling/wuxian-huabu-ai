@@ -12,6 +12,8 @@ import {
 import { useState, useRef, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { mirrorUrlToStorage } from '@/lib/canvas-storage';
+import { useMembership } from '@/lib/useMembership';
+import MembershipModal from './MembershipModal';
 
 // Helper function to update custom card shape (bypasses TypeScript type checking)
 const updateCustomCardShape = (editor: Editor, id: string, props: any) => {
@@ -396,6 +398,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
     const { cardType, title, prompt, model, w, h, uploadedImage, cameraVertical, cameraHorizontal, showCameraControl, generatedImage, aspectRatio, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showVideoOutput, capturedFrame, videoDuration, videoResolution, videoGenerateAudio, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterAnalyzeImage, characterAnchorJson, characterThreeViewJson, characterThreeViewImage, characterGeneratedImage, characterImageModel, showCharacterOutput, showAnalyzePanel, showThreeViewJsonPanel, showGeneratePanel, isMinimized, textOutput, isGenerating, generationProgress, generationStatus } = shape.props;
     const editor = useEditor();
     const videoRef = useRef<HTMLVideoElement>(null);
+    const { isMember, userId } = useMembership();
+    const [showMemberModal, setShowMemberModal] = useState(false);
 
     // 视频模型参数配置
     const VIDEO_MODEL_CONFIG: Record<string, {
@@ -599,6 +603,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
           overflow: 'visible',
         }}
       >
+        {showMemberModal && <MembershipModal onClose={() => setShowMemberModal(false)} />}
         {/* 输出端口 - Right */}
         <div
           className="absolute top-1/2 -translate-y-1/2 cursor-crosshair group"
@@ -918,6 +923,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         disabled={isGenerating || !characterAnalyzeImage}
                         onClick={async (e) => {
                           e.stopPropagation();
+                          if (!isMember) { setShowMemberModal(true); return; }
 
                           // 如果已经有输出结果，则切换显示/隐藏
                           if (characterAnchorJson) {
@@ -1083,6 +1089,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         disabled={isGenerating || !characterAnchorJson}
                         onClick={async (e) => {
                           e.stopPropagation();
+                          if (!isMember) { setShowMemberModal(true); return; }
 
                           // 如果已经有输出结果，则切换显示/隐藏
                           if (characterThreeViewJson) {
@@ -1304,6 +1311,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                                   prompt: `Character three-view sheet (front, side, back), same character, same outfit, same hairstyle. Based on: ${characterThreeViewJson}`,
                                   aspectRatio: '16:9',
                                   imageBase64: characterThreeViewImage || undefined,
+                                  userId: userId || undefined,
                                 }),
                               });
                               const data = await res.json();
@@ -1873,7 +1881,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                 e.stopPropagation();
 
                 if (cardType === 'text') {
-                  // 文本生成逻辑
+                  // 文本生成逻辑 — 需要会员
+                  if (!isMember) { setShowMemberModal(true); return; }
                   console.log('生成文本，模型:', model);
                   console.log('Prompt:', prompt);
 
@@ -1962,6 +1971,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         prompt: fullPrompt,
                         aspectRatio: aspectRatio || '1:1',
                         imageBase64: uploadedImage || undefined,
+                        userId: userId || undefined,
                       }),
                     });
 
@@ -2041,6 +2051,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         generateAudio: videoGenerateAudio ?? false,
                         startFrameImage: (currentVideoModel?.mode === 'i2v' || currentVideoModel?.mode === 'firstLastFrame') ? firstFrameImage : undefined,
                         endFrameImage: currentVideoModel?.mode === 'firstLastFrame' ? lastFrameImage : (currentVideoModel?.supportsEndFrame ? lastFrameImage : undefined),
+                        userId: userId || undefined,
                       }),
                     });
 

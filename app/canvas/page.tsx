@@ -14,6 +14,8 @@ import { PromptOptimizerCardUtil } from './PromptOptimizerCard';
 import TutorialOverlay from './TutorialOverlay';
 import { createClient } from '@/lib/supabase/client';
 import { getOrCreateCanvas, loadSnapshot as loadCanvasSnapshot, saveSnapshot } from '@/lib/canvas-storage';
+import { useMembership } from '@/lib/useMembership';
+import { MEMBERSHIP_PRICE } from '@/lib/pricing';
 
 // 自定义缩放控制器组件 - 外部版本
 function ZoomControlsExternal({ editor }: { editor: Editor }) {
@@ -1115,6 +1117,7 @@ function CanvasPageContent() {
   const [showAssetPanel, setShowAssetPanel] = useState(false);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const { isMember, balance, refresh: refreshMembership } = useMembership();
 
   const canvasIdRef = useRef<string | null>(null);
   const userIdRef = useRef<string | null>(null);
@@ -1366,6 +1369,29 @@ function CanvasPageContent() {
           {/* 保存状态 + 画布切换 */}
           {isLoggedIn && (
             <div className="fixed top-4 right-4 flex items-center gap-2" style={{ zIndex: 99999 }}>
+
+              {/* 余额 + 会员状态 */}
+              <div className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-zinc-900/80 backdrop-blur-md border border-white/10 text-gray-300">
+                {isMember ? (
+                  <span className="text-violet-400 font-semibold">会员</span>
+                ) : (
+                  <button
+                    className="text-yellow-400 hover:text-yellow-300 transition-colors"
+                    onClick={() => alert(`开通会员 ¥${MEMBERSHIP_PRICE}/月，请联系客服`)}
+                  >
+                    开通会员
+                  </button>
+                )}
+                <span className="text-white/20">|</span>
+                <span className="text-white/60">¥{balance.toFixed(2)}</span>
+                <button
+                  className="text-blue-400 hover:text-blue-300 transition-colors ml-0.5"
+                  onClick={() => alert('充值功能即将上线，请联系客服')}
+                >
+                  充值
+                </button>
+              </div>
+
               {/* 画布列表按钮 */}
               <div className="relative">
                 <button
