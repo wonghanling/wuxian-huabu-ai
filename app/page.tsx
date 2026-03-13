@@ -12,6 +12,26 @@ export default function Home() {
   const router = useRouter();
   const supabase = createClient();
 
+  const handlePay = async (plan: 'membership' | 'recharge', amount: number) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { router.push('/auth/login'); return; }
+    const res = await fetch('/api/payment/alipay', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+      body: JSON.stringify({ plan, amount }),
+    });
+    const data = await res.json();
+    if (data.paymentForm) {
+      const div = document.createElement('div');
+      div.innerHTML = data.paymentForm;
+      document.body.appendChild(div);
+      const form = div.querySelector('form');
+      form?.submit();
+    } else {
+      alert(data.error || '发起支付失败');
+    }
+  };
+
   useEffect(() => {
     // 检查登录状态
     const checkUser = async () => {
@@ -88,6 +108,9 @@ export default function Home() {
                 <div className="text-sm text-zinc-400">
                   {user.email}
                 </div>
+                <Link href="/orders" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">
+                  订单
+                </Link>
                 <button
                   onClick={handleLogout}
                   className="text-sm font-medium text-zinc-400 hover:text-white transition-colors"
@@ -604,7 +627,7 @@ export default function Home() {
                 <li className="flex items-center gap-2"><span className="text-violet-400">✓</span> 优先客服支持</li>
               </ul>
               <button
-                onClick={() => alert('支付功能即将上线，请联系客服开通')}
+                onClick={() => handlePay('membership', 115)}
                 className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white text-sm font-semibold transition-all shadow-lg shadow-violet-500/20"
               >
                 立即开通
