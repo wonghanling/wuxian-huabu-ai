@@ -306,6 +306,9 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
     characterThreeViewImage: T.string.optional(),
     characterGeneratedImage: T.string.optional(),
     characterImageModel: T.string.optional(),
+    imageQuality: T.string.optional(),
+    cameraTemplate: T.string.optional(),
+    cameraStrength: T.string.optional(),
     showCharacterOutput: T.boolean.optional(),
     showAnalyzePanel: T.boolean.optional(),
     showThreeViewJsonPanel: T.boolean.optional(),
@@ -395,7 +398,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
   }
 
   component(shape: CustomCardShape) {
-    const { cardType, title, prompt, model, w, h, uploadedImage, cameraVertical, cameraHorizontal, showCameraControl, generatedImage, aspectRatio, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showVideoOutput, capturedFrame, videoDuration, videoResolution, videoGenerateAudio, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterAnalyzeImage, characterAnchorJson, characterThreeViewJson, characterThreeViewImage, characterGeneratedImage, characterImageModel, showCharacterOutput, showAnalyzePanel, showThreeViewJsonPanel, showGeneratePanel, isMinimized, textOutput, isGenerating, generationProgress, generationStatus } = shape.props;
+    const { cardType, title, prompt, model, w, h, uploadedImage, cameraVertical, cameraHorizontal, showCameraControl, generatedImage, aspectRatio, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showVideoOutput, capturedFrame, videoDuration, videoResolution, videoGenerateAudio, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterAnalyzeImage, characterAnchorJson, characterThreeViewJson, characterThreeViewImage, characterGeneratedImage, characterImageModel, imageQuality, cameraTemplate, cameraStrength, showCharacterOutput, showAnalyzePanel, showThreeViewJsonPanel, showGeneratePanel, isMinimized, textOutput, isGenerating, generationProgress, generationStatus } = shape.props;
     const editor = useEditor();
     const videoRef = useRef<HTMLVideoElement>(null);
     const { isMember, userId } = useMembership();
@@ -1265,7 +1268,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                             });
                           }}
                         >
-                          <option value="nano-banana-pro">Nano Banana Pro — ¥0.7/次</option>
+                          <option value="nano-banana-pro">Nano Banana Pro（2K/4K可选）</option>
                           <option value="nano-banana">Nano Banana — ¥0.5/次</option>
                           <option value="flux-kontext">Flux Kontext — ¥0.6/次</option>
                           <option value="flux-kontext-max">Flux Kontext Max — ¥1.0/次</option>
@@ -1451,7 +1454,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   {cardType === 'image' && (
                     <>
                       <optgroup label="Gemini">
-                        <option value="nano-banana-pro">Nano Banana Pro — ¥0.7/次</option>
+                        <option value="nano-banana-pro">Nano Banana Pro（2K/4K可选）</option>
                         <option value="nano-banana">Nano Banana — ¥0.5/次</option>
                       </optgroup>
                       <optgroup label="Flux">
@@ -1535,6 +1538,26 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   <option value="2:3">2:3 竖图</option>
                   <option value="21:9">21:9 超宽</option>
                 </select>
+              </div>
+            )}
+
+            {/* 清晰度选择 - 仅 nano-banana-pro */}
+            {cardType === 'image' && model === 'nano-banana-pro' && (
+              <div className="mb-2">
+                <label className="text-gray-400 text-xs mb-1 block">清晰度</label>
+                <div className="flex gap-1">
+                  {[
+                    { value: '2k', label: '2K — ¥0.7/次' },
+                    { value: '4k', label: '4K — ¥1.5/次' },
+                  ].map(({ value, label }) => (
+                    <button
+                      key={value}
+                      className={`flex-1 py-1.5 rounded-lg border text-xs font-medium transition-all ${(imageQuality ?? '2k') === value ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
+                      onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, imageQuality: value } }); }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >{label}</button>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -1649,6 +1672,51 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     )}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* 即梦运镜参数 */}
+            {cardType === 'video' && model === 'jimeng-camera' && (
+              <div className="mb-2 space-y-2">
+                <div>
+                  <label className="text-gray-400 text-xs mb-1 block">运镜模板</label>
+                  <select
+                    className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all"
+                    value={cameraTemplate ?? 'dynamic_orbit'}
+                    onClick={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onChange={(e) => { editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, cameraTemplate: e.target.value } }); }}
+                  >
+                    <option value="hitchcock_dolly_in">希区柯克推进</option>
+                    <option value="hitchcock_dolly_out">希区柯克拉远</option>
+                    <option value="robo_arm">机械臂</option>
+                    <option value="dynamic_orbit">动感环绕</option>
+                    <option value="central_orbit">中心环绕</option>
+                    <option value="crane_push">起重机</option>
+                    <option value="quick_pull_back">超级拉远</option>
+                    <option value="counterclockwise_swivel">逆时针回旋</option>
+                    <option value="clockwise_swivel">顺时针回旋</option>
+                    <option value="handheld">手持运镜</option>
+                    <option value="rapid_push_pull">快速推拉</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-gray-400 text-xs mb-1 block">运镜强度</label>
+                  <div className="flex gap-1">
+                    {[
+                      { value: 'weak', label: '弱' },
+                      { value: 'medium', label: '中' },
+                      { value: 'strong', label: '强' },
+                    ].map(({ value, label }) => (
+                      <button
+                        key={value}
+                        className={`flex-1 py-1.5 rounded-lg border text-xs font-medium transition-all ${(cameraStrength ?? 'medium') === value ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
+                        onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, cameraStrength: value } }); }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                      >{label}</button>
+                    ))}
+                  </div>
+                </div>
               </div>
             )}
 
@@ -1971,6 +2039,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         prompt: fullPrompt,
                         aspectRatio: aspectRatio || '1:1',
                         imageBase64: uploadedImage || undefined,
+                        imageQuality: model === 'nano-banana-pro' ? (imageQuality ?? '2k') : undefined,
                         userId: userId || undefined,
                       }),
                     });
@@ -2051,6 +2120,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         generateAudio: videoGenerateAudio ?? false,
                         startFrameImage: (currentVideoModel?.mode === 'i2v' || currentVideoModel?.mode === 'firstLastFrame') ? firstFrameImage : undefined,
                         endFrameImage: currentVideoModel?.mode === 'firstLastFrame' ? lastFrameImage : (currentVideoModel?.supportsEndFrame ? lastFrameImage : undefined),
+                        cameraTemplate: model === 'jimeng-camera' ? (cameraTemplate ?? 'dynamic_orbit') : undefined,
+                        cameraStrength: model === 'jimeng-camera' ? (cameraStrength ?? 'medium') : undefined,
                         userId: userId || undefined,
                       }),
                     });

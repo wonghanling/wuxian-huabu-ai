@@ -391,6 +391,8 @@ export async function POST(req: NextRequest) {
       endFrameImage,
       userId,
       canvasId,
+      cameraTemplate,
+      cameraStrength,
     } = body;
 
     if (!prompt || !model) {
@@ -527,10 +529,10 @@ export async function POST(req: NextRequest) {
         jmBody.image_urls = [startUrl, endUrl];
       }
 
-      // 运镜模式额外参数（使用默认值，前端可扩展）
+      // 运镜模式额外参数
       if (cfg.supportsCamera) {
-        jmBody.template_id = 'dynamic_orbit';
-        jmBody.camera_strength = 'medium';
+        jmBody.template_id = cameraTemplate || 'dynamic_orbit';
+        jmBody.camera_strength = cameraStrength || 'medium';
       }
 
       const jmRes = await jimengSubmit(jmBody) as any;

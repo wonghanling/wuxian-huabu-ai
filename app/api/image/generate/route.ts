@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
   let body: any = {};
   try {
     body = await req.json();
-    const { model, prompt, aspectRatio = '1:1', imageBase64, userId } = body;
+    const { model, prompt, aspectRatio = '1:1', imageBase64, userId, imageQuality } = body;
 
     if (!model || !prompt) {
       return NextResponse.json({ error: '缺少必要参数' }, { status: 400 });
@@ -80,7 +80,11 @@ export async function POST(req: NextRequest) {
     }
 
     // ── 扣费 ──────────────────────────────────────────────────
-    const price = calcImagePrice(model);
+    // nano-banana-pro 根据清晰度选择 pricing key
+    const pricingKey = model === 'nano-banana-pro'
+      ? (imageQuality === '4k' ? 'nano-banana-pro-4k' : 'nano-banana-pro-2k')
+      : model;
+    const price = calcImagePrice(pricingKey);
     if (userId) {
       const deduct = await deductBalance(
         userId, price, 'image_deduct',
