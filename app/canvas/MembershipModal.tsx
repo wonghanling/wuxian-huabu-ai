@@ -81,6 +81,7 @@ export default function MembershipModal({ onClose }: MembershipModalProps) {
         </button>
 
         <p className="text-center text-xs text-white/30 mt-3">随时可取消，不自动续费</p>
+        <p className="text-center text-xs text-white/20 mt-1">按 ESC 键关闭</p>
       </div>
     </div>
   );

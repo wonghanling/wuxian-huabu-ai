@@ -1265,11 +1265,11 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                             });
                           }}
                         >
-                          <option value="nano-banana-pro">Nano Banana Pro</option>
-                          <option value="nano-banana">Nano Banana</option>
-                          <option value="flux-kontext">Flux Kontext</option>
-                          <option value="flux-kontext-max">Flux Kontext Max</option>
-                          <option value="doubao-seedream-4-5-251128">豆包 Seedream</option>
+                          <option value="nano-banana-pro">Nano Banana Pro — ¥0.7/次</option>
+                          <option value="nano-banana">Nano Banana — ¥0.5/次</option>
+                          <option value="flux-kontext">Flux Kontext — ¥0.6/次</option>
+                          <option value="flux-kontext-max">Flux Kontext Max — ¥1.0/次</option>
+                          <option value="doubao-seedream-4-5-251128">豆包 Seedream — ¥0.3/次</option>
                         </select>
                       </div>
 
@@ -1451,57 +1451,57 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   {cardType === 'image' && (
                     <>
                       <optgroup label="Gemini">
-                        <option value="nano-banana-pro">Nano Banana Pro</option>
-                        <option value="nano-banana">Nano Banana</option>
+                        <option value="nano-banana-pro">Nano Banana Pro — ¥0.7/次</option>
+                        <option value="nano-banana">Nano Banana — ¥0.5/次</option>
                       </optgroup>
                       <optgroup label="Flux">
-                        <option value="flux-kontext">Flux Kontext</option>
-                        <option value="flux-kontext-max">Flux Kontext Max</option>
+                        <option value="flux-kontext">Flux Kontext — ¥0.6/次</option>
+                        <option value="flux-kontext-max">Flux Kontext Max — ¥1.0/次</option>
                       </optgroup>
                       <optgroup label="其他">
-                        <option value="mj_imagine">Midjourney</option>
-                        <option value="doubao-seedream-4-5-251128">豆包 Seedream</option>
+                        <option value="mj_imagine">Midjourney — ¥0.6/次</option>
+                        <option value="doubao-seedream-4-5-251128">豆包 Seedream — ¥0.3/次</option>
                       </optgroup>
                     </>
                   )}
                   {cardType === 'video' && (
                     <>
                       <optgroup label="Google Veo 3.1">
-                        <option value="veo3.1-t2v">Veo 3.1 文生视频</option>
-                        <option value="veo3.1-i2v">Veo 3.1 图生视频</option>
-                        <option value="veo3.1-fast-t2v">Veo 3.1 Fast 文生视频</option>
-                        <option value="veo3.1-fast-i2v">Veo 3.1 Fast 图生视频</option>
-                        <option value="veo3.1-first-last">Veo 3.1 首尾帧</option>
+                        <option value="veo3.1-t2v">Veo 3.1 文生视频 — 会员¥1.78/秒 普通¥1.98/秒</option>
+                        <option value="veo3.1-i2v">Veo 3.1 图生视频 — 会员¥1.78/秒 普通¥1.98/秒</option>
+                        <option value="veo3.1-fast-t2v">Veo 3.1 Fast 文生视频 — 会员¥1.09/秒 普通¥1.29/秒</option>
+                        <option value="veo3.1-fast-i2v">Veo 3.1 Fast 图生视频 — 会员¥1.09/秒 普通¥1.29/秒</option>
+                        <option value="veo3.1-first-last">Veo 3.1 首尾帧 — 会员¥1.09/秒 普通¥1.29/秒</option>
                       </optgroup>
                       <optgroup label="Wan 2.6">
-                        <option value="wan2.6-t2v">Wan 2.6 文生视频</option>
-                        <option value="wan2.6-i2v">Wan 2.6 图生视频</option>
-                        <option value="wan2.6-i2v-flash">Wan 2.6 图生视频 Flash</option>
+                        <option value="wan2.6-t2v">Wan 2.6 文生视频 — 会员¥1.0/秒 普通¥1.2/秒</option>
+                        <option value="wan2.6-i2v">Wan 2.6 图生视频 — 会员¥1.0/秒 普通¥1.2/秒</option>
+                        <option value="wan2.6-i2v-flash">Wan 2.6 图生视频 Flash — 会员¥0.55/秒 普通¥0.75/秒</option>
                       </optgroup>
                       <optgroup label="Wan 2.5">
-                        <option value="wan2.5-t2v-preview">Wan 2.5 文生视频</option>
-                        <option value="wan2.5-i2v-preview">Wan 2.5 图生视频</option>
+                        <option value="wan2.5-t2v-preview">Wan 2.5 文生视频 — 会员¥1.0/秒 普通¥1.2/秒</option>
+                        <option value="wan2.5-i2v-preview">Wan 2.5 图生视频 — 会员¥1.0/秒 普通¥1.2/秒</option>
                       </optgroup>
                       <optgroup label="Wan 2.2">
-                        <option value="wan2.2-kf2v-flash">Wan 2.2 首尾帧视频</option>
+                        <option value="wan2.2-kf2v-flash">Wan 2.2 首尾帧视频 — 会员¥3.0/次 普通¥4.0/次（固定5秒）</option>
                       </optgroup>
                       <optgroup label="即梦 3.0 Pro（1080P）">
-                        <option value="jimeng-pro-t2v">即梦 Pro 文生视频</option>
-                        <option value="jimeng-pro-i2v">即梦 Pro 图生视频（首帧）</option>
+                        <option value="jimeng-pro-t2v">即梦 Pro 文生视频 — 会员¥1.4/秒 普通¥1.6/秒</option>
+                        <option value="jimeng-pro-i2v">即梦 Pro 图生视频（首帧）— 会员¥1.4/秒 普通¥1.6/秒</option>
                       </optgroup>
                       <optgroup label="即梦 3.0（720P）">
-                        <option value="jimeng-t2v">即梦 文生视频</option>
-                        <option value="jimeng-i2v">即梦 图生视频（首帧）</option>
-                        <option value="jimeng-first-last">即梦 首尾帧</option>
-                        <option value="jimeng-camera">即梦 运镜</option>
+                        <option value="jimeng-t2v">即梦 文生视频 — 会员¥0.68/秒 普通¥0.88/秒</option>
+                        <option value="jimeng-i2v">即梦 图生视频（首帧）— 会员¥0.68/秒 普通¥0.88/秒</option>
+                        <option value="jimeng-first-last">即梦 首尾帧 — 会员¥0.68/秒 普通¥0.88/秒</option>
+                        <option value="jimeng-camera">即梦 运镜 — 会员¥0.68/秒 普通¥0.88/秒</option>
                       </optgroup>
                       <optgroup label="即梦 3.0（1080P）">
-                        <option value="jimeng-1080-t2v">即梦 文生视频 1080P</option>
-                        <option value="jimeng-1080-i2v">即梦 图生视频首帧 1080P</option>
-                        <option value="jimeng-1080-first-last">即梦 首尾帧 1080P</option>
+                        <option value="jimeng-1080-t2v">即梦 文生视频 1080P — 会员¥1.03/秒 普通¥1.23/秒</option>
+                        <option value="jimeng-1080-i2v">即梦 图生视频首帧 1080P — 会员¥1.03/秒 普通¥1.23/秒</option>
+                        <option value="jimeng-1080-first-last">即梦 首尾帧 1080P — 会员¥1.03/秒 普通¥1.23/秒</option>
                       </optgroup>
                       <optgroup label="其他">
-                        <option value="ovi-i2v">Ovi 图生视频</option>
+                        <option value="ovi-i2v">Ovi 图生视频 — ¥1.78/次（固定）</option>
                       </optgroup>
                     </>
                   )}
