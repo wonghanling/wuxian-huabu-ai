@@ -1192,7 +1192,7 @@ function CanvasPageContent() {
         const { data: { user } } = await supabase.auth.getUser();
 
         if (!user) {
-          setIsLoggedIn(false);
+          router.replace('/auth');
           return;
         }
 
