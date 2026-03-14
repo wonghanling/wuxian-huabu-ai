@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
   let body: any = {};
   try {
     body = await req.json();
-    const { model, prompt, aspectRatio = '1:1', imageBase64, userId, imageQuality } = body;
+    const { model, prompt, aspectRatio = '1:1', imageBase64, imageBase64Array, userId, imageQuality } = body;
 
     if (!model || !prompt) {
       return NextResponse.json({ error: '缺少必要参数' }, { status: 400 });
@@ -124,12 +124,23 @@ export async function POST(req: NextRequest) {
     // ── n1n.ai 路径 ──────────────────────────────────────────────
     } else if (modelConfig.apiType === 'gemini-native') {
       const parts: any[] = [];
-      if (imageBase64) {
+
+      // 多图支持（imageBase64Array 优先）
+      if (imageBase64Array && Array.isArray(imageBase64Array)) {
+        imageBase64Array.forEach(img => {
+          const base64Match = img.match(/^data:image\/(jpeg|jpg|png|webp);base64,(.+)$/);
+          if (base64Match) {
+            parts.push({ inline_data: { mime_type: `image/${base64Match[1]}`, data: base64Match[2] } });
+          }
+        });
+      } else if (imageBase64) {
+        // 单图兼容
         const base64Match = imageBase64.match(/^data:image\/(jpeg|jpg|png|webp);base64,(.+)$/);
         if (base64Match) {
           parts.push({ inline_data: { mime_type: `image/${base64Match[1]}`, data: base64Match[2] } });
         }
       }
+
       parts.push({ text: prompt });
 
       const response = await fetch(

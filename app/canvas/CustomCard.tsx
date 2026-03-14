@@ -218,6 +218,7 @@ export type CustomCardShape = TLBaseShape<
     prompt: string;
     model: string;
     uploadedImage?: string;
+    uploadedImages?: string; // JSON 数组字符串，nano-banana/pro 多图用
     cameraVertical?: number;
     cameraHorizontal?: number;
     showCameraControl?: boolean;
@@ -278,6 +279,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
     prompt: T.string,
     model: T.string,
     uploadedImage: T.string.optional(),
+    uploadedImages: T.string.optional(),
     cameraVertical: T.number.optional(),
     cameraHorizontal: T.number.optional(),
     showCameraControl: T.boolean.optional(),
@@ -401,7 +403,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
   }
 
   component(shape: CustomCardShape) {
-    const { cardType, title, prompt, model, w, h, uploadedImage, cameraVertical, cameraHorizontal, showCameraControl, generatedImage, aspectRatio, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showVideoOutput, capturedFrame, videoDuration, videoResolution, videoGenerateAudio, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterAnalyzeImage, characterAnchorJson, characterThreeViewJson, characterThreeViewImage, characterGeneratedImage, characterImageModel, imageQuality, cameraTemplate, cameraStrength, showCharacterOutput, showAnalyzePanel, showThreeViewJsonPanel, showGeneratePanel, isMinimized, textOutput, isGenerating, generationProgress, generationStatus } = shape.props;
+    const { cardType, title, prompt, model, w, h, uploadedImage, uploadedImages, cameraVertical, cameraHorizontal, showCameraControl, generatedImage, aspectRatio, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showVideoOutput, capturedFrame, videoDuration, videoResolution, videoGenerateAudio, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterAnalyzeImage, characterAnchorJson, characterThreeViewJson, characterThreeViewImage, characterGeneratedImage, characterImageModel, imageQuality, cameraTemplate, cameraStrength, showCharacterOutput, showAnalyzePanel, showThreeViewJsonPanel, showGeneratePanel, isMinimized, textOutput, isGenerating, generationProgress, generationStatus } = shape.props;
     const editor = useEditor();
     const videoRef = useRef<HTMLVideoElement>(null);
     const { isMember, userId } = useMembership();
@@ -1589,45 +1591,107 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
             {cardType === 'image' && ['nano-banana', 'nano-banana-pro', 'doubao-seedream-4-5-251128', 'flux-kontext'].includes(model || '') && (
               <div className="mb-2">
                 <label className="text-gray-400 text-xs mb-1 block">
-                  参考图片{model === 'flux-kontext' ? '（必填）' : '（可选）'}
+                  {['nano-banana', 'nano-banana-pro'].includes(model || '')
+                    ? '参考图片（可选，可多张）'
+                    : model === 'flux-kontext' ? '参考图片（必填）' : '参考图片（可选）'}
                 </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
-                  onClick={(e) => e.stopPropagation()}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onload = (event) => {
-                        editor.updateShape({
-                          id: shape.id,
-                          type: 'custom-card' as any,
-                          props: { ...shape.props, uploadedImage: event.target?.result as string },
-                        });
-                      };
-                      reader.readAsDataURL(file);
-                    }
-                  }}
-                />
-                {uploadedImage && (
-                  <div className="mt-1 relative w-full h-20 bg-black/30 rounded-lg overflow-hidden group">
-                    <img src={uploadedImage} alt="参考图" className="w-full h-full object-cover" />
-                    <button
-                      className="absolute top-1 right-1 w-5 h-5 bg-black/60 hover:bg-red-500/80 rounded text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        editor.updateShape({
-                          id: shape.id,
-                          type: 'custom-card' as any,
-                          props: { ...shape.props, uploadedImage: '' },
-                        });
-                      }}
+
+                {/* nano-banana / nano-banana-pro：多图上传 */}
+                {['nano-banana', 'nano-banana-pro'].includes(model || '') ? (
+                  <>
+                    {(() => {
+                      const imgs: string[] = uploadedImages ? JSON.parse(uploadedImages) : [];
+                      return (
+                        <>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
+                            onClick={(e) => e.stopPropagation()}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onChange={(e) => {
+                              const files = Array.from(e.target.files || []);
+                              let loaded = 0;
+                              const newImgs = [...imgs];
+                              files.forEach(file => {
+                                const reader = new FileReader();
+                                reader.onload = (ev) => {
+                                  newImgs.push(ev.target?.result as string);
+                                  loaded++;
+                                  if (loaded === files.length) {
+                                    editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImages: JSON.stringify(newImgs) } });
+                                  }
+                                };
+                                reader.readAsDataURL(file);
+                              });
+                              e.target.value = '';
+                            }}
+                          />
+                          {imgs.length > 0 && (
+                            <div className="mt-1 flex gap-1 flex-wrap">
+                              {imgs.map((img, idx) => (
+                                <div key={idx} className="relative w-16 h-16 bg-black/30 rounded-lg overflow-hidden group">
+                                  <img src={img} className="w-full h-full object-cover" />
+                                  <button
+                                    className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/60 hover:bg-red-500/80 rounded text-white text-[9px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const next = imgs.filter((_, i) => i !== idx);
+                                      editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImages: next.length ? JSON.stringify(next) : '' } });
+                                    }}
+                                    onPointerDown={(e) => e.stopPropagation()}
+                                  >✕</button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </>
+                ) : (
+                  /* 其他模型：单图上传 */
+                  <>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
+                      onClick={(e) => e.stopPropagation()}
                       onPointerDown={(e) => e.stopPropagation()}
-                    >✕</button>
-                  </div>
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            editor.updateShape({
+                              id: shape.id,
+                              type: 'custom-card' as any,
+                              props: { ...shape.props, uploadedImage: event.target?.result as string },
+                            });
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                    {uploadedImage && (
+                      <div className="mt-1 relative w-full h-20 bg-black/30 rounded-lg overflow-hidden group">
+                        <img src={uploadedImage} alt="参考图" className="w-full h-full object-cover" />
+                        <button
+                          className="absolute top-1 right-1 w-5 h-5 bg-black/60 hover:bg-red-500/80 rounded text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            editor.updateShape({
+                              id: shape.id,
+                              type: 'custom-card' as any,
+                              props: { ...shape.props, uploadedImage: '' },
+                            });
+                          }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                        >✕</button>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}
@@ -2063,6 +2127,9 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         prompt: fullPrompt,
                         aspectRatio: aspectRatio || '1:1',
                         imageBase64: uploadedImage || undefined,
+                        imageBase64Array: ['nano-banana', 'nano-banana-pro'].includes(model || '') && uploadedImages
+                          ? JSON.parse(uploadedImages)
+                          : undefined,
                         imageQuality: model === 'nano-banana-pro' ? (imageQuality ?? '2k') : undefined,
                         userId: userId || undefined,
                       }),
