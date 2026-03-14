@@ -58,13 +58,19 @@ const IMAGE_MODELS: Record<string, {
     falEndpoint: 'fal-ai/flux-pro/kontext/max/text-to-image',
     // 纯文生图，不需要图片
   },
+  'nano-banana-pro-multi': {
+    provider: 'fal',
+    falEndpoint: 'fal-ai/nano-banana-pro/edit',
+    requiresImage: true,
+    supportsImage: true,
+  },
 };
 
 export async function POST(req: NextRequest) {
   let body: any = {};
   try {
     body = await req.json();
-    const { model, prompt, aspectRatio = '1:1', imageBase64, imageBase64Array, userId, imageQuality } = body;
+    const { model, prompt, aspectRatio = '1:1', imageBase64, imageBase64Array, imageUrlArray, userId, imageQuality } = body;
 
     if (!model || !prompt) {
       return NextResponse.json({ error: '缺少必要参数' }, { status: 400 });
@@ -75,14 +81,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '无效的模型' }, { status: 400 });
     }
 
-    if (modelConfig.requiresImage && !imageBase64) {
+    if (model === 'nano-banana-pro-multi' && (!imageUrlArray || imageUrlArray.length === 0)) {
+      return NextResponse.json({ error: '多图融合模型需要至少一张图片' }, { status: 400 });
+    } else if (modelConfig.requiresImage && model !== 'nano-banana-pro-multi' && !imageBase64) {
       return NextResponse.json({ error: '该模型需要上传一张图片' }, { status: 400 });
     }
 
     // ── 扣费 ──────────────────────────────────────────────────
-    // nano-banana-pro 根据清晰度选择 pricing key
     const pricingKey = model === 'nano-banana-pro'
       ? (imageQuality === '4k' ? 'nano-banana-pro-4k' : 'nano-banana-pro-2k')
+      : model === 'nano-banana-pro-multi'
+      ? (imageQuality === '4k' ? 'nano-banana-pro-multi-4k' : 'nano-banana-pro-multi-2k')
       : model;
     const price = calcImagePrice(pricingKey);
     if (userId) {
@@ -109,7 +118,16 @@ export async function POST(req: NextRequest) {
         safety_tolerance: '2',
       };
 
-      if (imageBase64) {
+      // 多图融合模型：传 image_urls 数组 + resolution
+      if (model === 'nano-banana-pro-multi') {
+        const urls: string[] = imageUrlArray && Array.isArray(imageUrlArray) ? imageUrlArray : [];
+        if (urls.length === 0) throw new Error('多图融合模型需要至少一张图片');
+        input.image_urls = urls;
+        input.resolution = imageQuality === '4k' ? '4K' : '2K';
+        delete input.aspect_ratio;
+        delete input.output_format;
+        delete input.safety_tolerance;
+      } else if (imageBase64) {
         input.image_url = imageBase64;
       }
 

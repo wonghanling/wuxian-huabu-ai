@@ -218,7 +218,8 @@ export type CustomCardShape = TLBaseShape<
     prompt: string;
     model: string;
     uploadedImage?: string;
-    uploadedImages?: string; // JSON 数组字符串，nano-banana/pro 多图用
+    uploadedImages?: string; // JSON 数组字符串，nano-banana/pro 多图用（最多2张）
+    uploadedImageUrls?: string; // JSON 数组字符串，多图融合模型用（fal storage URL）
     cameraVertical?: number;
     cameraHorizontal?: number;
     showCameraControl?: boolean;
@@ -280,6 +281,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
     model: T.string,
     uploadedImage: T.string.optional(),
     uploadedImages: T.string.optional(),
+    uploadedImageUrls: T.string.optional(),
     cameraVertical: T.number.optional(),
     cameraHorizontal: T.number.optional(),
     showCameraControl: T.boolean.optional(),
@@ -403,11 +405,12 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
   }
 
   component(shape: CustomCardShape) {
-    const { cardType, title, prompt, model, w, h, uploadedImage, uploadedImages, cameraVertical, cameraHorizontal, showCameraControl, generatedImage, aspectRatio, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showVideoOutput, capturedFrame, videoDuration, videoResolution, videoGenerateAudio, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterAnalyzeImage, characterAnchorJson, characterThreeViewJson, characterThreeViewImage, characterGeneratedImage, characterImageModel, imageQuality, cameraTemplate, cameraStrength, showCharacterOutput, showAnalyzePanel, showThreeViewJsonPanel, showGeneratePanel, isMinimized, textOutput, isGenerating, generationProgress, generationStatus } = shape.props;
+    const { cardType, title, prompt, model, w, h, uploadedImage, uploadedImages, uploadedImageUrls, cameraVertical, cameraHorizontal, showCameraControl, generatedImage, aspectRatio, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showVideoOutput, capturedFrame, videoDuration, videoResolution, videoGenerateAudio, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterAnalyzeImage, characterAnchorJson, characterThreeViewJson, characterThreeViewImage, characterGeneratedImage, characterImageModel, imageQuality, cameraTemplate, cameraStrength, showCharacterOutput, showAnalyzePanel, showThreeViewJsonPanel, showGeneratePanel, isMinimized, textOutput, isGenerating, generationProgress, generationStatus } = shape.props;
     const editor = useEditor();
     const videoRef = useRef<HTMLVideoElement>(null);
     const { isMember, userId } = useMembership();
     const [showMemberModal, setShowMemberModal] = useState(false);
+    const [isUploadingMulti, setIsUploadingMulti] = useState(false);
 
     const handlePay = async (plan: 'membership' | 'recharge', amount: number) => {
       const supabase = createClient();
@@ -1482,6 +1485,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       <optgroup label="Gemini">
                         <option value="nano-banana-pro">Nano Banana Pro（2K/4K可选）</option>
                         <option value="nano-banana">Nano Banana — ¥0.5/次</option>
+                        <option value="nano-banana-pro-multi">多图融合 Nano Banana Pro（2K ¥1.5 / 4K ¥2.5）</option>
                       </optgroup>
                       <optgroup label="Flux">
                         <option value="flux-kontext">Flux Kontext — ¥0.6/次</option>
@@ -1567,14 +1571,14 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
               </div>
             )}
 
-            {/* 清晰度选择 - 仅 nano-banana-pro */}
-            {cardType === 'image' && model === 'nano-banana-pro' && (
+            {/* 清晰度选择 - nano-banana-pro 和多图融合 */}
+            {cardType === 'image' && ['nano-banana-pro', 'nano-banana-pro-multi'].includes(model || '') && (
               <div className="mb-2">
                 <label className="text-gray-400 text-xs mb-1 block">清晰度</label>
                 <div className="flex gap-1">
                   {[
-                    { value: '2k', label: '2K — ¥0.7/次' },
-                    { value: '4k', label: '4K — ¥1.5/次' },
+                    { value: '2k', label: model === 'nano-banana-pro-multi' ? '2K — ¥1.5/次' : '2K — ¥0.7/次' },
+                    { value: '4k', label: model === 'nano-banana-pro-multi' ? '4K — ¥2.5/次' : '4K — ¥1.5/次' },
                   ].map(({ value, label }) => (
                     <button
                       key={value}
@@ -1588,16 +1592,82 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
             )}
 
             {/* 图片上传 - 支持图生图的模型才显示 */}
-            {cardType === 'image' && ['nano-banana', 'nano-banana-pro', 'doubao-seedream-4-5-251128', 'flux-kontext'].includes(model || '') && (
+            {cardType === 'image' && ['nano-banana', 'nano-banana-pro', 'nano-banana-pro-multi', 'doubao-seedream-4-5-251128', 'flux-kontext'].includes(model || '') && (
               <div className="mb-2">
                 <label className="text-gray-400 text-xs mb-1 block">
-                  {['nano-banana', 'nano-banana-pro'].includes(model || '')
-                    ? '参考图片（可选，可多张）'
+                  {model === 'nano-banana-pro-multi'
+                    ? '参考图片（必填，最多10张）'
+                    : ['nano-banana', 'nano-banana-pro'].includes(model || '')
+                    ? '参考图片（可选，最多2张）'
                     : model === 'flux-kontext' ? '参考图片（必填）' : '参考图片（可选）'}
                 </label>
 
-                {/* nano-banana / nano-banana-pro：多图上传 */}
-                {['nano-banana', 'nano-banana-pro'].includes(model || '') ? (
+                {/* 多图融合模型：上传到 fal storage，存 URL */}
+                {model === 'nano-banana-pro-multi' ? (
+                  <>
+                    {(() => {
+                      const urls: string[] = uploadedImageUrls ? JSON.parse(uploadedImageUrls) : [];
+                      return (
+                        <>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            disabled={urls.length >= 10 || isUploadingMulti}
+                            className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer disabled:opacity-50"
+                            onClick={(e) => e.stopPropagation()}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onChange={async (e) => {
+                              const files = Array.from(e.target.files || []);
+                              const remaining = 10 - urls.length;
+                              const toUpload = files.slice(0, remaining);
+                              if (toUpload.length === 0) return;
+                              setIsUploadingMulti(true);
+                              const newUrls = [...urls];
+                              for (const file of toUpload) {
+                                const base64 = await new Promise<string>((resolve) => {
+                                  const reader = new FileReader();
+                                  reader.onload = (ev) => resolve(ev.target?.result as string);
+                                  reader.readAsDataURL(file);
+                                });
+                                const res = await fetch('/api/image/upload', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ imageBase64: base64 }),
+                                });
+                                const data = await res.json();
+                                if (data.url) newUrls.push(data.url);
+                              }
+                              editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImageUrls: JSON.stringify(newUrls) } });
+                              setIsUploadingMulti(false);
+                              e.target.value = '';
+                            }}
+                          />
+                          {isUploadingMulti && <p className="text-xs text-gray-400 mt-1">上传中...</p>}
+                          {urls.length > 0 && (
+                            <div className="mt-1 flex gap-1 flex-wrap">
+                              {urls.map((url, idx) => (
+                                <div key={idx} className="relative w-16 h-16 bg-black/30 rounded-lg overflow-hidden group">
+                                  <img src={url} className="w-full h-full object-cover" />
+                                  <button
+                                    className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/60 hover:bg-red-500/80 rounded text-white text-[9px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      const next = urls.filter((_, i) => i !== idx);
+                                      editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImageUrls: next.length ? JSON.stringify(next) : '' } });
+                                    }}
+                                    onPointerDown={(e) => e.stopPropagation()}
+                                  >✕</button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </>
+                ) : ['nano-banana', 'nano-banana-pro'].includes(model || '') ? (
+                  /* n1n 模型：最多2张，base64 */
                   <>
                     {(() => {
                       const imgs: string[] = uploadedImages ? JSON.parse(uploadedImages) : [];
@@ -1607,19 +1677,22 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                             type="file"
                             accept="image/*"
                             multiple
-                            className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
+                            disabled={imgs.length >= 2}
+                            className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer disabled:opacity-50"
                             onClick={(e) => e.stopPropagation()}
                             onPointerDown={(e) => e.stopPropagation()}
                             onChange={(e) => {
                               const files = Array.from(e.target.files || []);
+                              const remaining = 2 - imgs.length;
+                              const toLoad = files.slice(0, remaining);
                               let loaded = 0;
                               const newImgs = [...imgs];
-                              files.forEach(file => {
+                              toLoad.forEach(file => {
                                 const reader = new FileReader();
                                 reader.onload = (ev) => {
                                   newImgs.push(ev.target?.result as string);
                                   loaded++;
-                                  if (loaded === files.length) {
+                                  if (loaded === toLoad.length) {
                                     editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImages: JSON.stringify(newImgs) } });
                                   }
                                 };
@@ -2130,7 +2203,10 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         imageBase64Array: ['nano-banana', 'nano-banana-pro'].includes(model || '') && uploadedImages
                           ? JSON.parse(uploadedImages)
                           : undefined,
-                        imageQuality: model === 'nano-banana-pro' ? (imageQuality ?? '2k') : undefined,
+                        imageUrlArray: model === 'nano-banana-pro-multi' && uploadedImageUrls
+                          ? JSON.parse(uploadedImageUrls)
+                          : undefined,
+                        imageQuality: ['nano-banana-pro', 'nano-banana-pro-multi'].includes(model || '') ? (imageQuality ?? '2k') : undefined,
                         userId: userId || undefined,
                       }),
                     });

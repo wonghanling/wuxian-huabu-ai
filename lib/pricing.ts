@@ -17,6 +17,8 @@ export const IMAGE_PRICING: Record<string, number> = {
   'flux-kontext-max':     1.0,
   'midjourney':           0.6,
   'doubao-seedream':      0.3,
+  'nano-banana-pro-multi-2k': 1.5,
+  'nano-banana-pro-multi-4k': 2.5,
 };
 
 // ============================================================
