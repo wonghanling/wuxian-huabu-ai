@@ -166,7 +166,7 @@ function ZoomControlsExternal({ editor }: { editor: Editor }) {
 }
 
 // 底部工具栏 - 外部版本（重新设计 - 可折叠抽屉式）
-function BottomToolbarExternal({ editor, onOpenAssetPanel }: { editor: Editor; onOpenAssetPanel: () => void }) {
+function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: { editor: Editor; onOpenAssetPanel: () => void; onOpenImageSplit: () => void }) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [showShotTypePanel, setShowShotTypePanel] = useState(false);
 
@@ -596,6 +596,24 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel }: { editor: Editor; o
           </div>
         </button>
 
+        {/* 图片切割按钮 */}
+        <button
+          onClick={onOpenImageSplit}
+          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
+          title="Image Split"
+        >
+          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
+            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 4v16M12 4v16M18 4v16" />
+            </svg>
+          </div>
+          <div className="flex flex-col items-start">
+            <span className="text-sm text-gray-300 whitespace-nowrap">Image Split</span>
+            <span className="text-xs text-gray-500 whitespace-nowrap">图片切割</span>
+          </div>
+        </button>
+
         {/* 分隔线 */}
         <div className="h-px bg-white/10 my-1"></div>
 
@@ -959,6 +977,174 @@ function BottomToolbar() {
   );
 }
 
+// 图片切割弹窗组件
+function ImageSplitModal({ onClose }: { onClose: () => void }) {
+  const [image, setImage] = useState<HTMLImageElement | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [cols, setCols] = useState(5);
+  const [rows, setRows] = useState(5);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isSplitting, setIsSplitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const loadImage = (file: File) => {
+    if (!file.type.startsWith('image/')) return;
+    setImageFile(file);
+    const img = new Image();
+    img.onload = () => setImage(img);
+    img.src = URL.createObjectURL(file);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) loadImage(file);
+  };
+
+  const handleSplit = async () => {
+    if (!image) return;
+    setIsSplitting(true);
+    try {
+      const cellW = Math.floor(image.naturalWidth / cols);
+      const cellH = Math.floor(image.naturalHeight / rows);
+
+      // 动态导入 JSZip
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const canvas = document.createElement('canvas');
+          canvas.width = cellW;
+          canvas.height = cellH;
+          const ctx = canvas.getContext('2d')!;
+          ctx.drawImage(image, c * cellW, r * cellH, cellW, cellH, 0, 0, cellW, cellH);
+          const blob = await new Promise<Blob>((res) => canvas.toBlob((b) => res(b!), 'image/png'));
+          zip.file(`${r + 1}-${c + 1}.png`, blob);
+        }
+      }
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `split_${rows}x${cols}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setIsSplitting(false);
+    }
+  };
+
+  const PRESETS = [
+    { label: '2×2', r: 2, c: 2 },
+    { label: '3×3', r: 3, c: 3 },
+    { label: '4×4', r: 4, c: 4 },
+    { label: '5×5', r: 5, c: 5 },
+  ];
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/60 z-[9999]" onClick={onClose} />
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[10000] w-[480px] bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl p-6">
+        {/* 标题 */}
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-white font-semibold text-base">图片切割</h2>
+          <button onClick={onClose} className="w-7 h-7 rounded-lg hover:bg-white/10 flex items-center justify-center transition-all">
+            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* 上传区域 */}
+        <div
+          className={`relative border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all mb-5 ${
+            isDragging ? 'border-white/40 bg-white/5' : 'border-white/15 hover:border-white/30'
+          }`}
+          onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) loadImage(f); }} />
+          {image ? (
+            <div className="flex items-center gap-3">
+              <img src={image.src} className="w-16 h-16 object-cover rounded-lg flex-shrink-0" />
+              <div className="text-left">
+                <p className="text-white text-sm truncate max-w-[280px]">{imageFile?.name}</p>
+                <p className="text-gray-500 text-xs mt-1">{image.naturalWidth} × {image.naturalHeight}px</p>
+                <p className="text-gray-500 text-xs">点击更换图片</p>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <svg className="w-8 h-8 text-gray-500 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <p className="text-gray-400 text-sm">点击或拖拽上传图片</p>
+              <p className="text-gray-600 text-xs mt-1">支持 PNG、JPG、WebP</p>
+            </div>
+          )}
+        </div>
+
+        {/* 宫格选择 */}
+        <div className="mb-5">
+          <p className="text-gray-400 text-xs mb-2">快速选择</p>
+          <div className="flex gap-2 mb-3">
+            {PRESETS.map((p) => (
+              <button
+                key={p.label}
+                onClick={() => { setRows(p.r); setCols(p.c); }}
+                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+                  rows === p.r && cols === p.c
+                    ? 'bg-white/20 text-white border border-white/30'
+                    : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'
+                }`}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <p className="text-gray-500 text-xs mb-1">列数</p>
+              <input
+                type="number" min={1} max={20} value={cols}
+                onChange={(e) => setCols(Math.max(1, Math.min(20, Number(e.target.value))))}
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-white/30"
+              />
+            </div>
+            <div className="flex-1">
+              <p className="text-gray-500 text-xs mb-1">行数</p>
+              <input
+                type="number" min={1} max={20} value={rows}
+                onChange={(e) => setRows(Math.max(1, Math.min(20, Number(e.target.value))))}
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-white/30"
+              />
+            </div>
+          </div>
+          {image && (
+            <p className="text-gray-600 text-xs mt-2">
+              每张 {Math.floor(image.naturalWidth / cols)} × {Math.floor(image.naturalHeight / rows)}px，共 {rows * cols} 张
+            </p>
+          )}
+        </div>
+
+        {/* 切割按钮 */}
+        <button
+          onClick={handleSplit}
+          disabled={!image || isSplitting}
+          className="w-full py-3 rounded-xl bg-white text-black font-semibold text-sm hover:bg-gray-100 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {isSplitting ? '切割中...' : `切割并下载 (${rows * cols} 张)`}
+        </button>
+      </div>
+    </>
+  );
+}
+
 // 资产面板组件
 function AssetPanel({ onClose }: { onClose: () => void }) {
   const [activeTab, setActiveTab] = useState<'images' | 'videos'>('images');
@@ -1118,6 +1304,7 @@ function CanvasPageContent() {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [showRechargeModal, setShowRechargeModal] = useState(false);
+  const [showImageSplitModal, setShowImageSplitModal] = useState(false);
   const { isMember, balance, refresh: refreshMembership } = useMembership();
 
   const handlePay = async (plan: 'membership' | 'recharge', amount: number) => {
@@ -1589,7 +1776,7 @@ function CanvasPageContent() {
           )}
 
           <ZoomControlsExternal editor={editorInstance} />
-          <BottomToolbarExternal editor={editorInstance} onOpenAssetPanel={() => setShowAssetPanel(true)} />
+          <BottomToolbarExternal editor={editorInstance} onOpenAssetPanel={() => setShowAssetPanel(true)} onOpenImageSplit={() => setShowImageSplitModal(true)} />
         </>
       )}
 
@@ -1608,6 +1795,11 @@ function CanvasPageContent() {
           <div className="fixed inset-0 bg-black/50 z-[9998]" onClick={() => setShowAssetPanel(false)} />
           <AssetPanel onClose={() => setShowAssetPanel(false)} />
         </>
+      )}
+
+      {/* 图片切割弹窗 */}
+      {showImageSplitModal && (
+        <ImageSplitModal onClose={() => setShowImageSplitModal(false)} />
       )}
 
       {/* 自定义样式 - 纯黑色主题 */}
