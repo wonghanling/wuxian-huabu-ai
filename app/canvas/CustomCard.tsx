@@ -2272,6 +2272,27 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   });
 
                   try {
+                    // 图片上传辅助函数：base64 → fal storage URL
+                    const uploadToUrl = async (base64: string | undefined): Promise<string | undefined> => {
+                      if (!base64 || !base64.startsWith('data:')) return base64;
+                      const res = await fetch('/api/image/upload', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ imageBase64: base64 }),
+                      });
+                      if (!res.ok) throw new Error('图片上传失败');
+                      const { url } = await res.json();
+                      return url;
+                    };
+
+                    // 首帧/尾帧先上传拿 URL，避免 413
+                    const needsStart = currentVideoModel?.mode === 'i2v' || currentVideoModel?.mode === 'firstLastFrame';
+                    const needsEnd = currentVideoModel?.mode === 'firstLastFrame' || currentVideoModel?.supportsEndFrame;
+                    const [startUrl, endUrl] = await Promise.all([
+                      needsStart ? uploadToUrl(firstFrameImage ?? undefined) : Promise.resolve(undefined),
+                      needsEnd ? uploadToUrl(lastFrameImage ?? undefined) : Promise.resolve(undefined),
+                    ]);
+
                     // 调用视频生成 API
                     const response = await fetch('/api/video/generate', {
                       method: 'POST',
@@ -2285,8 +2306,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         duration: videoDuration ?? 5,
                         resolution: videoResolution ?? '720p',
                         generateAudio: videoGenerateAudio ?? false,
-                        startFrameImage: (currentVideoModel?.mode === 'i2v' || currentVideoModel?.mode === 'firstLastFrame') ? firstFrameImage : undefined,
-                        endFrameImage: currentVideoModel?.mode === 'firstLastFrame' ? lastFrameImage : (currentVideoModel?.supportsEndFrame ? lastFrameImage : undefined),
+                        startFrameImage: startUrl,
+                        endFrameImage: endUrl,
                         cameraTemplate: model === 'jimeng-camera' ? (cameraTemplate ?? 'dynamic_orbit') : undefined,
                         cameraStrength: model === 'jimeng-camera' ? (cameraStrength ?? 'medium') : undefined,
                         userId: userId || undefined,
