@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { fal } from '@fal-ai/client';
 
 export const maxDuration = 60;
+
 import { createClient } from '@supabase/supabase-js';
 import { Service } from '@volcengine/openapi';
 import { calcVideoPrice, OVI_PRICE } from '@/lib/pricing';

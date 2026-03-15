@@ -2272,6 +2272,42 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   });
 
                   try {
+                    // 压缩图片到 1.5MB 以内
+                    const compressImage = (base64: string | null | undefined, maxBytes = 1.5 * 1024 * 1024): Promise<string | null | undefined> => {
+                      if (!base64 || !base64.startsWith('data:')) return Promise.resolve(base64);
+                      return new Promise((resolve) => {
+                        const img = new Image();
+                        img.onload = () => {
+                          let w = img.naturalWidth;
+                          let h = img.naturalHeight;
+                          let quality = 0.85;
+                          const canvas = document.createElement('canvas');
+                          const tryCompress = () => {
+                            canvas.width = w;
+                            canvas.height = h;
+                            canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
+                            const result = canvas.toDataURL('image/jpeg', quality);
+                            const bytes = (result.length - result.indexOf(',') - 1) * 0.75;
+                            if (bytes <= maxBytes || quality <= 0.3) {
+                              resolve(result);
+                            } else {
+                              quality -= 0.1;
+                              tryCompress();
+                            }
+                          };
+                          tryCompress();
+                        };
+                        img.src = base64;
+                      });
+                    };
+
+                    const needsStart = currentVideoModel?.mode === 'i2v' || currentVideoModel?.mode === 'firstLastFrame';
+                    const needsEnd = currentVideoModel?.mode === 'firstLastFrame' || currentVideoModel?.supportsEndFrame;
+                    const [compressedStart, compressedEnd] = await Promise.all([
+                      needsStart ? compressImage(firstFrameImage) : Promise.resolve(undefined),
+                      needsEnd ? compressImage(lastFrameImage) : Promise.resolve(undefined),
+                    ]);
+
                     // 调用视频生成 API
                     const response = await fetch('/api/video/generate', {
                       method: 'POST',
@@ -2285,8 +2321,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         duration: videoDuration ?? 5,
                         resolution: videoResolution ?? '720p',
                         generateAudio: videoGenerateAudio ?? false,
-                        startFrameImage: (currentVideoModel?.mode === 'i2v' || currentVideoModel?.mode === 'firstLastFrame') ? firstFrameImage : undefined,
-                        endFrameImage: currentVideoModel?.mode === 'firstLastFrame' ? lastFrameImage : (currentVideoModel?.supportsEndFrame ? lastFrameImage : undefined),
+                        startFrameImage: needsStart ? compressedStart : undefined,
+                        endFrameImage: needsEnd ? compressedEnd : undefined,
                         cameraTemplate: model === 'jimeng-camera' ? (cameraTemplate ?? 'dynamic_orbit') : undefined,
                         cameraStrength: model === 'jimeng-camera' ? (cameraStrength ?? 'medium') : undefined,
                         userId: userId || undefined,
