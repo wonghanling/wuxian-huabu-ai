@@ -1798,6 +1798,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) { const r = new FileReader(); r.onload = (ev) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, firstFrameImage: ev.target?.result as string } }); r.readAsDataURL(file); }
+                      e.target.value = '';
                     }}
                   />
                   {firstFrameImage && (
@@ -1820,6 +1821,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) { const r = new FileReader(); r.onload = (ev) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, lastFrameImage: ev.target?.result as string } }); r.readAsDataURL(file); }
+                        e.target.value = '';
                       }}
                     />
                     {lastFrameImage && (
@@ -1892,6 +1894,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) { const r = new FileReader(); r.onload = (ev) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, firstFrameImage: ev.target?.result as string } }); r.readAsDataURL(file); }
+                      e.target.value = '';
                     }}
                   />
                   {firstFrameImage && (
