@@ -1749,6 +1749,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         }
                         e.target.value = '';
                       }}
+                    />
+                    {uploadedImage && (
                       <div className="mt-1 relative w-full h-20 bg-black/30 rounded-lg overflow-hidden group">
                         <img src={uploadedImage} alt="参考图" className="w-full h-full object-cover" />
                         <button
