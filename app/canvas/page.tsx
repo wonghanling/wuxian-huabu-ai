@@ -1333,6 +1333,23 @@ function CanvasPageContent() {
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isRestoringRef = useRef(false);
   const hasUnsavedRef = useRef(false);
+  const editorRef = useRef<Editor | null>(null);
+
+  // 退出页面自动保存
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (!canvasIdRef.current || !editorRef.current || !hasUnsavedRef.current) return;
+      try {
+        const snapshot = getSnapshot(editorRef.current.store);
+        const payload = JSON.stringify({ canvasId: canvasIdRef.current, snapshot });
+        navigator.sendBeacon('/api/canvas/save', new Blob([payload], { type: 'application/json' }));
+      } catch (e) {
+        console.error('退出保存失败:', e);
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
 
   // 自定义形状工具和绑定工具
   const customShapeUtils = [CustomCardShapeUtil, ConnectionShapeUtil, TimelineShapeUtil, ShotCardShapeUtil, PromptOptimizerCardUtil];
@@ -1363,6 +1380,7 @@ function CanvasPageContent() {
   const handleMount = (editor: Editor) => {
     console.log('编辑器已加载');
     setEditorInstance(editor);
+    editorRef.current = editor;
 
     // 立即设置初始缩放为 60%
     setTimeout(() => {
@@ -1756,12 +1774,13 @@ function CanvasPageContent() {
                     await saveSnapshot(canvasIdRef.current, snapshot);
                     hasUnsavedRef.current = false;
                     setSaveStatus('saved');
+                    setTimeout(() => setSaveStatus('unsaved'), 2000);
                   } catch (err) {
                     console.error('保存失败:', err);
                     setSaveStatus('unsaved');
                   }
                 }}
-                disabled={saveStatus === 'saving' || saveStatus === 'saved'}
+                disabled={saveStatus === 'saving'}
                 className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-zinc-900/80 backdrop-blur-md border border-white/10 text-gray-300 hover:border-white/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {saveStatus === 'saving' ? (
@@ -1772,6 +1791,17 @@ function CanvasPageContent() {
                   <><svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg><span>保存</span></>
                 )}
               </button>
+
+              {/* 返回主页按钮 */}
+              <a
+                href="/"
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-zinc-900/80 backdrop-blur-md border border-white/10 text-gray-300 hover:border-white/20 transition-all"
+              >
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                <span>主页</span>
+              </a>
             </div>
           )}
 
