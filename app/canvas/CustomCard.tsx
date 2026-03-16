@@ -408,9 +408,10 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
     const { cardType, title, prompt, model, w, h, uploadedImage, uploadedImages, uploadedImageUrls, cameraVertical, cameraHorizontal, showCameraControl, generatedImage, aspectRatio, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showVideoOutput, capturedFrame, videoDuration, videoResolution, videoGenerateAudio, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterAnalyzeImage, characterAnchorJson, characterThreeViewJson, characterThreeViewImage, characterGeneratedImage, characterImageModel, imageQuality, cameraTemplate, cameraStrength, showCharacterOutput, showAnalyzePanel, showThreeViewJsonPanel, showGeneratePanel, isMinimized, textOutput, isGenerating, generationProgress, generationStatus } = shape.props;
     const editor = useEditor();
     const videoRef = useRef<HTMLVideoElement>(null);
-    const { isMember, userId } = useMembership();
+    const { isMember, userId, refresh: refreshBalance } = useMembership();
     const [showMemberModal, setShowMemberModal] = useState(false);
     const [isUploadingMulti, setIsUploadingMulti] = useState(false);
+    const [lightboxVideo, setLightboxVideo] = useState<string | null>(null);
 
     const handlePay = async (plan: 'membership' | 'recharge', amount: number) => {
       const supabase = createClient();
@@ -636,6 +637,28 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
         }}
       >
         {showMemberModal && <MembershipModal onClose={() => setShowMemberModal(false)} onPay={() => handlePay('membership', 115)} />}
+
+        {/* 视频/图片放大弹窗 */}
+        {lightboxVideo && (
+          <div
+            className="fixed inset-0 z-[99999] bg-black/80 flex items-center justify-center"
+            onClick={() => setLightboxVideo(null)}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <div className="relative" style={{ width: '60vw', maxWidth: '900px' }} onClick={(e) => e.stopPropagation()}>
+              {lightboxVideo.includes('.mp4') || lightboxVideo.includes('video') ? (
+                <video src={lightboxVideo} controls autoPlay className="w-full rounded-xl" />
+              ) : (
+                <img src={lightboxVideo} alt="大图" className="w-full h-auto rounded-xl object-contain" />
+              )}
+              <button
+                className="absolute -top-3 -right-3 w-7 h-7 bg-zinc-800 hover:bg-zinc-700 border border-white/20 rounded-full text-white text-sm flex items-center justify-center"
+                onClick={() => setLightboxVideo(null)}
+                onPointerDown={(e) => e.stopPropagation()}
+              >✕</button>
+            </div>
+          </div>
+        )}
         {/* 输出端口 - Right */}
         <div
           className="absolute top-1/2 -translate-y-1/2 cursor-crosshair group"
@@ -2247,6 +2270,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         isGenerating: false,
                       },
                     });
+                    refreshBalance();
                   } catch (error) {
                     console.error('图片生成错误:', error);
                     editor.updateShape({
@@ -2404,6 +2428,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                             generationStatus: '生成完成',
                           },
                         });
+                        refreshBalance();
                       } else if (queryData.status === 'failed') {
                         throw new Error('视频生成失败');
                       } else {
@@ -2502,7 +2527,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       className="px-3 py-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
                       onClick={(e) => {
                         e.stopPropagation();
-                        window.open(generatedImage, '_blank');
+                        setLightboxVideo(generatedImage);
                       }}
                       onPointerDown={(e) => e.stopPropagation()}
                       title="查看大图"
@@ -2627,10 +2652,10 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       className="p-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white transition-all"
                       onClick={(e) => {
                         e.stopPropagation();
-                        window.open(generatedVideo, '_blank');
+                        setLightboxVideo(generatedVideo);
                       }}
                       onPointerDown={(e) => e.stopPropagation()}
-                      title="全屏播放"
+                      title="放大播放"
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />

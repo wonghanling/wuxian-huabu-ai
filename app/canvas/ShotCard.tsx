@@ -645,14 +645,14 @@ export class ShotCardShapeUtil extends BaseBoxShapeUtil<ShotCardShape> {
             <div className="p-3 pt-4 space-y-2">
             {/* 运镜固定器 */}
             <div className="relative">
-              <div className="text-[10px] text-gray-400 mb-1 font-medium">运镜固定器（必选）</div>
+              <div className="text-xs text-gray-400 mb-1 font-medium">运镜固定器（必选）</div>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowCameraMovementPanel(!showCameraMovementPanel);
                 }}
                 onPointerDown={(e) => e.stopPropagation()}
-                className="w-full px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded text-white text-[9px] transition-all text-left flex items-center justify-between"
+                className="w-full px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded text-white text-xs transition-all text-left flex items-center justify-between"
               >
                 <span className="truncate flex-1">{cameraMovement}</span>
                 <svg className="w-3 h-3 text-gray-400 flex-shrink-0 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -671,7 +671,7 @@ export class ShotCardShapeUtil extends BaseBoxShapeUtil<ShotCardShape> {
                         updateCameraMovement(option.en);
                       }}
                       onPointerDown={(e) => e.stopPropagation()}
-                      className={`w-full px-2 py-1.5 rounded text-[9px] transition-all text-left ${
+                      className={`w-full px-2 py-1.5 rounded text-xs transition-all text-left ${
                         cameraMovement === option.en
                           ? 'bg-green-500/20 text-green-300 font-medium'
                           : 'bg-white/5 hover:bg-white/10 text-white'
@@ -679,7 +679,7 @@ export class ShotCardShapeUtil extends BaseBoxShapeUtil<ShotCardShape> {
                     >
                       <div className="flex flex-col">
                         <span>{option.en}</span>
-                        <span className="text-[8px] text-gray-500 mt-0.5">{option.zh}</span>
+                        <span className="text-[10px] text-gray-500 mt-0.5">{option.zh}</span>
                       </div>
                     </button>
                   ))}
