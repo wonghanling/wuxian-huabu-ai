@@ -909,6 +909,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                                 };
                                 reader.readAsDataURL(file);
                               }
+                              e.target.value = '';
                             }}
                           />
                         {characterAnalyzeImage && (
@@ -1248,6 +1249,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                               };
                               reader.readAsDataURL(file);
                             }
+                            e.target.value = '';
                           }}
                         />
                         {characterThreeViewImage && (
@@ -1745,9 +1747,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           };
                           reader.readAsDataURL(file);
                         }
+                        e.target.value = '';
                       }}
-                    />
-                    {uploadedImage && (
                       <div className="mt-1 relative w-full h-20 bg-black/30 rounded-lg overflow-hidden group">
                         <img src={uploadedImage} alt="参考图" className="w-full h-full object-cover" />
                         <button
@@ -1915,6 +1916,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) { const r = new FileReader(); r.onload = (ev) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, lastFrameImage: ev.target?.result as string } }); r.readAsDataURL(file); }
+                      e.target.value = '';
                     }}
                   />
                   {lastFrameImage && (
@@ -2046,6 +2048,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         };
                         reader.readAsDataURL(file);
                       }
+                      e.target.value = '';
                     }}
                   />
                 </div>
