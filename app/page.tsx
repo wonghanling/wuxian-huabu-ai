@@ -540,7 +540,7 @@ export default function Home() {
                 muted
                 loop
                 playsInline
-                className="absolute inset-0 w-full h-full object-cover opacity-30"
+                className="absolute inset-0 w-full h-full object-cover opacity-60"
                 src="/hero.mp4"
               />
               {/* 内容叠在视频上 */}
