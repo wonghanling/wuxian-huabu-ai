@@ -554,7 +554,7 @@ export default function Home() {
                 <p className="text-lg text-zinc-400 mb-10 max-w-2xl mx-auto">
                   Join thousands of creators using BOLUO.1971 to bring their ideas to life with AI-powered workflows.
                 </p>
-                <p className="text-sm text-zinc-500 mb-10 max-w-2xl mx-auto">
+                <p className="text-sm text-zinc-200 mb-10 max-w-2xl mx-auto">
                   加入数千名创作者，使用 BOLUO.1971 通过 AI 驱动的工作流将创意变为现实。
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
