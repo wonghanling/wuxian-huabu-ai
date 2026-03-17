@@ -200,19 +200,8 @@ export async function POST(req: NextRequest) {
       const data = await response.json();
       if (data.code !== 1) throw new Error(data.description || '生成失败');
 
-      const taskId = data.result;
-      for (let i = 0; i < 30; i++) {
-        await new Promise(r => setTimeout(r, 2000));
-        const s = await fetch(`${YUNWU_BASE_URL}/mj/task/${taskId}/fetch`, {
-          headers: { 'Authorization': `Bearer ${YUNWU_API_KEY}` },
-        });
-        if (s.ok) {
-          const sd = await s.json();
-          if (sd.status === 'SUCCESS' && sd.imageUrl) { imageUrl = sd.imageUrl; break; }
-          if (sd.status === 'FAILURE') throw new Error('图片生成失败');
-        }
-      }
-      if (!imageUrl) throw new Error('图片生成超时');
+      // 直接返回 taskId，让前端轮询
+      return NextResponse.json({ success: true, taskId: data.result, model, prompt, pending: true });
 
     } else if (modelConfig.apiType === 'image-generation') {
       const requestBody: any = {

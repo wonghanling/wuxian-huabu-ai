@@ -2248,6 +2248,19 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
                     const data = await response.json();
 
+                    // MJ 异步模式：轮询查询结果
+                    if (data.pending && data.taskId) {
+                      const mjPoll = async (): Promise<string> => {
+                        await new Promise(r => setTimeout(r, 3000));
+                        const qRes = await fetch(`/api/image/mj-query?taskId=${encodeURIComponent(data.taskId)}`);
+                        const qData = await qRes.json();
+                        if (qData.status === 'completed' && qData.imageUrl) return qData.imageUrl;
+                        if (qData.status === 'failed') throw new Error(qData.error || 'MJ 生成失败');
+                        return mjPoll();
+                      };
+                      data.imageUrl = await mjPoll();
+                    }
+
                     // 上传到 Supabase Storage，获取永久 URL
                     let finalImageUrl = data.imageUrl;
                     try {
