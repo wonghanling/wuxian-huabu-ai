@@ -645,11 +645,11 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
             onClick={() => setLightboxVideo(null)}
             onPointerDown={(e) => e.stopPropagation()}
           >
-            <div className="relative" style={{ maxWidth: '90vw', maxHeight: '90vh' }} onClick={(e) => e.stopPropagation()}>
+            <div className="relative" style={{ maxWidth: '70vw', maxHeight: '70vh' }} onClick={(e) => e.stopPropagation()}>
               {lightboxVideo.includes('.mp4') || lightboxVideo.includes('video') ? (
-                <video src={lightboxVideo} controls autoPlay className="rounded-xl" style={{ maxWidth: '90vw', maxHeight: '90vh' }} />
+                <video src={lightboxVideo} controls autoPlay className="rounded-xl" style={{ maxWidth: '70vw', maxHeight: '70vh' }} />
               ) : (
-                <img src={lightboxVideo} alt="大图" className="rounded-xl object-contain" style={{ maxWidth: '90vw', maxHeight: '90vh' }} />
+                <img src={lightboxVideo} alt="大图" className="rounded-xl object-contain" style={{ maxWidth: '70vw', maxHeight: '70vh' }} />
               )}
               <button
                 className="absolute -top-3 -right-3 w-7 h-7 bg-zinc-800 hover:bg-zinc-700 border border-white/20 rounded-full text-white text-sm flex items-center justify-center"
