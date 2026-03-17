@@ -11,6 +11,8 @@ import { PortTool } from './PortTool';
 import { TimelineShapeUtil } from './TimelineShape';
 import { ShotCardShapeUtil } from './ShotCard';
 import { PromptOptimizerCardUtil } from './PromptOptimizerCard';
+import { GemStep1CardUtil } from './GemStoryboardStep1Card';
+import { GemStep2CardUtil } from './GemStoryboardStep2Card';
 import TutorialOverlay from './TutorialOverlay';
 import { createClient } from '@/lib/supabase/client';
 import { getOrCreateCanvas, loadSnapshot as loadCanvasSnapshot, saveSnapshot } from '@/lib/canvas-storage';
@@ -426,6 +428,37 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
     }
   };
 
+  const createGemStoryboardCards = () => {
+    try {
+      const viewportPageBounds = editor.getViewportPageBounds();
+      const centerX = viewportPageBounds.center.x;
+      const centerY = viewportPageBounds.center.y;
+      const id1 = createShapeId();
+      const id2 = createShapeId();
+
+      editor.createShape({
+        id: id1,
+        type: 'gem-step1-card' as any,
+        x: centerX - 420,
+        y: centerY - 260,
+        props: { w: 400, h: 520 },
+      });
+
+      editor.createShape({
+        id: id2,
+        type: 'gem-step2-card' as any,
+        x: centerX + 20,
+        y: centerY - 280,
+        props: { w: 400, h: 560 },
+      });
+
+      editor.select(id1);
+      editor.setCurrentTool('select');
+    } catch (error) {
+      console.error('创建GEM分镜卡片失败:', error);
+    }
+  };
+
   return (
     <div
       className="fixed bottom-32 left-6 transition-all duration-300"
@@ -593,6 +626,23 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
           <div className="flex flex-col items-start">
             <span className="text-sm text-gray-300 whitespace-nowrap">Prompt</span>
             <span className="text-xs text-gray-500 whitespace-nowrap">快速编译视频生成词</span>
+          </div>
+        </button>
+
+        {/* GEM分镜设计按钮 */}
+        <button
+          onClick={createGemStoryboardCards}
+          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
+          title="GEM分镜设计"
+        >
+          <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center group-hover:bg-purple-500/30 transition-all flex-shrink-0">
+            <svg className="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+            </svg>
+          </div>
+          <div className="flex flex-col items-start">
+            <span className="text-sm text-gray-300 whitespace-nowrap">GEM 分镜设计</span>
+            <span className="text-xs text-gray-500 whitespace-nowrap">25格分镜生成</span>
           </div>
         </button>
 
@@ -1352,7 +1402,7 @@ function CanvasPageContent() {
   }, []);
 
   // 自定义形状工具和绑定工具
-  const customShapeUtils = [CustomCardShapeUtil, ConnectionShapeUtil, TimelineShapeUtil, ShotCardShapeUtil, PromptOptimizerCardUtil];
+  const customShapeUtils = [CustomCardShapeUtil, ConnectionShapeUtil, TimelineShapeUtil, ShotCardShapeUtil, PromptOptimizerCardUtil, GemStep1CardUtil, GemStep2CardUtil];
   const customBindingUtils = [ConnectionBindingUtil];
   const customTools = [PortTool];
 
