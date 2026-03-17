@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     parts.push({ text: 'Analyze these reference images and output the unified visual profile JSON.' });
 
     const response = await fetch(
-      `${YUNWU_BASE_URL}/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent`,
+      `${YUNWU_BASE_URL}/v1beta/models/gemini-3-flash-preview:generateContent`,
       {
         method: 'POST',
         headers: {

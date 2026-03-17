@@ -22,7 +22,7 @@ ${script}
 Generate the 5x5 storyboard JSON with exactly 25 shots.`;
 
     const response = await fetch(
-      `${YUNWU_BASE_URL}/v1beta/models/gemini-2.5-pro-preview-06-05:generateContent`,
+      `${YUNWU_BASE_URL}/v1beta/models/gemini-3-pro-preview:generateContent`,
       {
         method: 'POST',
         headers: {
