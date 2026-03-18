@@ -28,6 +28,8 @@ export type GemStep2CardShape = TLBaseShape<
     result: string;
     isGenerating: boolean;
     isMinimized: boolean;
+    showInstruction?: boolean;
+    systemInstruction?: string;
   }
 >;
 
