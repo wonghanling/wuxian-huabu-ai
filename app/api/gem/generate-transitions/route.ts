@@ -178,16 +178,21 @@ async function callGemini(shots: any[]): Promise<any[]> {
   if (!response.ok) throw new Error(`Gemini API 错误: ${response.status}`);
   const data = await response.json();
 
-  let text = '';
-  const parts = data.candidates?.[0]?.content?.parts ?? [];
-  for (const p of parts) {
-    if (typeof p.text === 'string') text += p.text;
-  }
+  const allParts: any[] = data?.candidates?.[0]?.content?.parts ?? [];
+  const text = allParts.map((p: any) => p.text ?? '').join('').trim();
 
-  // Extract JSON from response
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error('无法从响应中提取 JSON');
-  const parsed = JSON.parse(jsonMatch[0]);
+  const mdMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  const jsonText = (mdMatch ? mdMatch[1] : text).trim();
+
+  let parsed;
+  try {
+    parsed = JSON.parse(jsonText);
+  } catch {
+    // 最后尝试提取第一个 { } 块
+    const braceMatch = jsonText.match(/\{[\s\S]*\}/);
+    if (!braceMatch) throw new Error('无法从响应中提取 JSON');
+    parsed = JSON.parse(braceMatch[0]);
+  }
   return parsed.video_transitions ?? [];
 }
 
