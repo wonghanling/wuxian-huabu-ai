@@ -15,6 +15,7 @@ const volcService = new Service({
   serviceName: 'cv',
   accessKeyId: process.env.VOLC_ACCESS_KEY_ID!,
   secretKey: process.env.VOLC_SECRET_ACCESS_KEY!,
+  requestTimeout: 30000,
 });
 const jimengSubmit = volcService.createJSONAPI('CVSync2AsyncSubmitTask', { Version: '2022-08-31' });
 const jimengQuery  = volcService.createJSONAPI('CVSync2AsyncGetResult',  { Version: '2022-08-31' });
