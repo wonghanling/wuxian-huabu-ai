@@ -30,6 +30,8 @@ export class GemStep1CardUtil extends BaseBoxShapeUtil<GemStep1CardShape> {
     result: T.string,
     isGenerating: T.boolean,
     isMinimized: T.boolean,
+    showInstruction: T.boolean.optional(),
+    systemInstruction: T.string.optional(),
   };
 
   override isAspectRatioLocked = () => false;

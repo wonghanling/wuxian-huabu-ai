@@ -44,6 +44,7 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
     result: T.string,
     isGenerating: T.boolean,
     isMinimized: T.boolean,
+    showInstruction: T.boolean.optional(),
   };
 
   override isAspectRatioLocked = () => false;
