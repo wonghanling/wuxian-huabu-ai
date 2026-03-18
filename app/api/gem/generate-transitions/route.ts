@@ -181,6 +181,9 @@ async function callGemini(shots: any[]): Promise<any[]> {
   const allParts: any[] = data?.candidates?.[0]?.content?.parts ?? [];
   const text = allParts.map((p: any) => p.text ?? '').join('').trim();
 
+  console.log('[Step3] Gemini raw text (first 500):', text.slice(0, 500));
+  console.log('[Step3] finishReason:', data?.candidates?.[0]?.finishReason);
+
   const mdMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
   const jsonText = (mdMatch ? mdMatch[1] : text).trim();
 
