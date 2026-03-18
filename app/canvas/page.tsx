@@ -13,6 +13,7 @@ import { ShotCardShapeUtil } from './ShotCard';
 import { PromptOptimizerCardUtil } from './PromptOptimizerCard';
 import { GemStep1CardUtil } from './GemStoryboardStep1Card';
 import { GemStep2CardUtil } from './GemStoryboardStep2Card';
+import { GemStep3CardUtil } from './GemStoryboardStep3Card';
 import TutorialOverlay from './TutorialOverlay';
 import { createClient } from '@/lib/supabase/client';
 import { getOrCreateCanvas, loadSnapshot as loadCanvasSnapshot, saveSnapshot } from '@/lib/canvas-storage';
@@ -428,6 +429,26 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
     }
   };
 
+  const createGemDirectorCard = () => {
+    try {
+      const viewportPageBounds = editor.getViewportPageBounds();
+      const centerX = viewportPageBounds.center.x;
+      const centerY = viewportPageBounds.center.y;
+      const id = createShapeId();
+      editor.createShape({
+        id,
+        type: 'gem-step3-card' as any,
+        x: centerX - 200,
+        y: centerY - 260,
+        props: { w: 400, h: 520 },
+      });
+      editor.select(id);
+      editor.setCurrentTool('select');
+    } catch (error) {
+      console.error('创建导演引擎卡片失败:', error);
+    }
+  };
+
   const createGemStoryboardCards = () => {
     try {
       const viewportPageBounds = editor.getViewportPageBounds();
@@ -643,6 +664,23 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
           <div className="flex flex-col items-start">
             <span className="text-sm text-gray-300 whitespace-nowrap">GEM 分镜设计</span>
             <span className="text-xs text-gray-500 whitespace-nowrap">25格分镜生成</span>
+          </div>
+        </button>
+
+        {/* 导演引擎按钮 */}
+        <button
+          onClick={createGemDirectorCard}
+          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
+          title="导演引擎"
+        >
+          <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center group-hover:bg-emerald-500/30 transition-all flex-shrink-0">
+            <svg className="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
+            </svg>
+          </div>
+          <div className="flex flex-col items-start">
+            <span className="text-sm text-gray-300 whitespace-nowrap">导演引擎</span>
+            <span className="text-xs text-gray-500 whitespace-nowrap">视频过渡指令</span>
           </div>
         </button>
 
@@ -1415,7 +1453,7 @@ function CanvasPageContent() {
   }, []);
 
   // 自定义形状工具和绑定工具
-  const customShapeUtils = [CustomCardShapeUtil, ConnectionShapeUtil, TimelineShapeUtil, ShotCardShapeUtil, PromptOptimizerCardUtil, GemStep1CardUtil, GemStep2CardUtil];
+  const customShapeUtils = [CustomCardShapeUtil, ConnectionShapeUtil, TimelineShapeUtil, ShotCardShapeUtil, PromptOptimizerCardUtil, GemStep1CardUtil, GemStep2CardUtil, GemStep3CardUtil];
   const customBindingUtils = [ConnectionBindingUtil];
   const customTools = [PortTool];
 
