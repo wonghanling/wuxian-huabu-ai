@@ -196,6 +196,45 @@ async function callGeminiSegment(shots: any[], fromIdx: number, toIdx: number): 
   return callGemini(segment);
 }
 
+function stripMarkdown(raw: string) {
+  return raw
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/i, '')
+    .replace(/```$/i, '')
+    .trim();
+}
+
+function tryParse(value: any) {
+  if (typeof value !== 'string') return value;
+  try {
+    return JSON.parse(stripMarkdown(value));
+  } catch {
+    return value;
+  }
+}
+
+function extractShotsFromStoryboard(input: any) {
+  const data = tryParse(input);
+  if (!data) throw new Error('storyboard is empty');
+
+  const result = tryParse(data.result);
+
+  if (Array.isArray(data.shots)) return data.shots;
+  if (result && Array.isArray(result.shots)) return result.shots;
+
+  if (Array.isArray(data.storyboard_2x2)) return data.storyboard_2x2;
+  if (Array.isArray(data.storyboard_3x3)) return data.storyboard_3x3;
+  if (Array.isArray(data.storyboard_5x5)) return data.storyboard_5x5;
+
+  if (result) {
+    if (Array.isArray(result.storyboard_2x2)) return result.storyboard_2x2;
+    if (Array.isArray(result.storyboard_3x3)) return result.storyboard_3x3;
+    if (Array.isArray(result.storyboard_5x5)) return result.storyboard_5x5;
+  }
+
+  throw new Error(`Could not extract shots. top-level keys: ${Object.keys(data).join(', ')}`);
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { storyboard } = await req.json();
@@ -205,16 +244,7 @@ export async function POST(req: NextRequest) {
 
     let shots: any[];
     try {
-      let raw = typeof storyboard === 'string' ? storyboard : JSON.stringify(storyboard);
-      // 剥离 markdown 代码块
-      const mdMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
-      if (mdMatch) raw = mdMatch[1].trim();
-      // 提取第一个 JSON 对象
-      const jsonMatch = raw.match(/\{[\s\S]*\}/);
-      if (jsonMatch) raw = jsonMatch[0];
-      const parsed = JSON.parse(raw);
-      shots = parsed.shots ?? parsed.storyboard ?? parsed;
-      if (!Array.isArray(shots)) throw new Error('shots 不是数组');
+      shots = extractShotsFromStoryboard(storyboard);
     } catch (e: any) {
       return NextResponse.json({ error: `无法解析 storyboard JSON: ${e.message}` }, { status: 400 });
     }
