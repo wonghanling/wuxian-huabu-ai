@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { callGemini, extractJson } from '../gemini-client';
+
+const YUNWU_BASE_URL = 'https://api.n1n.ai';
+const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
 
 export const maxDuration = 60;
 
@@ -342,14 +344,37 @@ ${script}
 
 Generate the ${label}.`;
 
-    const text = await callGemini({
-      model: 'gemini-3-pro-preview',
-      systemInstruction: instruction,
-      userMessage,
-      temperature: 0.7,
-    });
+    const text = await (async () => {
+      const response = await fetch(
+        `${YUNWU_BASE_URL}/v1beta/models/gemini-3-pro-preview:generateContent`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${YUNWU_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: instruction }] },
+            contents: [{ role: 'user', parts: [{ text: userMessage }] }],
+            generationConfig: { temperature: 0.7 },
+          }),
+        }
+      );
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`API 错误: ${response.status} - ${errText}`);
+      }
+      const data = await response.json();
+      const allParts: any[] = data?.candidates?.[0]?.content?.parts ?? [];
+      return allParts
+        .filter((p: any) => !p.thought && !p.thoughtSignature && typeof p.text === 'string')
+        .map((p: any) => p.text)
+        .join('')
+        .trim();
+    })();
 
-    const jsonText = extractJson(text);
+    const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, text];
+    const jsonText = (jsonMatch[1] || text).trim();
 
     let parsed;
     try {

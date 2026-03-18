@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { callGemini, extractJson, YUNWU_API_KEY } from '../gemini-client';
+
+const YUNWU_BASE_URL = 'https://api.n1n.ai';
+const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
 
 export const maxDuration = 60;
 
@@ -82,26 +84,6 @@ STRICT OUTPUT RULES
 - style_tags must contain 3 to 6 items
 - Output ONLY the JSON object. No text before or after.`;
 
-const RESPONSE_SCHEMA = {
-  type: 'object',
-  properties: {
-    visual_tags: {
-      type: 'object',
-      properties: {
-        character:       { type: 'string' },
-        outfit:          { type: 'string' },
-        cybernetic_parts:{ type: 'string' },
-        monster:         { type: 'string' },
-        environment:     { type: 'string' },
-        style_tags:      { type: 'array', items: { type: 'string' } },
-      },
-      required: ['character', 'outfit', 'cybernetic_parts', 'monster', 'environment', 'style_tags'],
-    },
-    visual_bible: { type: 'string' },
-  },
-  required: ['visual_tags', 'visual_bible'],
-};
-
 export async function POST(req: NextRequest) {
   try {
     const { images } = await req.json();
@@ -110,22 +92,47 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '请上传至少一张图片' }, { status: 400 });
     }
 
-    const imageParts: any[] = [];
+    const parts: any[] = [];
     for (const img of images) {
       const m = img.match(/^data:image\/(jpeg|jpg|png|webp);base64,(.+)$/);
-      if (m) imageParts.push({ inline_data: { mime_type: `image/${m[1]}`, data: m[2] } });
+      if (m) parts.push({ inline_data: { mime_type: `image/${m[1]}`, data: m[2] } });
+    }
+    parts.push({ text: 'Analyze these reference images and output the unified visual profile JSON.' });
+
+    const response = await fetch(
+      `${YUNWU_BASE_URL}/v1beta/models/gemini-3-flash-preview:generateContent`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${YUNWU_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
+          contents: [{ role: 'user', parts }],
+          generationConfig: { temperature: 0.2 },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`API 错误: ${response.status} - ${errText}`);
     }
 
-    const text = await callGemini({
-      model: 'gemini-3-flash-preview',
-      systemInstruction: SYSTEM_INSTRUCTION,
-      userMessage: 'Analyze these reference images and output the unified visual profile JSON.',
-      parts: imageParts,
-      temperature: 0.2,
-      responseSchema: RESPONSE_SCHEMA,
-    });
+    const data = await response.json();
+    const allParts: any[] = data?.candidates?.[0]?.content?.parts ?? [];
+    const text = allParts
+      .filter((p: any) => !p.thought && !p.thoughtSignature && typeof p.text === 'string')
+      .map((p: any) => p.text)
+      .join('')
+      .trim();
 
-    const jsonText = extractJson(text);
+    if (!text) throw new Error('API 未返回内容');
+
+    const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, text];
+    const jsonText = (jsonMatch[1] || text).trim();
+
     let parsed;
     try {
       parsed = JSON.parse(jsonText);
