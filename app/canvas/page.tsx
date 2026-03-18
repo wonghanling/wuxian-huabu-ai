@@ -1387,18 +1387,31 @@ function CanvasPageContent() {
 
   // 退出页面自动保存
   useEffect(() => {
-    const handleBeforeUnload = () => {
+    const doBeaconSave = () => {
       if (!canvasIdRef.current || !editorRef.current || !hasUnsavedRef.current) return;
       try {
         const snapshot = getSnapshot(editorRef.current.store);
         const payload = JSON.stringify({ canvasId: canvasIdRef.current, snapshot });
         navigator.sendBeacon('/api/canvas/save', new Blob([payload], { type: 'application/json' }));
+        hasUnsavedRef.current = false;
       } catch (e) {
         console.error('退出保存失败:', e);
       }
     };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+
+    // 关闭/刷新页面
+    window.addEventListener('beforeunload', doBeaconSave);
+    // 切换标签页、打开新标签页返回、最小化等
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') doBeaconSave();
+    });
+    // iOS Safari 兼容
+    window.addEventListener('pagehide', doBeaconSave);
+
+    return () => {
+      window.removeEventListener('beforeunload', doBeaconSave);
+      window.removeEventListener('pagehide', doBeaconSave);
+    };
   }, []);
 
   // 自定义形状工具和绑定工具
