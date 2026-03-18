@@ -570,7 +570,7 @@ export async function POST(req: NextRequest) {
 
       const dsTask = cfg.dashscopeModel?.includes('kf2v') ? 'image2video' : 'video-generation';
       const dsRes = await fetch(
-        `https://dashscope.aliyuncs.com/api/v1/services/aigc/${dsTask}/video-synthesis`,
+        `https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/${dsTask}/video-synthesis`,
         {
           method: 'POST',
           headers: {

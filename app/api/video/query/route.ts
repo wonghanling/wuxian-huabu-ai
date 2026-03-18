@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
     } else if (endpoint.startsWith('dashscope:')) {
       // DashScope 官方 API 查询
       const res = await fetch(
-        `https://dashscope.aliyuncs.com/api/v1/tasks/${taskId}`,
+        `https://dashscope-intl.aliyuncs.com/api/v1/tasks/${taskId}`,
         { headers: { 'Authorization': `Bearer ${DASHSCOPE_KEY}` } }
       );
 
