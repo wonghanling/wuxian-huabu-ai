@@ -133,13 +133,11 @@ export async function POST(req: NextRequest) {
         input.image_url = imageBase64;
       }
 
-      const result = await fal.subscribe(endpoint, { input });
-      const images = (result.data as any)?.images;
-      if (images && images.length > 0) {
-        imageUrl = images[0].url;
-      }
+      const submitted = await fal.queue.submit(endpoint, { input });
+      const requestId = submitted.request_id;
+      if (!requestId) throw new Error('fal.ai 未返回 requestId');
 
-      if (!imageUrl) throw new Error('fal.ai 未返回图片');
+      return NextResponse.json({ success: true, requestId, model, prompt, pending: true });
 
     // ── n1n.ai 路径 ──────────────────────────────────────────────
     } else if (modelConfig.apiType === 'gemini-native') {

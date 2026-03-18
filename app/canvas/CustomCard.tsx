@@ -2261,6 +2261,25 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       data.imageUrl = await mjPoll();
                     }
 
+                    // fal 异步模式：轮询查询结果
+                    if (data.pending && data.requestId) {
+                      const falEndpointMap: Record<string, string> = {
+                        'flux-kontext': 'fal-ai/flux-pro/kontext/max',
+                        'flux-kontext-max': 'fal-ai/flux-pro/kontext/max/text-to-image',
+                        'nano-banana-pro-multi': 'fal-ai/nano-banana-pro/edit',
+                      };
+                      const falEndpoint = falEndpointMap[data.model] || 'fal-ai/nano-banana-pro/edit';
+                      const falPoll = async (): Promise<string> => {
+                        await new Promise(r => setTimeout(r, 3000));
+                        const qRes = await fetch(`/api/image/fal-query?requestId=${encodeURIComponent(data.requestId)}&endpoint=${encodeURIComponent(falEndpoint)}`);
+                        const qData = await qRes.json();
+                        if (qData.success && qData.imageUrl) return qData.imageUrl;
+                        if (qData.error) throw new Error(qData.error);
+                        return falPoll();
+                      };
+                      data.imageUrl = await falPoll();
+                    }
+
                     // 上传到 Supabase Storage，获取永久 URL
                     let finalImageUrl = data.imageUrl;
                     try {
