@@ -23,10 +23,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: true, imageUrl });
     }
 
-    if (status.status === 'FAILED') {
-      return NextResponse.json({ error: 'fal.ai 任务失败' }, { status: 500 });
-    }
-
     // IN_QUEUE 或 IN_PROGRESS
     return NextResponse.json({ pending: true, status: status.status });
   } catch (error: any) {
