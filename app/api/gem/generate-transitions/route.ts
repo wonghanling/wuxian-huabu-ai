@@ -262,26 +262,14 @@ export async function POST(req: NextRequest) {
     let allTransitions: any[] = [];
 
     if (shotCount <= 4) {
-      // 4格：一次生成全部
+      // 4格：一次生成全部 3 条
       allTransitions = await callGemini(shots);
-    } else if (shotCount <= 9) {
-      // 9格：一次生成，失败则分两组
-      try {
-        allTransitions = await callGemini(shots);
-      } catch {
-        const mid = Math.ceil(shotCount / 2);
-        const [g1, g2] = await Promise.all([
-          callGeminiSegment(shots, 0, mid),
-          callGeminiSegment(shots, mid - 1, shotCount - 1),
-        ]);
-        allTransitions = [...g1, ...g2];
-      }
     } else {
-      // 25格：固定分段，每组5条（6个shots）
+      // 9格/25格：固定分段，每组最多 3 个 transitions（4个shots）
       const groups: [number, number][] = [];
-      for (let i = 0; i < shotCount - 1; i += 5) {
+      for (let i = 0; i < shotCount - 1; i += 3) {
         const start = i;
-        const end = Math.min(i + 5, shotCount - 1);
+        const end = Math.min(i + 3, shotCount - 1);
         groups.push([start, end]);
       }
       const results = await Promise.all(
