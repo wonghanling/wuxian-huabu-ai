@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { callGemini, extractJson } from '../gemini-client';
 
-const YUNWU_BASE_URL = 'https://api.n1n.ai';
-const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
+export const maxDuration = 60;
 
 const INSTRUCTIONS: Record<string, string> = {
   '4': `You are Creative Visualization Script Assistant - 2x2 Storyboard Mode.
@@ -342,34 +342,14 @@ ${script}
 
 Generate the ${label}.`;
 
-    const response = await fetch(
-      `${YUNWU_BASE_URL}/v1beta/models/gemini-3-pro-preview:generateContent`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${YUNWU_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: instruction }] },
-          contents: [{ role: 'user', parts: [{ text: userMessage }] }],
-          generationConfig: { temperature: 0.7 },
-        }),
-      }
-    );
+    const text = await callGemini({
+      model: 'gemini-3-pro-preview',
+      systemInstruction: instruction,
+      userMessage,
+      temperature: 0.7,
+    });
 
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`API 错误: ${response.status} - ${errText}`);
-    }
-
-    const data = await response.json();
-    const parts = data.candidates?.[0]?.content?.parts ?? [];
-    const text = parts.filter((p: any) => !p.thought).map((p: any) => p.text).join('').trim();
-    if (!text) throw new Error('API 未返回内容');
-
-    const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, text];
-    const jsonText = (jsonMatch[1] || text).trim();
+    const jsonText = extractJson(text);
 
     let parsed;
     try {

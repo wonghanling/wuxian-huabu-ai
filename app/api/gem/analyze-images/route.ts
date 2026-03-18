@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { callGemini, extractJson, YUNWU_API_KEY } from '../gemini-client';
 
-const YUNWU_BASE_URL = 'https://api.n1n.ai';
-const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
+export const maxDuration = 60;
 
 const SYSTEM_INSTRUCTION = `You are a high-precision visual feature extraction engine.
 
@@ -60,54 +60,47 @@ MULTI-IMAGE FUSION RULES
 FIELD DEFINITIONS
 ━━━━━━━━━━━━━━━━━━━
 
-visual_tags.character
-- Core identity traits of the main character
-- Include gender presentation, hair, face shape, body type
-- Use short keyword phrases only
-
-visual_tags.outfit
-- Clothing, armor, materials, silhouette
-- Keep only stable recurring outfit traits
-
-visual_tags.cybernetic_parts
-- Mechanical limbs, implants, glowing tech structures
-- If none, return ""
-
-visual_tags.monster
-- Creature type, skeletal structure, iconic traits
-- If none, return ""
-
-visual_tags.environment
-- Dominant setting and lighting atmosphere
-- Example: desert, ruins, sunset, heat haze
-
-visual_tags.style_tags
-- 3 to 6 concise style tags only
+visual_tags.character - Core identity traits, gender, hair, face, body type. Short keyword phrases only.
+visual_tags.outfit - Clothing, armor, materials, silhouette. Stable recurring traits only.
+visual_tags.cybernetic_parts - Mechanical limbs, implants, glowing tech. If none, return "".
+visual_tags.monster - Creature type, skeletal structure, iconic traits. If none, return "".
+visual_tags.environment - Dominant setting and lighting atmosphere.
+visual_tags.style_tags - 3 to 6 concise style tags only.
 
 ━━━━━━━━━━━━━━━━━━━
 VISUAL_BIBLE REQUIREMENTS
 ━━━━━━━━━━━━━━━━━━━
 
-The field "visual_bible" must be a concise but rich cinematic anchor paragraph in English.
-- 80 to 180 English words
-- One paragraph only
-- Do NOT write plot
-- Do NOT write storyboard instructions
-- Do NOT mention camera shots
+80 to 180 English words. One paragraph. No plot. No storyboard instructions. No camera shots.
 
 ━━━━━━━━━━━━━━━━━━━
 STRICT OUTPUT RULES
 ━━━━━━━━━━━━━━━━━━━
 
 - English ONLY
-- JSON ONLY
-- No markdown
-- No explanations
-- No extra keys
+- JSON ONLY — no markdown, no explanations, no extra keys
 - style_tags must contain 3 to 6 items
-- visual_bible must be plain English prose
+- Output ONLY the JSON object. No text before or after.`;
 
-Output ONLY the JSON object. No text before or after.`;
+const RESPONSE_SCHEMA = {
+  type: 'object',
+  properties: {
+    visual_tags: {
+      type: 'object',
+      properties: {
+        character:       { type: 'string' },
+        outfit:          { type: 'string' },
+        cybernetic_parts:{ type: 'string' },
+        monster:         { type: 'string' },
+        environment:     { type: 'string' },
+        style_tags:      { type: 'array', items: { type: 'string' } },
+      },
+      required: ['character', 'outfit', 'cybernetic_parts', 'monster', 'environment', 'style_tags'],
+    },
+    visual_bible: { type: 'string' },
+  },
+  required: ['visual_tags', 'visual_bible'],
+};
 
 export async function POST(req: NextRequest) {
   try {
@@ -117,45 +110,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '请上传至少一张图片' }, { status: 400 });
     }
 
-    const parts: any[] = [];
-
+    const imageParts: any[] = [];
     for (const img of images) {
-      const base64Match = img.match(/^data:image\/(jpeg|jpg|png|webp);base64,(.+)$/);
-      if (base64Match) {
-        parts.push({ inline_data: { mime_type: `image/${base64Match[1]}`, data: base64Match[2] } });
-      }
+      const m = img.match(/^data:image\/(jpeg|jpg|png|webp);base64,(.+)$/);
+      if (m) imageParts.push({ inline_data: { mime_type: `image/${m[1]}`, data: m[2] } });
     }
 
-    parts.push({ text: 'Analyze these reference images and output the unified visual profile JSON.' });
+    const text = await callGemini({
+      model: 'gemini-3-flash-preview',
+      systemInstruction: SYSTEM_INSTRUCTION,
+      userMessage: 'Analyze these reference images and output the unified visual profile JSON.',
+      parts: imageParts,
+      temperature: 0.2,
+      responseSchema: RESPONSE_SCHEMA,
+    });
 
-    const response = await fetch(
-      `${YUNWU_BASE_URL}/v1beta/models/gemini-3-flash-preview:generateContent`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${YUNWU_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-          contents: [{ role: 'user', parts }],
-          generationConfig: { temperature: 0.2 },
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`API 错误: ${response.status} - ${errText}`);
-    }
-
-    const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) throw new Error('API 未返回内容');
-
-    const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, text];
-    const jsonText = (jsonMatch[1] || text).trim();
-
+    const jsonText = extractJson(text);
     let parsed;
     try {
       parsed = JSON.parse(jsonText);
