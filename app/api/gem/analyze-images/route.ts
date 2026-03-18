@@ -122,11 +122,7 @@ export async function POST(req: NextRequest) {
 
     const data = await response.json();
     const allParts: any[] = data?.candidates?.[0]?.content?.parts ?? [];
-    const text = allParts
-      .filter((p: any) => !p.thought && !p.thoughtSignature && typeof p.text === 'string')
-      .map((p: any) => p.text)
-      .join('')
-      .trim();
+    const text = allParts.map((p: any) => p.text ?? '').join('').trim();
 
     if (!text) throw new Error('API 未返回内容');
 

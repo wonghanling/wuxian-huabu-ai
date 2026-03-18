@@ -366,11 +366,7 @@ Generate the ${label}.`;
       }
       const data = await response.json();
       const allParts: any[] = data?.candidates?.[0]?.content?.parts ?? [];
-      return allParts
-        .filter((p: any) => !p.thought && !p.thoughtSignature && typeof p.text === 'string')
-        .map((p: any) => p.text)
-        .join('')
-        .trim();
+      return allParts.map((p: any) => p.text ?? '').join('').trim();
     })();
 
     const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, text];
