@@ -24,7 +24,7 @@ export type GemStep2CardShape = TLBaseShape<
     h: number;
     visualProfile: string;
     script: string;
-    gridSize: string;
+    gridSize?: string;
     result: string;
     isGenerating: boolean;
     isMinimized: boolean;
@@ -40,7 +40,7 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
     h: T.number,
     visualProfile: T.string,
     script: T.string,
-    gridSize: T.string,
+    gridSize: T.string.optional(),
     result: T.string,
     isGenerating: T.boolean,
     isMinimized: T.boolean,
@@ -68,7 +68,7 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
   }
 
   component(shape: GemStep2CardShape) {
-    const { w, h, visualProfile, script, gridSize, result, isGenerating, isMinimized } = shape.props;
+    const { w, h, visualProfile, script, gridSize = '25', result, isGenerating, isMinimized } = shape.props;
     const editor = useEditor();
     const [copied, setCopied] = useState(false);
 
