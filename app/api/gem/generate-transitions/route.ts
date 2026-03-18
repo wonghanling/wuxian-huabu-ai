@@ -205,11 +205,18 @@ export async function POST(req: NextRequest) {
 
     let shots: any[];
     try {
-      const parsed = typeof storyboard === 'string' ? JSON.parse(storyboard) : storyboard;
+      let raw = typeof storyboard === 'string' ? storyboard : JSON.stringify(storyboard);
+      // 剥离 markdown 代码块
+      const mdMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (mdMatch) raw = mdMatch[1].trim();
+      // 提取第一个 JSON 对象
+      const jsonMatch = raw.match(/\{[\s\S]*\}/);
+      if (jsonMatch) raw = jsonMatch[0];
+      const parsed = JSON.parse(raw);
       shots = parsed.shots ?? parsed.storyboard ?? parsed;
       if (!Array.isArray(shots)) throw new Error('shots 不是数组');
-    } catch {
-      return NextResponse.json({ error: '无法解析 storyboard JSON' }, { status: 400 });
+    } catch (e: any) {
+      return NextResponse.json({ error: `无法解析 storyboard JSON: ${e.message}` }, { status: 400 });
     }
 
     const shotCount = shots.length;
