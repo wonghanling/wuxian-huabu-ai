@@ -1437,17 +1437,20 @@ function CanvasPageContent() {
       }
     };
 
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') doBeaconSave();
+    };
+
     // 关闭/刷新页面
     window.addEventListener('beforeunload', doBeaconSave);
     // 切换标签页、打开新标签页返回、最小化等
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') doBeaconSave();
-    });
+    document.addEventListener('visibilitychange', onVisibilityChange);
     // iOS Safari 兼容
     window.addEventListener('pagehide', doBeaconSave);
 
     return () => {
       window.removeEventListener('beforeunload', doBeaconSave);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
       window.removeEventListener('pagehide', doBeaconSave);
     };
   }, []);
