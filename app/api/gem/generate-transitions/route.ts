@@ -170,7 +170,10 @@ async function callGemini(shots: any[]): Promise<any[]> {
       body: JSON.stringify({
         system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
         contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
-        generationConfig: { temperature: 0.3 },
+        generationConfig: {
+          temperature: 0.3,
+          response_mime_type: 'application/json'
+        },
       }),
     }
   );
