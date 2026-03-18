@@ -9,118 +9,25 @@ import {
 } from 'tldraw';
 import { useState } from 'react';
 
-const DEFAULT_SYSTEM_INSTRUCTION = `You are Creative Visualization Script Assistant - Concise Storyboard Mode.
+type GridSize = '4' | '9' | '25';
 
-Your task is to generate a NanoBananaPro-ready 5x5 storyboard JSON from a Chinese script and a pre-extracted visual profile.
-
-This is NOT an image analysis task.
-Do NOT analyze reference images.
-Do NOT extract style tags from images again.
-Use ONLY the provided visual_tags and visual_bible as the visual source of truth.
-
-━━━━━━━━━━━━━━━━━━━
-INPUT
-━━━━━━━━━━━━━━━━━━━
-
-You will receive:
-
-1. A Chinese script
-2. visual_tags JSON
-3. visual_bible text
-
-The provided visual profile is the ONLY visual reference for the storyboard.
-
-━━━━━━━━━━━━━━━━━━━
-CORE GOAL
-━━━━━━━━━━━━━━━━━━━
-
-Generate a 5x5 storyboard JSON for NanoBananaPro.
-
-Requirements:
-- EXACTLY 25 shots
-- Each shot is an independent visual moment
-- Prompts must be concise, cinematic, and optimized for image generation
-- Prompts must preserve character consistency, monster consistency, environment consistency, and style consistency
-
-━━━━━━━━━━━━━━━━━━━
-PRIMARY RESPONSIBILITIES
-━━━━━━━━━━━━━━━━━━━
-
-1. Split the script into EXACTLY 25 key visual moments
-2. Maintain narrative progression from opening to ending
-3. Convert each moment into a concise keyword-based English prompt
-4. Reuse the provided visual profile consistently in all shots
-5. Keep prompt structure highly compressed and generation-friendly
-
-━━━━━━━━━━━━━━━━━━━
-VISUAL CONSISTENCY RULES
-━━━━━━━━━━━━━━━━━━━
-
-- Always follow visual_tags and visual_bible strictly
-- Maintain the same main character identity across all relevant shots
-- Maintain the same monster identity across all relevant shots
-- Maintain the same environment and style language across the storyboard
-- Do NOT introduce new visual elements that conflict with the visual profile
-- If the script is vague, stay consistent with visual_bible instead of inventing unrelated details
-- Always incorporate key visual details from visual_bible into every shot prompt
-- Prioritize visual_bible over script when conflicts occur
-
-━━━━━━━━━━━━━━━━━━━
-PROMPT WRITING FORMULA
-━━━━━━━━━━━━━━━━━━━
-
-Each prompt should follow this compressed structure:
-
-[Shot Type] + [Subject and Action] + [Environment] + [Key Visual Traits] + [Style Tags] + [Constraint]
-
-- Shot Type: Extreme Wide Shot / Medium Shot / Close-up / Over-shoulder Shot / POV Shot / Hero Shot / Dynamic Action Shot
-- Every prompt_text MUST include: "no timecode, no subtitles"
-- Each prompt_text must be 20 to 30 English words
-
-━━━━━━━━━━━━━━━━━━━
-FORBIDDEN
-━━━━━━━━━━━━━━━━━━━
-
-- No markdown
-- No explanations
-- No storytelling outside JSON
-- No extra keys
-- No Chinese in output
-
-━━━━━━━━━━━━━━━━━━━
-OUTPUT FORMAT (STRICT JSON ONLY)
-━━━━━━━━━━━━━━━━━━━
-
-{
-  "image_generation_model": "NanoBananaPro",
-  "grid_layout": "5x5",
-  "grid_aspect_ratio": "16:9",
-  "global_watermark": {
-    "position": "bottom_center",
-    "size": "extremely small"
-  },
-  "shots": [
-    {
-      "shot_number": "1",
-      "prompt_text": ""
-    }
-  ]
-}
-
-Output EXACTLY 25 shot objects. Output ONLY valid JSON. No text before or after JSON.`;
+const GRID_OPTIONS: { value: GridSize; label: string; desc: string }[] = [
+  { value: '4',  label: '2×2', desc: '4格' },
+  { value: '9',  label: '3×3', desc: '9格' },
+  { value: '25', label: '5×5', desc: '25格' },
+];
 
 export type GemStep2CardShape = TLBaseShape<
   'gem-step2-card',
   {
     w: number;
     h: number;
-    systemInstruction: string;
     visualProfile: string;
     script: string;
+    gridSize: string;
     result: string;
     isGenerating: boolean;
     isMinimized: boolean;
-    showInstruction: boolean;
   }
 >;
 
@@ -131,13 +38,12 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
   static override props: RecordProps<GemStep2CardShape> = {
     w: T.number,
     h: T.number,
-    systemInstruction: T.string,
     visualProfile: T.string,
     script: T.string,
+    gridSize: T.string,
     result: T.string,
     isGenerating: T.boolean,
     isMinimized: T.boolean,
-    showInstruction: T.boolean,
   };
 
   override isAspectRatioLocked = () => false;
@@ -147,14 +53,13 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
   getDefaultProps(): GemStep2CardShape['props'] {
     return {
       w: 400,
-      h: 560,
-      systemInstruction: DEFAULT_SYSTEM_INSTRUCTION,
+      h: 520,
       visualProfile: '',
       script: '',
+      gridSize: '25',
       result: '',
       isGenerating: false,
       isMinimized: false,
-      showInstruction: false,
     };
   }
 
@@ -163,7 +68,7 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
   }
 
   component(shape: GemStep2CardShape) {
-    const { w, h, systemInstruction, visualProfile, script, result, isGenerating, isMinimized, showInstruction } = shape.props;
+    const { w, h, visualProfile, script, gridSize, result, isGenerating, isMinimized } = shape.props;
     const editor = useEditor();
     const [copied, setCopied] = useState(false);
 
@@ -179,7 +84,7 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
         const res = await fetch('/api/gem/generate-storyboard', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ visualProfile, script, systemInstruction }),
+          body: JSON.stringify({ visualProfile, script, gridSize }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || '请求失败');
@@ -198,8 +103,10 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
 
     const toggleMinimize = (e: React.MouseEvent) => {
       e.stopPropagation();
-      update({ isMinimized: !isMinimized, w: isMinimized ? 400 : 160, h: isMinimized ? 560 : 60 });
+      update({ isMinimized: !isMinimized, w: isMinimized ? 400 : 160, h: isMinimized ? 520 : 60 });
     };
+
+    const selectedGrid = GRID_OPTIONS.find(o => o.value === gridSize) ?? GRID_OPTIONS[2];
 
     return (
       <HTMLContainer style={{ width: w, height: h, pointerEvents: 'all', overflow: 'visible' }}>
@@ -220,29 +127,29 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
             </button>
           </div>
 
-          {isMinimized ? null : (
+          {!isMinimized && (
             <div className="flex-1 flex flex-col overflow-hidden p-3 gap-2">
-              {/* 系统指令（可折叠） */}
+
+              {/* 格数选择 */}
               <div className="flex-shrink-0">
-                <button
-                  onClick={(e) => { e.stopPropagation(); update({ showInstruction: !showInstruction }); }}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  className="w-full flex items-center justify-between px-2 py-1.5 bg-white/5 hover:bg-white/8 rounded-lg text-xs text-gray-400 transition-all"
-                >
-                  <span>系统指令</span>
-                  <svg className={`w-3 h-3 transition-transform ${showInstruction ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                {showInstruction && (
-                  <textarea
-                    className="w-full mt-1 h-32 bg-black/40 border border-white/8 rounded-lg p-2 text-gray-300 text-[10px] resize-none focus:outline-none focus:border-white/20 font-mono"
-                    value={systemInstruction}
-                    onClick={(e) => e.stopPropagation()}
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onChange={(e) => update({ systemInstruction: e.target.value })}
-                  />
-                )}
+                <span className="text-xs text-gray-400 mb-1.5 block">宫格数量</span>
+                <div className="flex gap-2">
+                  {GRID_OPTIONS.map(opt => (
+                    <button
+                      key={opt.value}
+                      onClick={(e) => { e.stopPropagation(); update({ gridSize: opt.value }); }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+                        gridSize === opt.value
+                          ? 'bg-blue-600 border-blue-500 text-white'
+                          : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
+                      }`}
+                    >
+                      <div>{opt.label}</div>
+                      <div className="text-[10px] opacity-70">{opt.desc}</div>
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* 视觉档案输入 */}
@@ -261,7 +168,7 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
                 </div>
                 <textarea
                   className="w-full h-20 bg-black/30 border border-white/8 rounded-lg p-2 text-gray-300 text-[10px] resize-none focus:outline-none focus:border-white/15 font-mono placeholder-gray-600"
-                  placeholder='粘贴 Step 1 输出的 JSON...'
+                  placeholder="粘贴 Step 1 输出的 JSON..."
                   value={visualProfile}
                   onClick={(e) => e.stopPropagation()}
                   onPointerDown={(e) => e.stopPropagation()}
@@ -293,14 +200,14 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
                     : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg'
                 }`}
               >
-                {isGenerating ? '生成中...' : '生成 25 格分镜'}
+                {isGenerating ? '生成中...' : `生成 ${selectedGrid.label} 分镜`}
               </button>
 
               {/* 结果输出 */}
               {result && (
                 <div className="flex-1 flex flex-col min-h-0">
                   <div className="flex items-center justify-between mb-1 flex-shrink-0">
-                    <span className="text-xs text-gray-400">分镜 JSON (25 shots)</span>
+                    <span className="text-xs text-gray-400">分镜 JSON ({selectedGrid.desc})</span>
                     <button
                       onClick={(e) => { e.stopPropagation(); copyResult(); }}
                       onPointerDown={(e) => e.stopPropagation()}

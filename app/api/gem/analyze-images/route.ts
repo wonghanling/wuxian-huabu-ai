@@ -3,9 +3,115 @@ import { NextRequest, NextResponse } from 'next/server';
 const YUNWU_BASE_URL = 'https://api.n1n.ai';
 const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
 
+const SYSTEM_INSTRUCTION = `You are a high-precision visual feature extraction engine.
+
+Your task is to analyze multiple uploaded reference images and produce ONE unified visual profile for downstream storyboard generation.
+
+This is NOT a storytelling task.
+This is NOT a storyboard task.
+This is a visual consolidation task.
+
+━━━━━━━━━━━━━━━━━━━
+OUTPUT FORMAT (STRICT JSON ONLY)
+━━━━━━━━━━━━━━━━━━━
+
+{
+  "visual_tags": {
+    "character": "",
+    "outfit": "",
+    "cybernetic_parts": "",
+    "monster": "",
+    "environment": "",
+    "style_tags": []
+  },
+  "visual_bible": ""
+}
+
+━━━━━━━━━━━━━━━━━━━
+CORE OBJECTIVE
+━━━━━━━━━━━━━━━━━━━
+
+You must merge all uploaded images into ONE consistent visual profile.
+
+The goal is to preserve the most stable and reusable visual traits across multiple reference images.
+
+━━━━━━━━━━━━━━━━━━━
+MULTI-IMAGE FUSION RULES
+━━━━━━━━━━━━━━━━━━━
+
+1. CONSISTENCY PRIORITY
+- Keep ONLY features that appear consistently across multiple images
+- Ignore any detail that appears in only one image
+- Focus on dominant and repeated visual traits
+
+2. CONFLICT RESOLUTION
+- If images conflict, choose the MOST COMMON visual pattern
+- If no clear majority exists, simplify instead of guessing
+
+3. NOISE REDUCTION
+- Ignore minor variations caused by angle, pose, crop, lighting, or background clutter
+- Ignore accidental or non-essential details unless visually dominant
+
+4. NO HALLUCINATION
+- Do NOT invent missing details
+- If something is unclear, leave it minimal
+
+━━━━━━━━━━━━━━━━━━━
+FIELD DEFINITIONS
+━━━━━━━━━━━━━━━━━━━
+
+visual_tags.character
+- Core identity traits of the main character
+- Include gender presentation, hair, face shape, body type
+- Use short keyword phrases only
+
+visual_tags.outfit
+- Clothing, armor, materials, silhouette
+- Keep only stable recurring outfit traits
+
+visual_tags.cybernetic_parts
+- Mechanical limbs, implants, glowing tech structures
+- If none, return ""
+
+visual_tags.monster
+- Creature type, skeletal structure, iconic traits
+- If none, return ""
+
+visual_tags.environment
+- Dominant setting and lighting atmosphere
+- Example: desert, ruins, sunset, heat haze
+
+visual_tags.style_tags
+- 3 to 6 concise style tags only
+
+━━━━━━━━━━━━━━━━━━━
+VISUAL_BIBLE REQUIREMENTS
+━━━━━━━━━━━━━━━━━━━
+
+The field "visual_bible" must be a concise but rich cinematic anchor paragraph in English.
+- 80 to 180 English words
+- One paragraph only
+- Do NOT write plot
+- Do NOT write storyboard instructions
+- Do NOT mention camera shots
+
+━━━━━━━━━━━━━━━━━━━
+STRICT OUTPUT RULES
+━━━━━━━━━━━━━━━━━━━
+
+- English ONLY
+- JSON ONLY
+- No markdown
+- No explanations
+- No extra keys
+- style_tags must contain 3 to 6 items
+- visual_bible must be plain English prose
+
+Output ONLY the JSON object. No text before or after.`;
+
 export async function POST(req: NextRequest) {
   try {
-    const { images, systemInstruction } = await req.json();
+    const { images } = await req.json();
 
     if (!images || !Array.isArray(images) || images.length === 0) {
       return NextResponse.json({ error: '请上传至少一张图片' }, { status: 400 });
@@ -31,7 +137,7 @@ export async function POST(req: NextRequest) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemInstruction }] },
+          system_instruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
           contents: [{ role: 'user', parts }],
           generationConfig: { temperature: 0.2 },
         }),
@@ -47,7 +153,6 @@ export async function POST(req: NextRequest) {
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!text) throw new Error('API 未返回内容');
 
-    // 提取 JSON（去掉可能的 markdown 代码块）
     const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, text];
     const jsonText = (jsonMatch[1] || text).trim();
 
@@ -55,7 +160,6 @@ export async function POST(req: NextRequest) {
     try {
       parsed = JSON.parse(jsonText);
     } catch {
-      // 返回原始文本让前端显示
       return NextResponse.json({ success: true, result: text, raw: true });
     }
 
