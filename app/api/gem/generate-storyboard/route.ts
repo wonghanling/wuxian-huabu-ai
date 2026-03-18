@@ -364,7 +364,8 @@ Generate the ${label}.`;
     }
 
     const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const parts = data.candidates?.[0]?.content?.parts ?? [];
+    const text = parts.filter((p: any) => !p.thought).map((p: any) => p.text).join('').trim();
     if (!text) throw new Error('API 未返回内容');
 
     const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, text];
