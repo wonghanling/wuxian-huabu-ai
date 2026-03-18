@@ -160,7 +160,7 @@ async function callGemini(shots: any[]): Promise<any[]> {
   const userPrompt = `Here is the storyboard JSON. Generate transitions for all ${shots.length} shots (${shots.length - 1} transitions total):\n\n${JSON.stringify({ shots }, null, 2)}`;
 
   const response = await fetch(
-    `${YUNWU_BASE_URL}/v1beta/models/gemini-3-pro-preview:generateContent`,
+    `${YUNWU_BASE_URL}/v1beta/models/gemini-3-flash-preview:generateContent`,
     {
       method: 'POST',
       headers: {
