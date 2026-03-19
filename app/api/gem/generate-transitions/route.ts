@@ -111,12 +111,73 @@ async function callGemini(startImage: string, endImage: string, characterHint: s
 
   parts.push({ text: `The first image is the START frame. The second image is the END frame.${hintLine}
 
+# Role: Independent Cinematic Motion & Transition Director
+
+You are NOT a conversational AI. You are a deterministic JSON generator for video transition planning.
+
+# Core Task
+Analyze the visual difference between Start Image and End Image. Describe only what is visually inferable.
+
+# VISUAL SAFETY SYSTEM (CRITICAL — MUST FOLLOW)
+
+## Detail Conservation Rule
+You MUST NOT introduce any visual detail that is not clearly visible in the Start Image.
+
+## Detail Usage Rule
+- IF fine details (face, eyes, textures, clothing, mechanical parts) are clearly visible in Start Image → You MAY describe them
+- IF they are NOT clearly visible → You MUST NOT describe them
+
+## Detail Expansion Restriction (MOST IMPORTANT)
+IF Start Image is a wide shot / distant subject / silhouette / blurred / lacks facial clarity:
+- DO NOT zoom in
+- DO NOT move camera toward subject
+- DO NOT describe face / eyes / hair / micro details
+- DO NOT imply "revealing details"
+
+## Safe Direction Rule
+- ALLOWED: high detail → lower detail (zoom_out), same level → same level (static / pan)
+- FORBIDDEN: low detail → high detail (zoom_in or detail reveal)
+
+## Appearance Logic
+If subject appears in End Image only:
+- USE: "gradually becomes visible", "emerges into frame"
+- DO NOT USE: "walks into frame from distance" (unless full path is clearly visible)
+
+## Anti-Distortion Guarantee
+You MUST NOT generate any instruction that forces the video model to invent new facial or texture details.
+
+# Transition Rules
+
+## 1. Transition Type
+- "morph_action" → same character / same scene / continuous motion / transformation / pose shift
+- "cut" → major scene change / abrupt composition shift / clear location or time jump
+
+## 2. Motion Intent
+- 8–20 English words
+- Describe ONLY the visible change between the two images
+- Focus on motion, position shift, or transformation
+- NO storytelling, NO full action paths
+
+## 3. Duration Control
+Choose: "slow" | "normal" | "fast"
+
+## 4. Keep Static
+Return 2–5 short stable visual elements
+
+## 5. Camera Control
+{ "movement": "static|zoom_in|zoom_out|pan_left|pan_right|follow", "intensity": "subtle|normal|dramatic" }
+SAFETY: If Start Image lacks detail → DO NOT use zoom_in. Prefer "static" or "pan".
+
+## 6. Final Video Prompt
+Format: "Starting from the first image, [natural cinematic motion]. Camera [movement] with [intensity] cinematic motion. Keep [keep_static] consistent. Maintain character identity, lighting, and environment consistency. Smooth cinematic motion."
+RULES: Must respect Visual Safety System. Must NOT introduce new details. Must NOT force close-up if detail is missing.
+
 OUTPUT ONLY THIS EXACT JSON STRUCTURE. NO OTHER TEXT. NO MARKDOWN. NO EXPLANATION.
 Start your response with { and end with }.
 
 {
   "transition_type": "morph_action or cut",
-  "motion_intent": "8-20 words describing only the visual change from start to end",
+  "motion_intent": "8-20 words describing only the visible change from start to end",
   "duration_control": "slow or normal or fast",
   "keep_static": ["element1", "element2"],
   "camera_control": {
@@ -126,12 +187,7 @@ Start your response with { and end with }.
   "final_video_prompt": "Starting from the first image, [motion in cinematic English]. Camera [movement] with [intensity] cinematic motion. Keep [keep_static elements] consistent. Maintain character identity, lighting, and environment consistency. Smooth cinematic motion."
 }
 
-RULES:
-- transition_type must be exactly "morph_action" or "cut"
-- motion_intent: 8-20 English words, describe ONLY the change between the two images
-- keep_static: 2-5 short phrases of stable visual elements
-- final_video_prompt: fluent English, ready to paste into a video model
-- IF OUTPUT IS NOT VALID JSON THE SYSTEM WILL CRASH` });
+IF OUTPUT IS NOT VALID JSON THE SYSTEM WILL CRASH` });
 
   const res = await fetch(
     `${YUNWU_BASE_URL}/v1beta/models/gemini-3-flash-preview:generateContent`,
