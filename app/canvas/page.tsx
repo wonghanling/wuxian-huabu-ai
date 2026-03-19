@@ -1393,6 +1393,7 @@ function CanvasPageContent() {
   const [renameValue, setRenameValue] = useState('');
   const [showRechargeModal, setShowRechargeModal] = useState(false);
   const [showImageSplitModal, setShowImageSplitModal] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const { isMember, balance, refresh: refreshMembership } = useMembership();
 
   const handlePay = async (plan: 'membership' | 'recharge', amount: number) => {
@@ -1900,15 +1901,15 @@ function CanvasPageContent() {
               </button>
 
               {/* 返回主页按钮 */}
-              <a
-                href="/"
+              <button
+                onClick={() => setShowLeaveConfirm(true)}
                 className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-zinc-900/80 backdrop-blur-md border border-white/10 text-gray-300 hover:border-white/20 transition-all"
               >
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
                 <span>主页</span>
-              </a>
+              </button>
             </div>
           )}
 
@@ -1937,6 +1938,38 @@ function CanvasPageContent() {
       {/* 图片切割弹窗 */}
       {showImageSplitModal && (
         <ImageSplitModal onClose={() => setShowImageSplitModal(false)} />
+      )}
+
+      {/* 离开确认弹窗 */}
+      {showLeaveConfirm && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-zinc-900 border border-white/10 rounded-2xl p-6 w-80 shadow-2xl flex flex-col gap-4">
+            <div className="text-white font-semibold text-base">离开画布？</div>
+            <div className="text-gray-400 text-sm">离开前建议保存画布，避免内容丢失。</div>
+            <div className="flex flex-col gap-2">
+              <button
+                className="w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-all"
+                onClick={async () => {
+                  if (canvasIdRef.current && editorInstance) {
+                    try {
+                      const snapshot = getSnapshot(editorInstance.store);
+                      await saveSnapshot(canvasIdRef.current, snapshot);
+                    } catch {}
+                  }
+                  window.location.href = '/';
+                }}
+              >保存并离开</button>
+              <button
+                className="w-full py-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-sm transition-all"
+                onClick={() => { window.location.href = '/'; }}
+              >不保存离开</button>
+              <button
+                className="w-full py-2 rounded-xl text-gray-500 text-sm hover:text-gray-300 transition-all"
+                onClick={() => setShowLeaveConfirm(false)}
+              >取消</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* 自定义样式 - 纯黑色主题 */}

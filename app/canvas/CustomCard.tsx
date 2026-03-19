@@ -24,6 +24,25 @@ const updateCustomCardShape = (editor: Editor, id: string, props: any) => {
   });
 };
 
+// 下载文件（fetch blob，不打开新标签页）
+const downloadFile = async (url: string, filename: string) => {
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(blobUrl);
+  } catch {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+  }
+};
+
 // 3D球形摄像头控制器组件
 function CameraController({
   vertical,
@@ -1433,10 +1452,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                                 className="px-3 py-2 bg-green-500/90 hover:bg-green-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  const link = document.createElement('a');
-                                  link.href = characterGeneratedImage;
-                                  link.download = `character-three-view-${Date.now()}.png`;
-                                  link.click();
+                                  downloadFile(characterGeneratedImage, `character-three-view-${Date.now()}.png`);
                                 }}
                                 onPointerDown={(e) => e.stopPropagation()}
                                 title="下载图片"
@@ -2575,10 +2591,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       className="px-3 py-2 bg-green-500/90 hover:bg-green-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
                       onClick={(e) => {
                         e.stopPropagation();
-                        const link = document.createElement('a');
-                        link.href = generatedImage;
-                        link.download = `generated-${Date.now()}.png`;
-                        link.click();
+                        downloadFile(generatedImage, `generated-${Date.now()}.png`);
                       }}
                       onPointerDown={(e) => e.stopPropagation()}
                       title="下载图片"
@@ -2699,10 +2712,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       className="p-2 bg-green-500/90 hover:bg-green-600 rounded-lg text-white transition-all"
                       onClick={(e) => {
                         e.stopPropagation();
-                        const link = document.createElement('a');
-                        link.href = generatedVideo;
-                        link.download = `generated-video-${Date.now()}.mp4`;
-                        link.click();
+                        downloadFile(generatedVideo, `generated-video-${Date.now()}.mp4`);
                       }}
                       onPointerDown={(e) => e.stopPropagation()}
                       title="下载视频"
@@ -2781,10 +2791,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           className="px-3 py-2 bg-green-500/90 hover:bg-green-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
                           onClick={(e) => {
                             e.stopPropagation();
-                            const link = document.createElement('a');
-                            link.href = capturedFrame;
-                            link.download = `video-frame-${Date.now()}.png`;
-                            link.click();
+                            downloadFile(capturedFrame, `video-frame-${Date.now()}.png`);
                           }}
                           onPointerDown={(e) => e.stopPropagation()}
                           title="下载图片"
