@@ -1426,7 +1426,7 @@ function CanvasPageContent() {
   // 退出页面自动保存
   useEffect(() => {
     const doBeaconSave = () => {
-      if (!canvasIdRef.current || !editorRef.current || !hasUnsavedRef.current) return;
+      if (!canvasIdRef.current || !editorRef.current) return;
       try {
         const snapshot = getSnapshot(editorRef.current.store);
         const payload = JSON.stringify({ canvasId: canvasIdRef.current, snapshot });
