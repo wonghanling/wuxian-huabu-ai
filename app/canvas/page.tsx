@@ -1945,11 +1945,14 @@ function CanvasPageContent() {
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="bg-zinc-900 border border-white/10 rounded-2xl p-6 w-80 shadow-2xl flex flex-col gap-4">
             <div className="text-white font-semibold text-base">离开画布？</div>
-            <div className="text-gray-400 text-sm">离开前建议保存画布，避免内容丢失。</div>
+            <div className="text-gray-400 text-sm">离开前将自动保存画布内容。</div>
             <div className="flex flex-col gap-2">
               <button
-                className="w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-all"
-                onClick={async () => {
+                className="w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                onClick={async (e) => {
+                  const btn = e.currentTarget;
+                  btn.disabled = true;
+                  btn.textContent = '保存中...';
                   if (canvasIdRef.current && editorInstance) {
                     try {
                       const snapshot = getSnapshot(editorInstance.store);
@@ -1959,10 +1962,6 @@ function CanvasPageContent() {
                   window.location.href = '/';
                 }}
               >保存并离开</button>
-              <button
-                className="w-full py-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-sm transition-all"
-                onClick={() => { window.location.href = '/'; }}
-              >不保存离开</button>
               <button
                 className="w-full py-2 rounded-xl text-gray-500 text-sm hover:text-gray-300 transition-all"
                 onClick={() => setShowLeaveConfirm(false)}
