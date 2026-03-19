@@ -9,6 +9,23 @@ import {
 } from 'tldraw';
 import { useState } from 'react';
 
+function compressImage(dataUrl: string, maxSize = 1280, quality = 0.85): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.src = dataUrl;
+  });
+}
+
 export type GemStep3CardShape = TLBaseShape<
   'gem-step3-card',
   {
@@ -72,7 +89,10 @@ export class GemStep3CardUtil extends BaseBoxShapeUtil<GemStep3CardShape> {
       const file = e.target.files?.[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = (ev) => setter(ev.target?.result as string);
+      reader.onload = async (ev) => {
+        const compressed = await compressImage(ev.target?.result as string);
+        setter(compressed);
+      };
       reader.readAsDataURL(file);
       e.target.value = '';
     };
