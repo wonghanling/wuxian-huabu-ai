@@ -14,10 +14,12 @@ export type GemStep3CardShape = TLBaseShape<
   {
     w: number;
     h: number;
-    storyboard: string;
+    characterHint: string;
     result: string;
     isGenerating: boolean;
     isMinimized: boolean;
+    // legacy compat
+    storyboard?: string;
   }
 >;
 
@@ -28,10 +30,11 @@ export class GemStep3CardUtil extends BaseBoxShapeUtil<GemStep3CardShape> {
   static override props: RecordProps<GemStep3CardShape> = {
     w: T.number,
     h: T.number,
-    storyboard: T.string,
+    characterHint: T.string,
     result: T.string,
     isGenerating: T.boolean,
     isMinimized: T.boolean,
+    storyboard: T.string.optional(),
   };
 
   override isAspectRatioLocked = () => false;
@@ -40,9 +43,9 @@ export class GemStep3CardUtil extends BaseBoxShapeUtil<GemStep3CardShape> {
 
   getDefaultProps(): GemStep3CardShape['props'] {
     return {
-      w: 400,
-      h: 520,
-      storyboard: '',
+      w: 420,
+      h: 600,
+      characterHint: '',
       result: '',
       isGenerating: false,
       isMinimized: false,
@@ -54,22 +57,34 @@ export class GemStep3CardUtil extends BaseBoxShapeUtil<GemStep3CardShape> {
   }
 
   component(shape: GemStep3CardShape) {
-    const { w, h, storyboard, result, isGenerating, isMinimized } = shape.props;
+    const { w, h, characterHint, result, isGenerating, isMinimized } = shape.props;
     const editor = useEditor();
-    const [copied, setCopied] = useState(false);
+    const [startImage, setStartImage] = useState<string>('');
+    const [endImage, setEndImage] = useState<string>('');
+    const [copiedPrompt, setCopiedPrompt] = useState(false);
+    const [copiedJson, setCopiedJson] = useState(false);
 
     const update = (props: Partial<GemStep3CardShape['props']>) => {
       editor.updateShape({ id: shape.id, type: 'gem-step3-card' as any, props: { ...shape.props, ...props } });
     };
 
+    const loadImage = (setter: (s: string) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => setter(ev.target?.result as string);
+      reader.readAsDataURL(file);
+      e.target.value = '';
+    };
+
     const generate = async () => {
-      if (!storyboard.trim()) { alert('请粘贴 Step 2 的分镜 JSON'); return; }
+      if (!startImage || !endImage) { alert('请上传起始图和结束图'); return; }
       update({ isGenerating: true, result: '' });
       try {
         const res = await fetch('/api/gem/generate-transitions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ storyboard }),
+          body: JSON.stringify({ startImage, endImage, characterHint }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || '请求失败');
@@ -80,16 +95,16 @@ export class GemStep3CardUtil extends BaseBoxShapeUtil<GemStep3CardShape> {
       }
     };
 
-    const copyResult = () => {
-      navigator.clipboard.writeText(result);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    };
-
     const toggleMinimize = (e: React.MouseEvent) => {
       e.stopPropagation();
-      update({ isMinimized: !isMinimized, w: isMinimized ? 400 : 160, h: isMinimized ? 520 : 60 });
+      update({ isMinimized: !isMinimized, w: isMinimized ? 420 : 160, h: isMinimized ? 600 : 60 });
     };
+
+    // 解析结果
+    let parsed: any = null;
+    try { parsed = result ? JSON.parse(result) : null; } catch {}
+
+    const finalPrompt = parsed?.final_video_prompt ?? '';
 
     return (
       <HTMLContainer style={{ width: w, height: h, pointerEvents: 'all', overflow: 'visible' }}>
@@ -99,7 +114,7 @@ export class GemStep3CardUtil extends BaseBoxShapeUtil<GemStep3CardShape> {
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
               <span className="text-white text-sm font-semibold">GEM 导演引擎 · Step 3</span>
-              <span className="text-gray-500 text-xs">过渡指令</span>
+              <span className="text-gray-500 text-xs">图片驱动</span>
             </div>
             <button
               onClick={toggleMinimize}
@@ -113,27 +128,72 @@ export class GemStep3CardUtil extends BaseBoxShapeUtil<GemStep3CardShape> {
           {!isMinimized && (
             <div className="flex-1 flex flex-col overflow-hidden p-3 gap-2">
 
-              {/* 分镜 JSON 输入 */}
+              {/* 图片上传区 */}
+              <div className="flex gap-2 flex-shrink-0">
+                {/* Start Image */}
+                <div className="flex-1">
+                  <span className="text-[10px] text-gray-400 mb-1 block">Start Image</span>
+                  <label
+                    className="relative flex items-center justify-center w-full aspect-video rounded-lg overflow-hidden border border-dashed border-white/15 cursor-pointer hover:border-emerald-400/40 hover:bg-emerald-400/5 transition-all bg-black/20"
+                    onPointerDown={(e) => e.stopPropagation()}
+                  >
+                    {startImage ? (
+                      <>
+                        <img src={startImage} alt="start" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 flex items-center justify-center transition-all">
+                          <span className="text-white text-[10px]">更换</span>
+                        </div>
+                      </>
+                    ) : (
+                      <span className="text-gray-600 text-[10px]">上传图A</span>
+                    )}
+                    <input type="file" accept="image/*" className="hidden" onChange={loadImage(setStartImage)} onClick={(e) => e.stopPropagation()} />
+                  </label>
+                </div>
+
+                {/* End Image */}
+                <div className="flex-1">
+                  <span className="text-[10px] text-gray-400 mb-1 block">End Image</span>
+                  <label
+                    className="relative flex items-center justify-center w-full aspect-video rounded-lg overflow-hidden border border-dashed border-white/15 cursor-pointer hover:border-emerald-400/40 hover:bg-emerald-400/5 transition-all bg-black/20"
+                    onPointerDown={(e) => e.stopPropagation()}
+                  >
+                    {endImage ? (
+                      <>
+                        <img src={endImage} alt="end" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 flex items-center justify-center transition-all">
+                          <span className="text-white text-[10px]">更换</span>
+                        </div>
+                      </>
+                    ) : (
+                      <span className="text-gray-600 text-[10px]">上传图B</span>
+                    )}
+                    <input type="file" accept="image/*" className="hidden" onChange={loadImage(setEndImage)} onClick={(e) => e.stopPropagation()} />
+                  </label>
+                </div>
+              </div>
+
+              {/* Character Hint 输入 */}
               <div className="flex-shrink-0">
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs text-gray-400">Step 2 分镜 JSON</label>
+                  <label className="text-[10px] text-gray-400">Character Hint（可选，来自 Step 1）</label>
                   <button
                     className="text-[10px] text-gray-500 hover:text-gray-300 transition-colors"
                     onClick={async (e) => {
                       e.stopPropagation();
                       const text = await navigator.clipboard.readText();
-                      if (text) update({ storyboard: text });
+                      if (text) update({ characterHint: text });
                     }}
                     onPointerDown={(e) => e.stopPropagation()}
                   >粘贴</button>
                 </div>
-                <textarea
-                  className="w-full h-48 bg-black/30 border border-white/8 rounded-lg p-2 text-gray-300 text-[10px] resize-none focus:outline-none focus:border-white/15 font-mono placeholder-gray-600"
-                  placeholder='粘贴 Step 2 输出的分镜 JSON，例如 {"shots": [...]}...'
-                  value={storyboard}
+                <input
+                  className="w-full bg-black/30 border border-white/8 rounded-lg px-2 py-1.5 text-gray-300 text-[10px] focus:outline-none focus:border-white/15 placeholder-gray-600"
+                  placeholder="Character reference: silver-white hair, mechanical right arm..."
+                  value={characterHint}
                   onClick={(e) => e.stopPropagation()}
                   onPointerDown={(e) => e.stopPropagation()}
-                  onChange={(e) => update({ storyboard: e.target.value })}
+                  onChange={(e) => update({ characterHint: e.target.value })}
                 />
               </div>
 
@@ -141,31 +201,79 @@ export class GemStep3CardUtil extends BaseBoxShapeUtil<GemStep3CardShape> {
               <button
                 onClick={(e) => { e.stopPropagation(); generate(); }}
                 onPointerDown={(e) => e.stopPropagation()}
-                disabled={isGenerating || !storyboard.trim()}
+                disabled={isGenerating || !startImage || !endImage}
                 className={`flex-shrink-0 w-full py-2 rounded-xl text-sm font-semibold transition-all ${
-                  isGenerating || !storyboard.trim()
+                  isGenerating || !startImage || !endImage
                     ? 'bg-white/5 text-gray-500 cursor-not-allowed'
                     : 'bg-emerald-700 hover:bg-emerald-600 text-white shadow-lg'
                 }`}
               >
-                {isGenerating ? '生成过渡指令中...' : '生成过渡指令'}
+                {isGenerating ? '分析中...' : '生成过渡指令'}
               </button>
 
               {/* 结果输出 */}
-              {result && (
-                <div className="flex-1 flex flex-col min-h-0">
-                  <div className="flex items-center justify-between mb-1 flex-shrink-0">
-                    <span className="text-xs text-gray-400">过渡指令 JSON</span>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); copyResult(); }}
-                      onPointerDown={(e) => e.stopPropagation()}
-                      className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
-                    >
-                      {copied ? '已复制 ✓' : '复制'}
-                    </button>
+              {parsed && (
+                <div className="flex-1 flex flex-col min-h-0 gap-2 overflow-y-auto">
+
+                  {/* 关键字段 */}
+                  <div className="flex-shrink-0 grid grid-cols-2 gap-1.5">
+                    <div className="bg-black/30 border border-white/8 rounded-lg p-2">
+                      <span className="text-[9px] text-gray-500 block mb-0.5">transition_type</span>
+                      <span className={`text-xs font-semibold ${parsed.transition_type === 'morph_action' ? 'text-emerald-400' : 'text-yellow-400'}`}>
+                        {parsed.transition_type}
+                      </span>
+                    </div>
+                    <div className="bg-black/30 border border-white/8 rounded-lg p-2">
+                      <span className="text-[9px] text-gray-500 block mb-0.5">duration</span>
+                      <span className="text-xs font-semibold text-blue-400">{parsed.duration_control}</span>
+                    </div>
                   </div>
-                  <div className="flex-1 bg-black/40 border border-white/8 rounded-xl p-2 overflow-y-auto min-h-0">
-                    <pre className="text-gray-300 text-[10px] font-mono whitespace-pre-wrap break-all">{result}</pre>
+
+                  <div className="flex-shrink-0 bg-black/30 border border-white/8 rounded-lg p-2">
+                    <span className="text-[9px] text-gray-500 block mb-0.5">motion_intent</span>
+                    <span className="text-[10px] text-gray-300">{parsed.motion_intent}</span>
+                  </div>
+
+                  {/* Final Video Prompt */}
+                  <div className="flex-shrink-0 bg-black/40 border border-emerald-500/20 rounded-xl p-2">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[10px] text-emerald-400 font-semibold">Final Video Prompt</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigator.clipboard.writeText(finalPrompt);
+                          setCopiedPrompt(true);
+                          setTimeout(() => setCopiedPrompt(false), 2000);
+                        }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        className="text-[10px] text-emerald-400 hover:text-emerald-300 transition-colors"
+                      >
+                        {copiedPrompt ? '已复制 ✓' : '复制'}
+                      </button>
+                    </div>
+                    <p className="text-gray-300 text-[10px] leading-relaxed whitespace-pre-wrap">{finalPrompt}</p>
+                  </div>
+
+                  {/* 完整 JSON */}
+                  <div className="flex-shrink-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[10px] text-gray-500">完整 JSON</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigator.clipboard.writeText(result);
+                          setCopiedJson(true);
+                          setTimeout(() => setCopiedJson(false), 2000);
+                        }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        className="text-[10px] text-gray-500 hover:text-gray-300 transition-colors"
+                      >
+                        {copiedJson ? '已复制 ✓' : '复制'}
+                      </button>
+                    </div>
+                    <div className="bg-black/30 border border-white/8 rounded-lg p-2 max-h-24 overflow-y-auto">
+                      <pre className="text-gray-500 text-[9px] font-mono whitespace-pre-wrap break-all">{result}</pre>
+                    </div>
                   </div>
                 </div>
               )}

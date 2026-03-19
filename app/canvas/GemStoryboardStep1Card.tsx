@@ -15,7 +15,9 @@ export type GemStep1CardShape = TLBaseShape<
     w: number;
     h: number;
     result: string;
+    characterHint: string;
     isGenerating: boolean;
+    isExtractingHint: boolean;
     isMinimized: boolean;
     showInstruction?: boolean;
     systemInstruction?: string;
@@ -30,7 +32,9 @@ export class GemStep1CardUtil extends BaseBoxShapeUtil<GemStep1CardShape> {
     w: T.number,
     h: T.number,
     result: T.string,
+    characterHint: T.string,
     isGenerating: T.boolean,
+    isExtractingHint: T.boolean,
     isMinimized: T.boolean,
     showInstruction: T.boolean.optional(),
     systemInstruction: T.string.optional(),
@@ -45,7 +49,9 @@ export class GemStep1CardUtil extends BaseBoxShapeUtil<GemStep1CardShape> {
       w: 400,
       h: 480,
       result: '',
+      characterHint: '',
       isGenerating: false,
+      isExtractingHint: false,
       isMinimized: false,
     };
   }
@@ -55,10 +61,11 @@ export class GemStep1CardUtil extends BaseBoxShapeUtil<GemStep1CardShape> {
   }
 
   component(shape: GemStep1CardShape) {
-    const { w, h, result, isGenerating, isMinimized } = shape.props;
+    const { w, h, result, characterHint, isGenerating, isExtractingHint, isMinimized } = shape.props;
     const editor = useEditor();
     const [images, setImages] = useState<string[]>([]);
     const [copied, setCopied] = useState(false);
+    const [copiedHint, setCopiedHint] = useState(false);
 
     const update = (props: Partial<GemStep1CardShape['props']>) => {
       editor.updateShape({ id: shape.id, type: 'gem-step1-card' as any, props: { ...shape.props, ...props } });
@@ -99,6 +106,30 @@ export class GemStep1CardUtil extends BaseBoxShapeUtil<GemStep1CardShape> {
       navigator.clipboard.writeText(result);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    };
+
+    const extractHint = async () => {
+      if (!result.trim()) { alert('请先分析图片获取视觉档案'); return; }
+      update({ isExtractingHint: true });
+      try {
+        const res = await fetch('/api/gem/extract-character-hint', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ visualJson: result }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || '请求失败');
+        update({ characterHint: data.hint, isExtractingHint: false });
+      } catch (err: any) {
+        alert('提取失败: ' + err.message);
+        update({ isExtractingHint: false });
+      }
+    };
+
+    const copyHint = () => {
+      navigator.clipboard.writeText(characterHint);
+      setCopiedHint(true);
+      setTimeout(() => setCopiedHint(false), 2000);
     };
 
     const toggleMinimize = (e: React.MouseEvent) => {
@@ -179,8 +210,8 @@ export class GemStep1CardUtil extends BaseBoxShapeUtil<GemStep1CardShape> {
 
               {/* 结果输出 */}
               {result && (
-                <div className="flex-1 flex flex-col min-h-0">
-                  <div className="flex items-center justify-between mb-1 flex-shrink-0">
+                <div className="flex-1 flex flex-col min-h-0 gap-2">
+                  <div className="flex items-center justify-between flex-shrink-0">
                     <span className="text-xs text-gray-400">视觉档案 JSON</span>
                     <button
                       onClick={(e) => { e.stopPropagation(); copyResult(); }}
@@ -193,6 +224,37 @@ export class GemStep1CardUtil extends BaseBoxShapeUtil<GemStep1CardShape> {
                   <div className="flex-1 bg-black/40 border border-white/8 rounded-xl p-2 overflow-y-auto min-h-0">
                     <pre className="text-gray-300 text-[10px] font-mono whitespace-pre-wrap break-all">{result}</pre>
                   </div>
+
+                  {/* 提取 Character Hint 按钮 */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); extractHint(); }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    disabled={isExtractingHint}
+                    className={`flex-shrink-0 w-full py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                      isExtractingHint
+                        ? 'bg-white/5 text-gray-500 cursor-not-allowed'
+                        : 'bg-purple-900/60 hover:bg-purple-800/60 text-purple-300 border border-purple-500/30'
+                    }`}
+                  >
+                    {isExtractingHint ? '提取中...' : 'Extract Character Hint'}
+                  </button>
+
+                  {/* Hint 输出 */}
+                  {characterHint && (
+                    <div className="flex-shrink-0 bg-black/30 border border-purple-500/20 rounded-xl p-2">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] text-purple-400">Character Hint</span>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); copyHint(); }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          className="text-[10px] text-purple-400 hover:text-purple-300 transition-colors"
+                        >
+                          {copiedHint ? '已复制 ✓' : '复制'}
+                        </button>
+                      </div>
+                      <p className="text-gray-300 text-[10px] leading-relaxed">{characterHint}</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
