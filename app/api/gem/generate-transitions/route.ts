@@ -138,6 +138,9 @@ IF Start Image is a wide shot / distant subject / silhouette / blurred / lacks f
 - ALLOWED: high detail → lower detail (zoom_out), same level → same level (static / pan)
 - FORBIDDEN: low detail → high detail (zoom_in or detail reveal)
 
+## Motion Safety Rule
+Motion must be visually inferable, NOT imagined.
+
 ## Appearance Logic
 If subject appears in End Image only:
 - USE: "gradually becomes visible", "emerges into frame"
