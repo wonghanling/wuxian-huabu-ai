@@ -1878,8 +1878,11 @@ function CanvasPageContent() {
                   if (!canvasIdRef.current || !editorInstance) return;
                   try {
                     setSaveStatus('saving');
+                    console.log('[保存] 开始, canvasId:', canvasIdRef.current);
                     const snapshot = getSnapshot(editorInstance.store);
+                    console.log('[保存] snapshot 获取成功, 开始写入 Supabase...');
                     await saveSnapshot(canvasIdRef.current, snapshot);
+                    console.log('[保存] 写入成功');
                     hasUnsavedRef.current = false;
                     setSaveStatus('saved');
                     setTimeout(() => setSaveStatus('unsaved'), 2000);
