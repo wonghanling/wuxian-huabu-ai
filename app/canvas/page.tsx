@@ -1425,37 +1425,33 @@ function CanvasPageContent() {
 
   // 退出页面自动保存
   useEffect(() => {
-    const doBeaconSave = () => {
+    const doSaveSync = () => {
       if (!canvasIdRef.current || !editorRef.current) return;
       try {
         const snapshot = getSnapshot(editorRef.current.store);
         const payload = JSON.stringify({ canvasId: canvasIdRef.current, snapshot });
-        // sendBeacon 优先，fetch keepalive 兜底
-        const blob = new Blob([payload], { type: 'application/json' });
-        if (!navigator.sendBeacon('/api/canvas/save', blob)) {
-          fetch('/api/canvas/save', { method: 'POST', body: blob, keepalive: true });
-        }
-        hasUnsavedRef.current = false;
+        // 同步 XHR，唯一能在页面关闭时可靠执行的请求
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/canvas/save', false);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.send(payload);
       } catch (e) {
         console.error('退出保存失败:', e);
       }
     };
 
     const onVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') doBeaconSave();
+      if (document.visibilityState === 'hidden') doSaveSync();
     };
 
-    // 关闭/刷新页面
-    window.addEventListener('beforeunload', doBeaconSave);
-    // 切换标签页、打开新标签页返回、最小化等
+    window.addEventListener('beforeunload', doSaveSync);
     document.addEventListener('visibilitychange', onVisibilityChange);
-    // iOS Safari 兼容
-    window.addEventListener('pagehide', doBeaconSave);
+    window.addEventListener('pagehide', doSaveSync);
 
     return () => {
-      window.removeEventListener('beforeunload', doBeaconSave);
+      window.removeEventListener('beforeunload', doSaveSync);
       document.removeEventListener('visibilitychange', onVisibilityChange);
-      window.removeEventListener('pagehide', doBeaconSave);
+      window.removeEventListener('pagehide', doSaveSync);
     };
   }, []);
 
