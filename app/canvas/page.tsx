@@ -1430,7 +1430,11 @@ function CanvasPageContent() {
       try {
         const snapshot = getSnapshot(editorRef.current.store);
         const payload = JSON.stringify({ canvasId: canvasIdRef.current, snapshot });
-        navigator.sendBeacon('/api/canvas/save', new Blob([payload], { type: 'application/json' }));
+        // sendBeacon 优先，fetch keepalive 兜底
+        const blob = new Blob([payload], { type: 'application/json' });
+        if (!navigator.sendBeacon('/api/canvas/save', blob)) {
+          fetch('/api/canvas/save', { method: 'POST', body: blob, keepalive: true });
+        }
         hasUnsavedRef.current = false;
       } catch (e) {
         console.error('退出保存失败:', e);
@@ -1871,7 +1875,7 @@ function CanvasPageContent() {
               {/* 手动保存按钮 */}
               <button
                 onClick={async () => {
-                  if (!canvasIdRef.current || !editorInstance || saveStatus === 'saving') return;
+                  if (!canvasIdRef.current || !editorInstance) return;
                   try {
                     setSaveStatus('saving');
                     const snapshot = getSnapshot(editorInstance.store);
