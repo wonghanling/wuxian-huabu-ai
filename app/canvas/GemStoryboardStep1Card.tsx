@@ -15,9 +15,9 @@ export type GemStep1CardShape = TLBaseShape<
     w: number;
     h: number;
     result: string;
-    characterHint: string;
+    characterHint?: string;
     isGenerating: boolean;
-    isExtractingHint: boolean;
+    isExtractingHint?: boolean;
     isMinimized: boolean;
     showInstruction?: boolean;
     systemInstruction?: string;
