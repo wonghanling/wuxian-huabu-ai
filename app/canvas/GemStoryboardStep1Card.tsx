@@ -32,9 +32,9 @@ export class GemStep1CardUtil extends BaseBoxShapeUtil<GemStep1CardShape> {
     w: T.number,
     h: T.number,
     result: T.string,
-    characterHint: T.string,
+    characterHint: T.string.optional(),
     isGenerating: T.boolean,
-    isExtractingHint: T.boolean,
+    isExtractingHint: T.boolean.optional(),
     isMinimized: T.boolean,
     showInstruction: T.boolean.optional(),
     systemInstruction: T.string.optional(),
@@ -61,7 +61,7 @@ export class GemStep1CardUtil extends BaseBoxShapeUtil<GemStep1CardShape> {
   }
 
   component(shape: GemStep1CardShape) {
-    const { w, h, result, characterHint, isGenerating, isExtractingHint, isMinimized } = shape.props;
+    const { w, h, result, characterHint = '', isGenerating, isExtractingHint = false, isMinimized } = shape.props;
     const editor = useEditor();
     const [images, setImages] = useState<string[]>([]);
     const [copied, setCopied] = useState(false);
