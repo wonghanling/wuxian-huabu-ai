@@ -3,6 +3,7 @@
 import { Tldraw, TLComponents, Editor, useEditor, createShapeId, getSnapshot, loadSnapshot } from 'tldraw';
 import 'tldraw/tldraw.css';
 import { useState, useEffect, useRef, Suspense } from 'react';
+import { flushSync } from 'react-dom';
 import { useSearchParams } from 'next/navigation';
 import { CustomCardShapeUtil } from './CustomCard';
 import { ConnectionShapeUtil } from './ConnectionShapeUtil';
@@ -1874,12 +1875,9 @@ function CanvasPageContent() {
                 onClick={async () => {
                   if (!canvasIdRef.current || !editorInstance) return;
                   try {
-                    setSaveStatus('saving');
-                    console.log('[保存] 开始, canvasId:', canvasIdRef.current);
+                    flushSync(() => setSaveStatus('saving'));
                     const snapshot = getSnapshot(editorInstance.store);
-                    console.log('[保存] snapshot 获取成功, 开始写入 Supabase...');
                     await saveSnapshot(canvasIdRef.current, snapshot);
-                    console.log('[保存] 写入成功');
                     hasUnsavedRef.current = false;
                     setSaveStatus('saved');
                     setTimeout(() => setSaveStatus('unsaved'), 2000);
