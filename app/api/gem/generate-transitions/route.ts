@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 const YUNWU_BASE_URL = 'https://api.n1n.ai';
 const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
@@ -97,22 +97,41 @@ function cleanResponse(raw: string): string {
 async function callGemini(startImage: string, endImage: string, characterHint: string): Promise<string> {
   const parts: any[] = [];
 
-  // Start Image
   const startMatch = startImage.match(/^data:image\/(jpeg|jpg|png|webp);base64,(.+)$/);
   if (startMatch) {
-    parts.push({ text: 'Start Image:' });
     parts.push({ inline_data: { mime_type: `image/${startMatch[1]}`, data: startMatch[2] } });
   }
 
-  // End Image
   const endMatch = endImage.match(/^data:image\/(jpeg|jpg|png|webp);base64,(.+)$/);
   if (endMatch) {
-    parts.push({ text: 'End Image:' });
     parts.push({ inline_data: { mime_type: `image/${endMatch[1]}`, data: endMatch[2] } });
   }
 
-  const hintText = characterHint?.trim() ? `\nCharacter Hint: ${characterHint}` : '';
-  parts.push({ text: `Analyze the transition from Start Image to End Image and output strict JSON only.${hintText}` });
+  const hintLine = characterHint?.trim() ? `\nCharacter Hint: ${characterHint}` : '';
+
+  parts.push({ text: `The first image is the START frame. The second image is the END frame.${hintLine}
+
+OUTPUT ONLY THIS EXACT JSON STRUCTURE. NO OTHER TEXT. NO MARKDOWN. NO EXPLANATION.
+Start your response with { and end with }.
+
+{
+  "transition_type": "morph_action or cut",
+  "motion_intent": "8-20 words describing only the visual change from start to end",
+  "duration_control": "slow or normal or fast",
+  "keep_static": ["element1", "element2"],
+  "camera_control": {
+    "movement": "static or zoom_in or zoom_out or pan_left or pan_right or follow",
+    "intensity": "subtle or normal or dramatic"
+  },
+  "final_video_prompt": "Starting from the first image, [motion in cinematic English]. Camera [movement] with [intensity] cinematic motion. Keep [keep_static elements] consistent. Maintain character identity, lighting, and environment consistency. Smooth cinematic motion."
+}
+
+RULES:
+- transition_type must be exactly "morph_action" or "cut"
+- motion_intent: 8-20 English words, describe ONLY the change between the two images
+- keep_static: 2-5 short phrases of stable visual elements
+- final_video_prompt: fluent English, ready to paste into a video model
+- IF OUTPUT IS NOT VALID JSON THE SYSTEM WILL CRASH` });
 
   const res = await fetch(
     `${YUNWU_BASE_URL}/v1beta/models/gemini-3-flash-preview:generateContent`,
@@ -120,9 +139,8 @@ async function callGemini(startImage: string, endImage: string, characterHint: s
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${YUNWU_API_KEY}` },
       body: JSON.stringify({
-        system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
         contents: [{ role: 'user', parts }],
-        generationConfig: { temperature: 0.3 },
+        generationConfig: { temperature: 0.2 },
       }),
     }
   );
