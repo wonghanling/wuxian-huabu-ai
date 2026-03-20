@@ -24,6 +24,25 @@ const updateCustomCardShape = (editor: Editor, id: string, props: any) => {
   });
 };
 
+// 轻度压缩：最长边限 2048px，quality 0.92
+function softCompressImage(dataUrl: string): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const maxSide = 2048;
+      const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d')!.drawImage(img, 0, 0, w, h);
+      resolve(c.toDataURL('image/jpeg', 0.92));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
 // 下载文件（fetch blob，不打开新标签页）
 const downloadFile = async (url: string, filename: string) => {
   try {
@@ -1730,8 +1749,9 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                               const newImgs = [...imgs];
                               toLoad.forEach(file => {
                                 const reader = new FileReader();
-                                reader.onload = (ev) => {
-                                  newImgs.push(ev.target?.result as string);
+                                reader.onload = async (ev) => {
+                                  const compressed = await softCompressImage(ev.target?.result as string);
+                                  newImgs.push(compressed);
                                   loaded++;
                                   if (loaded === toLoad.length) {
                                     editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImages: JSON.stringify(newImgs) } });
