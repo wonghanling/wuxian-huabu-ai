@@ -15,6 +15,7 @@ import { PromptOptimizerCardUtil } from './PromptOptimizerCard';
 import { GemStep1CardUtil } from './GemStoryboardStep1Card';
 import { GemStep2CardUtil } from './GemStoryboardStep2Card';
 import { GemStep3CardUtil } from './GemStoryboardStep3Card';
+import { GemStep4CardUtil } from './GemStoryboardStep4Card';
 import TutorialOverlay from './TutorialOverlay';
 import { createClient } from '@/lib/supabase/client';
 import { getOrCreateCanvas, loadSnapshot as loadCanvasSnapshot, saveSnapshot } from '@/lib/canvas-storage';
@@ -450,6 +451,26 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
     }
   };
 
+  const createGemSoloMotionCard = () => {
+    try {
+      const viewportPageBounds = editor.getViewportPageBounds();
+      const centerX = viewportPageBounds.center.x;
+      const centerY = viewportPageBounds.center.y;
+      const id = createShapeId();
+      editor.createShape({
+        id,
+        type: 'gem-step4-card' as any,
+        x: centerX - 190,
+        y: centerY - 240,
+        props: { w: 380, h: 480 },
+      });
+      editor.select(id);
+      editor.setCurrentTool('select');
+    } catch (error) {
+      console.error('创建单图运动卡片失败:', error);
+    }
+  };
+
   const createGemStoryboardCards = () => {
     try {
       const viewportPageBounds = editor.getViewportPageBounds();
@@ -682,6 +703,24 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
           <div className="flex flex-col items-start">
             <span className="text-sm text-gray-300 whitespace-nowrap">导演引擎</span>
             <span className="text-xs text-gray-500 whitespace-nowrap">视频过渡指令</span>
+          </div>
+        </button>
+
+        {/* 单图运动按钮 */}
+        <button
+          onClick={createGemSoloMotionCard}
+          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
+          title="单图运动"
+        >
+          <div className="w-8 h-8 rounded-lg bg-sky-500/20 flex items-center justify-center group-hover:bg-sky-500/30 transition-all flex-shrink-0">
+            <svg className="w-4 h-4 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div className="flex flex-col items-start">
+            <span className="text-sm text-gray-300 whitespace-nowrap">单图运动</span>
+            <span className="text-xs text-gray-500 whitespace-nowrap">单帧运动指令</span>
           </div>
         </button>
 
@@ -1458,7 +1497,7 @@ function CanvasPageContent() {
   }, []);
 
   // 自定义形状工具和绑定工具
-  const customShapeUtils = [CustomCardShapeUtil, ConnectionShapeUtil, TimelineShapeUtil, ShotCardShapeUtil, PromptOptimizerCardUtil, GemStep1CardUtil, GemStep2CardUtil, GemStep3CardUtil];
+  const customShapeUtils = [CustomCardShapeUtil, ConnectionShapeUtil, TimelineShapeUtil, ShotCardShapeUtil, PromptOptimizerCardUtil, GemStep1CardUtil, GemStep2CardUtil, GemStep3CardUtil, GemStep4CardUtil];
   const customBindingUtils = [ConnectionBindingUtil];
   const customTools = [PortTool];
 
