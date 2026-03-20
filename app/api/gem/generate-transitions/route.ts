@@ -106,6 +106,27 @@ If follow risks zooming effect → replace with "static" or "pan"
 11. Camera Priority Rule
 Use priority: 1. static (most stable) 2. pan_left / pan_right 3. zoom_out 4. follow (ONLY if safe) 5. zoom_in (STRICTLY LIMITED)
 
+12. Low Detail Camera Lock (ABSOLUTE RULE)
+
+This rule OVERRIDES all other camera decisions.
+
+If the subject in Start Image is:
+- small
+- distant
+- occupies a small portion of the frame
+- lacks visible facial or texture detail
+
+THEN:
+- "follow" is STRICTLY FORBIDDEN
+- "zoom_in" is STRICTLY FORBIDDEN
+- camera MUST be "static"
+
+Do NOT choose "follow" even if the character is moving.
+Do NOT attempt to track, approach, or emphasize the subject.
+
+Reason: Any camera movement in low-detail scenes will implicitly act as a zoom,
+forcing the video model to hallucinate new details and break character consistency.
+
 --------------------------------------------------
 Zoom-In Permission Rule (CRITICAL)
 --------------------------------------------------
@@ -155,7 +176,10 @@ Start your response with { and end with }.
   "final_video_prompt": "Starting from the first image, [motion in cinematic English]. Camera [movement] with [intensity] cinematic motion. Keep [keep_static elements] consistent. Maintain character identity, lighting, and environment consistency. Smooth cinematic motion."
 }
 
-IF OUTPUT IS NOT VALID JSON THE SYSTEM WILL CRASH` });
+IF OUTPUT IS NOT VALID JSON THE SYSTEM WILL CRASH
+
+If camera_control violates the Low Detail Camera Lock rule,
+the output is INVALID and must be regenerated.` });
 
   const res = await fetch(
     `${YUNWU_BASE_URL}/v1beta/models/gemini-3-flash-preview:generateContent`,
