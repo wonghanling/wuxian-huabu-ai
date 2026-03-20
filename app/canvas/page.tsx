@@ -436,38 +436,26 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
       const viewportPageBounds = editor.getViewportPageBounds();
       const centerX = viewportPageBounds.center.x;
       const centerY = viewportPageBounds.center.y;
-      const id = createShapeId();
-      editor.createShape({
-        id,
-        type: 'gem-step3-card' as any,
-        x: centerX - 200,
-        y: centerY - 260,
-        props: { w: 400, h: 520 },
-      });
-      editor.select(id);
+      const cardW = 400;
+      const gap = 20;
+      const totalW = cardW * 4 + gap * 3;
+      const startX = centerX - totalW / 2;
+      const startY = centerY - 260;
+
+      const id1 = createShapeId();
+      const id2 = createShapeId();
+      const id3 = createShapeId();
+      const id4 = createShapeId();
+
+      editor.createShape({ id: id1, type: 'gem-step1-card' as any, x: startX, y: startY, props: { w: cardW, h: 520 } });
+      editor.createShape({ id: id2, type: 'gem-step2-card' as any, x: startX + (cardW + gap), y: startY, props: { w: cardW, h: 520 } });
+      editor.createShape({ id: id3, type: 'gem-step3-card' as any, x: startX + (cardW + gap) * 2, y: startY, props: { w: cardW, h: 520 } });
+      editor.createShape({ id: id4, type: 'gem-step4-card' as any, x: startX + (cardW + gap) * 3, y: startY, props: { w: cardW, h: 520 } });
+
+      editor.select(id1);
       editor.setCurrentTool('select');
     } catch (error) {
       console.error('创建导演引擎卡片失败:', error);
-    }
-  };
-
-  const createGemSoloMotionCard = () => {
-    try {
-      const viewportPageBounds = editor.getViewportPageBounds();
-      const centerX = viewportPageBounds.center.x;
-      const centerY = viewportPageBounds.center.y;
-      const id = createShapeId();
-      editor.createShape({
-        id,
-        type: 'gem-step4-card' as any,
-        x: centerX - 190,
-        y: centerY - 240,
-        props: { w: 380, h: 480 },
-      });
-      editor.select(id);
-      editor.setCurrentTool('select');
-    } catch (error) {
-      console.error('创建单图运动卡片失败:', error);
     }
   };
 
@@ -703,24 +691,6 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
           <div className="flex flex-col items-start">
             <span className="text-sm text-gray-300 whitespace-nowrap">导演引擎</span>
             <span className="text-xs text-gray-500 whitespace-nowrap">视频过渡指令</span>
-          </div>
-        </button>
-
-        {/* 单图运动按钮 */}
-        <button
-          onClick={createGemSoloMotionCard}
-          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
-          title="单图运动"
-        >
-          <div className="w-8 h-8 rounded-lg bg-sky-500/20 flex items-center justify-center group-hover:bg-sky-500/30 transition-all flex-shrink-0">
-            <svg className="w-4 h-4 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <div className="flex flex-col items-start">
-            <span className="text-sm text-gray-300 whitespace-nowrap">单图运动</span>
-            <span className="text-xs text-gray-500 whitespace-nowrap">单帧运动指令</span>
           </div>
         </button>
 

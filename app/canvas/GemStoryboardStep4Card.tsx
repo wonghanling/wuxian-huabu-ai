@@ -122,8 +122,8 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/8 flex-shrink-0">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-sky-400"></div>
-              <span className="text-white text-sm font-semibold">GEM 单图运动 · Step 4</span>
-              <span className="text-gray-500 text-xs">solo motion</span>
+              <span className="text-white text-sm font-semibold">GEM 导演引擎 · Step 3-Solo</span>
+              <span className="text-gray-500 text-xs">单图运动</span>
             </div>
             <button
               onClick={toggleMinimize}
