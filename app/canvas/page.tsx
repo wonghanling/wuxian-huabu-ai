@@ -16,6 +16,7 @@ import { GemStep1CardUtil } from './GemStoryboardStep1Card';
 import { GemStep2CardUtil } from './GemStoryboardStep2Card';
 import { GemStep3CardUtil } from './GemStoryboardStep3Card';
 import { GemStep4CardUtil } from './GemStoryboardStep4Card';
+import { AudioCardUtil } from './AudioCard';
 import TutorialOverlay from './TutorialOverlay';
 import { createClient } from '@/lib/supabase/client';
 import { getOrCreateCanvas, loadSnapshot as loadCanvasSnapshot, saveSnapshot } from '@/lib/canvas-storage';
@@ -490,6 +491,38 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
     }
   };
 
+  const createAudioCard = () => {
+    try {
+      const viewportPageBounds = editor.getViewportPageBounds();
+      const centerX = viewportPageBounds.center.x;
+      const centerY = viewportPageBounds.center.y;
+      const id = createShapeId();
+      editor.createShape({
+        id,
+        type: 'audio-card' as any,
+        x: centerX - 200,
+        y: centerY - 260,
+        props: { w: 400, h: 520 },
+      });
+      editor.select(id);
+      editor.setCurrentTool('select');
+    } catch (error) {
+      console.error('创建音频卡片失败:', error);
+    }
+  };
+
+  return (
+        y: centerY - 280,
+        props: { w: 400, h: 560 },
+      });
+
+      editor.select(id1);
+      editor.setCurrentTool('select');
+    } catch (error) {
+      console.error('创建GEM分镜卡片失败:', error);
+    }
+  };
+
   return (
     <div
       className="fixed bottom-32 left-6 transition-all duration-300"
@@ -691,6 +724,23 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
           <div className="flex flex-col items-start">
             <span className="text-sm text-gray-300 whitespace-nowrap">导演引擎</span>
             <span className="text-xs text-gray-500 whitespace-nowrap">视频过渡指令</span>
+          </div>
+        </button>
+
+        {/* 语音合成按钮 */}
+        <button
+          onClick={createAudioCard}
+          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
+          title="语音合成"
+        >
+          <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center group-hover:bg-purple-500/30 transition-all flex-shrink-0">
+            <svg className="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+            </svg>
+          </div>
+          <div className="flex flex-col items-start">
+            <span className="text-sm text-gray-300 whitespace-nowrap">语音合成</span>
+            <span className="text-xs text-gray-500 whitespace-nowrap">MiniMax TTS</span>
           </div>
         </button>
 
@@ -1467,7 +1517,7 @@ function CanvasPageContent() {
   }, []);
 
   // 自定义形状工具和绑定工具
-  const customShapeUtils = [CustomCardShapeUtil, ConnectionShapeUtil, TimelineShapeUtil, ShotCardShapeUtil, PromptOptimizerCardUtil, GemStep1CardUtil, GemStep2CardUtil, GemStep3CardUtil, GemStep4CardUtil];
+  const customShapeUtils = [CustomCardShapeUtil, ConnectionShapeUtil, TimelineShapeUtil, ShotCardShapeUtil, PromptOptimizerCardUtil, GemStep1CardUtil, GemStep2CardUtil, GemStep3CardUtil, GemStep4CardUtil, AudioCardUtil];
   const customBindingUtils = [ConnectionBindingUtil];
   const customTools = [PortTool];
 
