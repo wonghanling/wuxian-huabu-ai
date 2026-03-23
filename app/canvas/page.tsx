@@ -512,18 +512,6 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
   };
 
   return (
-        y: centerY - 280,
-        props: { w: 400, h: 560 },
-      });
-
-      editor.select(id1);
-      editor.setCurrentTool('select');
-    } catch (error) {
-      console.error('创建GEM分镜卡片失败:', error);
-    }
-  };
-
-  return (
     <div
       className="fixed bottom-32 left-6 transition-all duration-300"
       style={{ zIndex: 9998 }}
