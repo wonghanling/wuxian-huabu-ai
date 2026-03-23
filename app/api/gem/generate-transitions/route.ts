@@ -13,7 +13,7 @@ function cleanResponse(raw: string): string {
   return cleaned;
 }
 
-async function callGemini(startImage: string, endImage: string, characterHint: string): Promise<string> {
+async function callGemini(startImage: string, endImage: string, characterHint: string, actionSuggestion?: string): Promise<string> {
   const parts: any[] = [];
 
   const startMatch = startImage.match(/^data:image\/(jpeg|jpg|png|webp);base64,(.+)$/);
@@ -27,8 +27,9 @@ async function callGemini(startImage: string, endImage: string, characterHint: s
   }
 
   const hintLine = characterHint?.trim() ? `\nCharacter Hint: ${characterHint}` : '';
+  const actionLine = actionSuggestion?.trim() ? `\nUser Action Suggestion: ${actionSuggestion}` : '';
 
-  parts.push({ text: `The first image is the START frame. The second image is the END frame.${hintLine}
+  parts.push({ text: `The first image is the START frame. The second image is the END frame.${hintLine}${actionLine}
 
 # Role: Independent Cinematic Motion & Transition Director
 
@@ -128,6 +129,32 @@ Reason: Any camera movement in low-detail scenes will implicitly act as a zoom,
 forcing the video model to hallucinate new details and break character consistency.
 
 --------------------------------------------------
+User Action Suggestion Rule
+--------------------------------------------------
+
+User Action Suggestion is optional and only describes the motion of the existing subject.
+It is NOT a command, but a soft hint.
+
+The system MUST:
+- treat it as a low-priority input
+- only use it if consistent with visual evidence
+- simplify or partially apply it if needed
+
+The system MUST NOT:
+- use it to control camera movement
+- use it to change shot scale
+- use it to increase visual detail
+- use it to introduce new objects or characters
+- use it to override safety rules
+
+If the suggestion conflicts with any safety constraint: IGNORE it completely
+
+Priority order:
+1. Visual evidence (images)
+2. Safety rules (detail / shot / distortion rules)
+3. User Action Suggestion
+
+--------------------------------------------------
 Zoom-In Permission Rule (CRITICAL)
 --------------------------------------------------
 
@@ -200,9 +227,9 @@ the output is INVALID and must be regenerated.` });
   return raw;
 }
 
-async function getTransition(startImage: string, endImage: string, characterHint: string): Promise<any> {
+async function getTransition(startImage: string, endImage: string, characterHint: string, actionSuggestion?: string): Promise<any> {
   for (let i = 0; i < 2; i++) {
-    const raw = await callGemini(startImage, endImage, characterHint);
+    const raw = await callGemini(startImage, endImage, characterHint, actionSuggestion);
     try {
       const parsed = JSON.parse(cleanResponse(raw));
       if (parsed.transition_type && parsed.final_video_prompt) return parsed;
@@ -216,13 +243,13 @@ async function getTransition(startImage: string, endImage: string, characterHint
 
 export async function POST(req: NextRequest) {
   try {
-    const { startImage, endImage, characterHint = '' } = await req.json();
+    const { startImage, endImage, characterHint = '', actionSuggestion = '' } = await req.json();
 
     if (!startImage || !endImage) {
       return NextResponse.json({ error: '缺少 startImage 或 endImage' }, { status: 400 });
     }
 
-    const result = await getTransition(startImage, endImage, characterHint);
+    const result = await getTransition(startImage, endImage, characterHint, actionSuggestion);
 
     return NextResponse.json({
       result: JSON.stringify(result, null, 2),

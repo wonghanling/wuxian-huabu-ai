@@ -32,6 +32,7 @@ export type GemStep4CardShape = TLBaseShape<
     w: number;
     h: number;
     characterHint: string;
+    actionSuggestion: string;
     result: string;
     isGenerating: boolean;
     isMinimized: boolean;
@@ -46,6 +47,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
     w: T.number,
     h: T.number,
     characterHint: T.string,
+    actionSuggestion: T.string,
     result: T.string,
     isGenerating: T.boolean,
     isMinimized: T.boolean,
@@ -60,6 +62,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
       w: 380,
       h: 480,
       characterHint: '',
+      actionSuggestion: '',
       result: '',
       isGenerating: false,
       isMinimized: false,
@@ -71,10 +74,18 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
   }
 
   component(shape: GemStep4CardShape) {
-    const { w, h, characterHint, result, isGenerating, isMinimized } = shape.props;
+    const { w, h, characterHint, actionSuggestion, result, isGenerating, isMinimized } = shape.props;
     const editor = useEditor();
     const [image, setImage] = useState<string>('');
     const [copied, setCopied] = useState(false);
+    const [actionError, setActionError] = useState('');
+
+    const BLOCKED_KEYWORDS = ['camera', 'zoom', 'pan', 'follow', 'shot', 'scene', '镜头', '特写', '远景', '拉近', '推进', '跟拍', '运镜', '背景', '爆炸', '烟雾', '加一个', '出现一个'];
+
+    const validateAction = (val: string): boolean => {
+      const lower = val.toLowerCase();
+      return BLOCKED_KEYWORDS.some(k => lower.includes(k.toLowerCase()));
+    };
 
     const update = (props: Partial<GemStep4CardShape['props']>) => {
       editor.updateShape({ id: shape.id, type: 'gem-step4-card' as any, props: { ...shape.props, ...props } });
@@ -94,12 +105,17 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
 
     const generate = async () => {
       if (!image) { alert('请上传图片'); return; }
+      if (actionSuggestion && validateAction(actionSuggestion)) {
+        setActionError('只能填写人物动作，不能包含镜头、场景或特效');
+        return;
+      }
+      setActionError('');
       update({ isGenerating: true, result: '' });
       try {
         const res = await fetch('/api/gem/generate-solo-motion', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image, characterHint }),
+          body: JSON.stringify({ image, characterHint, actionSuggestion }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || '请求失败');
@@ -181,6 +197,23 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
                   onPointerDown={(e) => e.stopPropagation()}
                   onChange={(e) => update({ characterHint: e.target.value })}
                 />
+              </div>
+
+              {/* Action Suggestion */}
+              <div className="flex-shrink-0">
+                <label className="text-[10px] text-gray-400 mb-1 block">人物动作建议（可选）</label>
+                <input
+                  className={`w-full bg-black/30 border ${actionError ? 'border-red-500/50' : 'border-white/8'} rounded-lg px-2 py-1.5 text-gray-300 text-[10px] focus:outline-none focus:border-white/15 placeholder-gray-600`}
+                  placeholder="例如：慢慢走、转头、抬手、滑下去（只填写人物动作）"
+                  value={actionSuggestion}
+                  onClick={(e) => e.stopPropagation()}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onChange={(e) => {
+                    update({ actionSuggestion: e.target.value });
+                    if (actionError) setActionError('');
+                  }}
+                />
+                {actionError && <span className="text-[9px] text-red-400 mt-0.5 block">{actionError}</span>}
               </div>
 
               {/* 生成按钮 */}

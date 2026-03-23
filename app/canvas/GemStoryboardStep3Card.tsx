@@ -32,6 +32,7 @@ export type GemStep3CardShape = TLBaseShape<
     w: number;
     h: number;
     characterHint: string;
+    actionSuggestion: string;
     result: string;
     isGenerating: boolean;
     isMinimized: boolean;
@@ -48,6 +49,7 @@ export class GemStep3CardUtil extends BaseBoxShapeUtil<GemStep3CardShape> {
     w: T.number,
     h: T.number,
     characterHint: T.string,
+    actionSuggestion: T.string,
     result: T.string,
     isGenerating: T.boolean,
     isMinimized: T.boolean,
@@ -63,6 +65,7 @@ export class GemStep3CardUtil extends BaseBoxShapeUtil<GemStep3CardShape> {
       w: 420,
       h: 600,
       characterHint: '',
+      actionSuggestion: '',
       result: '',
       isGenerating: false,
       isMinimized: false,
@@ -74,12 +77,20 @@ export class GemStep3CardUtil extends BaseBoxShapeUtil<GemStep3CardShape> {
   }
 
   component(shape: GemStep3CardShape) {
-    const { w, h, characterHint, result, isGenerating, isMinimized } = shape.props;
+    const { w, h, characterHint, actionSuggestion, result, isGenerating, isMinimized } = shape.props;
     const editor = useEditor();
     const [startImage, setStartImage] = useState<string>('');
     const [endImage, setEndImage] = useState<string>('');
     const [copiedPrompt, setCopiedPrompt] = useState(false);
     const [copiedJson, setCopiedJson] = useState(false);
+    const [actionError, setActionError] = useState('');
+
+    const BLOCKED_KEYWORDS = ['camera', 'zoom', 'pan', 'follow', 'shot', 'scene', '镜头', '特写', '远景', '拉近', '推进', '跟拍', '运镜', '背景', '爆炸', '烟雾', '加一个', '出现一个'];
+
+    const validateAction = (val: string): boolean => {
+      const lower = val.toLowerCase();
+      return BLOCKED_KEYWORDS.some(k => lower.includes(k.toLowerCase()));
+    };
 
     const update = (props: Partial<GemStep3CardShape['props']>) => {
       editor.updateShape({ id: shape.id, type: 'gem-step3-card' as any, props: { ...shape.props, ...props } });
@@ -99,12 +110,17 @@ export class GemStep3CardUtil extends BaseBoxShapeUtil<GemStep3CardShape> {
 
     const generate = async () => {
       if (!startImage || !endImage) { alert('请上传起始图和结束图'); return; }
+      if (actionSuggestion && validateAction(actionSuggestion)) {
+        setActionError('只能填写人物动作，不能包含镜头、场景或特效');
+        return;
+      }
+      setActionError('');
       update({ isGenerating: true, result: '' });
       try {
         const res = await fetch('/api/gem/generate-transitions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ startImage, endImage, characterHint }),
+          body: JSON.stringify({ startImage, endImage, characterHint, actionSuggestion }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || '请求失败');
@@ -215,6 +231,25 @@ export class GemStep3CardUtil extends BaseBoxShapeUtil<GemStep3CardShape> {
                   onPointerDown={(e) => e.stopPropagation()}
                   onChange={(e) => update({ characterHint: e.target.value })}
                 />
+              </div>
+
+              {/* Action Suggestion 输入 */}
+              <div className="flex-shrink-0">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[10px] text-gray-400">人物动作建议（可选）</label>
+                </div>
+                <input
+                  className={`w-full bg-black/30 border ${actionError ? 'border-red-500/50' : 'border-white/8'} rounded-lg px-2 py-1.5 text-gray-300 text-[10px] focus:outline-none focus:border-white/15 placeholder-gray-600`}
+                  placeholder="例如：慢慢走、转头、抬手、滑下去（只填写人物动作）"
+                  value={actionSuggestion}
+                  onClick={(e) => e.stopPropagation()}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onChange={(e) => {
+                    update({ actionSuggestion: e.target.value });
+                    if (actionError) setActionError('');
+                  }}
+                />
+                {actionError && <span className="text-[9px] text-red-400 mt-0.5 block">{actionError}</span>}
               </div>
 
               {/* 生成按钮 */}
