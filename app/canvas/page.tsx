@@ -1852,19 +1852,30 @@ function CanvasPageContent() {
                             <button
                               className={`flex-1 text-left text-xs py-1 px-1 truncate ${canvasIdRef.current === c.id ? 'text-white' : 'text-gray-400'}`}
                               onClick={async () => {
-                                canvasIdRef.current = c.id;
-                                if (editorInstance) {
-                                  const snapshot = await loadCanvasSnapshot(c.id);
-                                  isRestoringRef.current = true;
-                                  if (snapshot) {
-                                    loadSnapshot(editorInstance.store, snapshot);
-                                  } else {
-                                    editorInstance.selectAll();
-                                    editorInstance.deleteShapes(editorInstance.getSelectedShapeIds());
-                                  }
-                                  isRestoringRef.current = false;
-                                }
+                                // 立即更新 UI，避免阻塞
+                                const targetId = c.id;
+                                canvasIdRef.current = targetId;
                                 setShowCanvasList(false);
+
+                                // 异步加载画布数据
+                                if (editorInstance) {
+                                  setTimeout(async () => {
+                                    try {
+                                      const snapshot = await loadCanvasSnapshot(targetId);
+                                      isRestoringRef.current = true;
+                                      if (snapshot) {
+                                        loadSnapshot(editorInstance.store, snapshot);
+                                      } else {
+                                        editorInstance.selectAll();
+                                        editorInstance.deleteShapes(editorInstance.getSelectedShapeIds());
+                                      }
+                                      isRestoringRef.current = false;
+                                    } catch (err) {
+                                      console.error('加载画布失败:', err);
+                                      isRestoringRef.current = false;
+                                    }
+                                  }, 0);
+                                }
                               }}
                             >
                               {canvasIdRef.current === c.id ? '● ' : '○ '}{c.title}
