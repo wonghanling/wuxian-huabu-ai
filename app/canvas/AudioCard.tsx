@@ -154,6 +154,25 @@ export class AudioCardUtil extends BaseBoxShapeUtil<AudioCardShape> {
         }
       } else if (mode === 'clone') {
         if (!uploadedFileId || !voiceId) { alert('请先上传音频文件并输入 Voice ID'); return; }
+
+        // 校验 Voice ID 格式
+        if (voiceId.length < 8 || voiceId.length > 256) {
+          alert('Voice ID 长度必须在 8-256 字符之间');
+          return;
+        }
+        if (!/^[a-zA-Z]/.test(voiceId)) {
+          alert('Voice ID 必须以字母开头');
+          return;
+        }
+        if (!/^[a-zA-Z0-9_-]+$/.test(voiceId)) {
+          alert('Voice ID 只能包含字母、数字、下划线和连字符');
+          return;
+        }
+        if (/[-_]$/.test(voiceId)) {
+          alert('Voice ID 不能以连字符或下划线结尾');
+          return;
+        }
+
         update({ isGenerating: true });
         try {
           const res = await fetch('/api/audio/generate', {
@@ -162,7 +181,13 @@ export class AudioCardUtil extends BaseBoxShapeUtil<AudioCardShape> {
             body: JSON.stringify({ mode: 'clone', fileId: uploadedFileId, voiceId, text: cloneText }),
           });
           const data = await res.json();
-          if (!res.ok) throw new Error(data.error || '复刻失败');
+          if (!res.ok) {
+            const errMsg = data.error || '复刻失败';
+            if (errMsg.includes('duration too short')) {
+              throw new Error('音频时长太短，至少需要 10 秒');
+            }
+            throw new Error(errMsg);
+          }
 
           // 将复刻的 Voice ID 加入列表
           const newList = [...clonedVoicesList, voiceId];
@@ -396,7 +421,7 @@ export class AudioCardUtil extends BaseBoxShapeUtil<AudioCardShape> {
 
                   {/* Voice ID */}
                   <div className="flex-shrink-0">
-                    <label className="text-[10px] text-gray-400 mb-1 block">自定义 Voice ID</label>
+                    <label className="text-[10px] text-gray-400 mb-1 block">自定义 Voice ID（8-256字符，字母开头）</label>
                     <input
                       className="w-full bg-black/30 border border-white/8 rounded-lg px-2 py-1.5 text-gray-300 text-[10px] focus:outline-none focus:border-white/15 placeholder-gray-600"
                       placeholder="例如：my_cloned_voice_001"
@@ -405,6 +430,7 @@ export class AudioCardUtil extends BaseBoxShapeUtil<AudioCardShape> {
                       onPointerDown={(e) => e.stopPropagation()}
                       onChange={(e) => update({ voiceId: e.target.value })}
                     />
+                    <span className="text-[8px] text-gray-500 mt-0.5 block">只能包含字母、数字、下划线、连字符</span>
                   </div>
                 </>
               )}
