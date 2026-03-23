@@ -1479,11 +1479,18 @@ function CanvasPageContent() {
       try {
         const snapshot = getSnapshot(editorRef.current.store);
         const payload = JSON.stringify({ canvasId: canvasIdRef.current, snapshot });
-        // 同步 XHR，唯一能在页面关闭时可靠执行的请求
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', '/api/canvas/save', false);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.send(payload);
+
+        // 优先使用 Beacon API（更可靠，不会被浏览器阻止）
+        if (navigator.sendBeacon) {
+          const blob = new Blob([payload], { type: 'application/json' });
+          navigator.sendBeacon('/api/canvas/save', blob);
+        } else {
+          // 降级到同步 XHR
+          const xhr = new XMLHttpRequest();
+          xhr.open('POST', '/api/canvas/save', false);
+          xhr.setRequestHeader('Content-Type', 'application/json');
+          xhr.send(payload);
+        }
       } catch (e) {
         console.error('退出保存失败:', e);
       }
@@ -1927,7 +1934,7 @@ function CanvasPageContent() {
                     await saveSnapshot(canvasIdRef.current, snapshot);
                     hasUnsavedRef.current = false;
                     setSaveStatus('saved');
-                    setTimeout(() => setSaveStatus('unsaved'), 2000);
+                    // 不再自动变回 unsaved，只有新操作时才会变
                   } catch (err) {
                     console.error('保存失败:', err);
                     setSaveStatus('unsaved');
