@@ -224,7 +224,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
                 className={`flex-shrink-0 w-full py-2 rounded-xl text-sm font-semibold transition-all ${
                   isGenerating || !image
                     ? 'bg-white/5 text-gray-500 cursor-not-allowed'
-                    : 'bg-sky-700 hover:bg-sky-600 text-white shadow-lg'
+                    : 'bg-emerald-700 hover:bg-emerald-600 text-white shadow-lg'
                 }`}
               >
                 {isGenerating ? '分析中...' : '生成运动指令'}
