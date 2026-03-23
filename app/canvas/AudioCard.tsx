@@ -35,7 +35,7 @@ export class AudioCardUtil extends BaseBoxShapeUtil<AudioCardShape> {
   static override props: RecordProps<AudioCardShape> = {
     w: T.number,
     h: T.number,
-    mode: T.string,
+    mode: T.literalEnum('synthesize', 'design'),
     text: T.string,
     voiceId: T.string,
     speed: T.number,
