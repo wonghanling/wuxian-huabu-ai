@@ -36,7 +36,23 @@ export async function POST(req: NextRequest) {
       }
 
       const data = await res.json();
-      const audioUrl = data?.audio_file || data?.data?.audio_file || data?.file_url || data?.url;
+      console.log('MiniMax 返回数据:', JSON.stringify(data).slice(0, 500));
+
+      // 尝试多种可能的字段
+      let audioUrl = data?.audio_file || data?.data?.audio_file || data?.file_url || data?.url || data?.audio_url;
+
+      // 如果返回的是 base64 或 hex 数据，转换成 data URL
+      if (!audioUrl && data?.data?.audio) {
+        const audioData = data.data.audio;
+        // 检查是否是 hex 字符串
+        if (typeof audioData === 'string' && /^[0-9a-fA-F]+$/.test(audioData)) {
+          // 将 hex 转换为 base64
+          const bytes = new Uint8Array(audioData.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)));
+          const base64 = Buffer.from(bytes).toString('base64');
+          audioUrl = `data:audio/wav;base64,${base64}`;
+        }
+      }
+
       if (!audioUrl) throw new Error(`未获取到音频 URL: ${JSON.stringify(data).slice(0, 200)}`);
 
       return NextResponse.json({ success: true, audioUrl });
