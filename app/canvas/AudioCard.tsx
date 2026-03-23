@@ -23,6 +23,7 @@ export type AudioCardShape = TLBaseShape<
     designPrompt: string;
     previewText: string;
     cloneText: string;
+    clonedVoices: string;
     audioUrl: string;
     isGenerating: boolean;
     isMinimized: boolean;
@@ -45,6 +46,7 @@ export class AudioCardUtil extends BaseBoxShapeUtil<AudioCardShape> {
     designPrompt: T.string,
     previewText: T.string,
     cloneText: T.string,
+    clonedVoices: T.string,
     audioUrl: T.string,
     isGenerating: T.boolean,
     isMinimized: T.boolean,
@@ -67,6 +69,7 @@ export class AudioCardUtil extends BaseBoxShapeUtil<AudioCardShape> {
       designPrompt: '',
       previewText: '',
       cloneText: '',
+      clonedVoices: '[]',
       audioUrl: '',
       isGenerating: false,
       isMinimized: false,
@@ -78,9 +81,11 @@ export class AudioCardUtil extends BaseBoxShapeUtil<AudioCardShape> {
   }
 
   component(shape: AudioCardShape) {
-    const { w, h, mode, text, voiceId, speed, vol, pitch, designPrompt, previewText, cloneText, audioUrl, isGenerating, isMinimized } = shape.props;
+    const { w, h, mode, text, voiceId, speed, vol, pitch, designPrompt, previewText, cloneText, clonedVoices, audioUrl, isGenerating, isMinimized } = shape.props;
     const editor = useEditor();
     const [uploadedFileId, setUploadedFileId] = useState<string>('');
+
+    const clonedVoicesList: string[] = clonedVoices ? JSON.parse(clonedVoices) : [];
 
     const update = (props: Partial<AudioCardShape['props']>) => {
       editor.updateShape({ id: shape.id, type: 'audio-card' as any, props: { ...shape.props, ...props } });
@@ -158,8 +163,11 @@ export class AudioCardUtil extends BaseBoxShapeUtil<AudioCardShape> {
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || '复刻失败');
-          alert('音色复刻成功！Voice ID: ' + voiceId);
-          update({ isGenerating: false });
+
+          // 将复刻的 Voice ID 加入列表
+          const newList = [...clonedVoicesList, voiceId];
+          update({ isGenerating: false, clonedVoices: JSON.stringify(newList) });
+          alert(`音色复刻成功！\nVoice ID: ${voiceId}\n\n已保存到音色列表，可在语音合成模式选择使用。`);
         } catch (err: any) {
           alert('复刻失败: ' + err.message);
           update({ isGenerating: false });
@@ -240,7 +248,22 @@ export class AudioCardUtil extends BaseBoxShapeUtil<AudioCardShape> {
 
                   {/* Voice ID */}
                   <div className="flex-shrink-0">
-                    <label className="text-[10px] text-gray-400 mb-1 block">Voice ID</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[10px] text-gray-400">Voice ID</label>
+                      {clonedVoicesList.length > 0 && (
+                        <select
+                          className="text-[9px] bg-black/50 border border-white/10 rounded px-1 py-0.5 text-gray-300"
+                          onChange={(e) => update({ voiceId: e.target.value })}
+                          onClick={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                        >
+                          <option value="">选择已复刻音色</option>
+                          {clonedVoicesList.map((vid, i) => (
+                            <option key={i} value={vid}>{vid}</option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
                     <input
                       className="w-full bg-black/30 border border-white/8 rounded-lg px-2 py-1.5 text-gray-300 text-[10px] focus:outline-none focus:border-white/15 placeholder-gray-600"
                       placeholder="moss_audio_ce44fc67-7ce3-11f0-8de5-96e35d26fb85"
