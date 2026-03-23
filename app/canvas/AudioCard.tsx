@@ -166,10 +166,6 @@ export class AudioCardUtil extends BaseBoxShapeUtil<AudioCardShape> {
         }
       }
     };
-          update({ isGenerating: false });
-        }
-      }
-    };
 
     const toggleMinimize = (e: React.MouseEvent) => {
       e.stopPropagation();
