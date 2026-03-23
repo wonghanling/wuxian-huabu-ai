@@ -70,6 +70,38 @@ export async function POST(req: NextRequest) {
       const data = await res.json();
       return NextResponse.json({ success: true, result: data });
 
+    } else if (mode === 'clone') {
+      // 音色快速复刻
+      const { fileId, voiceId, text } = body;
+      if (!fileId || !voiceId) {
+        return NextResponse.json({ error: '缺少 fileId 或 voiceId' }, { status: 400 });
+      }
+
+      const res = await fetch(`${MINIMAX_BASE_URL}/voice_clone`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${YUNWU_API_KEY}`,
+        },
+        body: JSON.stringify({
+          file_id: fileId,
+          voice_id: voiceId,
+          text: text || '你好，这是音色复刻预览。',
+          model: 'speech-02-hd',
+          need_noise_reduction: true,
+          need_volume_normalization: true,
+          aigc_watermark: false,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.text();
+        throw new Error(`音色复刻失败: ${res.status} ${err}`);
+      }
+
+      const data = await res.json();
+      return NextResponse.json({ success: true, result: data });
+
     } else {
       return NextResponse.json({ error: '无效的 mode' }, { status: 400 });
     }

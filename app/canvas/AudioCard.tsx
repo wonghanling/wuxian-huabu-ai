@@ -14,7 +14,7 @@ export type AudioCardShape = TLBaseShape<
   {
     w: number;
     h: number;
-    mode: 'synthesize' | 'design';
+    mode: 'synthesize' | 'design' | 'clone';
     text: string;
     voiceId: string;
     speed: number;
@@ -22,6 +22,7 @@ export type AudioCardShape = TLBaseShape<
     pitch: number;
     designPrompt: string;
     previewText: string;
+    cloneText: string;
     audioUrl: string;
     isGenerating: boolean;
     isMinimized: boolean;
@@ -35,7 +36,7 @@ export class AudioCardUtil extends BaseBoxShapeUtil<AudioCardShape> {
   static override props: RecordProps<AudioCardShape> = {
     w: T.number,
     h: T.number,
-    mode: T.literalEnum('synthesize', 'design'),
+    mode: T.literalEnum('synthesize', 'design', 'clone'),
     text: T.string,
     voiceId: T.string,
     speed: T.number,
@@ -43,6 +44,7 @@ export class AudioCardUtil extends BaseBoxShapeUtil<AudioCardShape> {
     pitch: T.number,
     designPrompt: T.string,
     previewText: T.string,
+    cloneText: T.string,
     audioUrl: T.string,
     isGenerating: T.boolean,
     isMinimized: T.boolean,
@@ -64,6 +66,7 @@ export class AudioCardUtil extends BaseBoxShapeUtil<AudioCardShape> {
       pitch: 0,
       designPrompt: '',
       previewText: '',
+      cloneText: '',
       audioUrl: '',
       isGenerating: false,
       isMinimized: false,
@@ -75,11 +78,39 @@ export class AudioCardUtil extends BaseBoxShapeUtil<AudioCardShape> {
   }
 
   component(shape: AudioCardShape) {
-    const { w, h, mode, text, voiceId, speed, vol, pitch, designPrompt, previewText, audioUrl, isGenerating, isMinimized } = shape.props;
+    const { w, h, mode, text, voiceId, speed, vol, pitch, designPrompt, previewText, cloneText, audioUrl, isGenerating, isMinimized } = shape.props;
     const editor = useEditor();
+    const [uploadedFileId, setUploadedFileId] = useState<string>('');
 
     const update = (props: Partial<AudioCardShape['props']>) => {
       editor.updateShape({ id: shape.id, type: 'audio-card' as any, props: { ...shape.props, ...props } });
+    };
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      update({ isGenerating: true });
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('purpose', 'voice_clone');
+
+        const res = await fetch('/api/audio/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || '上传失败');
+
+        setUploadedFileId(data.fileId);
+        alert('文件上传成功！File ID: ' + data.fileId);
+        update({ isGenerating: false });
+      } catch (err: any) {
+        alert('上传失败: ' + err.message);
+        update({ isGenerating: false });
+      }
+      e.target.value = '';
     };
 
     const generate = async () => {
@@ -114,6 +145,27 @@ export class AudioCardUtil extends BaseBoxShapeUtil<AudioCardShape> {
           update({ isGenerating: false });
         } catch (err: any) {
           alert('设计失败: ' + err.message);
+          update({ isGenerating: false });
+        }
+      } else if (mode === 'clone') {
+        if (!uploadedFileId || !voiceId) { alert('请先上传音频文件并输入 Voice ID'); return; }
+        update({ isGenerating: true });
+        try {
+          const res = await fetch('/api/audio/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: 'clone', fileId: uploadedFileId, voiceId, text: cloneText }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || '复刻失败');
+          alert('音色复刻成功！Voice ID: ' + voiceId);
+          update({ isGenerating: false });
+        } catch (err: any) {
+          alert('复刻失败: ' + err.message);
+          update({ isGenerating: false });
+        }
+      }
+    };
           update({ isGenerating: false });
         }
       }
@@ -163,6 +215,15 @@ export class AudioCardUtil extends BaseBoxShapeUtil<AudioCardShape> {
                   }`}
                 >
                   音色设计
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); update({ mode: 'clone' }); }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    mode === 'clone' ? 'bg-purple-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                  }`}
+                >
+                  音色复刻
                 </button>
               </div>
 
@@ -237,7 +298,7 @@ export class AudioCardUtil extends BaseBoxShapeUtil<AudioCardShape> {
                     </div>
                   </div>
                 </>
-              ) : (
+              ) : mode === 'design' ? (
                 <>
                   {/* 音色描述 */}
                   <div className="flex-shrink-0">
@@ -278,6 +339,53 @@ export class AudioCardUtil extends BaseBoxShapeUtil<AudioCardShape> {
                     />
                   </div>
                 </>
+              ) : (
+                <>
+                  {/* 音色复刻 - 文件上传 */}
+                  <div className="flex-shrink-0">
+                    <label className="text-[10px] text-gray-400 mb-1 block">上传音频文件（10秒-5分钟，mp3/m4a/wav）</label>
+                    <label className="w-full bg-black/30 border border-dashed border-white/15 rounded-lg px-3 py-4 flex flex-col items-center justify-center cursor-pointer hover:border-purple-400/40 hover:bg-purple-400/5 transition-all">
+                      <svg className="w-8 h-8 text-gray-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                      <span className="text-[10px] text-gray-400">点击上传音频</span>
+                      {uploadedFileId && <span className="text-[9px] text-green-400 mt-1">已上传 ✓</span>}
+                      <input
+                        type="file"
+                        accept="audio/mp3,audio/m4a,audio/wav"
+                        className="hidden"
+                        onChange={handleFileUpload}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </label>
+                  </div>
+
+                  {/* 复刻预览文本 */}
+                  <div className="flex-shrink-0">
+                    <label className="text-[10px] text-gray-400 mb-1 block">试听文本（可选）</label>
+                    <input
+                      className="w-full bg-black/30 border border-white/8 rounded-lg px-2 py-1.5 text-gray-300 text-[10px] focus:outline-none focus:border-white/15 placeholder-gray-600"
+                      placeholder="你好，这是音色复刻预览"
+                      value={cloneText}
+                      onClick={(e) => e.stopPropagation()}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onChange={(e) => update({ cloneText: e.target.value })}
+                    />
+                  </div>
+
+                  {/* Voice ID */}
+                  <div className="flex-shrink-0">
+                    <label className="text-[10px] text-gray-400 mb-1 block">自定义 Voice ID</label>
+                    <input
+                      className="w-full bg-black/30 border border-white/8 rounded-lg px-2 py-1.5 text-gray-300 text-[10px] focus:outline-none focus:border-white/15 placeholder-gray-600"
+                      placeholder="例如：my_cloned_voice_001"
+                      value={voiceId}
+                      onClick={(e) => e.stopPropagation()}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onChange={(e) => update({ voiceId: e.target.value })}
+                    />
+                  </div>
+                </>
               )}
 
               {/* 生成按钮 */}
@@ -291,7 +399,7 @@ export class AudioCardUtil extends BaseBoxShapeUtil<AudioCardShape> {
                     : 'bg-purple-700 hover:bg-purple-600 text-white shadow-lg'
                 }`}
               >
-                {isGenerating ? '生成中...' : mode === 'synthesize' ? '生成语音' : '设计音色'}
+                {isGenerating ? '生成中...' : mode === 'synthesize' ? '生成语音' : mode === 'design' ? '设计音色' : '复刻音色'}
               </button>
 
               {/* 音频播放器 */}
