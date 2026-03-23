@@ -340,18 +340,20 @@ export class AudioCardUtil extends BaseBoxShapeUtil<AudioCardShape> {
                   {/* 音色复刻 - 文件上传 */}
                   <div className="flex-shrink-0">
                     <label className="text-[10px] text-gray-400 mb-1 block">上传音频文件（10秒-5分钟，mp3/m4a/wav）</label>
-                    <label className="w-full bg-black/30 border border-dashed border-white/15 rounded-lg px-3 py-4 flex flex-col items-center justify-center cursor-pointer hover:border-purple-400/40 hover:bg-purple-400/5 transition-all">
+                    <label
+                      className="w-full bg-black/30 border border-dashed border-white/15 rounded-lg px-3 py-4 flex flex-col items-center justify-center cursor-pointer hover:border-purple-400/40 hover:bg-purple-400/5 transition-all"
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >
                       <svg className="w-8 h-8 text-gray-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                       </svg>
                       <span className="text-[10px] text-gray-400">点击上传音频</span>
-                      {uploadedFileId && <span className="text-[9px] text-green-400 mt-1">已上传 ✓</span>}
+                      {uploadedFileId && <span className="text-[9px] text-green-400 mt-1">已上传 ✓ File ID: {uploadedFileId}</span>}
                       <input
                         type="file"
                         accept="audio/mp3,audio/m4a,audio/wav"
                         className="hidden"
                         onChange={handleFileUpload}
-                        onClick={(e) => e.stopPropagation()}
                       />
                     </label>
                   </div>
