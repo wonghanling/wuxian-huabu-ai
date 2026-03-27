@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { Tldraw, TLComponents, Editor, useEditor, createShapeId, getSnapshot, loadSnapshot } from 'tldraw';
 import 'tldraw/tldraw.css';
@@ -23,11 +23,12 @@ import { getOrCreateCanvas, loadSnapshot as loadCanvasSnapshot, saveSnapshot } f
 import { useMembership } from '@/lib/useMembership';
 import { MEMBERSHIP_PRICE } from '@/lib/pricing';
 
-// 自定义缩放控制器组件 - 外部版本
+// 鑷畾涔夌缉鏀炬帶鍒跺櫒缁勪欢 - 澶栭儴鐗堟湰
 function ZoomControlsExternal({ editor }: { editor: Editor }) {
   const [zoom, setZoom] = useState(100);
 
-  // 同步编辑器的缩放级别到状态
+  // 鍚屾缂栬緫鍣ㄧ殑缂╂斁绾у埆鍒扮姸鎬?
+
   useEffect(() => {
     const interval = setInterval(() => {
       const currentZoom = Math.round(editor.getCamera().z * 100);
@@ -40,36 +41,36 @@ function ZoomControlsExternal({ editor }: { editor: Editor }) {
   }, [editor, zoom]);
 
   const handleZoomChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('滑块改变');
+    console.log('婊戝潡鏀瑰彉');
     const newZoom = parseInt(e.target.value);
     setZoom(newZoom);
     editor.setCamera({ ...editor.getCamera(), z: newZoom / 100 });
   };
 
   const handleZoomIn = () => {
-    console.log('点击放大按钮，当前缩放:', zoom);
+    console.log('鐐瑰嚮鏀惧ぇ鎸夐挳锛屽綋鍓嶇缉鏀?', zoom);
     const newZoom = Math.min(zoom + 10, 200);
     setZoom(newZoom);
     editor.setCamera({ ...editor.getCamera(), z: newZoom / 100 });
-    console.log('新缩放:', newZoom);
+    console.log('鏂扮缉鏀?', newZoom);
   };
 
   const handleZoomOut = () => {
-    console.log('点击缩小按钮，当前缩放:', zoom);
+    console.log('鐐瑰嚮缂╁皬鎸夐挳锛屽綋鍓嶇缉鏀?', zoom);
     const newZoom = Math.max(zoom - 10, 25);
     setZoom(newZoom);
     editor.setCamera({ ...editor.getCamera(), z: newZoom / 100 });
-    console.log('新缩放:', newZoom);
+    console.log('鏂扮缉鏀?', newZoom);
   };
 
   const handleResetZoom = () => {
-    console.log('重置缩放');
+    console.log('閲嶇疆缂╂斁');
     setZoom(100);
     editor.setCamera({ ...editor.getCamera(), z: 1 });
   };
 
   const handleFitToScreen = () => {
-    console.log('适应屏幕');
+    console.log('閫傚簲灞忓箷');
     editor.zoomToFit();
     setTimeout(() => {
       const newZoom = Math.round(editor.getCamera().z * 100);
@@ -82,38 +83,37 @@ function ZoomControlsExternal({ editor }: { editor: Editor }) {
       className="fixed bottom-6 left-6 flex items-center gap-1.5 bg-zinc-900/90 backdrop-blur-md border border-white/10 rounded-full px-2 py-1.5 shadow-xl"
       style={{ zIndex: 99999 }}
     >
-      {/* 适应屏幕 */}
+      {/* 閫傚簲灞忓箷 */}
       <button
         onClick={handleFitToScreen}
         className="w-6 h-6 hover:bg-white/10 rounded-md flex items-center justify-center text-white transition-all"
-        title="适应屏幕"
+        title="閫傚簲灞忓箷"
       >
         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
         </svg>
       </button>
 
-      {/* 重置缩放 */}
+      {/* 閲嶇疆缂╂斁 */}
       <button
         onClick={handleResetZoom}
         className="w-6 h-6 hover:bg-white/10 rounded-md flex items-center justify-center text-white transition-all"
-        title="重置缩放"
+        title="閲嶇疆缂╂斁"
       >
         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
         </svg>
       </button>
 
-      {/* 缩小按钮 */}
+      {/* 缂╁皬鎸夐挳 */}
       <button
         onClick={handleZoomOut}
         className="w-6 h-6 hover:bg-white/10 rounded-md flex items-center justify-center text-white text-sm font-bold transition-all"
-        title="缩小"
+        title="缂╁皬"
       >
-        −
-      </button>
+        鈭?      </button>
 
-      {/* 滑块 */}
+      {/* 婊戝潡 */}
       <input
         type="range"
         min="25"
@@ -124,16 +124,16 @@ function ZoomControlsExternal({ editor }: { editor: Editor }) {
         title={`${zoom}%`}
       />
 
-      {/* 放大按钮 */}
+      {/* 鏀惧ぇ鎸夐挳 */}
       <button
         onClick={handleZoomIn}
         className="w-6 h-6 hover:bg-white/10 rounded-md flex items-center justify-center text-white text-sm font-bold transition-all"
-        title="放大"
+        title="鏀惧ぇ"
       >
         +
       </button>
 
-      {/* 缩放百分比显示 */}
+      {/* 缂╂斁鐧惧垎姣旀樉绀?*/}
       <div className="min-w-[2rem] text-center text-white text-xs font-medium">
         {zoom}%
       </div>
@@ -171,13 +171,14 @@ function ZoomControlsExternal({ editor }: { editor: Editor }) {
   );
 }
 
-// 底部工具栏 - 外部版本（重新设计 - 可折叠抽屉式）
+// 搴曢儴宸ュ叿鏍?- 澶栭儴鐗堟湰锛堥噸鏂拌璁?- 鍙姌鍙犳娊灞夊紡锛?
 function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: { editor: Editor; onOpenAssetPanel: () => void; onOpenImageSplit: () => void }) {
-  const [isExpanded, setIsExpanded] = useState(true);
+
+const [isExpanded, setIsExpanded] = useState(true);
   const [showShotTypePanel, setShowShotTypePanel] = useState(false);
 
   const createTextCard = () => {
-    console.log('点击文本生成按钮');
+    console.log('鐐瑰嚮鏂囨湰鐢熸垚鎸夐挳');
     try {
       const viewportPageBounds = editor.getViewportPageBounds();
       const centerX = viewportPageBounds.center.x;
@@ -199,16 +200,16 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
         },
       });
 
-      console.log('文本卡片创建成功');
+      console.log('鏂囨湰鍗＄墖鍒涘缓鎴愬姛');
       editor.select(id);
       editor.setCurrentTool('select');
     } catch (error) {
-      console.error('创建卡片失败:', error);
+      console.error('鍒涘缓鍗＄墖澶辫触:', error);
     }
   };
 
   const createImageCard = () => {
-    console.log('点击图片生成按钮');
+    console.log('鐐瑰嚮鍥剧墖鐢熸垚鎸夐挳');
     try {
       const viewportPageBounds = editor.getViewportPageBounds();
       const centerX = viewportPageBounds.center.x;
@@ -230,16 +231,16 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
         },
       });
 
-      console.log('图片卡片创建成功');
+      console.log('鍥剧墖鍗＄墖鍒涘缓鎴愬姛');
       editor.select(id);
       editor.setCurrentTool('select');
     } catch (error) {
-      console.error('创建图片卡片失败:', error);
+      console.error('鍒涘缓鍥剧墖鍗＄墖澶辫触:', error);
     }
   };
 
   const createVideoCard = () => {
-    console.log('点击视频生成按钮');
+    console.log('鐐瑰嚮瑙嗛鐢熸垚鎸夐挳');
     try {
       const viewportPageBounds = editor.getViewportPageBounds();
       const centerX = viewportPageBounds.center.x;
@@ -261,16 +262,48 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
         },
       });
 
-      console.log('视频卡片创建成功');
+      console.log('瑙嗛鍗＄墖鍒涘缓鎴愬姛');
       editor.select(id);
       editor.setCurrentTool('select');
     } catch (error) {
-      console.error('创建视频卡片失败:', error);
+      console.error('鍒涘缓瑙嗛鍗＄墖澶辫触:', error);
     }
   };
 
+  const createKlingCard = () => {
+    try {
+      const viewportPageBounds = editor.getViewportPageBounds();
+      const centerX = viewportPageBounds.center.x;
+      const centerY = viewportPageBounds.center.y;
+      const id = createShapeId();
+
+      editor.createShape({
+        id,
+        type: 'custom-card' as any,
+        x: centerX - 190,
+        y: centerY - 220,
+        props: {
+          w: 380,
+          h: 440,
+          cardType: 'kling',
+          title: 'Kling Video',
+          prompt: '',
+          model: 'v2.6',
+          klingMode: 'motion-control',
+          klingMotionVersion: 'v2.6',
+          klingVideoMode: 'std',
+          klingKeepSound: 'no',
+        },
+      });
+
+      editor.select(id);
+      editor.setCurrentTool('select');
+    } catch (error) {
+      console.error('创建 Kling 卡片失败:', error);
+    }
+  };
   const createCharacterCard = () => {
-    console.log('点击角色设计按钮');
+    console.log('鐐瑰嚮瑙掕壊璁捐鎸夐挳');
     try {
       const viewportPageBounds = editor.getViewportPageBounds();
       const centerX = viewportPageBounds.center.x;
@@ -292,11 +325,11 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
         },
       });
 
-      console.log('角色卡片创建成功');
+      console.log('瑙掕壊鍗＄墖鍒涘缓鎴愬姛');
       editor.select(id);
       editor.setCurrentTool('select');
     } catch (error) {
-      console.error('创建角色卡片失败:', error);
+      console.error('鍒涘缓瑙掕壊鍗＄墖澶辫触:', error);
     }
   };
 
@@ -305,7 +338,7 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
   };
 
   const createDirectorTimeline = () => {
-    console.log('点击导演流程按钮');
+    console.log('鐐瑰嚮瀵兼紨娴佺▼鎸夐挳');
     try {
       const viewportPageBounds = editor.getViewportPageBounds();
       const centerX = viewportPageBounds.center.x;
@@ -322,48 +355,48 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
           h: 100,
           duration: 60,
           zoom: 1,
-          shotType: '全景',
+          shotType: '鍏ㄦ櫙',
         },
       });
 
-      console.log('导演流程创建成功');
+      console.log('瀵兼紨娴佺▼鍒涘缓鎴愬姛');
       editor.select(id);
       editor.setCurrentTool('select');
     } catch (error) {
-      console.error('创建导演流程失败:', error);
+      console.error('鍒涘缓瀵兼紨娴佺▼澶辫触:', error);
     }
   };
 
-  // 处理景别类型选择（创建景别卡片）
+  // 澶勭悊鏅埆绫诲瀷閫夋嫨锛堝垱寤烘櫙鍒崱鐗囷級
+
   const handleShotTypeSelect = (shotType: '超远景' | '远景' | '全景' | '中远景' | '中景' | '中近景' | '特写') => {
-    console.log('选择了景别类型:', shotType);
+    console.log('閫夋嫨浜嗘櫙鍒被鍨?', shotType);
     try {
       const viewportPageBounds = editor.getViewportPageBounds();
       const centerX = viewportPageBounds.center.x;
       const centerY = viewportPageBounds.center.y;
       const id = createShapeId();
 
-      // 根据景别类型设置默认值
-      let defaultCameraMovement = 'Static';
+      // 鏍规嵁鏅埆绫诲瀷璁剧疆榛樿鍊?      let defaultCameraMovement = 'Static';
 
       switch (shotType) {
         case '超远景':
           defaultCameraMovement = 'Static';
           break;
-        case '远景':
-        case '全景':
+        case '杩滄櫙':
+        case '鍏ㄦ櫙':
           defaultCameraMovement = 'Follow/Tracking';
           break;
         case '中远景':
           defaultCameraMovement = 'Follow';
           break;
-        case '中景':
+        case '涓櫙':
           defaultCameraMovement = 'Static';
           break;
         case '中近景':
           defaultCameraMovement = 'Static';
           break;
-        case '特写':
+        case '鐗瑰啓':
           defaultCameraMovement = 'Absolute Static';
           break;
       }
@@ -390,11 +423,11 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
         },
       });
 
-      console.log('景别卡片创建成功，景别:', shotType);
+      console.log('鏅埆鍗＄墖鍒涘缓鎴愬姛锛屾櫙鍒?', shotType);
       editor.select(id);
       editor.setCurrentTool('select');
     } catch (error) {
-      console.error('创建景别卡片失败:', error);
+      console.error('鍒涘缓鏅埆鍗＄墖澶辫触:', error);
     }
     setShowShotTypePanel(false);
   };
@@ -424,11 +457,11 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
         },
       });
 
-      console.log('Prompt优化卡片创建成功');
+      console.log('Prompt浼樺寲鍗＄墖鍒涘缓鎴愬姛');
       editor.select(id);
       editor.setCurrentTool('select');
     } catch (error) {
-      console.error('创建Prompt优化卡片失败:', error);
+      console.error('鍒涘缓Prompt浼樺寲鍗＄墖澶辫触:', error);
     }
   };
 
@@ -456,7 +489,7 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
       editor.select(id1);
       editor.setCurrentTool('select');
     } catch (error) {
-      console.error('创建导演引擎卡片失败:', error);
+      console.error('鍒涘缓瀵兼紨寮曟搸鍗＄墖澶辫触:', error);
     }
   };
 
@@ -487,7 +520,7 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
       editor.select(id1);
       editor.setCurrentTool('select');
     } catch (error) {
-      console.error('创建GEM分镜卡片失败:', error);
+      console.error('鍒涘缓GEM鍒嗛暅鍗＄墖澶辫触:', error);
     }
   };
 
@@ -507,7 +540,7 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
       editor.select(id);
       editor.setCurrentTool('select');
     } catch (error) {
-      console.error('创建音频卡片失败:', error);
+      console.error('鍒涘缓闊抽鍗＄墖澶辫触:', error);
     }
   };
 
@@ -521,7 +554,7 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
         className="relative flex flex-col gap-2"
         onMouseLeave={() => setShowShotTypePanel(false)}
       >
-        {/* 展开/收起按钮 */}
+        {/* 灞曞紑/鏀惰捣鎸夐挳 */}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
           className="w-12 h-12 bg-zinc-900/90 backdrop-blur-md border border-white/10 rounded-full flex items-center justify-center hover:bg-zinc-800/90 transition-all shadow-xl"
@@ -537,13 +570,13 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
           </svg>
         </button>
 
-        {/* 工具栏内容 - 可折叠 */}
+        {/* 宸ュ叿鏍忓唴瀹?- 鍙姌鍙?*/}
         <div
           className={`flex flex-col gap-2 bg-zinc-900/90 backdrop-blur-md border border-white/10 rounded-2xl p-2 shadow-xl transition-all duration-300 origin-bottom ${
             isExpanded ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'
           }`}
         >
-        {/* 文本生成按钮 */}
+        {/* 鏂囨湰鐢熸垚鎸夐挳 */}
         <button
           onClick={createTextCard}
           className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
@@ -555,11 +588,11 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
           </div>
           <div className="flex flex-col items-start">
             <span className="text-sm text-gray-300 whitespace-nowrap">Text</span>
-            <span className="text-xs text-gray-500 whitespace-nowrap">文本生成</span>
+            <span className="text-xs text-gray-500 whitespace-nowrap">鏂囨湰鐢熸垚</span>
           </div>
         </button>
 
-        {/* 图片生成按钮 */}
+        {/* 鍥剧墖鐢熸垚鎸夐挳 */}
         <button
           onClick={createImageCard}
           className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
@@ -573,11 +606,11 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
           </div>
           <div className="flex flex-col items-start">
             <span className="text-sm text-gray-300 whitespace-nowrap">Image</span>
-            <span className="text-xs text-gray-500 whitespace-nowrap">图片生成</span>
+            <span className="text-xs text-gray-500 whitespace-nowrap">鍥剧墖鐢熸垚</span>
           </div>
         </button>
 
-        {/* 视频生成按钮 */}
+        {/* 瑙嗛鐢熸垚鎸夐挳 */}
         <button
           onClick={createVideoCard}
           className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
@@ -590,11 +623,26 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
           </div>
           <div className="flex flex-col items-start">
             <span className="text-sm text-gray-300 whitespace-nowrap">Video</span>
-            <span className="text-xs text-gray-500 whitespace-nowrap">视频生成</span>
+            <span className="text-xs text-gray-500 whitespace-nowrap">瑙嗛鐢熸垚</span>
           </div>
         </button>
 
-        {/* 角色设计按钮 */}
+        {/* 瑙掕壊璁捐鎸夐挳 */}
+        <button
+          onClick={createKlingCard}
+          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
+          title="Kling Video"
+        >
+          <div className="w-8 h-8 rounded-lg bg-blue-500/15 flex items-center justify-center group-hover:bg-blue-500/25 transition-all flex-shrink-0">
+            <svg className="w-4 h-4 text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
+            </svg>
+          </div>
+          <div className="flex flex-col items-start">
+            <span className="text-sm text-gray-300 whitespace-nowrap">Kling</span>
+            <span className="text-xs text-gray-500 whitespace-nowrap">可灵独立视频卡</span>
+          </div>
+        </button>
         <button
           onClick={createCharacterCard}
           className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
@@ -607,11 +655,11 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
           </div>
           <div className="flex flex-col items-start">
             <span className="text-sm text-gray-300 whitespace-nowrap">Character Design</span>
-            <span className="text-xs text-gray-500 whitespace-nowrap">角色设计</span>
+            <span className="text-xs text-gray-500 whitespace-nowrap">瑙掕壊璁捐</span>
           </div>
         </button>
 
-        {/* 资产库按钮 */}
+        {/* 璧勪骇搴撴寜閽?*/}
         <button
           onClick={createAssetCard}
           className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
@@ -628,7 +676,7 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
           </div>
         </button>
 
-        {/* 导演流程按钮 */}
+        {/* 瀵兼紨娴佺▼鎸夐挳 */}
         <button
           onClick={createDirectorTimeline}
           className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
@@ -642,11 +690,11 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
           </div>
           <div className="flex flex-col items-start">
             <span className="text-sm text-gray-300 whitespace-nowrap">Director Timeline</span>
-            <span className="text-xs text-gray-500 whitespace-nowrap">导演流程</span>
+            <span className="text-xs text-gray-500 whitespace-nowrap">瀵兼紨娴佺▼</span>
           </div>
         </button>
 
-        {/* 电影控制器按钮 */}
+        {/* 鐢靛奖鎺у埗鍣ㄦ寜閽?*/}
         <button
           onMouseEnter={() => setShowShotTypePanel(true)}
           className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
@@ -664,7 +712,7 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
           </div>
         </button>
 
-        {/* Prompt按钮 */}
+        {/* Prompt鎸夐挳 */}
         <button
           onClick={createPromptOptimizerCard}
           className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
@@ -677,15 +725,15 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
           </div>
           <div className="flex flex-col items-start">
             <span className="text-sm text-gray-300 whitespace-nowrap">Prompt</span>
-            <span className="text-xs text-gray-500 whitespace-nowrap">快速编译视频生成词</span>
+            <span className="text-xs text-gray-500 whitespace-nowrap">蹇€熺紪璇戣棰戠敓鎴愯瘝</span>
           </div>
         </button>
 
-        {/* GEM分镜设计按钮 */}
+        {/* GEM鍒嗛暅璁捐鎸夐挳 */}
         <button
           onClick={createGemStoryboardCards}
           className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
-          title="GEM分镜设计"
+          title="GEM鍒嗛暅璁捐"
         >
           <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -693,16 +741,16 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
             </svg>
           </div>
           <div className="flex flex-col items-start">
-            <span className="text-sm text-gray-300 whitespace-nowrap">GEM 分镜设计</span>
+            <span className="text-sm text-gray-300 whitespace-nowrap">GEM 鍒嗛暅璁捐</span>
             <span className="text-xs text-gray-500 whitespace-nowrap">25格分镜生成</span>
           </div>
         </button>
 
-        {/* 导演引擎按钮 */}
+        {/* 瀵兼紨寮曟搸鎸夐挳 */}
         <button
           onClick={createGemDirectorCard}
           className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
-          title="导演引擎"
+          title="瀵兼紨寮曟搸"
         >
           <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -710,16 +758,16 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
             </svg>
           </div>
           <div className="flex flex-col items-start">
-            <span className="text-sm text-gray-300 whitespace-nowrap">导演引擎</span>
-            <span className="text-xs text-gray-500 whitespace-nowrap">视频过渡指令</span>
+            <span className="text-sm text-gray-300 whitespace-nowrap">瀵兼紨寮曟搸</span>
+            <span className="text-xs text-gray-500 whitespace-nowrap">瑙嗛杩囨浮鎸囦护</span>
           </div>
         </button>
 
-        {/* 语音合成按钮 */}
+        {/* 璇煶鍚堟垚鎸夐挳 */}
         <button
           onClick={createAudioCard}
           className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
-          title="语音合成"
+          title="璇煶鍚堟垚"
         >
           <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -727,12 +775,12 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
             </svg>
           </div>
           <div className="flex flex-col items-start">
-            <span className="text-sm text-gray-300 whitespace-nowrap">语音合成</span>
+            <span className="text-sm text-gray-300 whitespace-nowrap">璇煶鍚堟垚</span>
             <span className="text-xs text-gray-500 whitespace-nowrap">MiniMax TTS</span>
           </div>
         </button>
 
-        {/* 图片切割按钮 */}
+        {/* 鍥剧墖鍒囧壊鎸夐挳 */}
         <button
           onClick={onOpenImageSplit}
           className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
@@ -746,14 +794,14 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
           </div>
           <div className="flex flex-col items-start">
             <span className="text-sm text-gray-300 whitespace-nowrap">Image Split</span>
-            <span className="text-xs text-gray-500 whitespace-nowrap">图片切割</span>
+            <span className="text-xs text-gray-500 whitespace-nowrap">鍥剧墖鍒囧壊</span>
           </div>
         </button>
 
-        {/* 分隔线 */}
+        {/* 鍒嗛殧绾?*/}
         <div className="h-px bg-white/10 my-1"></div>
 
-        {/* 更多按钮 */}
+        {/* 鏇村鎸夐挳 */}
         <button
           className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
           title="More Options"
@@ -767,13 +815,13 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
         </button>
       </div>
 
-      {/* 景别类型选择面板 */}
+      {/* 鏅埆绫诲瀷閫夋嫨闈㈡澘 */}
       {showShotTypePanel && (
         <div className="absolute left-full bottom-0 z-50">
           <div className="bg-zinc-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-4 w-64">
-            {/* 标题栏 */}
+            {/* 鏍囬鏍?*/}
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white font-semibold text-sm">选择景别类型</h3>
+              <h3 className="text-white font-semibold text-sm">閫夋嫨鏅埆绫诲瀷</h3>
               <button
                 onClick={() => setShowShotTypePanel(false)}
                 className="w-6 h-6 rounded-lg hover:bg-white/10 flex items-center justify-center transition-all"
@@ -784,7 +832,7 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
               </button>
             </div>
 
-            {/* 景别选项列表 */}
+            {/* 鏅埆閫夐」鍒楄〃 */}
             <div className="space-y-2">
               {(['超远景', '远景', '全景', '中远景', '中景', '中近景', '特写'] as const).map((shotType) => (
                 <button
@@ -804,12 +852,13 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
   );
 }
 
-// 自定义缩放控制器组件 - 滑块样式
+// 鑷畾涔夌缉鏀炬帶鍒跺櫒缁勪欢 - 婊戝潡鏍峰紡
 function ZoomControls() {
   const editor = useEditor();
   const [zoom, setZoom] = useState(100);
 
-  // 同步编辑器的缩放级别到状态
+  // 鍚屾缂栬緫鍣ㄧ殑缂╂斁绾у埆鍒扮姸鎬?
+
   useEffect(() => {
     const interval = setInterval(() => {
       const currentZoom = Math.round(editor.getCamera().z * 100);
@@ -828,19 +877,19 @@ function ZoomControls() {
   };
 
   const handleZoomIn = () => {
-    console.log('点击放大按钮，当前缩放:', zoom);
+    console.log('鐐瑰嚮鏀惧ぇ鎸夐挳锛屽綋鍓嶇缉鏀?', zoom);
     const newZoom = Math.min(zoom + 10, 200);
     setZoom(newZoom);
     editor.setCamera({ ...editor.getCamera(), z: newZoom / 100 });
-    console.log('新缩放:', newZoom);
+    console.log('鏂扮缉鏀?', newZoom);
   };
 
   const handleZoomOut = () => {
-    console.log('点击缩小按钮，当前缩放:', zoom);
+    console.log('鐐瑰嚮缂╁皬鎸夐挳锛屽綋鍓嶇缉鏀?', zoom);
     const newZoom = Math.max(zoom - 10, 25);
     setZoom(newZoom);
     editor.setCamera({ ...editor.getCamera(), z: newZoom / 100 });
-    console.log('新缩放:', newZoom);
+    console.log('鏂扮缉鏀?', newZoom);
   };
 
   const handleResetZoom = () => {
@@ -861,38 +910,37 @@ function ZoomControls() {
       className="fixed bottom-6 left-6 flex items-center gap-2 bg-zinc-900/90 backdrop-blur-md border border-white/10 rounded-full px-4 py-2 shadow-xl"
       style={{ zIndex: 9999, pointerEvents: 'auto' }}
     >
-      {/* 适应屏幕 */}
+      {/* 閫傚簲灞忓箷 */}
       <button
         onClick={handleFitToScreen}
         className="w-8 h-8 hover:bg-white/10 rounded-lg flex items-center justify-center text-white transition-all"
-        title="适应屏幕"
+        title="閫傚簲灞忓箷"
       >
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
         </svg>
       </button>
 
-      {/* 重置缩放 */}
+      {/* 閲嶇疆缂╂斁 */}
       <button
         onClick={handleResetZoom}
         className="w-8 h-8 hover:bg-white/10 rounded-lg flex items-center justify-center text-white transition-all"
-        title="重置缩放"
+        title="閲嶇疆缂╂斁"
       >
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
         </svg>
       </button>
 
-      {/* 缩小按钮 */}
+      {/* 缂╁皬鎸夐挳 */}
       <button
         onClick={handleZoomOut}
         className="w-8 h-8 hover:bg-white/10 rounded-lg flex items-center justify-center text-white text-lg font-bold transition-all"
-        title="缩小"
+        title="缂╁皬"
       >
-        −
-      </button>
+        鈭?      </button>
 
-      {/* 滑块 */}
+      {/* 婊戝潡 */}
       <input
         type="range"
         min="25"
@@ -904,16 +952,16 @@ function ZoomControls() {
         title={`${zoom}%`}
       />
 
-      {/* 放大按钮 */}
+      {/* 鏀惧ぇ鎸夐挳 */}
       <button
         onClick={handleZoomIn}
         className="w-8 h-8 hover:bg-white/10 rounded-lg flex items-center justify-center text-white text-lg font-bold transition-all"
-        title="放大"
+        title="鏀惧ぇ"
       >
         +
       </button>
 
-      {/* 缩放百分比显示 */}
+      {/* 缂╂斁鐧惧垎姣旀樉绀?*/}
       <div className="min-w-[3rem] text-center text-white text-sm font-medium">
         {zoom}%
       </div>
@@ -953,15 +1001,16 @@ function ZoomControls() {
 
 // 底部工具栏 - 生成按钮（现代化设计）
 function BottomToolbar() {
-  const editor = useEditor();
+
+const editor = useEditor();
 
   const createTextCard = () => {
-    console.log('点击文本生成按钮');
+    console.log('鐐瑰嚮鏂囨湰鐢熸垚鎸夐挳');
     try {
       const viewportCenter = editor.getViewportScreenCenter();
-      console.log('视口中心:', viewportCenter);
+      console.log('瑙嗗彛涓績:', viewportCenter);
       const id = createShapeId();
-      console.log('生成的ID:', id);
+      console.log('鐢熸垚鐨処D:', id);
 
       editor.createShape({
         id,
@@ -978,17 +1027,17 @@ function BottomToolbar() {
         },
       });
 
-      console.log('卡片创建成功');
+      console.log('鍗＄墖鍒涘缓鎴愬姛');
       editor.select(id);
       editor.setCurrentTool('select');
-      console.log('已选中卡片并切换到选择工具');
+      console.log('宸查€変腑鍗＄墖骞跺垏鎹㈠埌閫夋嫨宸ュ叿');
     } catch (error) {
-      console.error('创建卡片失败:', error);
+      console.error('鍒涘缓鍗＄墖澶辫触:', error);
     }
   };
 
   const createImageCard = () => {
-    console.log('点击图片生成按钮');
+    console.log('鐐瑰嚮鍥剧墖鐢熸垚鎸夐挳');
     try {
       const viewportCenter = editor.getViewportScreenCenter();
       const id = createShapeId();
@@ -1008,16 +1057,16 @@ function BottomToolbar() {
         },
       });
 
-      console.log('图片卡片创建成功');
+      console.log('鍥剧墖鍗＄墖鍒涘缓鎴愬姛');
       editor.select(id);
       editor.setCurrentTool('select');
     } catch (error) {
-      console.error('创建图片卡片失败:', error);
+      console.error('鍒涘缓鍥剧墖鍗＄墖澶辫触:', error);
     }
   };
 
   const createVideoCard = () => {
-    console.log('点击视频生成按钮');
+    console.log('鐐瑰嚮瑙嗛鐢熸垚鎸夐挳');
     try {
       const viewportCenter = editor.getViewportScreenCenter();
       const id = createShapeId();
@@ -1037,11 +1086,11 @@ function BottomToolbar() {
         },
       });
 
-      console.log('视频卡片创建成功');
+      console.log('瑙嗛鍗＄墖鍒涘缓鎴愬姛');
       editor.select(id);
       editor.setCurrentTool('select');
     } catch (error) {
-      console.error('创建视频卡片失败:', error);
+      console.error('鍒涘缓瑙嗛鍗＄墖澶辫触:', error);
     }
   };
 
@@ -1050,7 +1099,7 @@ function BottomToolbar() {
       className="fixed bottom-6 left-1/2 -translate-x-1/2 flex gap-4"
       style={{ zIndex: 9999, pointerEvents: 'auto' }}
     >
-      {/* 文本生成按钮 */}
+      {/* 鏂囨湰鐢熸垚鎸夐挳 */}
       <button
         onClick={createTextCard}
         className="group relative px-8 py-4 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 hover:from-blue-500/30 hover:to-cyan-500/30 backdrop-blur-xl border border-blue-400/30 rounded-2xl text-white font-medium transition-all duration-300 shadow-lg hover:shadow-blue-500/25 hover:shadow-2xl hover:-translate-y-0.5"
@@ -1063,14 +1112,14 @@ function BottomToolbar() {
             </svg>
           </div>
           <div className="text-left">
-            <div className="text-sm font-semibold">文本生成</div>
+            <div className="text-sm font-semibold">鏂囨湰鐢熸垚</div>
             <div className="text-xs text-blue-200/70">Text Generate</div>
           </div>
         </div>
         <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-400/0 to-cyan-400/0 group-hover:from-blue-400/10 group-hover:to-cyan-400/10 transition-all duration-300"></div>
       </button>
 
-      {/* 图片生成按钮 */}
+      {/* 鍥剧墖鐢熸垚鎸夐挳 */}
       <button
         onClick={createImageCard}
         className="group relative px-8 py-4 bg-gradient-to-br from-violet-500/20 to-purple-500/20 hover:from-violet-500/30 hover:to-purple-500/30 backdrop-blur-xl border border-violet-400/30 rounded-2xl text-white font-medium transition-all duration-300 shadow-lg hover:shadow-violet-500/25 hover:shadow-2xl hover:-translate-y-0.5"
@@ -1083,14 +1132,14 @@ function BottomToolbar() {
             </svg>
           </div>
           <div className="text-left">
-            <div className="text-sm font-semibold">图片生成</div>
+            <div className="text-sm font-semibold">鍥剧墖鐢熸垚</div>
             <div className="text-xs text-violet-200/70">Image Generate</div>
           </div>
         </div>
         <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-violet-400/0 to-purple-400/0 group-hover:from-violet-400/10 group-hover:to-purple-400/10 transition-all duration-300"></div>
       </button>
 
-      {/* 视频生成按钮 */}
+      {/* 瑙嗛鐢熸垚鎸夐挳 */}
       <button
         onClick={createVideoCard}
         className="group relative px-8 py-4 bg-gradient-to-br from-rose-500/20 to-orange-500/20 hover:from-rose-500/30 hover:to-orange-500/30 backdrop-blur-xl border border-rose-400/30 rounded-2xl text-white font-medium transition-all duration-300 shadow-lg hover:shadow-rose-500/25 hover:shadow-2xl hover:-translate-y-0.5"
@@ -1103,7 +1152,7 @@ function BottomToolbar() {
             </svg>
           </div>
           <div className="text-left">
-            <div className="text-sm font-semibold">视频生成</div>
+            <div className="text-sm font-semibold">瑙嗛鐢熸垚</div>
             <div className="text-xs text-rose-200/70">Video Generate</div>
           </div>
         </div>
@@ -1113,7 +1162,7 @@ function BottomToolbar() {
   );
 }
 
-// 图片切割弹窗组件
+// 鍥剧墖鍒囧壊寮圭獥缁勪欢
 function ImageSplitModal({ onClose }: { onClose: () => void }) {
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -1145,7 +1194,8 @@ function ImageSplitModal({ onClose }: { onClose: () => void }) {
       const cellW = Math.floor(image.naturalWidth / cols);
       const cellH = Math.floor(image.naturalHeight / rows);
 
-      // 动态导入 JSZip
+      // 鍔ㄦ€佸鍏?JSZip
+
       const JSZip = (await import('jszip')).default;
       const zip = new JSZip();
 
@@ -1174,19 +1224,19 @@ function ImageSplitModal({ onClose }: { onClose: () => void }) {
   };
 
   const PRESETS = [
-    { label: '2×2', r: 2, c: 2 },
-    { label: '3×3', r: 3, c: 3 },
-    { label: '4×4', r: 4, c: 4 },
-    { label: '5×5', r: 5, c: 5 },
+    { label: '2脳2', r: 2, c: 2 },
+    { label: '3脳3', r: 3, c: 3 },
+    { label: '4脳4', r: 4, c: 4 },
+    { label: '5脳5', r: 5, c: 5 },
   ];
 
   return (
     <>
       <div className="fixed inset-0 bg-black/60 z-[9999]" onClick={onClose} />
       <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[10000] w-[480px] bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl p-6">
-        {/* 标题 */}
+        {/* 鏍囬 */}
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-white font-semibold text-base">图片切割</h2>
+          <h2 className="text-white font-semibold text-base">鍥剧墖鍒囧壊</h2>
           <button onClick={onClose} className="w-7 h-7 rounded-lg hover:bg-white/10 flex items-center justify-center transition-all">
             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1194,7 +1244,7 @@ function ImageSplitModal({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        {/* 上传区域 */}
+        {/* 涓婁紶鍖哄煙 */}
         <div
           className={`relative border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all mb-5 ${
             isDragging ? 'border-white/40 bg-white/5' : 'border-white/15 hover:border-white/30'
@@ -1210,8 +1260,8 @@ function ImageSplitModal({ onClose }: { onClose: () => void }) {
               <img src={image.src} className="w-16 h-16 object-cover rounded-lg flex-shrink-0" />
               <div className="text-left">
                 <p className="text-white text-sm truncate max-w-[280px]">{imageFile?.name}</p>
-                <p className="text-gray-500 text-xs mt-1">{image.naturalWidth} × {image.naturalHeight}px</p>
-                <p className="text-gray-500 text-xs">点击更换图片</p>
+                <p className="text-gray-500 text-xs mt-1">{image.naturalWidth} 脳 {image.naturalHeight}px</p>
+                <p className="text-gray-500 text-xs">鐐瑰嚮鏇存崲鍥剧墖</p>
               </div>
             </div>
           ) : (
@@ -1219,15 +1269,15 @@ function ImageSplitModal({ onClose }: { onClose: () => void }) {
               <svg className="w-8 h-8 text-gray-500 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <p className="text-gray-400 text-sm">点击或拖拽上传图片</p>
-              <p className="text-gray-600 text-xs mt-1">支持 PNG、JPG、WebP</p>
+              <p className="text-gray-400 text-sm">Upload Image</p>
+              <p className="text-gray-600 text-xs mt-1">点击或拖拽上传图片，支持 PNG / JPG / WebP</p>
             </div>
           )}
         </div>
 
-        {/* 宫格选择 */}
+        {/* 瀹牸閫夋嫨 */}
         <div className="mb-5">
-          <p className="text-gray-400 text-xs mb-2">快速选择</p>
+          <p className="text-gray-400 text-xs mb-2">蹇€熼€夋嫨</p>
           <div className="flex gap-2 mb-3">
             {PRESETS.map((p) => (
               <button
@@ -1245,7 +1295,7 @@ function ImageSplitModal({ onClose }: { onClose: () => void }) {
           </div>
           <div className="flex gap-4">
             <div className="flex-1">
-              <p className="text-gray-500 text-xs mb-1">列数</p>
+              <p className="text-gray-500 text-xs mb-1">鍒楁暟</p>
               <input
                 type="number" min={1} max={20} value={cols}
                 onChange={(e) => setCols(Math.max(1, Math.min(20, Number(e.target.value))))}
@@ -1253,7 +1303,7 @@ function ImageSplitModal({ onClose }: { onClose: () => void }) {
               />
             </div>
             <div className="flex-1">
-              <p className="text-gray-500 text-xs mb-1">行数</p>
+              <p className="text-gray-500 text-xs mb-1">琛屾暟</p>
               <input
                 type="number" min={1} max={20} value={rows}
                 onChange={(e) => setRows(Math.max(1, Math.min(20, Number(e.target.value))))}
@@ -1263,25 +1313,24 @@ function ImageSplitModal({ onClose }: { onClose: () => void }) {
           </div>
           {image && (
             <p className="text-gray-600 text-xs mt-2">
-              每张 {Math.floor(image.naturalWidth / cols)} × {Math.floor(image.naturalHeight / rows)}px，共 {rows * cols} 张
-            </p>
+              姣忓紶 {Math.floor(image.naturalWidth / cols)} 脳 {Math.floor(image.naturalHeight / rows)}px锛屽叡 {rows * cols} 寮?            </p>
           )}
         </div>
 
-        {/* 切割按钮 */}
+        {/* 鍒囧壊鎸夐挳 */}
         <button
           onClick={handleSplit}
           disabled={!image || isSplitting}
           className="w-full py-3 rounded-xl bg-white text-black font-semibold text-sm hover:bg-gray-100 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          {isSplitting ? '切割中...' : `切割并下载 (${rows * cols} 张)`}
+          {isSplitting ? '鍒囧壊涓?..' : `鍒囧壊骞朵笅杞?(${rows * cols} 寮?`}
         </button>
       </div>
     </>
   );
 }
 
-// 资产面板组件
+// 璧勪骇闈㈡澘缁勪欢
 function AssetPanel({ onClose }: { onClose: () => void }) {
   const [activeTab, setActiveTab] = useState<'images' | 'videos'>('images');
   const [images, setImages] = useState<string[]>([]);
@@ -1298,7 +1347,8 @@ function AssetPanel({ onClose }: { onClose: () => void }) {
         const imgs: string[] = [];
         const vids: string[] = [];
 
-        // 读用户目录下的图片
+        // 璇荤敤鎴风洰褰曚笅鐨勫浘鐗?
+
         const { data: userFiles } = await supabase.storage
           .from('assets')
           .list(user.id, { limit: 100, sortBy: { column: 'created_at', order: 'desc' } });
@@ -1312,7 +1362,8 @@ function AssetPanel({ onClose }: { onClose: () => void }) {
           }
         });
 
-        // 读 videos/{userId}/ 目录下的视频
+        // 璇?videos/{userId}/ 鐩綍涓嬬殑瑙嗛
+
         const { data: videoFiles } = await supabase.storage
           .from('assets')
           .list(`videos/${user.id}`, { limit: 100, sortBy: { column: 'created_at', order: 'desc' } });
@@ -1327,7 +1378,7 @@ function AssetPanel({ onClose }: { onClose: () => void }) {
         setImages(imgs);
         setVideos(vids);
       } catch (err) {
-        console.error('加载资产失败:', err);
+        console.error('鍔犺浇璧勪骇澶辫触:', err);
       } finally {
         setLoading(false);
       }
@@ -1338,9 +1389,12 @@ function AssetPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="fixed top-0 right-0 h-full w-96 bg-zinc-900 border-l border-white/10 z-[9999] shadow-2xl flex flex-col">
-      {/* 头部 */}
+      {/* 澶撮儴 */}
       <div className="flex items-center justify-between p-4 border-b border-white/10">
-        <h2 className="text-lg font-semibold text-white">资产库</h2>
+        <div>
+          <h2 className="text-lg font-semibold text-white">Asset Library</h2>
+          <p className="text-xs text-gray-500 mt-1">资产库</p>
+        </div>
         <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-lg transition-all">
           <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1348,7 +1402,7 @@ function AssetPanel({ onClose }: { onClose: () => void }) {
         </button>
       </div>
 
-      {/* Tab 切换 */}
+      {/* Tab 鍒囨崲 */}
       <div className="flex border-b border-white/10">
         <button
           onClick={() => setActiveTab('images')}
@@ -1358,7 +1412,7 @@ function AssetPanel({ onClose }: { onClose: () => void }) {
               : 'text-gray-400 hover:text-gray-300'
           }`}
         >
-          图片 ({images.length})
+          鍥剧墖 ({images.length})
         </button>
         <button
           onClick={() => setActiveTab('videos')}
@@ -1368,11 +1422,11 @@ function AssetPanel({ onClose }: { onClose: () => void }) {
               : 'text-gray-400 hover:text-gray-300'
           }`}
         >
-          视频 ({videos.length})
+          瑙嗛 ({videos.length})
         </button>
       </div>
 
-      {/* 内容区 */}
+      {/* 鍐呭鍖?*/}
       <div className="flex-1 overflow-y-auto p-4">
         {loading ? (
           <div className="flex items-center justify-center py-16">
@@ -1383,7 +1437,7 @@ function AssetPanel({ onClose }: { onClose: () => void }) {
           </div>
         ) : activeTab === 'images' ? (
           images.length === 0 ? (
-            <div className="text-center text-gray-400 py-16">暂无图片</div>
+            <div className="text-center text-gray-400 py-16">鏆傛棤鍥剧墖</div>
           ) : (
             <div className="grid grid-cols-2 gap-3">
               {images.map((url, i) => (
@@ -1402,7 +1456,7 @@ function AssetPanel({ onClose }: { onClose: () => void }) {
           )
         ) : (
           videos.length === 0 ? (
-            <div className="text-center text-gray-400 py-16">暂无视频</div>
+            <div className="text-center text-gray-400 py-16">鏆傛棤瑙嗛</div>
           ) : (
             <div className="space-y-3">
               {videos.map((url, i) => (
@@ -1447,7 +1501,7 @@ function CanvasPageContent() {
   const handlePay = async (plan: 'membership' | 'recharge', amount: number) => {
     const supabase = createClient();
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { alert('请先登录'); return; }
+    if (!session) { alert('璇峰厛鐧诲綍'); return; }
     const res = await fetch('/api/payment/alipay', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
@@ -1461,7 +1515,7 @@ function CanvasPageContent() {
       const form = div.querySelector('form');
       form?.submit();
     } else {
-      alert(data.error || '发起支付失败');
+      alert(data.error || '鍙戣捣鏀粯澶辫触');
     }
   };
 
@@ -1472,7 +1526,8 @@ function CanvasPageContent() {
   const hasUnsavedRef = useRef(false);
   const editorRef = useRef<Editor | null>(null);
 
-  // 退出页面自动保存
+  // 閫€鍑洪〉闈㈣嚜鍔ㄤ繚瀛?
+
   useEffect(() => {
     const doSaveSync = () => {
       if (!canvasIdRef.current || !editorRef.current) return;
@@ -1480,19 +1535,20 @@ function CanvasPageContent() {
         const snapshot = getSnapshot(editorRef.current.store);
         const payload = JSON.stringify({ canvasId: canvasIdRef.current, snapshot });
 
-        // 优先使用 Beacon API（更可靠，不会被浏览器阻止）
+        // 浼樺厛浣跨敤 Beacon API锛堟洿鍙潬锛屼笉浼氳娴忚鍣ㄩ樆姝級
+
         if (navigator.sendBeacon) {
           const blob = new Blob([payload], { type: 'application/json' });
           navigator.sendBeacon('/api/canvas/save', blob);
         } else {
-          // 降级到同步 XHR
+          // 闄嶇骇鍒板悓姝?XHR
           const xhr = new XMLHttpRequest();
           xhr.open('POST', '/api/canvas/save', false);
           xhr.setRequestHeader('Content-Type', 'application/json');
           xhr.send(payload);
         }
       } catch (e) {
-        console.error('退出保存失败:', e);
+        console.error('閫€鍑轰繚瀛樺け璐?', e);
       }
     };
 
@@ -1511,12 +1567,14 @@ function CanvasPageContent() {
     };
   }, []);
 
-  // 自定义形状工具和绑定工具
+  // 鑷畾涔夊舰鐘跺伐鍏峰拰缁戝畾宸ュ叿
+
   const customShapeUtils = [CustomCardShapeUtil, ConnectionShapeUtil, TimelineShapeUtil, ShotCardShapeUtil, PromptOptimizerCardUtil, GemStep1CardUtil, GemStep2CardUtil, GemStep3CardUtil, GemStep4CardUtil, AudioCardUtil];
   const customBindingUtils = [ConnectionBindingUtil];
   const customTools = [PortTool];
 
-  // 隐藏所有默认UI组件
+  // 闅愯棌鎵€鏈夐粯璁I缁勪欢
+
   const components: TLComponents = {
     Toolbar: null,
     StylePanel: null,
@@ -1536,21 +1594,22 @@ function CanvasPageContent() {
     ZoomMenu: null,
   };
 
-  // 当编辑器加载完成时的设置
+  // 褰撶紪杈戝櫒鍔犺浇瀹屾垚鏃剁殑璁剧疆
+
   const handleMount = (editor: Editor) => {
-    console.log('编辑器已加载');
+    console.log('缂栬緫鍣ㄥ凡鍔犺浇');
     setEditorInstance(editor);
     editorRef.current = editor;
 
-    // 立即设置初始缩放为 60%
+    // 绔嬪嵆璁剧疆鍒濆缂╂斁涓?60%
     setTimeout(() => {
       editor.setCamera({ x: 0, y: 0, z: 0.6 });
     }, 0);
 
-    // 3秒后隐藏介绍动画
+    // 3绉掑悗闅愯棌浠嬬粛鍔ㄧ敾
     setTimeout(() => setShowIntro(false), 3000);
 
-    // ── 加载用户画布 ──────────────────────────────────────────────
+    // 鈹€鈹€ 鍔犺浇鐢ㄦ埛鐢诲竷 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
     (async () => {
       try {
         const supabase = createClient();
@@ -1564,7 +1623,8 @@ function CanvasPageContent() {
         setIsLoggedIn(true);
         userIdRef.current = user.id;
 
-        // 加载画布列表
+        // 鍔犺浇鐢诲竷鍒楄〃
+
         const { data: canvases } = await supabase
           .from('canvases')
           .select('id, title')
@@ -1572,7 +1632,8 @@ function CanvasPageContent() {
           .order('updated_at', { ascending: false });
         if (canvases) setCanvasList(canvases);
 
-        // 用已有的第一个画布，没有才创建
+        // 鐢ㄥ凡鏈夌殑绗竴涓敾甯冿紝娌℃湁鎵嶅垱寤?
+
         const canvasId = canvases && canvases.length > 0
           ? canvases[0].id
           : await getOrCreateCanvas(user.id);
@@ -1586,11 +1647,11 @@ function CanvasPageContent() {
           console.log('画布已恢复');
         }
       } catch (err) {
-        console.error('加载画布失败:', err);
+        console.error('鍔犺浇鐢诲竷澶辫触:', err);
       }
     })();
 
-    // ── 监听变化标记未保存 ──────────────────────────────────────
+    // 鈹€鈹€ 鐩戝惉鍙樺寲鏍囪鏈繚瀛?鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
     editor.store.listen(() => {
       if (isRestoringRef.current) return;
       if (!canvasIdRef.current) return;
@@ -1598,7 +1659,8 @@ function CanvasPageContent() {
       setSaveStatus('unsaved');
     });
 
-    // ── 自动保存：进入后30/60/90分钟各保存一次 ──────────────────
+    // 鈹€鈹€ 鑷姩淇濆瓨锛氳繘鍏ュ悗30/60/90鍒嗛挓鍚勪繚瀛樹竴娆?鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+
     const doAutoSave = async () => {
       if (!canvasIdRef.current || !hasUnsavedRef.current) return;
       try {
@@ -1608,7 +1670,7 @@ function CanvasPageContent() {
         hasUnsavedRef.current = false;
         setSaveStatus('saved');
       } catch (err) {
-        console.error('自动保存失败:', err);
+        console.error('鑷姩淇濆瓨澶辫触:', err);
         setSaveStatus('unsaved');
       }
     };
@@ -1617,7 +1679,8 @@ function CanvasPageContent() {
     const t2 = setTimeout(doAutoSave, 60 * 60 * 1000);
     const t3 = setTimeout(doAutoSave, 90 * 60 * 1000);
 
-    // 监听相机变化，更新缩放级别和位置
+    // 鐩戝惉鐩告満鍙樺寲锛屾洿鏂扮缉鏀剧骇鍒拰浣嶇疆
+
     const updateCamera = () => {
       const camera = editor.getCamera();
       setCameraZoom(camera.z);
@@ -1626,26 +1689,26 @@ function CanvasPageContent() {
     updateCamera();
     const unsubscribe = editor.store.listen(updateCamera);
 
-    // 监听鼠标事件，实现右键拖动画布
-    let isDraggingCanvas = false;
+    // 鐩戝惉榧犳爣浜嬩欢锛屽疄鐜板彸閿嫋鍔ㄧ敾甯?    let isDraggingCanvas = false;
     let lastX = 0;
     let lastY = 0;
 
     const handleContextMenu = (e: MouseEvent) => {
-      // 阻止右键菜单
+      // 闃绘鍙抽敭鑿滃崟
       e.preventDefault();
     };
 
     const handlePointerDown = (e: PointerEvent) => {
-      // 右键按下（button === 2）
+      // 鍙抽敭鎸変笅锛坆utton === 2锛?
       if (e.button === 2) {
         const target = e.target as HTMLElement;
 
-        // 检查是否点击了卡片
+        // 妫€鏌ユ槸鍚︾偣鍑讳簡鍗＄墖
+
         const clickedOnShape = target.closest('.tl-shape') !== null;
 
         if (!clickedOnShape) {
-          // 点击空白处，拖动画布
+          // 鐐瑰嚮绌虹櫧澶勶紝鎷栧姩鐢诲竷
           isDraggingCanvas = true;
           lastX = e.clientX;
           lastY = e.clientY;
@@ -1682,7 +1745,8 @@ function CanvasPageContent() {
       }
     };
 
-    // 添加事件监听，使用 capture 阶段
+    // 娣诲姞浜嬩欢鐩戝惉锛屼娇鐢?capture 闃舵
+
     const container = editor.getContainer();
     container.addEventListener('contextmenu', handleContextMenu);
     container.addEventListener('pointerdown', handlePointerDown, { capture: true });
@@ -1704,7 +1768,7 @@ function CanvasPageContent() {
 
   return (
     <div className="fixed inset-0 bg-black">
-      {/* 介绍动画 */}
+      {/* 浠嬬粛鍔ㄧ敾 */}
       {showIntro && (
         <div className="fixed inset-0 z-[100000] bg-black flex items-center justify-center animate-intro">
           <div className="text-center">
@@ -1729,10 +1793,10 @@ function CanvasPageContent() {
         licenseKey={process.env.NEXT_PUBLIC_TLDRAW_LICENSE_KEY || ''}
       />
 
-      {/* 将控件放在 Tldraw 外面 */}
+      {/* 灏嗘帶浠舵斁鍦?Tldraw 澶栭潰 */}
       {editorInstance && (
         <>
-          {/* 未登录提示 */}
+          {/* 鏈櫥褰曟彁绀?*/}
           {isLoggedIn === false && (
             <div className="fixed inset-0 z-[200000] bg-black/80 backdrop-blur-sm flex items-center justify-center">
               <div className="bg-zinc-900 border border-white/10 rounded-2xl p-8 max-w-sm w-full mx-4 text-center">
@@ -1741,45 +1805,43 @@ function CanvasPageContent() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                 </div>
-                <h2 className="text-white text-lg font-semibold mb-2">登录后使用画布</h2>
-                <p className="text-gray-400 text-sm mb-6">登录后可保存画布、生成图片和视频</p>
+                <h2 className="text-white text-lg font-semibold mb-2">Sign In To Continue</h2>
+                <p className="text-gray-400 text-sm mb-6">登录后即可保存画布、生成图片和视频</p>
                 <a
                   href="/auth"
                   className="block w-full py-3 rounded-xl bg-white text-black font-semibold text-sm hover:bg-gray-100 transition-all"
                 >
-                  去登录
+                  前往登录
                 </a>
               </div>
             </div>
           )}
 
-          {/* 保存状态 + 画布切换 */}
+          {/* 淇濆瓨鐘舵€?+ 鐢诲竷鍒囨崲 */}
           {isLoggedIn && (
             <div className="fixed top-4 right-4 flex items-center gap-2" style={{ zIndex: 99999 }}>
 
-              {/* 余额 + 会员状态 */}
+              {/* 浣欓 + 浼氬憳鐘舵€?*/}
               <div className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-zinc-900/80 backdrop-blur-md border border-white/10 text-gray-300">
                 {isMember ? (
-                  <span className="text-violet-400 font-semibold">会员</span>
+                  <span className="text-violet-400 font-semibold">浼氬憳</span>
                 ) : (
                   <button
                     className="text-yellow-400 hover:text-yellow-300 transition-colors"
                     onClick={() => handlePay('membership', MEMBERSHIP_PRICE)}
                   >
-                    开通会员
-                  </button>
+                    寮€閫氫細鍛?                  </button>
                 )}
                 <span className="text-white/20">|</span>
-                <span className="text-white/60">¥{balance.toFixed(2)}</span>
+                <span className="text-white/60">楼{balance.toFixed(2)}</span>
                 <button
                   className="text-blue-400 hover:text-blue-300 transition-colors ml-0.5"
                   onClick={() => setShowRechargeModal(true)}
                 >
-                  充值
-                </button>
+                  鍏呭€?                </button>
               </div>
 
-              {/* 画布列表按钮 */}
+              {/* 鐢诲竷鍒楄〃鎸夐挳 */}
               <div className="relative">
                 <button
                   onClick={() => setShowCanvasList(!showCanvasList)}
@@ -1788,7 +1850,7 @@ function CanvasPageContent() {
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                   </svg>
-                  画布
+                  鐢诲竷
                 </button>
 
                 {showCanvasList && (
@@ -1798,7 +1860,7 @@ function CanvasPageContent() {
                         className="w-full text-left px-3 py-2 text-xs text-blue-400 hover:bg-white/5 rounded-lg transition-all"
                         onClick={async () => {
                           const supabase = createClient();
-                          const title = `画布 ${new Date().toLocaleDateString('zh-CN')}`;
+                          const title = `鐢诲竷 ${new Date().toLocaleDateString('zh-CN')}`;
                           const { data } = await supabase
                             .from('canvases')
                             .insert({ user_id: userIdRef.current, title })
@@ -1817,7 +1879,7 @@ function CanvasPageContent() {
                           }
                         }}
                       >
-                        + 新建画布
+                        + 鏂板缓鐢诲竷
                       </button>
                     </div>
                     <div className="max-h-64 overflow-y-auto">
@@ -1852,12 +1914,13 @@ function CanvasPageContent() {
                             <button
                               className={`flex-1 text-left text-xs py-1 px-1 truncate ${canvasIdRef.current === c.id ? 'text-white' : 'text-gray-400'}`}
                               onClick={async () => {
-                                // 立即更新 UI，避免阻塞
+                                // 绔嬪嵆鏇存柊 UI锛岄伩鍏嶉樆濉?
                                 const targetId = c.id;
                                 canvasIdRef.current = targetId;
                                 setShowCanvasList(false);
 
-                                // 异步加载画布数据
+                                // 寮傛鍔犺浇鐢诲竷鏁版嵁
+
                                 if (editorInstance) {
                                   setTimeout(async () => {
                                     try {
@@ -1871,20 +1934,20 @@ function CanvasPageContent() {
                                       }
                                       isRestoringRef.current = false;
                                     } catch (err) {
-                                      console.error('加载画布失败:', err);
+                                      console.error('鍔犺浇鐢诲竷澶辫触:', err);
                                       isRestoringRef.current = false;
                                     }
                                   }, 0);
                                 }
                               }}
                             >
-                              {canvasIdRef.current === c.id ? '● ' : '○ '}{c.title}
+                              {canvasIdRef.current === c.id ? '鈼?' : '鈼?'}{c.title}
                             </button>
                           )}
-                          {/* 重命名按钮 */}
+                          {/* 閲嶅懡鍚嶆寜閽?*/}
                           <button
                             className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-white rounded transition-all flex-shrink-0"
-                            title="重命名"
+                            title="Rename / 重命名"
                             onClick={e => { e.stopPropagation(); setRenamingId(c.id); setRenameValue(c.title); }}
                             onPointerDown={e => e.stopPropagation()}
                           >
@@ -1892,20 +1955,20 @@ function CanvasPageContent() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                             </svg>
                           </button>
-                          {/* 删除按钮 - 至少保留一个画布 */}
+                          {/* 鍒犻櫎鎸夐挳 - 鑷冲皯淇濈暀涓€涓敾甯?*/}
                           {canvasList.length > 1 && (
                             <button
                               className="w-6 h-6 flex items-center justify-center text-gray-500 hover:text-red-400 rounded transition-all flex-shrink-0"
-                              title="删除画布"
+                              title="鍒犻櫎鐢诲竷"
                               onClick={async (e) => {
                                 e.stopPropagation();
-                                if (!confirm(`确定删除画布「${c.title}」？`)) return;
+                                if (!confirm(`纭畾鍒犻櫎鐢诲竷銆?{c.title}銆嶏紵`)) return;
                                 const supabase = createClient();
                                 await supabase.from('canvas_snapshots').delete().eq('canvas_id', c.id);
                                 await supabase.from('canvases').delete().eq('id', c.id);
                                 const newList = canvasList.filter(x => x.id !== c.id);
                                 setCanvasList(newList);
-                                // 如果删的是当前画布，切换到第一个
+                                // 濡傛灉鍒犵殑鏄綋鍓嶇敾甯冿紝鍒囨崲鍒扮涓€涓?
                                 if (canvasIdRef.current === c.id && newList.length > 0) {
                                   canvasIdRef.current = newList[0].id;
                                   const snapshot = await loadCanvasSnapshot(newList[0].id);
@@ -1935,7 +1998,7 @@ function CanvasPageContent() {
                 )}
               </div>
 
-              {/* 手动保存按钮 */}
+              {/* 鎵嬪姩淇濆瓨鎸夐挳 */}
               <button
                 onClick={async () => {
                   if (!canvasIdRef.current || !editorInstance) return;
@@ -1945,9 +2008,9 @@ function CanvasPageContent() {
                     await saveSnapshot(canvasIdRef.current, snapshot);
                     hasUnsavedRef.current = false;
                     setSaveStatus('saved');
-                    // 不再自动变回 unsaved，只有新操作时才会变
+                    // 涓嶅啀鑷姩鍙樺洖 unsaved锛屽彧鏈夋柊鎿嶄綔鏃舵墠浼氬彉
                   } catch (err) {
-                    console.error('保存失败:', err);
+                    console.error('淇濆瓨澶辫触:', err);
                     setSaveStatus('unsaved');
                   }
                 }}
@@ -1955,15 +2018,15 @@ function CanvasPageContent() {
                 className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-zinc-900/80 backdrop-blur-md border border-white/10 text-gray-300 hover:border-white/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {saveStatus === 'saving' ? (
-                  <><div className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" /><span className="text-yellow-400">保存中...</span></>
+                  <><div className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" /><span className="text-yellow-400">淇濆瓨涓?..</span></>
                 ) : saveStatus === 'saved' ? (
                   <><div className="w-1.5 h-1.5 rounded-full bg-green-400" /><span className="text-green-400">已保存</span></>
                 ) : (
-                  <><svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg><span>保存</span></>
+                  <><svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg><span>淇濆瓨</span></>
                 )}
               </button>
 
-              {/* 返回主页按钮 */}
+              {/* 杩斿洖涓婚〉鎸夐挳 */}
               <button
                 onClick={() => setShowLeaveConfirm(true)}
                 className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-zinc-900/80 backdrop-blur-md border border-white/10 text-gray-300 hover:border-white/20 transition-all"
@@ -1971,7 +2034,7 @@ function CanvasPageContent() {
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
-                <span>主页</span>
+                <span>涓婚〉</span>
               </button>
             </div>
           )}
@@ -1990,7 +2053,7 @@ function CanvasPageContent() {
         />
       )}
 
-      {/* 资产面板 */}
+      {/* 璧勪骇闈㈡澘 */}
       {showAssetPanel && (
         <>
           <div className="fixed inset-0 bg-black/50 z-[9998]" onClick={() => setShowAssetPanel(false)} />
@@ -1998,24 +2061,26 @@ function CanvasPageContent() {
         </>
       )}
 
-      {/* 图片切割弹窗 */}
+      {/* 鍥剧墖鍒囧壊寮圭獥 */}
       {showImageSplitModal && (
         <ImageSplitModal onClose={() => setShowImageSplitModal(false)} />
       )}
 
-      {/* 离开确认弹窗 */}
+      {/* 绂诲紑纭寮圭獥 */}
       {showLeaveConfirm && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="bg-zinc-900 border border-white/10 rounded-2xl p-6 w-80 shadow-2xl flex flex-col gap-4">
-            <div className="text-white font-semibold text-base">离开画布？</div>
-            <div className="text-gray-400 text-sm">离开前将自动保存画布内容。</div>
+            <div>
+              <div className="text-white font-semibold text-base">Leave Canvas</div>
+              <div className="text-gray-400 text-sm mt-1">离开前将自动保存当前画布内容。</div>
+            </div>
             <div className="flex flex-col gap-2">
               <button
                 className="w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 onClick={async (e) => {
                   const btn = e.currentTarget;
                   btn.disabled = true;
-                  btn.textContent = '保存中...';
+                  btn.textContent = '淇濆瓨涓?..';
                   if (canvasIdRef.current && editorInstance) {
                     try {
                       const snapshot = getSnapshot(editorInstance.store);
@@ -2024,19 +2089,19 @@ function CanvasPageContent() {
                   }
                   window.location.href = '/';
                 }}
-              >保存并离开</button>
+              >淇濆瓨骞剁寮€</button>
               <button
                 className="w-full py-2 rounded-xl text-gray-500 text-sm hover:text-gray-300 transition-all"
                 onClick={() => setShowLeaveConfirm(false)}
-              >取消</button>
+              >鍙栨秷</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* 自定义样式 - 纯黑色主题 */}
+      {/* 鑷畾涔夋牱寮?- 绾粦鑹蹭富棰?*/}
       <style jsx global>{`
-        /* tldraw 画布背景 - 细线网格，随缩放和位置变化 */
+        /* tldraw 鐢诲竷鑳屾櫙 - 缁嗙嚎缃戞牸锛岄殢缂╂斁鍜屼綅缃彉鍖?*/
         .tl-background {
           background-color: #000000 !important;
           background-image:
@@ -2046,12 +2111,12 @@ function CanvasPageContent() {
           background-position: ${-cameraPos.x * cameraZoom}px ${-cameraPos.y * cameraZoom}px;
         }
 
-        /* 网格颜色 */
+        /* 缃戞牸棰滆壊 */
         .tl-grid {
           opacity: 0 !important;
         }
 
-        /* 淡入动画 */
+        /* 娣″叆鍔ㄧ敾 */
         @keyframes fade-in {
           from {
             opacity: 0;
@@ -2067,7 +2132,7 @@ function CanvasPageContent() {
           animation: fade-in 0.2s ease-out;
         }
 
-        /* 隐藏所有默认UI */
+        /* 闅愯棌鎵€鏈夐粯璁I */
         .tl-toolbar,
         .tl-style-panel,
         .tl-page-menu,
@@ -2084,7 +2149,7 @@ function CanvasPageContent() {
           display: none !important;
         }
 
-        /* 彻底隐藏选中边框和所有选中效果 */
+        /* 褰诲簳闅愯棌閫変腑杈规鍜屾墍鏈夐€変腑鏁堟灉 */
         .tl-selection__bg,
         .tl-selection__fg,
         .tl-selection-border,
@@ -2112,7 +2177,7 @@ function CanvasPageContent() {
           visibility: hidden !important;
         }
 
-        /* 隐藏选中时的所有视觉效果 */
+        /* 闅愯棌閫変腑鏃剁殑鎵€鏈夎瑙夋晥鏋?*/
         [data-is-selected="true"],
         .tl-shape[data-is-selected="true"],
         .tl-shape.tl-shape--selected {
@@ -2120,7 +2185,7 @@ function CanvasPageContent() {
           box-shadow: none !important;
         }
 
-        /* 隐藏 SVG 选中框 */
+        /* 闅愯棌 SVG 閫変腑妗?*/
         svg.tl-overlays__item {
           display: none !important;
         }
@@ -2129,12 +2194,12 @@ function CanvasPageContent() {
           display: none !important;
         }
 
-        /* 确保画布占满整个屏幕 */
+        /* 纭繚鐢诲竷鍗犳弧鏁翠釜灞忓箷 */
         .tl-container {
           background-color: #000000 !important;
         }
 
-        /* 自定义鼠标样式 - 手型光标 */
+        /* 鑷畾涔夐紶鏍囨牱寮?- 鎵嬪瀷鍏夋爣 */
         .tl-canvas {
           cursor: grab !important;
         }
@@ -2143,7 +2208,7 @@ function CanvasPageContent() {
           cursor: grabbing !important;
         }
 
-        /* 拖动卡片时也用手型光标 */
+        /* 鎷栧姩鍗＄墖鏃朵篃鐢ㄦ墜鍨嬪厜鏍?*/
         .tl-shape {
           cursor: grab !important;
         }
@@ -2152,18 +2217,18 @@ function CanvasPageContent() {
           cursor: grabbing !important;
         }
 
-        /* 选中状态下的卡片 */
+        /* 閫変腑鐘舵€佷笅鐨勫崱鐗?*/
         .tl-shape[data-is-selected="true"] {
           cursor: move !important;
         }
 
-        /* 自定义卡片样式 */
+        /* 鑷畾涔夊崱鐗囨牱寮?*/
         .tl-shape[data-shape-type="geo"] {
           border-radius: 16px !important;
           box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
         }
 
-        /* 箭头连接线样式 - 浅灰色 */
+        /* 绠ご杩炴帴绾挎牱寮?- 娴呯伆鑹?*/
         .tl-arrow {
           stroke: #a0a0a0 !important;
         }
@@ -2190,12 +2255,12 @@ function CanvasPageContent() {
           stroke: #a0a0a0 !important;
         }
 
-        /* 箭头线条粗细 */
+        /* 绠ご绾挎潯绮楃粏 */
         .tl-arrow__line {
           stroke-width: 2 !important;
         }
 
-        /* 滑块样式 */
+        /* 婊戝潡鏍峰紡 */
         .zoom-slider::-webkit-slider-thumb {
           appearance: none;
           width: 16px;
@@ -2225,7 +2290,7 @@ function CanvasPageContent() {
         }
 
 
-        /* 介绍动画 */
+        /* 浠嬬粛鍔ㄧ敾 */
         @keyframes intro {
           0% {
             opacity: 1;
@@ -2272,7 +2337,7 @@ function CanvasPageContent() {
         }
       `}</style>
 
-      {/* 充值弹窗 */}
+      {/* 鍏呭€煎脊绐?*/}
       {showRechargeModal && (
         <div
           className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
@@ -2285,14 +2350,17 @@ function CanvasPageContent() {
             <button
               className="absolute top-4 right-4 text-white/40 hover:text-white/80 transition-colors"
               onClick={() => setShowRechargeModal(false)}
-            >✕</button>
-            <h2 className="text-center text-xl font-semibold text-white mb-6">选择充值金额</h2>
+            >×</button>
+            <div className="text-center mb-6">
+              <h2 className="text-xl font-semibold text-white">Choose Recharge Amount</h2>
+              <p className="text-xs text-gray-500 mt-1">选择充值金额</p>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { amount: 50, label: '¥50' },
-                { amount: 100, label: '¥100' },
-                { amount: 1000, label: '¥1000' },
-                { amount: 10000, label: '¥10000' },
+                { amount: 50, label: '楼50' },
+                { amount: 100, label: '楼100' },
+                { amount: 1000, label: '楼1000' },
+                { amount: 10000, label: '楼10000' },
               ].map(({ amount, label }) => (
                 <button
                   key={amount}
@@ -2301,7 +2369,7 @@ function CanvasPageContent() {
                 >{label}</button>
               ))}
             </div>
-            <p className="text-center text-xs text-white/30 mt-4">充值后余额可用于图片和视频生成</p>
+            <p className="text-center text-xs text-white/30 mt-4">鍏呭€煎悗浣欓鍙敤浜庡浘鐗囧拰瑙嗛鐢熸垚</p>
           </div>
         </div>
       )}
@@ -2320,3 +2388,10 @@ export default function CanvasPage() {
     </Suspense>
   );
 }
+
+
+
+
+
+
+
