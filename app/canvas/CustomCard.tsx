@@ -680,13 +680,13 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
           if (sp.shotType) parts.push(`鏅埆锛?{sp.shotType}`);
           if (sp.cameraMovement && sp.cameraMovement !== 'Follow/Tracking') parts.push(`杩愰暅锛?{sp.cameraMovement}`);
           if (sp.composition) parts.push(`鏋勫浘锛?{sp.composition}`);
-          if (sp.subjectScale) parts.push(`涓讳綋姣斾緥锛?{sp.subjectScale}`);
-          if (sp.spaceType) parts.push(`绌洪棿绫诲瀷锛?{sp.spaceType}`);
-          if (sp.timeFeeling) parts.push(`鏃堕棿鎰燂細${sp.timeFeeling}`);
-          if (sp.lighting) parts.push(`鍏夊奖/澶╂皵锛?{sp.lighting}`);
-          if (sp.motionSource) parts.push(`鍔ㄦ€佹潵婧愶細${sp.motionSource}`);
-          if (sp.semantic) parts.push(`璇箟锛?{sp.semantic}`);
-          if (parts.length > 0) return `[鐢靛奖闀滃ご鎸囦护] ${parts.join('锛?)}銆俙;
+          if (sp.subjectScale) parts.push(`主体比例：${sp.subjectScale}`);
+          if (sp.spaceType) parts.push(`空间类型：${sp.spaceType}`);
+          if (sp.timeFeeling) parts.push(`时间感：${sp.timeFeeling}`);
+          if (sp.lighting) parts.push(`光影/天气：${sp.lighting}`);
+          if (sp.motionSource) parts.push(`动态来源：${sp.motionSource}`);
+          if (sp.semantic) parts.push(`语义：${sp.semantic}`);
+          if (parts.length > 0) return `[电影镜头指令] ${parts.join('；')}。`;
         }
       }
       return '';
