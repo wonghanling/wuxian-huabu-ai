@@ -1,5 +1,5 @@
 'use client';
-import { BaseBoxShapeUtil, HTMLContainer, RecordProps, T } from '@tldraw/tldraw';
+import { BaseBoxShapeUtil, HTMLContainer, RecordProps, T, useEditor } from 'tldraw';
 
 type SeedanceCardShape = any;
 
