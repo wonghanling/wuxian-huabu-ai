@@ -17,6 +17,7 @@ import { GemStep2CardUtil } from './GemStoryboardStep2Card';
 import { GemStep3CardUtil } from './GemStoryboardStep3Card';
 import { GemStep4CardUtil } from './GemStoryboardStep4Card';
 import { AudioCardUtil } from './AudioCard';
+import { SeedanceCardUtil } from './SeedanceCard';
 import TutorialOverlay from './TutorialOverlay';
 import { createClient } from '@/lib/supabase/client';
 import { getOrCreateCanvas, loadSnapshot as loadCanvasSnapshot, saveSnapshot } from '@/lib/canvas-storage';
@@ -294,6 +295,26 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
       editor.setCurrentTool('select');
     } catch (error) {
       console.error('创建Kling卡片失败:', error);
+    }
+  };
+
+  const createSeedanceCard = () => {
+    try {
+      const viewportPageBounds = editor.getViewportPageBounds();
+      const centerX = viewportPageBounds.center.x;
+      const centerY = viewportPageBounds.center.y;
+      const id = createShapeId();
+      editor.createShape({
+        id,
+        type: 'seedance-card' as any,
+        x: centerX - 210,
+        y: centerY - 280,
+        props: { w: 420, h: 560 },
+      });
+      editor.select(id);
+      editor.setCurrentTool('select');
+    } catch (error) {
+      console.error('创建Seedance卡片失败:', error);
     }
   };
 
@@ -638,6 +659,12 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all text-left"
               >
                 <span className="text-xs text-gray-300 whitespace-nowrap">Kling</span>
+              </button>
+              <button
+                onClick={() => { createSeedanceCard(); setShowVideoMenu(false); }}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all text-left"
+              >
+                <span className="text-xs text-gray-300 whitespace-nowrap">Seedance 2.0</span>
               </button>
             </div>
           )}
@@ -1554,7 +1581,7 @@ function CanvasPageContent() {
   }, []);
 
   // 自定义形状工具和绑定工具
-  const customShapeUtils = [CustomCardShapeUtil, ConnectionShapeUtil, TimelineShapeUtil, ShotCardShapeUtil, PromptOptimizerCardUtil, GemStep1CardUtil, GemStep2CardUtil, GemStep3CardUtil, GemStep4CardUtil, AudioCardUtil];
+  const customShapeUtils = [CustomCardShapeUtil, ConnectionShapeUtil, TimelineShapeUtil, ShotCardShapeUtil, PromptOptimizerCardUtil, GemStep1CardUtil, GemStep2CardUtil, GemStep3CardUtil, GemStep4CardUtil, AudioCardUtil, SeedanceCardUtil];
   const customBindingUtils = [ConnectionBindingUtil];
   const customTools = [PortTool];
 
