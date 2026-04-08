@@ -3,7 +3,6 @@ import { BaseBoxShapeUtil, HTMLContainer, RecordProps, T, useEditor } from 'tldr
 
 type SeedanceCardShape = any;
 
-// @ts-expect-error
 export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
   static override type = 'seedance-card' as const;
 
