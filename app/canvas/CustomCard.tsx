@@ -700,6 +700,15 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
         buttonBg: 'bg-gradient-to-r from-gray-500/80 to-gray-600/80 hover:from-gray-500 hover:to-gray-600',
         handleColor: 'rgba(192, 192, 192, 0.8)',
       },
+      kling: {
+        gradient: 'linear-gradient(135deg, rgba(192, 192, 192, 0.15) 0%, rgba(169, 169, 169, 0.12) 50%, rgba(128, 128, 128, 0.08) 100%)',
+        border: 'rgba(192, 192, 192, 0.3)',
+        glow: '0 0 40px rgba(192, 192, 192, 0.15)',
+        icon: 'text-gray-300',
+        iconBg: 'bg-gradient-to-br from-gray-400/20 to-gray-500/20',
+        buttonBg: 'bg-gradient-to-r from-gray-500/80 to-gray-600/80 hover:from-gray-500 hover:to-gray-600',
+        handleColor: 'rgba(192, 192, 192, 0.8)',
+      },
     };
 
     const color = colors[cardType];
