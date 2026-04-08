@@ -82,6 +82,37 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
       if (mode === 'multimodal' && parsedRefImages.length === 0 && !refVideoUrl) { alert('请至少上传一张参考图或视频URL'); return; }
       up({ isGenerating: true, generationStatus: '提交中...', generationProgress: 5, generatedVideo: '' });
       try {
+        // 压缩图片到 1.5MB 以内
+        const compressImage = (base64: string | null | undefined, maxBytes = 1.5 * 1024 * 1024): Promise<string | null | undefined> => {
+          if (!base64 || !base64.startsWith('data:')) return Promise.resolve(base64);
+          return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+              let w = img.naturalWidth;
+              let h = img.naturalHeight;
+              let quality = 0.85;
+              const canvas = document.createElement('canvas');
+              const tryCompress = () => {
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
+                const result = canvas.toDataURL('image/jpeg', quality);
+                const bytes = (result.length - result.indexOf(',') - 1) * 0.75;
+                if (bytes <= maxBytes || quality <= 0.3) { resolve(result); } else { quality -= 0.1; tryCompress(); }
+              };
+              tryCompress();
+            };
+            img.src = base64;
+          });
+        };
+
+        const [compFirst, compLast] = await Promise.all([
+          firstFrameImage ? compressImage(firstFrameImage) : Promise.resolve(undefined),
+          lastFrameImage ? compressImage(lastFrameImage) : Promise.resolve(undefined),
+        ]);
+        const compRefImages = parsedRefImages.length > 0
+          ? await Promise.all(parsedRefImages.map(img => compressImage(img)))
+          : undefined;
+
         const res = await fetch('/api/seedance/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -89,9 +120,9 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
             mode, model, prompt, ratio,
             duration: duration === '-1' ? -1 : parseInt(duration || '5'),
             resolution, generateAudio,
-            firstFrameImage: firstFrameImage || undefined,
-            lastFrameImage: lastFrameImage || undefined,
-            refImages: parsedRefImages.length > 0 ? parsedRefImages : undefined,
+            firstFrameImage: compFirst || undefined,
+            lastFrameImage: compLast || undefined,
+            refImages: compRefImages || undefined,
             refVideoUrl: refVideoUrl || undefined,
             refAudioBase64: refAudioBase64 || undefined,
           }),
