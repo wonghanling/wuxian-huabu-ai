@@ -36,7 +36,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
   getDefaultProps() {
     return {
       w: 420, h: 560,
-      mode: 't2v', model: 'doubao-seedance-2-0',
+      mode: 't2v', model: 'doubao-seedance-2-0-260128',
       prompt: '', ratio: '16:9', duration: '5',
       resolution: '720p', generateAudio: true,
       firstFrameImage: '', lastFrameImage: '',
@@ -252,12 +252,12 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
                 <label className="text-gray-400 text-xs mb-1 block">模型</label>
                 <select
                   className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 transition-all"
-                  value={model || 'doubao-seedance-2-0'}
+                  value={model || 'doubao-seedance-2-0-260128'}
                   onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
                   onChange={(e) => up({ model: e.target.value })}
                 >
-                  <option value="doubao-seedance-2-0">Seedance 2.0</option>
-                  <option value="doubao-seedance-2-0-fast">Seedance 2.0 Fast</option>
+                  <option value="doubao-seedance-2-0-260128">Seedance 2.0</option>
+                  <option value="doubao-seedance-2-0-fast-260128">Seedance 2.0 Fast</option>
                 </select>
               </div>
 
