@@ -15,6 +15,8 @@ import { PromptOptimizerCardUtil } from './PromptOptimizerCard';
 import { GemStep1CardUtil } from './GemStoryboardStep1Card';
 import { GemStep2CardUtil } from './GemStoryboardStep2Card';
 import { GemStep3CardUtil } from './GemStoryboardStep3Card';
+import { GemStep4CardUtil } from './GemStoryboardStep4Card';
+import { AudioCardUtil } from './AudioCard';
 import TutorialOverlay from './TutorialOverlay';
 import { createClient } from '@/lib/supabase/client';
 import { getOrCreateCanvas, loadSnapshot as loadCanvasSnapshot, saveSnapshot } from '@/lib/canvas-storage';
@@ -173,6 +175,7 @@ function ZoomControlsExternal({ editor }: { editor: Editor }) {
 function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: { editor: Editor; onOpenAssetPanel: () => void; onOpenImageSplit: () => void }) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [showShotTypePanel, setShowShotTypePanel] = useState(false);
+  const [showVideoMenu, setShowVideoMenu] = useState(false);
 
   const createTextCard = () => {
     console.log('点击文本生成按钮');
@@ -264,6 +267,33 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
       editor.setCurrentTool('select');
     } catch (error) {
       console.error('创建视频卡片失败:', error);
+    }
+  };
+
+  const createKlingCard = () => {
+    try {
+      const viewportPageBounds = editor.getViewportPageBounds();
+      const centerX = viewportPageBounds.center.x;
+      const centerY = viewportPageBounds.center.y;
+      const id = createShapeId();
+      editor.createShape({
+        id,
+        type: 'custom-card' as any,
+        x: centerX - 190,
+        y: centerY - 190,
+        props: {
+          w: 380,
+          h: 480,
+          cardType: 'kling',
+          title: 'Kling',
+          prompt: '',
+          model: 'kling-v2-master',
+        },
+      });
+      editor.select(id);
+      editor.setCurrentTool('select');
+    } catch (error) {
+      console.error('创建Kling卡片失败:', error);
     }
   };
 
@@ -435,15 +465,23 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
       const viewportPageBounds = editor.getViewportPageBounds();
       const centerX = viewportPageBounds.center.x;
       const centerY = viewportPageBounds.center.y;
-      const id = createShapeId();
-      editor.createShape({
-        id,
-        type: 'gem-step3-card' as any,
-        x: centerX - 200,
-        y: centerY - 260,
-        props: { w: 400, h: 520 },
-      });
-      editor.select(id);
+      const cardW = 400;
+      const gap = 20;
+      const totalW = cardW * 4 + gap * 3;
+      const startX = centerX - totalW / 2;
+      const startY = centerY - 260;
+
+      const id1 = createShapeId();
+      const id2 = createShapeId();
+      const id3 = createShapeId();
+      const id4 = createShapeId();
+
+      editor.createShape({ id: id1, type: 'gem-step1-card' as any, x: startX, y: startY, props: { w: cardW, h: 520 } });
+      editor.createShape({ id: id2, type: 'gem-step2-card' as any, x: startX + (cardW + gap), y: startY, props: { w: cardW, h: 520 } });
+      editor.createShape({ id: id3, type: 'gem-step3-card' as any, x: startX + (cardW + gap) * 2, y: startY, props: { w: cardW, h: 520 } });
+      editor.createShape({ id: id4, type: 'gem-step4-card' as any, x: startX + (cardW + gap) * 3, y: startY, props: { w: cardW, h: 520 } });
+
+      editor.select(id1);
       editor.setCurrentTool('select');
     } catch (error) {
       console.error('创建导演引擎卡片失败:', error);
@@ -478,6 +516,26 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
       editor.setCurrentTool('select');
     } catch (error) {
       console.error('创建GEM分镜卡片失败:', error);
+    }
+  };
+
+  const createAudioCard = () => {
+    try {
+      const viewportPageBounds = editor.getViewportPageBounds();
+      const centerX = viewportPageBounds.center.x;
+      const centerY = viewportPageBounds.center.y;
+      const id = createShapeId();
+      editor.createShape({
+        id,
+        type: 'audio-card' as any,
+        x: centerX - 200,
+        y: centerY - 260,
+        props: { w: 400, h: 520 },
+      });
+      editor.select(id);
+      editor.setCurrentTool('select');
+    } catch (error) {
+      console.error('创建音频卡片失败:', error);
     }
   };
 
@@ -547,22 +605,43 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
           </div>
         </button>
 
-        {/* 视频生成按钮 */}
-        <button
-          onClick={createVideoCard}
-          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
-          title="Video Generation"
-        >
-          <div className="w-8 h-8 rounded-lg bg-gray-700/20 flex items-center justify-center group-hover:bg-gray-700/30 transition-all flex-shrink-0">
-            <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+        {/* 视频生成按钮 - 下拉菜单 */}
+        <div className="relative">
+          <button
+            onClick={() => setShowVideoMenu(!showVideoMenu)}
+            className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group w-full"
+            title="Video Generation"
+          >
+            <div className="w-8 h-8 rounded-lg bg-gray-700/20 flex items-center justify-center group-hover:bg-gray-700/30 transition-all flex-shrink-0">
+              <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div className="flex flex-col items-start flex-1">
+              <span className="text-sm text-gray-300 whitespace-nowrap">Video</span>
+              <span className="text-xs text-gray-500 whitespace-nowrap">视频生成</span>
+            </div>
+            <svg className={`w-3 h-3 text-gray-500 transition-transform ${showVideoMenu ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
-          </div>
-          <div className="flex flex-col items-start">
-            <span className="text-sm text-gray-300 whitespace-nowrap">Video</span>
-            <span className="text-xs text-gray-500 whitespace-nowrap">视频生成</span>
-          </div>
-        </button>
+          </button>
+          {showVideoMenu && (
+            <div className="ml-11 mt-1 flex flex-col gap-1">
+              <button
+                onClick={() => { createVideoCard(); setShowVideoMenu(false); }}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all text-left"
+              >
+                <span className="text-xs text-gray-300 whitespace-nowrap">通用视频</span>
+              </button>
+              <button
+                onClick={() => { createKlingCard(); setShowVideoMenu(false); }}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all text-left"
+              >
+                <span className="text-xs text-gray-300 whitespace-nowrap">Kling</span>
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* 角色设计按钮 */}
         <button
@@ -640,8 +719,8 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
           className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
           title="Prompt"
         >
-          <div className="w-8 h-8 rounded-lg bg-yellow-500/20 flex items-center justify-center group-hover:bg-yellow-500/30 transition-all flex-shrink-0">
-            <svg className="w-4 h-4 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
+            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           </div>
@@ -657,8 +736,8 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
           className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
           title="GEM分镜设计"
         >
-          <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center group-hover:bg-purple-500/30 transition-all flex-shrink-0">
-            <svg className="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
+            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
             </svg>
           </div>
@@ -674,14 +753,31 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
           className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
           title="导演引擎"
         >
-          <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center group-hover:bg-emerald-500/30 transition-all flex-shrink-0">
-            <svg className="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
+            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
             </svg>
           </div>
           <div className="flex flex-col items-start">
             <span className="text-sm text-gray-300 whitespace-nowrap">导演引擎</span>
             <span className="text-xs text-gray-500 whitespace-nowrap">视频过渡指令</span>
+          </div>
+        </button>
+
+        {/* 语音合成按钮 */}
+        <button
+          onClick={createAudioCard}
+          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
+          title="语音合成"
+        >
+          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
+            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+            </svg>
+          </div>
+          <div className="flex flex-col items-start">
+            <span className="text-sm text-gray-300 whitespace-nowrap">语音合成</span>
+            <span className="text-xs text-gray-500 whitespace-nowrap">MiniMax TTS</span>
           </div>
         </button>
 
@@ -1458,7 +1554,7 @@ function CanvasPageContent() {
   }, []);
 
   // 自定义形状工具和绑定工具
-  const customShapeUtils = [CustomCardShapeUtil, ConnectionShapeUtil, TimelineShapeUtil, ShotCardShapeUtil, PromptOptimizerCardUtil, GemStep1CardUtil, GemStep2CardUtil, GemStep3CardUtil];
+  const customShapeUtils = [CustomCardShapeUtil, ConnectionShapeUtil, TimelineShapeUtil, ShotCardShapeUtil, PromptOptimizerCardUtil, GemStep1CardUtil, GemStep2CardUtil, GemStep3CardUtil, GemStep4CardUtil, AudioCardUtil];
   const customBindingUtils = [ConnectionBindingUtil];
   const customTools = [PortTool];
 
