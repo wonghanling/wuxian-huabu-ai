@@ -2,6 +2,21 @@
 import { BaseBoxShapeUtil, HTMLContainer, RecordProps, T } from 'tldraw';
 import { useState, useRef, useCallback } from 'react';
 
+// 下载文件（fetch blob，不打开新标签页）
+const downloadFile = async (url: string, filename: string) => {
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl; link.download = filename; link.click();
+    URL.revokeObjectURL(blobUrl);
+  } catch {
+    const link = document.createElement('a');
+    link.href = url; link.download = filename; link.click();
+  }
+};
+
 type SeedanceCardShape = any;
 
 export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
@@ -206,7 +221,11 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
           }}
         >
           <button
-            onClick={() => up({ isMinimized: !isMinimized })}
+            onClick={(e) => {
+              e.stopPropagation();
+              const newMinimized = !isMinimized;
+              editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...shape.props, isMinimized: newMinimized, w: newMinimized ? 150 : 420, h: newMinimized ? 80 : 560 } });
+            }}
             onPointerDown={(e) => e.stopPropagation()}
             className="absolute top-2 right-2 w-7 h-7 bg-zinc-800/90 hover:bg-zinc-700/90 border border-white/20 rounded flex items-center justify-center text-white text-lg z-10"
             style={{ transform: `scale(${1 / scale})`, transformOrigin: 'center' }}
@@ -509,7 +528,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
                           </button>
                           {/* 下载 */}
                           <button className="p-2 bg-green-500/90 hover:bg-green-600 rounded-lg text-white transition-all" title="下载视频"
-                            onClick={(e) => { e.stopPropagation(); const a = document.createElement('a'); a.href = generatedVideo; a.download = 'seedance-' + Date.now() + '.mp4'; a.click(); }}
+                            onClick={(e) => { e.stopPropagation(); downloadFile(generatedVideo, 'seedance-' + Date.now() + '.mp4'); }}
                             onPointerDown={(e) => e.stopPropagation()}>
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -547,7 +566,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
                                 查看
                               </button>
                               <button className="px-3 py-2 bg-green-500/90 hover:bg-green-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
-                                onClick={(e) => { e.stopPropagation(); const a = document.createElement('a'); a.href = capturedFrame; a.download = 'seedance-frame-' + Date.now() + '.png'; a.click(); }}
+                                onClick={(e) => { e.stopPropagation(); downloadFile(capturedFrame, 'seedance-frame-' + Date.now() + '.png'); }}
                                 onPointerDown={(e) => e.stopPropagation()} title="下载图片">
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />

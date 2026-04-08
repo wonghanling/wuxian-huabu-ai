@@ -1542,7 +1542,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                                 className="px-3 py-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  window.open(characterGeneratedImage, '_blank');
+                                  setLightboxVideo(characterGeneratedImage);
                                 }}
                                 onPointerDown={(e) => e.stopPropagation()}
                                 title="查看大图"
@@ -2882,7 +2882,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           className="px-3 py-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
                           onClick={(e) => {
                             e.stopPropagation();
-                            window.open(capturedFrame, '_blank');
+                            setLightboxVideo(capturedFrame);
                           }}
                           onPointerDown={(e) => e.stopPropagation()}
                           title="查看大图"
