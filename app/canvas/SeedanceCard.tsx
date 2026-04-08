@@ -20,6 +20,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
     lastFrameImage: T.string.optional(),
     refImages: T.string.optional(),
     refVideoUrl: T.string.optional(),
+    refVideoName: T.string.optional(),
     refAudioBase64: T.string.optional(),
     refAudioName: T.string.optional(),
     generatedVideo: T.string.optional(),
@@ -37,7 +38,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
       prompt: '', ratio: '16:9', duration: '5',
       resolution: '720p', generateAudio: true,
       firstFrameImage: '', lastFrameImage: '',
-      refImages: '[]', refVideoUrl: '',
+      refImages: '[]', refVideoUrl: '', refVideoName: '',
       refAudioBase64: '', refAudioName: '',
       generatedVideo: '', isGenerating: false,
       generationProgress: 0, generationStatus: '',
@@ -46,9 +47,8 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
   }
 
   component(shape: SeedanceCardShape) {
-    const {
-      w, h, mode, model, prompt, ratio, duration, resolution, generateAudio,
-      firstFrameImage, lastFrameImage, refImages, refVideoUrl, refAudioBase64, refAudioName,
+    const { w, h, mode, model, prompt, ratio, duration, resolution, generateAudio,
+      firstFrameImage, lastFrameImage, refImages, refVideoUrl, refVideoName, refAudioBase64, refAudioName,
       generatedVideo, isGenerating, generationProgress, generationStatus, showSettings, isMinimized,
     } = shape.props;
 
@@ -115,6 +115,24 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
     const removeRefImage = (idx: number) => {
       const arr = [...parsedRefImages]; arr.splice(idx, 1);
       up({ refImages: JSON.stringify(arr) });
+    };
+
+    const handleRefVideoUpload = async (file: File) => {
+      if (file.size > 50 * 1024 * 1024) { alert('视频文件不能超过 50MB'); return; }
+      up({ refVideoName: '上传中...', refVideoUrl: '' });
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch('/api/video/upload', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (!res.ok || !data?.url) throw new Error(data?.error || '上传失败');
+        const ls = editor.getShape(shape.id);
+        const lp = ls ? (ls as any).props : shape.props;
+        editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...lp, refVideoUrl: data.url, refVideoName: file.name } });
+      } catch (err: any) {
+        alert(err?.message || '视频上传失败');
+        up({ refVideoName: '', refVideoUrl: '' });
+      }
     };
 
     const MODES = [
@@ -272,13 +290,33 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
                     )}
                   </div>
                   <div>
-                    <label className="text-gray-400 text-xs mb-1 block">参考视频 URL（可选）</label>
-                    <input
-                      className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 transition-all placeholder-gray-500"
-                      placeholder="https://..." value={refVideoUrl || ''}
+                    <label className="text-gray-400 text-xs mb-1 block">参考视频（可选，mp4/mov ≤50MB）</label>
+                    <input type="file" accept="video/mp4,video/quicktime"
+                      className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
                       onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                      onChange={(e) => up({ refVideoUrl: e.target.value })}
+                      onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; await handleRefVideoUpload(f); e.target.value = ''; }}
                     />
+                    {refVideoName && refVideoName !== '上传中...' && (
+                      <div className="mt-1 flex items-center gap-2 bg-black/20 border border-white/10 rounded p-1">
+                        <span className="text-gray-300 text-xs truncate flex-1">{refVideoName}</span>
+                        <button className="text-gray-500 hover:text-red-400 text-xs"
+                          onClick={(e) => { e.stopPropagation(); up({ refVideoUrl: '', refVideoName: '' }); }} onPointerDown={(e) => e.stopPropagation()}>x</button>
+                      </div>
+                    )}
+                    {refVideoName === '上传中...' && (
+                      <div className="mt-1 text-gray-400 text-xs">上传中...</div>
+                    )}
+                    {!refVideoName && (
+                      <div className="mt-1">
+                        <input
+                          className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 transition-all placeholder-gray-500"
+                          placeholder="或直接填写视频 URL https://..."
+                          value={refVideoUrl && !refVideoName ? refVideoUrl : ''}
+                          onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
+                          onChange={(e) => up({ refVideoUrl: e.target.value, refVideoName: '' })}
+                        />
+                      </div>
+                    )}
                   </div>
                   <div>
                     <label className="text-gray-400 text-xs mb-1 block">参考音频（可选，wav/mp3）</label>
@@ -370,17 +408,75 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
               )}
 
               {generatedVideo && (
-                <div className="mt-2 bg-black/40 border border-white/10 rounded-lg overflow-hidden">
-                  <video src={generatedVideo} controls className="w-full" style={{ maxHeight: '180px' }}
-                    onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()} />
-                  <div className="flex gap-1 p-1">
-                    <button
-                      className="flex-1 py-1 bg-gray-700/60 hover:bg-gray-600/60 rounded text-white text-[10px] transition-all"
-                      onClick={(e) => { e.stopPropagation(); const a = document.createElement('a'); a.href = generatedVideo; a.download = 'seedance-' + Date.now() + '.mp4'; a.click(); }}
-                      onPointerDown={(e) => e.stopPropagation()}
-                    >下载</button>
+                <>
+                  <button
+                    className="w-full py-2 mt-2 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg bg-gradient-to-r from-yellow-400/80 to-yellow-500/80 hover:from-yellow-400 hover:to-yellow-500"
+                    onClick={(e) => { e.stopPropagation(); up({ showSettings: false }); }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                  >查看生成视频</button>
+                  <div className="mt-2 bg-black/40 border border-white/10 rounded-lg overflow-visible">
+                    <div className="relative group" style={{ minHeight: '180px' }}>
+                      <video
+                        src={generatedVideo}
+                        controls
+                        crossOrigin="anonymous"
+                        className="w-full bg-black rounded-lg"
+                        style={{ minHeight: '180px', maxHeight: '220px' }}
+                        onClick={(e) => e.stopPropagation()}
+                        onPointerDown={(e) => e.stopPropagation()}
+                      />
+                      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {/* 全屏 */}
+                        <button
+                          className="p-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white transition-all"
+                          title="放大播放"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const overlay = document.createElement('div');
+                            overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;';
+                            const vid = document.createElement('video');
+                            vid.src = generatedVideo; vid.controls = true; vid.autoplay = true;
+                            vid.style.cssText = 'max-width:80vw;max-height:80vh;border-radius:12px;';
+                            const close = document.createElement('button');
+                            close.textContent = '✕';
+                            close.style.cssText = 'position:absolute;top:16px;right:16px;width:32px;height:32px;background:#3f3f46;border:1px solid rgba(255,255,255,0.2);border-radius:50%;color:white;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;';
+                            close.onclick = () => document.body.removeChild(overlay);
+                            overlay.onclick = (ev) => { if (ev.target === overlay) document.body.removeChild(overlay); };
+                            overlay.appendChild(vid); overlay.appendChild(close);
+                            document.body.appendChild(overlay);
+                          }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                          </svg>
+                        </button>
+                        {/* 下载 */}
+                        <button
+                          className="p-2 bg-green-500/90 hover:bg-green-600 rounded-lg text-white transition-all"
+                          title="下载视频"
+                          onClick={(e) => { e.stopPropagation(); const a = document.createElement('a'); a.href = generatedVideo; a.download = 'seedance-' + Date.now() + '.mp4'; a.click(); }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                          </svg>
+                        </button>
+                        {/* 删除 */}
+                        <button
+                          className="p-2 bg-red-500/90 hover:bg-red-600 rounded-lg text-white transition-all"
+                          title="删除视频"
+                          onClick={(e) => { e.stopPropagation(); up({ generatedVideo: '' }); }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                </>
               )}
 
             </div>
