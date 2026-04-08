@@ -1,4 +1,4 @@
-mport {
+import {
   BaseBoxShapeUtil,
   DefaultColorStyle,
   HTMLContainer,
