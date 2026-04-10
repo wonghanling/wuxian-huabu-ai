@@ -143,6 +143,42 @@ export const VIDEO_PRICING: Record<string, VideoModelPrice> = {
     },
   },
 
+  // ── Seedance 2.0（有声/无声分开）────────────────────────
+  // key 规则：分辨率 + "_audio" 表示有声版
+  'doubao-seedance-2-0-260128': {
+    audioVariants: true,
+    resolutions: {
+      '480p':        tier(0.3),  // 无声 0.7/秒
+      '480p_audio':  tier(0.6),  // 有声 1.0/秒
+      '720p':        tier(1.1),  // 无声 1.5/秒
+      '720p_audio':  tier(1.5),  // 有声 1.9/秒
+    },
+  },
+  // ── Seedance 2.0 Fast（有声/无声分开）────────────────────
+  'doubao-seedance-2-0-fast-260128': {
+    audioVariants: true,
+    resolutions: {
+      '480p':        tier(0.35), // 无声 0.75/秒
+      '480p_audio':  tier(0.5),  // 有声 0.9/秒
+      '720p':        tier(0.9),  // 无声 1.3/秒
+      '720p_audio':  tier(1.3),  // 有声 1.7/秒
+    },
+  },
+
+  // ── Kling 动作控制（按秒，std=720p，pro=1080p）──────────
+  'kling-motion-v2.6-std': {
+    resolutions: { '720p': tier(0.5) },  // 0.9/秒
+  },
+  'kling-motion-v2.6-pro': {
+    resolutions: { '1080p': tier(0.9) }, // 1.5/秒
+  },
+  'kling-motion-v3.0-std': {
+    resolutions: { '720p': tier(1.2) },  // 1.6/秒
+  },
+  'kling-motion-v3.0-pro': {
+    resolutions: { '1080p': tier(1.5) }, // 2.1/秒
+  },
+
   // ── Veo 3.1 系列（有声/无声分开）────────────────────────
   'veo3.1-t2v': {
     audioVariants: true,

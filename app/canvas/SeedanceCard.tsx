@@ -1,6 +1,7 @@
 ﻿'use client';
 import { BaseBoxShapeUtil, HTMLContainer, RecordProps, T } from 'tldraw';
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
 
 // 下载文件（fetch blob，不打开新标签页）
 const downloadFile = async (url: string, filename: string) => {
@@ -72,10 +73,17 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
     const editor = (this as any).editor;
     const up = (props: any) => editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...shape.props, ...props } });
     const parsedRefImages: string[] = (() => { try { return JSON.parse(refImages || '[]'); } catch { return []; } })();
-    const scale = Math.min(w / 420, h / 420);
+    // scale 只在展开状态下生效，缩小时固定为1
+    const scale = isMinimized ? 1 : Math.min(w / 420, h / 560);
     const videoRef = useRef<HTMLVideoElement>(null);
     const [lightboxVideo, setLightboxVideo] = useState<string | null>(null);
     const [showVideoOutput, setShowVideoOutput] = useState(true);
+    const [userId, setUserId] = useState<string | null>(null);
+
+    useEffect(() => {
+      const supabase = createClient();
+      supabase.auth.getUser().then(({ data }: { data: any }) => setUserId(data.user?.id ?? null));
+    }, []);
 
     const captureCurrentFrame = useCallback(() => {
       const video = videoRef.current;
@@ -140,6 +148,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
             refImages: compRefImages || undefined,
             refVideoUrl: refVideoUrl || undefined,
             refAudioBase64: refAudioBase64 || undefined,
+            userId: userId || undefined,
           }),
         });
         const data = await res.json();
@@ -252,6 +261,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
             transformOrigin: 'top left',
             width: `${100 / scale}%`,
             height: `${100 / scale}%`,
+            transition: 'all 0.2s ease',
           }}
         >
           <button
@@ -309,8 +319,8 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
                   onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
                   onChange={(e) => up({ model: e.target.value })}
                 >
-                  <option value="doubao-seedance-2-0-260128">Seedance 2.0</option>
-                  <option value="doubao-seedance-2-0-fast-260128">Seedance 2.0 Fast</option>
+                  <option value="doubao-seedance-2-0-260128">Seedance 2.0 (480p无声0.7/有声1.0，720p无声1.5/有声1.9 元/秒)</option>
+                  <option value="doubao-seedance-2-0-fast-260128">Seedance 2.0 Fast (480p无声0.75/有声0.9，720p无声1.3/有声1.7 元/秒)</option>
                 </select>
               </div>
 
@@ -521,8 +531,8 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
           )}
         </div>
 
-        {/* 视频输出面板 - 卡片外，overflow visible */}
-        {generatedVideo && showVideoOutput && (
+        {/* 视频输出面板 - 卡片外，overflow visible，缩小时隐藏 */}
+        {generatedVideo && showVideoOutput && !isMinimized && (
           <div className="mt-2 bg-black/40 border border-white/10 rounded-lg overflow-visible" style={{ position: 'absolute', top: `${h + 8}px`, left: 0, width: `${w}px`, zIndex: 100 }}>
             <div className="relative group" style={{ minHeight: '180px' }}>
               <video

@@ -14,18 +14,18 @@ const supabaseAdmin = createClient(
 );
 
 const KLING_LIP_SYNC_PRICE = {
-  member: 2.1,
-  normal: 2.3,
+  member: 1.085,  // 0.085/次 + 0.19/秒 × 5秒 = 1.035，取整后约1.085（按次固定）
+  normal: 1.285,
 } as const;
 
 const KLING_MOTION_PRICE = {
   'v2.6': {
-    std: { member: 1.25, normal: 1.45, resolution: '720p' },
-    pro: { member: 1.76, normal: 1.96, resolution: '1080p' },
+    std: { member: 0.9, normal: 1.1, resolution: '720p' },
+    pro: { member: 1.5, normal: 1.7, resolution: '1080p' },
   },
   'v3.0': {
-    std: { member: 1.93, normal: 2.13, resolution: '720p' },
-    pro: { member: 2.44, normal: 2.64, resolution: '1080p' },
+    std: { member: 1.6, normal: 1.8, resolution: '720p' },
+    pro: { member: 2.1, normal: 2.3, resolution: '1080p' },
   },
 } as const;
 
@@ -58,7 +58,8 @@ function extractFaceId(data: any, faces: Array<Record<string, unknown>>): string
 }
 
 function normalizeMotionVersion(value?: string): 'v2.6' | 'v3.0' {
-  return value === 'v3.0' ? 'v3.0' : 'v2.6';
+  if (value === 'v3.0' || value === 'kling-v3-master') return 'v3.0';
+  return 'v2.6';
 }
 
 function normalizeVideoMode(value?: string): 'std' | 'pro' {

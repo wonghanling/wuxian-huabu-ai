@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { checkMembership, deductBalance, refundBalance } from '@/lib/billing';
 
 export const maxDuration = 60;
 
@@ -10,6 +11,28 @@ const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
+
+// Seedance 定价（用户侧价格，会员/普通）
+const SEEDANCE_PRICE: Record<string, { member: number; normal: number }> = {
+  'doubao-seedance-2-0-260128_480p_silent':  { member: 0.7,  normal: 0.9  },
+  'doubao-seedance-2-0-260128_480p_audio':   { member: 1.0,  normal: 1.2  },
+  'doubao-seedance-2-0-260128_720p_silent':  { member: 1.5,  normal: 1.7  },
+  'doubao-seedance-2-0-260128_720p_audio':   { member: 1.9,  normal: 2.1  },
+  'doubao-seedance-2-0-fast-260128_480p_silent': { member: 0.75, normal: 0.95 },
+  'doubao-seedance-2-0-fast-260128_480p_audio':  { member: 0.9,  normal: 1.1  },
+  'doubao-seedance-2-0-fast-260128_720p_silent': { member: 1.3,  normal: 1.5  },
+  'doubao-seedance-2-0-fast-260128_720p_audio':  { member: 1.7,  normal: 1.9  },
+};
+
+function getSeedanceCharge(model: string, resolution: string, generateAudio: boolean, duration: number, isMember: boolean) {
+  const audioKey = generateAudio ? 'audio' : 'silent';
+  const key = `${model}_${resolution}_${audioKey}`;
+  const price = SEEDANCE_PRICE[key];
+  if (!price) return 0;
+  const perSec = isMember ? price.member : price.normal;
+  const secs = duration === -1 ? 5 : Math.max(1, duration);
+  return Math.round(perSec * secs * 100) / 100;
+}
 
 // 上传 base64 图片到 Supabase Storage，返回公开 URL
 async function uploadBase64ToStorage(base64: string, prefix: string): Promise<string> {
@@ -27,11 +50,14 @@ async function uploadBase64ToStorage(base64: string, prefix: string): Promise<st
 }
 
 export async function POST(req: NextRequest) {
+  let body: any = {};
+  let chargedAmount = 0;
+
   try {
-    const body = await req.json();
+    body = await req.json();
     const {
       mode = 't2v',
-      model = 'doubao-seedance-2-0',
+      model = 'doubao-seedance-2-0-260128',
       prompt = '',
       ratio = '16:9',
       duration = 5,
@@ -42,10 +68,25 @@ export async function POST(req: NextRequest) {
       refImages,
       refVideoUrl,
       refAudioBase64,
+      userId,
     } = body;
 
     if (!ARK_API_KEY) {
       return NextResponse.json({ error: '未配置 ARK_API_KEY' }, { status: 500 });
+    }
+
+    // 扣费
+    if (userId) {
+      const isMember = await checkMembership(userId);
+      chargedAmount = getSeedanceCharge(model, resolution, generateAudio, Number(duration), isMember);
+      if (chargedAmount > 0) {
+        const deduct = await deductBalance(userId, chargedAmount, 'video_deduct',
+          `Seedance 视频生成 ${model} ${resolution} ${generateAudio ? '有声' : '无声'}`,
+          { model, resolution, generateAudio, duration, mode });
+        if (!deduct.success) {
+          return NextResponse.json({ error: deduct.error || '余额不足，请充值' }, { status: 402 });
+        }
+      }
     }
 
     // 构建 content 数组
@@ -137,6 +178,13 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error('Seedance 生成错误:', error);
+
+    if (body?.userId && chargedAmount > 0) {
+      await refundBalance(body.userId, chargedAmount, `Seedance 视频生成失败退款`, {
+        model: body.model, resolution: body.resolution, mode: body.mode,
+      });
+    }
+
     return NextResponse.json({ error: error.message || '服务器错误' }, { status: 500 });
   }
 }
