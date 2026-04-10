@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fal } from '@fal-ai/client';
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { calcImagePrice } from '@/lib/pricing';
 import { deductBalance, refundBalance } from '@/lib/billing';
