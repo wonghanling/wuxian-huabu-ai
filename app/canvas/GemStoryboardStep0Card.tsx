@@ -57,6 +57,14 @@ export class GemStep0CardUtil extends BaseBoxShapeUtil<GemStep0CardShape> {
     const { w, h, story, result, isGenerating, isMinimized } = shape.props;
     const editor = useEditor();
     const [copied, setCopied] = useState(false);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+
+  const copyBeat = (content: string, index: number) => {
+    navigator.clipboard.writeText(content).then(() => {
+      setCopiedIndex(index);
+      setTimeout(() => setCopiedIndex(null), 2000);
+    });
+  };
 
     const update = (props: Partial<GemStep0CardShape['props']>) => {
       editor.updateShape({ id: shape.id, type: 'gem-step0-card' as any, props: { ...shape.props, ...props } });
@@ -179,19 +187,19 @@ export class GemStep0CardUtil extends BaseBoxShapeUtil<GemStep0CardShape> {
                     {beats.map((beat, i) => (
                       <div
                         key={i}
-                        className="bg-black/30 border border-white/8 rounded-lg p-2 cursor-pointer hover:border-purple-500/40 hover:bg-purple-900/10 transition-all group"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigator.clipboard.writeText(beat.content);
-                        }}
-                        onPointerDown={(e) => e.stopPropagation()}
-                        title="点击复制此段内容"
+                        className="bg-black/30 border border-white/8 rounded-lg p-2"
                       >
-                        <div className="flex items-center gap-1.5 mb-1">
+                        <div className="flex items-center justify-between mb-1">
                           <span className="text-[10px] font-mono text-purple-400 bg-purple-900/30 px-1.5 py-0.5 rounded">
                             {beat.beat_type}
                           </span>
-                          <span className="text-[10px] text-gray-600 group-hover:text-gray-400 transition-colors">点击复制</span>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); copyBeat(beat.content, i); }}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            className="text-[10px] text-purple-400 hover:text-purple-300 transition-colors px-1.5 py-0.5 rounded hover:bg-purple-900/20"
+                          >
+                            {copiedIndex === i ? '已复制 ✓' : '复制'}
+                          </button>
                         </div>
                         <p className="text-gray-300 text-[11px] leading-relaxed">{beat.content}</p>
                       </div>
