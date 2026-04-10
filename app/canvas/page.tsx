@@ -12,6 +12,7 @@ import { PortTool } from './PortTool';
 import { TimelineShapeUtil } from './TimelineShape';
 import { ShotCardShapeUtil } from './ShotCard';
 import { PromptOptimizerCardUtil } from './PromptOptimizerCard';
+import { GemStep0CardUtil } from './GemStoryboardStep0Card';
 import { GemStep1CardUtil } from './GemStoryboardStep1Card';
 import { GemStep2CardUtil } from './GemStoryboardStep2Card';
 import { GemStep3CardUtil } from './GemStoryboardStep3Card';
@@ -492,17 +493,20 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
       const startX = centerX - totalW / 2;
       const startY = centerY - 260;
 
+      const totalW = cardW * 5 + gap * 4;
+      const id0 = createShapeId();
       const id1 = createShapeId();
       const id2 = createShapeId();
       const id3 = createShapeId();
       const id4 = createShapeId();
 
-      editor.createShape({ id: id1, type: 'gem-step1-card' as any, x: startX, y: startY, props: { w: cardW, h: 520 } });
-      editor.createShape({ id: id2, type: 'gem-step2-card' as any, x: startX + (cardW + gap), y: startY, props: { w: cardW, h: 520 } });
-      editor.createShape({ id: id3, type: 'gem-step3-card' as any, x: startX + (cardW + gap) * 2, y: startY, props: { w: cardW, h: 520 } });
-      editor.createShape({ id: id4, type: 'gem-step4-card' as any, x: startX + (cardW + gap) * 3, y: startY, props: { w: cardW, h: 520 } });
+      editor.createShape({ id: id0, type: 'gem-step0-card' as any, x: startX, y: startY, props: { w: cardW, h: 520 } });
+      editor.createShape({ id: id1, type: 'gem-step1-card' as any, x: startX + (cardW + gap), y: startY, props: { w: cardW, h: 520 } });
+      editor.createShape({ id: id2, type: 'gem-step2-card' as any, x: startX + (cardW + gap) * 2, y: startY, props: { w: cardW, h: 520 } });
+      editor.createShape({ id: id3, type: 'gem-step3-card' as any, x: startX + (cardW + gap) * 3, y: startY, props: { w: cardW, h: 520 } });
+      editor.createShape({ id: id4, type: 'gem-step4-card' as any, x: startX + (cardW + gap) * 4, y: startY, props: { w: cardW, h: 520 } });
 
-      editor.select(id1);
+      editor.select(id0);
       editor.setCurrentTool('select');
     } catch (error) {
       console.error('创建导演引擎卡片失败:', error);
@@ -1583,7 +1587,7 @@ function CanvasPageContent() {
   }, []);
 
   // 自定义形状工具和绑定工具
-  const customShapeUtils = [CustomCardShapeUtil, ConnectionShapeUtil, TimelineShapeUtil, ShotCardShapeUtil, PromptOptimizerCardUtil, GemStep1CardUtil, GemStep2CardUtil, GemStep3CardUtil, GemStep4CardUtil, AudioCardUtil, SeedanceCardUtil];
+  const customShapeUtils = [CustomCardShapeUtil, ConnectionShapeUtil, TimelineShapeUtil, ShotCardShapeUtil, PromptOptimizerCardUtil, GemStep0CardUtil, GemStep1CardUtil, GemStep2CardUtil, GemStep3CardUtil, GemStep4CardUtil, AudioCardUtil, SeedanceCardUtil];
   const customBindingUtils = [ConnectionBindingUtil];
   const customTools = [PortTool];
 
