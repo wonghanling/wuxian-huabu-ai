@@ -45,7 +45,49 @@ export function useMembership() {
     });
   }, []);
 
-  useEffect(() => { refresh(); }, [refresh]);
+  useEffect(() => {
+    refresh();
+
+    // Supabase realtime 订阅 users 表，余额/会员状态变化时自动刷新
+    const supabase = createClient();
+    if (!supabase) return;
+
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+
+      channel = supabase
+        .channel('user-balance')
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'users',
+            filter: `id=eq.${user.id}`,
+          },
+          (payload) => {
+            const row = payload.new as any;
+            const isMember = !!(
+              row?.is_member &&
+              row?.member_expires_at &&
+              new Date(row.member_expires_at) > new Date()
+            );
+            setState(s => ({
+              ...s,
+              isMember,
+              balance: row?.balance ?? s.balance,
+            }));
+          }
+        )
+        .subscribe();
+    });
+
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, [refresh]);
 
   return { ...state, refresh };
 }
