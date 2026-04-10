@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 const YUNWU_BASE_URL = 'https://api.n1n.ai';
 const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 const INSTRUCTIONS: Record<string, string> = {
   '4': `You are Creative Visualization Script Assistant - 2x2 Storyboard Mode.
