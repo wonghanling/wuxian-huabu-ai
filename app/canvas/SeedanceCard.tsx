@@ -94,6 +94,8 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
       el.addEventListener('wheel', handler, { passive: false });
       return () => el.removeEventListener('wheel', handler);
     }, []);
+
+    const captureCurrentFrame = useCallback(() => {
       const video = videoRef.current;
       if (!video) return;
       const canvas = document.createElement('canvas');
