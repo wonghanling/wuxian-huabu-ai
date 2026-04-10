@@ -489,11 +489,9 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
       const centerY = viewportPageBounds.center.y;
       const cardW = 400;
       const gap = 20;
-      const totalW = cardW * 4 + gap * 3;
+      const totalW = cardW * 5 + gap * 4;
       const startX = centerX - totalW / 2;
       const startY = centerY - 260;
-
-      const totalW = cardW * 5 + gap * 4;
       const id0 = createShapeId();
       const id1 = createShapeId();
       const id2 = createShapeId();
