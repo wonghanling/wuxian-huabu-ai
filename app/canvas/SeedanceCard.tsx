@@ -620,7 +620,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
 
         {/* 视频输出面板 - 卡片外，overflow visible，缩小时隐藏 */}
         {generatedVideo && showVideoOutput && !isMinimized && (
-          <div className="mt-2 bg-zinc-900 border border-white/10 rounded-lg overflow-hidden" style={{ position: 'absolute', top: `${h + 8}px`, left: 0, width: `${w}px`, zIndex: 100 }}>
+          <div className="mt-2 bg-zinc-900 border border-white/10 rounded-lg overflow-hidden" style={{ position: 'absolute', top: `${h + 8}px`, left: 0, width: `${w}px`, zIndex: 100, transform: 'translateZ(0)', willChange: 'transform' }}>
             <div className="relative group" style={{ minHeight: '180px' }}>
               <video
                 ref={videoRef}

@@ -3312,7 +3312,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
         {/* Kling 视频输出面板 - 卡片外，绝对定位在卡片下方 */}
         {cardType === 'kling' && klingGeneratedVideo && !isMinimized && (
-          <div className="bg-black/40 border border-white/10 rounded-lg overflow-visible" style={{ position: 'absolute', top: `${h + 8}px`, left: 0, width: `${w}px`, zIndex: 100 }}>
+          <div className="bg-zinc-900 border border-white/10 rounded-lg overflow-hidden" style={{ position: 'absolute', top: `${h + 8}px`, left: 0, width: `${w}px`, zIndex: 100, transform: 'translateZ(0)', willChange: 'transform' }}>
             <div className="relative group" style={{ minHeight: '180px' }}>
               <video
                 ref={videoRef}
