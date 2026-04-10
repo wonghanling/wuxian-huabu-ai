@@ -98,11 +98,81 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
       editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...lp, capturedFrame: frameImage } });
     }, [editor, shape.id]);
 
+    // 读取连接到当前卡片的上游数据，按模式填充对应字段
+    const getConnectedInputs = () => {
+      const allBindings = editor.getBindingsToShape(shape.id, 'connection');
+      const imageUrls: string[] = [];
+      let audioBase64: string | null = null;
+      let videoUrl: string | null = null;
+
+      for (const binding of allBindings) {
+        if (binding.props.terminal !== 'end') continue;
+        const connection = editor.getShape(binding.fromId);
+        if (!connection) continue;
+        const otherBindings = editor.getBindingsFromShape(binding.fromId, 'connection');
+        for (const ob of otherBindings) {
+          if ((ob as any).props?.terminal !== 'start') continue;
+          const src = editor.getShape((ob as any).toId);
+          if (!src) continue;
+          const sp = (src as any).props;
+          const srcType = (src as any).type;
+
+          if (srcType === 'custom-card') {
+            // 图片卡片：取生成的图片
+            if (sp.generatedImage) imageUrls.push(sp.generatedImage);
+            // 视频卡片：取生成的视频
+            if (sp.generatedVideo && !sp.generatedImage) videoUrl = sp.generatedVideo;
+            // Kling 视频卡片
+            if (sp.klingGeneratedVideo) videoUrl = sp.klingGeneratedVideo;
+          } else if (srcType === 'seedance-card') {
+            // Seedance 输出的视频
+            if (sp.generatedVideo) videoUrl = sp.generatedVideo;
+            // Seedance 保存的帧图片
+            if (sp.capturedFrame) imageUrls.push(sp.capturedFrame);
+          }
+        }
+      }
+
+      return { imageUrls, audioBase64, videoUrl };
+    };
+
     const handleGenerate = async () => {
+      // 读取上游连接数据，按模式自动填充
+      const connected = getConnectedInputs();
+      let effectiveFirstFrame = firstFrameImage;
+      let effectiveLastFrame = lastFrameImage;
+      let effectiveRefImages = parsedRefImages;
+      let effectiveRefVideoUrl = refVideoUrl;
+
+      if (connected.imageUrls.length > 0) {
+        if (mode === 'i2v') {
+          // 只取第一张作为首帧（如果用户没有手动上传）
+          if (!effectiveFirstFrame) effectiveFirstFrame = connected.imageUrls[0];
+        } else if (mode === 'first-last') {
+          // 第1张=首帧，第2张=尾帧（如果用户没有手动上传）
+          if (!effectiveFirstFrame) effectiveFirstFrame = connected.imageUrls[0];
+          if (!effectiveLastFrame && connected.imageUrls.length >= 2) effectiveLastFrame = connected.imageUrls[1];
+          if (connected.imageUrls.length > 2) {
+            alert(`首尾帧模式只支持2张图片，已自动取前两张（共连接了 ${connected.imageUrls.length} 张）`);
+          }
+        } else if (mode === 'multimodal') {
+          // 合并连接的图片到参考图（最多9张）
+          const merged = [...effectiveRefImages];
+          for (const img of connected.imageUrls) {
+            if (merged.length >= 9) break;
+            if (!merged.includes(img)) merged.push(img);
+          }
+          effectiveRefImages = merged;
+        }
+      }
+      if (connected.videoUrl && mode === 'multimodal' && !effectiveRefVideoUrl) {
+        effectiveRefVideoUrl = connected.videoUrl;
+      }
+
       if (!prompt && mode === 't2v') { alert('请输入提示词'); return; }
-      if ((mode === 'i2v' || mode === 'first-last') && !firstFrameImage) { alert('请上传首帧图片'); return; }
-      if (mode === 'first-last' && !lastFrameImage) { alert('请上传尾帧图片'); return; }
-      if (mode === 'multimodal' && parsedRefImages.length === 0 && !refVideoUrl) { alert('请至少上传一张参考图或视频URL'); return; }
+      if ((mode === 'i2v' || mode === 'first-last') && !effectiveFirstFrame) { alert('请上传首帧图片，或连接一张图片卡片'); return; }
+      if (mode === 'first-last' && !effectiveLastFrame) { alert('请上传尾帧图片，或连接第二张图片卡片'); return; }
+      if (mode === 'multimodal' && effectiveRefImages.length === 0 && !effectiveRefVideoUrl) { alert('请至少上传一张参考图或视频URL，或连接图片/视频卡片'); return; }
       up({ isGenerating: true, generationStatus: '提交中...', generationProgress: 5, generatedVideo: '' });
       try {
         // 压缩图片到 1.5MB 以内
@@ -129,11 +199,11 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
         };
 
         const [compFirst, compLast] = await Promise.all([
-          firstFrameImage ? compressImage(firstFrameImage) : Promise.resolve(undefined),
-          lastFrameImage ? compressImage(lastFrameImage) : Promise.resolve(undefined),
+          effectiveFirstFrame ? compressImage(effectiveFirstFrame) : Promise.resolve(undefined),
+          effectiveLastFrame ? compressImage(effectiveLastFrame) : Promise.resolve(undefined),
         ]);
-        const compRefImages = parsedRefImages.length > 0
-          ? await Promise.all(parsedRefImages.map(img => compressImage(img)))
+        const compRefImages = effectiveRefImages.length > 0
+          ? await Promise.all(effectiveRefImages.map((img: string) => compressImage(img)))
           : undefined;
 
         const res = await fetch('/api/seedance/generate', {
@@ -146,7 +216,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
             firstFrameImage: compFirst || undefined,
             lastFrameImage: compLast || undefined,
             refImages: compRefImages || undefined,
-            refVideoUrl: refVideoUrl || undefined,
+            refVideoUrl: effectiveRefVideoUrl || undefined,
             refAudioBase64: refAudioBase64 || undefined,
             userId: userId || undefined,
           }),
@@ -237,7 +307,13 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
         {/* 输出端口 - Right */}
         <div className="absolute top-1/2 -translate-y-1/2 cursor-crosshair group"
           style={{ right: '-6px', zIndex: 101, pointerEvents: 'all' }}
-          onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            editor.setCurrentTool('port', { shapeId: shape.id, portId: 'output', terminal: 'start' });
+          }}>
           <div className="w-3 h-3 rounded-full transition-all group-hover:scale-150"
             style={{ backgroundColor: '#27272a', border: '2px solid rgba(192,192,192,0.8)', boxShadow: '0 0 8px rgba(192,192,192,0.8)', pointerEvents: 'none' }} />
         </div>
@@ -245,7 +321,13 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
         {/* 输入端口 - Left */}
         <div className="absolute top-1/2 -translate-y-1/2 cursor-crosshair group"
           style={{ left: '-6px', zIndex: 101, pointerEvents: 'all' }}
-          onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            editor.setCurrentTool('port', { shapeId: shape.id, portId: 'input', terminal: 'end' });
+          }}>
           <div className="w-3 h-3 rounded-full transition-all group-hover:scale-150"
             style={{ backgroundColor: '#27272a', border: '2px solid rgba(192,192,192,0.8)', boxShadow: '0 0 8px rgba(192,192,192,0.8)', pointerEvents: 'none' }} />
         </div>

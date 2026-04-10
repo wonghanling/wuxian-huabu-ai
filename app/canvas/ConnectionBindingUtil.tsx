@@ -148,10 +148,17 @@ export function getConnectionBindingPosition(
   // Handle prompt-optimizer-card shape connections
   if (shapeType === 'prompt-optimizer-card') {
     if (binding.props.terminal === 'start') {
-      // Output port on right side
       return { x: bounds.maxX, y: bounds.midY };
     } else {
-      // Input port on left side
+      return { x: bounds.minX, y: bounds.midY };
+    }
+  }
+
+  // Handle seedance-card shape connections
+  if (shapeType === 'seedance-card') {
+    if (binding.props.terminal === 'start') {
+      return { x: bounds.maxX, y: bounds.midY };
+    } else {
       return { x: bounds.minX, y: bounds.midY };
     }
   }
