@@ -90,10 +90,13 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
     useEffect(() => {
       const el = scrollContainerRef.current;
       if (!el) return;
-      const handler = (e: WheelEvent) => e.stopPropagation();
-      el.addEventListener('wheel', handler, { passive: false });
-      return () => el.removeEventListener('wheel', handler);
-    }, []);
+      const handler = (e: WheelEvent) => {
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      };
+      el.addEventListener('wheel', handler, { passive: false, capture: true });
+      return () => el.removeEventListener('wheel', handler, { capture: true });
+    });
 
     const captureCurrentFrame = useCallback(() => {
       const video = videoRef.current;
