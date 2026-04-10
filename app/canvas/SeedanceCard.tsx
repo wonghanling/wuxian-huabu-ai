@@ -1,5 +1,5 @@
 ﻿'use client';
-import { BaseBoxShapeUtil, HTMLContainer, RecordProps, T } from 'tldraw';
+import { BaseBoxShapeUtil, HTMLContainer, RecordProps, T, usePassThroughWheelEvents } from 'tldraw';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -86,17 +86,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
     }, []);
 
     const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-      const el = scrollContainerRef.current;
-      if (!el) return;
-      const handler = (e: WheelEvent) => {
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-      };
-      el.addEventListener('wheel', handler, { passive: false, capture: true });
-      return () => el.removeEventListener('wheel', handler, { capture: true });
-    });
+    usePassThroughWheelEvents(scrollContainerRef);
 
     const captureCurrentFrame = useCallback(() => {
       const video = videoRef.current;

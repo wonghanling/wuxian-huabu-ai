@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { checkMembership, deductBalance, refundBalance } from '@/lib/billing';
 
 export const runtime = 'nodejs';
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 const N1N_API_KEY = process.env.YUNWU_API_KEY!;
 const N1N_BASE = 'https://api.n1n.ai';
