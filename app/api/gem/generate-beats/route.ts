@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
     const userMessage = `Here is the Chinese story text:\n\n${story}\n\nGenerate the narrative beats JSON.`;
 
     const response = await fetch(
-      `${YUNWU_BASE_URL}/v1beta/models/gemini-3-pro-preview:generateContent`,
+      `${YUNWU_BASE_URL}/v1beta/models/gemini-3-flash-preview:generateContent`,
       {
         method: 'POST',
         headers: {
