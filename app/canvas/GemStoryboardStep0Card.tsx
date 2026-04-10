@@ -194,8 +194,7 @@ export class GemStep0CardUtil extends BaseBoxShapeUtil<GemStep0CardShape> {
                             {beat.beat_type}
                           </span>
                           <button
-                            onClick={(e) => { e.stopPropagation(); copyBeat(beat.content, i); }}
-                            onPointerDown={(e) => e.stopPropagation()}
+                            onPointerDown={(e) => { e.stopPropagation(); copyBeat(beat.content, i); }}
                             className="text-[10px] text-purple-400 hover:text-purple-300 transition-colors px-1.5 py-0.5 rounded hover:bg-purple-900/20"
                           >
                             {copiedIndex === i ? '已复制 ✓' : '复制'}
