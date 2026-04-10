@@ -54,7 +54,8 @@ export function useMembership() {
 
     let channel: ReturnType<typeof supabase.channel> | null = null;
 
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(({ data }: { data: any }) => {
+      const user = data?.user;
       if (!user) return;
 
       channel = supabase
