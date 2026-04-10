@@ -68,7 +68,7 @@ export function useMembership() {
             table: 'users',
             filter: `id=eq.${user.id}`,
           },
-          (payload) => {
+          (payload: any) => {
             const row = payload.new as any;
             const isMember = !!(
               row?.is_member &&
