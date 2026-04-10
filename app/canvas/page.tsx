@@ -1551,7 +1551,9 @@ function CanvasPageContent() {
   // 退出页面自动保存
   useEffect(() => {
     const doSaveSync = () => {
+      // 没有未保存内容、或画布还没加载完，不保存（防止保存空白画布）
       if (!canvasIdRef.current || !editorRef.current) return;
+      if (!hasUnsavedRef.current) return;
       try {
         const snapshot = getSnapshot(editorRef.current.store);
         const payload = JSON.stringify({ canvasId: canvasIdRef.current, snapshot });

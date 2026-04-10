@@ -371,7 +371,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
               </div>
             </div>
           ) : (
-            <div className="p-4 h-full flex flex-col overflow-y-auto">
+            <div className="p-4 h-full flex flex-col overflow-y-auto" onWheel={(e) => e.stopPropagation()}>
 
               {/* 标题 */}
               <div className="flex items-center gap-2 mb-3">
@@ -620,7 +620,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
 
         {/* 视频输出面板 - 卡片外，overflow visible，缩小时隐藏 */}
         {generatedVideo && showVideoOutput && !isMinimized && (
-          <div className="mt-2 bg-black/40 border border-white/10 rounded-lg overflow-visible" style={{ position: 'absolute', top: `${h + 8}px`, left: 0, width: `${w}px`, zIndex: 100 }}>
+          <div className="mt-2 bg-zinc-900 border border-white/10 rounded-lg overflow-hidden" style={{ position: 'absolute', top: `${h + 8}px`, left: 0, width: `${w}px`, zIndex: 100 }}>
             <div className="relative group" style={{ minHeight: '180px' }}>
               <video
                 ref={videoRef}
