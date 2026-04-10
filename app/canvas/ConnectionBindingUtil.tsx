@@ -163,6 +163,15 @@ export function getConnectionBindingPosition(
     }
   }
 
+  // Handle audio-card shape connections
+  if (shapeType === 'audio-card') {
+    if (binding.props.terminal === 'start') {
+      return { x: bounds.maxX, y: bounds.midY };
+    } else {
+      return { x: bounds.minX, y: bounds.midY };
+    }
+  }
+
   return null;
 }
 

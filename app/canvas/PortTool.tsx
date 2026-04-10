@@ -139,7 +139,7 @@ export class PortTool extends StateNode {
       }
 
       // 检查卡片（支持所有带端口的卡片类型）
-      if (shapeType === 'custom-card' || shapeType === 'shot-card' || shapeType === 'prompt-optimizer-card' || shapeType === 'seedance-card') {
+      if (shapeType === 'custom-card' || shapeType === 'shot-card' || shapeType === 'prompt-optimizer-card' || shapeType === 'seedance-card' || shapeType === 'audio-card') {
         // Check input port (left side)
         if (this.terminal === 'start') {
           const inputX = bounds.minX;

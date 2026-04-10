@@ -129,6 +129,9 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
             if (sp.generatedVideo) videoUrl = sp.generatedVideo;
             // Seedance 保存的帧图片
             if (sp.capturedFrame) imageUrls.push(sp.capturedFrame);
+          } else if (srcType === 'audio-card') {
+            // 音频卡片：取生成的音频 URL
+            if (sp.audioUrl && !audioBase64) audioBase64 = sp.audioUrl;
           }
         }
       }
@@ -143,20 +146,18 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
       let effectiveLastFrame = lastFrameImage;
       let effectiveRefImages = parsedRefImages;
       let effectiveRefVideoUrl = refVideoUrl;
+      let effectiveRefAudio = refAudioBase64;
 
       if (connected.imageUrls.length > 0) {
         if (mode === 'i2v') {
-          // 只取第一张作为首帧（如果用户没有手动上传）
           if (!effectiveFirstFrame) effectiveFirstFrame = connected.imageUrls[0];
         } else if (mode === 'first-last') {
-          // 第1张=首帧，第2张=尾帧（如果用户没有手动上传）
           if (!effectiveFirstFrame) effectiveFirstFrame = connected.imageUrls[0];
           if (!effectiveLastFrame && connected.imageUrls.length >= 2) effectiveLastFrame = connected.imageUrls[1];
           if (connected.imageUrls.length > 2) {
             alert(`首尾帧模式只支持2张图片，已自动取前两张（共连接了 ${connected.imageUrls.length} 张）`);
           }
         } else if (mode === 'multimodal') {
-          // 合并连接的图片到参考图（最多9张）
           const merged = [...effectiveRefImages];
           for (const img of connected.imageUrls) {
             if (merged.length >= 9) break;
@@ -167,6 +168,10 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
       }
       if (connected.videoUrl && mode === 'multimodal' && !effectiveRefVideoUrl) {
         effectiveRefVideoUrl = connected.videoUrl;
+      }
+      // 音频卡片连接：自动填充参考音频（multimodal 模式）
+      if (connected.audioBase64 && mode === 'multimodal' && !effectiveRefAudio) {
+        effectiveRefAudio = connected.audioBase64;
       }
 
       if (!prompt && mode === 't2v') { alert('请输入提示词'); return; }
@@ -217,7 +222,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
             lastFrameImage: compLast || undefined,
             refImages: compRefImages || undefined,
             refVideoUrl: effectiveRefVideoUrl || undefined,
-            refAudioBase64: refAudioBase64 || undefined,
+            refAudioBase64: effectiveRefAudio || undefined,
             userId: userId || undefined,
           }),
         });
