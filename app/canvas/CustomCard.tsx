@@ -3180,6 +3180,72 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     <div className="bg-blue-400 h-1 rounded-full transition-all" style={{ width: `${generationProgress || 0}%` }} />
                   </div>
                 )}
+
+                {/* 视频输出面板 - 卡片内部，overflow-visible 溢出显示 */}
+                {klingGeneratedVideo && (
+                  <div className="mt-2 bg-black/40 border border-white/10 rounded-lg overflow-visible">
+                    <div className="relative group" style={{ minHeight: '180px' }}>
+                      <video
+                        ref={videoRef}
+                        src={klingGeneratedVideo}
+                        controls
+                        crossOrigin="anonymous"
+                        className="w-full bg-black"
+                        style={{ minHeight: '180px', maxHeight: '250px' }}
+                        onClick={(e) => e.stopPropagation()}
+                        onPointerDown={(e) => e.stopPropagation()}
+                      />
+                      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button className="p-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white transition-all" title="保存当前帧"
+                          onClick={(e) => { e.stopPropagation(); captureCurrentFrame(); }} onPointerDown={(e) => e.stopPropagation()}>
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                        </button>
+                        <button className="p-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white transition-all" title="放大播放"
+                          onClick={(e) => { e.stopPropagation(); setLightboxVideo(klingGeneratedVideo); }} onPointerDown={(e) => e.stopPropagation()}>
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                          </svg>
+                        </button>
+                        <button className="p-2 bg-green-500/90 hover:bg-green-600 rounded-lg text-white transition-all" title="下载视频"
+                          onClick={(e) => { e.stopPropagation(); downloadFile(klingGeneratedVideo, 'kling-video.mp4'); }} onPointerDown={(e) => e.stopPropagation()}>
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                          </svg>
+                        </button>
+                        <button className="p-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white transition-all" title="删除视频"
+                          onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingGeneratedVideo: '' } }); }} onPointerDown={(e) => e.stopPropagation()}>
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 pointer-events-none">
+                        <p className="text-white text-[10px] truncate">生成成功 · Kling 视频</p>
+                      </div>
+                    </div>
+                    {capturedFrame && (
+                      <div className="mt-2 bg-black/40 border border-purple-500/30 rounded-lg overflow-hidden">
+                        <div className="p-2 bg-purple-500/10 border-b border-purple-500/20">
+                          <p className="text-purple-400 text-[10px] font-semibold">捕获的视频帧</p>
+                        </div>
+                        <div className="relative group">
+                          <img src={capturedFrame} alt="Captured Frame" className="w-full h-auto max-h-[200px] object-contain bg-black/20" onClick={(e) => e.stopPropagation()} />
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                            <button className="px-3 py-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white text-xs font-semibold transition-all"
+                              onClick={(e) => { e.stopPropagation(); setLightboxVideo(capturedFrame); }} onPointerDown={(e) => e.stopPropagation()}>查看</button>
+                            <button className="px-3 py-2 bg-green-500/90 hover:bg-green-600 rounded-lg text-white text-xs font-semibold transition-all"
+                              onClick={(e) => { e.stopPropagation(); downloadFile(capturedFrame, `kling-frame-${Date.now()}.png`); }} onPointerDown={(e) => e.stopPropagation()}>下载</button>
+                            <button className="px-3 py-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white text-xs font-semibold transition-all"
+                              onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, capturedFrame: '' } }); }} onPointerDown={(e) => e.stopPropagation()}>删除</button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
@@ -3310,83 +3376,6 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
           )}
         </div>
 
-        {/* Kling 视频输出面板 - 卡片外，绝对定位在卡片下方 */}
-        {cardType === 'kling' && klingGeneratedVideo && !isMinimized && (
-          <div className="bg-zinc-900 border border-white/10 rounded-lg overflow-hidden" style={{ position: 'absolute', top: `${h + 8}px`, left: 0, width: `${w}px`, zIndex: 100, transform: 'translateZ(0)', willChange: 'transform' }}>
-            <div className="relative group" style={{ minHeight: '180px' }}>
-              <video
-                ref={videoRef}
-                src={klingGeneratedVideo}
-                controls
-                crossOrigin="anonymous"
-                className="w-full bg-black"
-                style={{ minHeight: '180px', maxHeight: '250px' }}
-                onClick={(e) => e.stopPropagation()}
-                onPointerDown={(e) => e.stopPropagation()}
-              />
-              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button className="p-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white transition-all" title="保存当前帧"
-                  onClick={(e) => { e.stopPropagation(); captureCurrentFrame(); }} onPointerDown={(e) => e.stopPropagation()}>
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </button>
-                <button className="p-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white transition-all" title="放大播放"
-                  onClick={(e) => { e.stopPropagation(); setLightboxVideo(klingGeneratedVideo); }} onPointerDown={(e) => e.stopPropagation()}>
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                  </svg>
-                </button>
-                <button className="p-2 bg-green-500/90 hover:bg-green-600 rounded-lg text-white transition-all" title="下载视频"
-                  onClick={(e) => { e.stopPropagation(); downloadFile(klingGeneratedVideo, 'kling-video.mp4'); }} onPointerDown={(e) => e.stopPropagation()}>
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                </button>
-                <button className="p-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white transition-all" title="删除视频"
-                  onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingGeneratedVideo: '' } }); }} onPointerDown={(e) => e.stopPropagation()}>
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-              </div>
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 pointer-events-none">
-                <p className="text-white text-[10px] truncate">生成成功 · Kling 视频</p>
-              </div>
-            </div>
-            {capturedFrame && (
-              <div className="mt-2 bg-black/40 border border-purple-500/30 rounded-lg overflow-hidden">
-                <div className="p-2 bg-purple-500/10 border-b border-purple-500/20">
-                  <p className="text-purple-400 text-[10px] font-semibold">捕获的视频帧</p>
-                </div>
-                <div className="relative group">
-                  <img src={capturedFrame} alt="Captured Frame" className="w-full h-auto max-h-[200px] object-contain bg-black/20" onClick={(e) => e.stopPropagation()} />
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                    <button className="px-3 py-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
-                      onClick={(e) => { e.stopPropagation(); setLightboxVideo(capturedFrame); }} onPointerDown={(e) => e.stopPropagation()}>
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                      </svg>查看
-                    </button>
-                    <button className="px-3 py-2 bg-green-500/90 hover:bg-green-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
-                      onClick={(e) => { e.stopPropagation(); downloadFile(capturedFrame, `kling-frame-${Date.now()}.png`); }} onPointerDown={(e) => e.stopPropagation()}>
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                      </svg>下载
-                    </button>
-                    <button className="px-3 py-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
-                      onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, capturedFrame: '' } }); }} onPointerDown={(e) => e.stopPropagation()}>
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>删除
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
 
         {/* 镜头控制滑块样式 */}
         <style jsx>{`
