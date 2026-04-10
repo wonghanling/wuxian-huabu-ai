@@ -46,20 +46,20 @@ export function useMembership() {
   }, []);
 
   useEffect(() => {
-    refresh();
-
-    // Supabase realtime 订阅 users 表，余额/会员状态变化时自动刷新
     const supabase = createClient();
     if (!supabase) return;
 
     let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelled = false;
 
-    supabase.auth.getUser().then(({ data }: { data: any }) => {
-      const user = data?.user;
-      if (!user) return;
+    const setup = async () => {
+      await refresh();
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || cancelled) return;
 
       channel = supabase
-        .channel('user-balance')
+        .channel(`user-balance-${user.id}`)
         .on(
           'postgres_changes',
           {
@@ -83,9 +83,12 @@ export function useMembership() {
           }
         )
         .subscribe();
-    });
+    };
+
+    setup();
 
     return () => {
+      cancelled = true;
       if (channel) supabase.removeChannel(channel);
     };
   }, [refresh]);
