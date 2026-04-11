@@ -519,6 +519,15 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
     const [isUploadingKlingVideo, setIsUploadingKlingVideo] = useState(false);
     const [lightboxVideo, setLightboxVideo] = useState<string | null>(null);
 
+    // debounce 写入 tldraw，避免每次打字都触发 store 更新
+    const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const updateShapeDebounced = useCallback((props: Partial<CustomCardShape['props']>) => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+      debounceTimer.current = setTimeout(() => {
+        editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, ...props } });
+      }, 300);
+    }, [editor, shape.id, shape.props]);
+
     const handleKlingVideoUpload = async (file: File) => {
       const lowerName = file.name.toLowerCase();
       if (!(lowerName.endsWith('.mp4') || lowerName.endsWith('.mov'))) {
@@ -972,14 +981,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     onChange={(e) => {
                       // 移除镜头参数，只保存用户输入的文本
                       const userInput = e.target.value.replace(/\[Camera: vertical [+-]?\d+°, horizontal [+-]?\d+°\]/g, '').trim();
-                      editor.updateShape({
-                        id: shape.id,
-                        type: 'custom-card' as any,
-                        props: {
-                          ...shape.props,
-                          prompt: userInput,
-                        },
-                      });
+                      updateShapeDebounced({ prompt: userInput });
                     }}
                   />
                   {/* 镜头参数提示 */}
@@ -1248,11 +1250,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           onClick={(e) => e.stopPropagation()}
                           onPointerDown={(e) => e.stopPropagation()}
                           onChange={(e) => {
-                            editor.updateShape({
-                              id: shape.id,
-                              type: 'custom-card' as any,
-                              props: { ...shape.props, characterAnchorJson: e.target.value },
-                            });
+                            updateShapeDebounced({ characterAnchorJson: e.target.value });
                           }}
                         />
                       </div>
@@ -1478,11 +1476,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           onClick={(e) => e.stopPropagation()}
                           onPointerDown={(e) => e.stopPropagation()}
                           onChange={(e) => {
-                            editor.updateShape({
-                              id: shape.id,
-                              type: 'custom-card' as any,
-                              props: { ...shape.props, characterThreeViewJson: e.target.value },
-                            });
+                            updateShapeDebounced({ characterThreeViewJson: e.target.value });
                           }}
                         />
                       </div>
@@ -3042,7 +3036,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       placeholder="让图片的人像视频一样..."
                       value={prompt}
                       onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                      onChange={(e) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, prompt: e.target.value } })}
+                      onChange={(e) => updateShapeDebounced({ prompt: e.target.value })}
                     />
                   </div>
                   <div>
@@ -3145,7 +3139,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       placeholder="https://..."
                       value={klingVideoUrl && !klingVideoName ? klingVideoUrl : ''}
                       onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                      onChange={(e) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingVideoUrl: e.target.value, klingVideoName: '' } })}
+                      onChange={(e) => updateShapeDebounced({ klingVideoUrl: e.target.value, klingVideoName: '' })}
                     />
                   </div>
                   <div>
@@ -3378,7 +3372,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                 <input className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none transition-all"
                   value={klingLipSyncFaceId || '-1'}
                   onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                  onChange={(e) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingLipSyncFaceId: e.target.value } })} />
+                  onChange={(e) => updateShapeDebounced({ klingLipSyncFaceId: e.target.value })} />
               </div>
               <div className="grid grid-cols-3 gap-2">
                 <div>
@@ -3386,21 +3380,21 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   <input type="number" className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none transition-all"
                     value={klingLipSyncSoundStart ?? 0}
                     onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                    onChange={(e) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingLipSyncSoundStart: parseInt(e.target.value) || 0 } })} />
+                    onChange={(e) => updateShapeDebounced({ klingLipSyncSoundStart: parseInt(e.target.value) || 0 })} />
                 </div>
                 <div>
                   <label className="text-gray-400 text-xs mb-1 block">结束(ms)</label>
                   <input type="number" className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none transition-all"
                     value={klingLipSyncSoundEnd ?? 5000}
                     onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                    onChange={(e) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingLipSyncSoundEnd: parseInt(e.target.value) || 5000 } })} />
+                    onChange={(e) => updateShapeDebounced({ klingLipSyncSoundEnd: parseInt(e.target.value) || 5000 })} />
                 </div>
                 <div>
                   <label className="text-gray-400 text-xs mb-1 block">插入(ms)</label>
                   <input type="number" className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none transition-all"
                     value={klingLipSyncSoundInsert ?? 0}
                     onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                    onChange={(e) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingLipSyncSoundInsert: parseInt(e.target.value) || 0 } })} />
+                    onChange={(e) => updateShapeDebounced({ klingLipSyncSoundInsert: parseInt(e.target.value) || 0 })} />
                 </div>
               </div>
               <div>
@@ -3408,14 +3402,14 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                 <input type="range" min="0" max="2" step="0.1" className="w-full"
                   value={klingLipSyncSoundVolume ?? 1}
                   onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                  onChange={(e) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingLipSyncSoundVolume: parseFloat(e.target.value) } })} />
+                  onChange={(e) => updateShapeDebounced({ klingLipSyncSoundVolume: parseFloat(e.target.value) })} />
               </div>
               <div>
                 <label className="text-gray-400 text-xs mb-1 block">原声音量 ({klingLipSyncOriginalVolume ?? 1})</label>
                 <input type="range" min="0" max="2" step="0.1" className="w-full"
                   value={klingLipSyncOriginalVolume ?? 1}
                   onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                  onChange={(e) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingLipSyncOriginalVolume: parseFloat(e.target.value) } })} />
+                  onChange={(e) => updateShapeDebounced({ klingLipSyncOriginalVolume: parseFloat(e.target.value) })} />
               </div>
             </>)}
           </div>

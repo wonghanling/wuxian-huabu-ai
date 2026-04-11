@@ -133,6 +133,8 @@ export async function POST(req: NextRequest) {
         const hasImages = imageUrlArray && Array.isArray(imageUrlArray) && imageUrlArray.length > 0;
         const actualEndpoint = hasImages ? 'fal-ai/nano-banana-2/edit' : 'fal-ai/nano-banana-2';
         input.resolution = imageQuality === '4k' ? '4K' : '2K';
+        delete input.aspect_ratio;
+        delete input.num_images;
         delete input.output_format;
         delete input.safety_tolerance;
         if (hasImages) {
