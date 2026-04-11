@@ -1848,16 +1848,9 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                               setIsUploadingMulti(true);
                               const newUrls = [...urls];
                               for (const file of toUpload) {
-                                const base64 = await new Promise<string>((resolve) => {
-                                  const reader = new FileReader();
-                                  reader.onload = (ev) => resolve(ev.target?.result as string);
-                                  reader.readAsDataURL(file);
-                                });
-                                const res = await fetch('/api/image/upload', {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ imageBase64: base64 }),
-                                });
+                                const formData = new FormData();
+                                formData.append('file', file);
+                                const res = await fetch('/api/image/upload', { method: 'POST', body: formData });
                                 const data = await res.json();
                                 if (data.url) newUrls.push(data.url);
                               }
