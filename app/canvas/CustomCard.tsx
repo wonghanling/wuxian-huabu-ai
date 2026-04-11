@@ -1485,6 +1485,18 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                             });
 
                             try {
+                              // 如果有参考图且用 nano-banana-pro，先上传到 fal storage
+                              let imageUrlArray: string[] | undefined;
+                              if (characterThreeViewImage && (characterImageModel || 'nano-banana-pro') === 'nano-banana-pro') {
+                                const uploadRes = await fetch('/api/image/upload', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ imageBase64: characterThreeViewImage }),
+                                });
+                                const uploadData = await uploadRes.json();
+                                if (uploadData.url) imageUrlArray = [uploadData.url];
+                              }
+
                               const res = await fetch('/api/image/generate', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
@@ -1492,18 +1504,37 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                                   model: characterImageModel || 'nano-banana-pro',
                                   prompt: `Character three-view sheet (front, side, back), same character, same outfit, same hairstyle. Based on: ${characterThreeViewJson}`,
                                   aspectRatio: '16:9',
-                                  imageBase64: characterThreeViewImage || undefined,
+                                  imageBase64: (characterImageModel || 'nano-banana-pro') === 'nano-banana-pro' ? undefined : (characterThreeViewImage || undefined),
+                                  imageUrlArray,
+                                  imageQuality: '2k',
                                   userId: userId || undefined,
                                 }),
                               });
                               const data = await res.json();
                               if (!res.ok) throw new Error(data.error || '生成失败');
+
+                              // fal 异步轮询
+                              let imageUrl = data.imageUrl;
+                              if (data.pending && data.requestId) {
+                                const hasImg = imageUrlArray && imageUrlArray.length > 0;
+                                const endpoint = hasImg ? 'fal-ai/nano-banana-2/edit' : 'fal-ai/nano-banana-2';
+                                const poll = async (): Promise<string> => {
+                                  await new Promise(r => setTimeout(r, 3000));
+                                  const qRes = await fetch(`/api/image/fal-query?requestId=${encodeURIComponent(data.requestId)}&endpoint=${encodeURIComponent(endpoint)}`);
+                                  const qData = await qRes.json();
+                                  if (qData.success && qData.imageUrl) return qData.imageUrl;
+                                  if (qData.error) throw new Error(qData.error);
+                                  return poll();
+                                };
+                                imageUrl = await poll();
+                              }
+
                               editor.updateShape({
                                 id: shape.id,
                                 type: 'custom-card' as any,
                                 props: {
                                   ...shape.props,
-                                  characterGeneratedImage: data.imageUrl,
+                                  characterGeneratedImage: imageUrl,
                                   showGeneratePanel: true,
                                   isGenerating: false,
                                 },
