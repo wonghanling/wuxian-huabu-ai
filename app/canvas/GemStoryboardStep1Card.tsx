@@ -76,7 +76,22 @@ export class GemStep1CardUtil extends BaseBoxShapeUtil<GemStep1CardShape> {
       const remaining = 10 - images.length;
       files.slice(0, remaining).forEach(file => {
         const reader = new FileReader();
-        reader.onload = (ev) => setImages(prev => [...prev, ev.target?.result as string]);
+        reader.onload = (ev) => {
+          const dataUrl = ev.target?.result as string;
+          const img = new Image();
+          img.onload = () => {
+            const maxSide = 1500;
+            const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+            const w = Math.round(img.width * scale);
+            const h = Math.round(img.height * scale);
+            const c = document.createElement('canvas');
+            c.width = w; c.height = h;
+            c.getContext('2d')!.drawImage(img, 0, 0, w, h);
+            setImages(prev => [...prev, c.toDataURL('image/jpeg', 0.85)]);
+          };
+          img.onerror = () => setImages(prev => [...prev, dataUrl]);
+          img.src = dataUrl;
+        };
         reader.readAsDataURL(file);
       });
       e.target.value = '';
