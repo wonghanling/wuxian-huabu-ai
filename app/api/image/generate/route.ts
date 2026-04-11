@@ -129,13 +129,19 @@ export async function POST(req: NextRequest) {
         delete input.output_format;
         delete input.safety_tolerance;
       } else if (model === 'nano-banana-pro') {
-        // nano-banana-2/edit：resolution 控制清晰度，图片可选，aspect_ratio 保留
+        // 有图用 /edit，无图用纯文生图 endpoint
+        const hasImages = imageUrlArray && Array.isArray(imageUrlArray) && imageUrlArray.length > 0;
+        const actualEndpoint = hasImages ? 'fal-ai/nano-banana-2/edit' : 'fal-ai/nano-banana-2';
         input.resolution = imageQuality === '4k' ? '4K' : '2K';
         delete input.output_format;
         delete input.safety_tolerance;
-        if (imageUrlArray && Array.isArray(imageUrlArray) && imageUrlArray.length > 0) {
+        if (hasImages) {
           input.image_urls = imageUrlArray;
         }
+        const submitted = await fal.queue.submit(actualEndpoint, { input });
+        const requestId = submitted.request_id;
+        if (!requestId) throw new Error('fal.ai 未返回 requestId');
+        return NextResponse.json({ success: true, requestId, model, prompt, pending: true });
       } else if (imageBase64) {
         input.image_url = imageBase64;
       }

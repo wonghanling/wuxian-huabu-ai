@@ -2400,10 +2400,11 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
                     // fal 异步模式：轮询查询结果
                     if (data.pending && data.requestId) {
+                      const hasImages = uploadedImageUrls && JSON.parse(uploadedImageUrls).length > 0;
                       const falEndpointMap: Record<string, string> = {
                         'flux-kontext': 'fal-ai/flux-pro/kontext/max',
                         'flux-kontext-max': 'fal-ai/flux-pro/kontext/max/text-to-image',
-                        'nano-banana-pro': 'fal-ai/nano-banana-2/edit',
+                        'nano-banana-pro': hasImages ? 'fal-ai/nano-banana-2/edit' : 'fal-ai/nano-banana-2',
                         'nano-banana-pro-multi': 'fal-ai/nano-banana-pro/edit',
                       };
                       const falEndpoint = falEndpointMap[data.model] || 'fal-ai/nano-banana-2';
