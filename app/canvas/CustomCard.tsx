@@ -1724,7 +1724,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                 <label className="text-gray-400 text-xs mb-1 block">清晰度</label>
                 <div className="flex gap-1">
                   {[
-                    { value: '2k', label: model === 'nano-banana-pro-multi' ? '2K — ¥1.5/次' : '2K — ¥0.7/次' },
+                    { value: '2k', label: model === 'nano-banana-pro-multi' ? '2K — ¥1.5/次' : '2K — ¥1.2/次' },
                     { value: '4k', label: model === 'nano-banana-pro-multi' ? '4K — ¥2.5/次' : '4K — ¥1.5/次' },
                   ].map(({ value, label }) => (
                     <button
