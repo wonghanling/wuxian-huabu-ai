@@ -43,6 +43,25 @@ function softCompressImage(dataUrl: string): Promise<string> {
   });
 }
 
+// 上传压缩：最长边限 1024px，quality 0.80，确保不超过 Vercel 4.5MB 限制
+function compressForUpload(dataUrl: string): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const maxSide = 1024;
+      const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d')!.drawImage(img, 0, 0, w, h);
+      resolve(c.toDataURL('image/jpeg', 0.80));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
 // 下载文件（fetch blob，不打开新标签页）
 const downloadFile = async (url: string, filename: string) => {
   try {
@@ -1871,18 +1890,13 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                                 const newUrls = [...existing];
                                 for (const file of toUpload) {
                                   try {
-                                    const reader = new FileReader();
-                                    const base64 = await new Promise<string>((resolve) => {
-                                      reader.onload = (ev) => resolve(ev.target?.result as string);
-                                      reader.readAsDataURL(file);
-                                    });
+                                    const formData = new FormData();
+                                    formData.append('file', file);
                                     const res = await fetch('/api/image/upload', {
                                       method: 'POST',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ imageBase64: base64 }),
+                                      body: formData,
                                     });
                                     const data = await res.json();
-                                    console.log('上传结果:', data);
                                     if (data.url) newUrls.push(data.url);
                                     else console.error('上传失败:', data.error);
                                   } catch (err) {
