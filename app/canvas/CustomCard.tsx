@@ -1825,17 +1825,18 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                             type="file"
                             accept="image/*"
                             multiple
-                            disabled={model === 'nano-banana-pro' ? urls.length >= 2 : imgs.length >= 2}
+                            disabled={model === 'nano-banana-pro' ? urls.length >= 2 || isUploadingMulti : imgs.length >= 2}
                             className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer disabled:opacity-50"
                             onClick={(e) => e.stopPropagation()}
                             onPointerDown={(e) => e.stopPropagation()}
                             onChange={async (e) => {
                               const files = Array.from(e.target.files || []);
                               if (model === 'nano-banana-pro') {
-                                // 上传到 fal storage 拿 URL（通过服务端接口）
                                 const existing = uploadedImageUrls ? JSON.parse(uploadedImageUrls) : [];
                                 const remaining = 2 - existing.length;
                                 const toUpload = files.slice(0, remaining);
+                                if (toUpload.length === 0) return;
+                                setIsUploadingMulti(true);
                                 const newUrls = [...existing];
                                 for (const file of toUpload) {
                                   try {
@@ -1854,6 +1855,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                                   } catch {}
                                 }
                                 editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImageUrls: JSON.stringify(newUrls) } });
+                                setIsUploadingMulti(false);
                               } else {
                                 // nano-banana：base64
                                 const remaining = 2 - imgs.length;
@@ -1876,6 +1878,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                               e.target.value = '';
                             }}
                           />
+                          {model === 'nano-banana-pro' && isUploadingMulti && <p className="text-xs text-gray-400 mt-1">上传中...</p>}
                           {model === 'nano-banana-pro' && urls.length > 0 && (
                             <div className="mt-1 flex gap-1 flex-wrap">
                               {urls.map((url, idx) => (
@@ -2426,7 +2429,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       const falEndpointMap: Record<string, string> = {
                         'flux-kontext': 'fal-ai/flux-pro/kontext/max',
                         'flux-kontext-max': 'fal-ai/flux-pro/kontext/max/text-to-image',
-                        'nano-banana-pro': 'fal-ai/nano-banana-2',
+                        'nano-banana-pro': 'fal-ai/nano-banana-2/edit',
                         'nano-banana-pro-multi': 'fal-ai/nano-banana-pro/edit',
                       };
                       const falEndpoint = falEndpointMap[data.model] || 'fal-ai/nano-banana-2';

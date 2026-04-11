@@ -34,7 +34,7 @@ const IMAGE_MODELS: Record<string, {
   },
   'nano-banana-pro': {
     provider: 'fal',
-    falEndpoint: 'fal-ai/nano-banana-2',
+    falEndpoint: 'fal-ai/nano-banana-2/edit',
     supportsImage: true,
   },
   'mj_imagine': {
@@ -129,9 +129,8 @@ export async function POST(req: NextRequest) {
         delete input.output_format;
         delete input.safety_tolerance;
       } else if (model === 'nano-banana-pro') {
-        // nano-banana-2：resolution 控制清晰度，图片可选
+        // nano-banana-2/edit：resolution 控制清晰度，图片可选，aspect_ratio 保留
         input.resolution = imageQuality === '4k' ? '4K' : '2K';
-        delete input.aspect_ratio;
         delete input.output_format;
         delete input.safety_tolerance;
         if (imageUrlArray && Array.isArray(imageUrlArray) && imageUrlArray.length > 0) {
