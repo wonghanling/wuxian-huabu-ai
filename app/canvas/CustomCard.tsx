@@ -1395,36 +1395,71 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       <div className="space-y-2">
                       {/* 上传图片 */}
                       <div>
-                        <label className="text-gray-400 text-xs mb-1 block">上传参考图片</label>
+                        <label className="text-gray-400 text-xs mb-1 block">上传参考图片（可选）</label>
                         <input
                           type="file"
                           accept="image/*"
                           className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
                           onClick={(e) => e.stopPropagation()}
                           onPointerDown={(e) => e.stopPropagation()}
-                          onChange={(e) => {
+                          onChange={async (e) => {
                             const file = e.target.files?.[0];
                             if (file) {
-                              const reader = new FileReader();
-                              reader.onload = (event) => {
-                                const imageData = event.target?.result as string;
-                                editor.updateShape({
-                                  id: shape.id,
-                                  type: 'custom-card' as any,
-                                  props: { ...shape.props, characterThreeViewImage: imageData },
-                                });
-                              };
-                              reader.readAsDataURL(file);
+                              const formData = new FormData();
+                              formData.append('file', file);
+                              try {
+                                const res = await fetch('/api/image/upload', { method: 'POST', body: formData });
+                                const data = await res.json();
+                                if (data.url) {
+                                  editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, characterThreeViewImage: data.url } });
+                                }
+                              } catch {}
                             }
                             e.target.value = '';
                           }}
                         />
                         {characterThreeViewImage && (
-                          <div className="mt-2 relative w-full h-24 bg-black/30 rounded-lg overflow-hidden">
+                          <div className="mt-2 relative w-full h-24 bg-black/30 rounded-lg overflow-hidden group">
                             <img src={characterThreeViewImage} alt="Reference" className="w-full h-full object-cover" />
+                            <button
+                              className="absolute top-1 right-1 w-5 h-5 bg-black/60 hover:bg-red-500/80 rounded text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, characterThreeViewImage: '' } }); }}
+                              onPointerDown={(e) => e.stopPropagation()}
+                            >✕</button>
                           </div>
                         )}
                       </div>
+
+                      {/* 清晰度 + 比例 */}
+                      {['nano-banana-pro'].includes(characterImageModel || 'nano-banana-pro') && (
+                        <div className="flex gap-2">
+                          <div className="flex-1">
+                            <label className="text-gray-400 text-xs mb-1 block">清晰度</label>
+                            <div className="flex gap-1">
+                              {[{ value: '2k', label: '2K ¥1.2' }, { value: '4k', label: '4K ¥1.5' }].map(({ value, label }) => (
+                                <button
+                                  key={value}
+                                  onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, imageQuality: value } }); }}
+                                  onPointerDown={(e) => e.stopPropagation()}
+                                  className={`flex-1 py-1 rounded text-[10px] font-semibold border transition-all ${(imageQuality ?? '2k') === value ? 'bg-blue-600 border-blue-500 text-white' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}`}
+                                >{label}</button>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="flex-1">
+                            <label className="text-gray-400 text-xs mb-1 block">比例</label>
+                            <select
+                              className="w-full bg-black/30 border border-white/8 rounded p-1 text-white text-[10px] focus:outline-none"
+                              value={aspectRatio || '16:9'}
+                              onClick={(e) => e.stopPropagation()}
+                              onPointerDown={(e) => e.stopPropagation()}
+                              onChange={(e) => { editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, aspectRatio: e.target.value } }); }}
+                            >
+                              {['1:1','16:9','9:16','4:3','3:4','3:2','2:3'].map(r => <option key={r} value={r}>{r}</option>)}
+                            </select>
+                          </div>
+                        </div>
+                      )}
 
                       {/* 粘贴完整JSON */}
                       <div>
@@ -1504,17 +1539,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                             });
 
                             try {
-                              // 如果有参考图且用 nano-banana-pro，先上传到 fal storage
-                              let imageUrlArray: string[] | undefined;
-                              if (characterThreeViewImage && (characterImageModel || 'nano-banana-pro') === 'nano-banana-pro') {
-                                const uploadRes = await fetch('/api/image/upload', {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ imageBase64: characterThreeViewImage }),
-                                });
-                                const uploadData = await uploadRes.json();
-                                if (uploadData.url) imageUrlArray = [uploadData.url];
-                              }
+                              // characterThreeViewImage 现在已经是 fal URL，直接用
+                              const imageUrlArray = characterThreeViewImage ? [characterThreeViewImage] : undefined;
 
                               const res = await fetch('/api/image/generate', {
                                 method: 'POST',
@@ -1522,10 +1548,10 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                                 body: JSON.stringify({
                                   model: characterImageModel || 'nano-banana-pro',
                                   prompt: `Character three-view sheet (front, side, back), same character, same outfit, same hairstyle. Based on: ${characterThreeViewJson}`,
-                                  aspectRatio: '16:9',
+                                  aspectRatio: aspectRatio || '16:9',
                                   imageBase64: (characterImageModel || 'nano-banana-pro') === 'nano-banana-pro' ? undefined : (characterThreeViewImage || undefined),
-                                  imageUrlArray,
-                                  imageQuality: '2k',
+                                  imageUrlArray: (characterImageModel || 'nano-banana-pro') === 'nano-banana-pro' ? imageUrlArray : undefined,
+                                  imageQuality: imageQuality || '2k',
                                   userId: userId || undefined,
                                 }),
                               });
