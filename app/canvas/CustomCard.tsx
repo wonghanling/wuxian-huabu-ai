@@ -2473,13 +2473,18 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     refreshBalance();
                   } catch (error) {
                     console.error('图片生成错误:', error);
+                    // fal 异步失败时退款
+                    if (userId && ['nano-banana-pro', 'nano-banana-pro-multi', 'flux-kontext', 'flux-kontext-max'].includes(model || '')) {
+                      fetch('/api/image/refund', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ userId, model, imageQuality }),
+                      }).catch(() => {});
+                    }
                     editor.updateShape({
                       id: shape.id,
                       type: 'custom-card' as any,
-                      props: {
-                        ...shape.props,
-                        isGenerating: false,
-                      },
+                      props: { ...shape.props, isGenerating: false },
                     });
                     alert('图片生成失败，请重试');
                   }

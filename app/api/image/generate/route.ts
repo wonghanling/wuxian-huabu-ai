@@ -235,9 +235,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, imageUrl, model, prompt });
   } catch (error: any) {
     console.error('Image API error:', error);
-    // 生成失败退款
+    // 生成失败退款（精确还原扣费金额）
     if (body?.userId) {
-      const price = calcImagePrice(body.model);
+      const refundKey = body.model === 'nano-banana-pro'
+        ? (body.imageQuality === '4k' ? 'nano-banana-pro-4k' : 'nano-banana-pro-2k')
+        : body.model === 'nano-banana-pro-multi'
+        ? (body.imageQuality === '4k' ? 'nano-banana-pro-multi-4k' : 'nano-banana-pro-multi-2k')
+        : body.model;
+      const price = calcImagePrice(refundKey);
       await refundBalance(body.userId, price, `图片生成失败退款 - ${body.model}`, { model: body.model });
     }
     return NextResponse.json({ error: error.message || '服务器错误' }, { status: 500 });
