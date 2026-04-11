@@ -10,10 +10,13 @@ import {
   Editor,
 } from 'tldraw';
 import { useState, useRef, useCallback } from 'react';
+import { fal } from '@fal-ai/client';
 import { createClient } from '@/lib/supabase/client';
 import { mirrorUrlToStorage } from '@/lib/canvas-storage';
 import { useMembership } from '@/lib/useMembership';
 import MembershipModal from './MembershipModal';
+
+fal.config({ proxyUrl: '/api/fal/proxy' });
 
 // Helper function to update custom card shape (bypasses TypeScript type checking)
 const updateCustomCardShape = (editor: Editor, id: string, props: any) => {
@@ -43,22 +46,24 @@ function softCompressImage(dataUrl: string): Promise<string> {
   });
 }
 
-// 上传压缩：最长边限 1024px，quality 0.80，确保不超过 Vercel 4.5MB 限制
-function compressForUpload(dataUrl: string): Promise<string> {
+// 上传压缩：最长边限 2048px，quality 0.85，视觉影响极小
+function compressForUpload(file: File): Promise<Blob> {
   return new Promise((resolve) => {
     const img = new Image();
+    const url = URL.createObjectURL(file);
     img.onload = () => {
-      const maxSide = 1024;
+      URL.revokeObjectURL(url);
+      const maxSide = 2048;
       const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
       const w = Math.round(img.width * scale);
       const h = Math.round(img.height * scale);
       const c = document.createElement('canvas');
       c.width = w; c.height = h;
       c.getContext('2d')!.drawImage(img, 0, 0, w, h);
-      resolve(c.toDataURL('image/jpeg', 0.80));
+      c.toBlob((blob) => resolve(blob || new Blob()), 'image/jpeg', 0.85);
     };
-    img.onerror = () => resolve(dataUrl);
-    img.src = dataUrl;
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(new Blob([file])); };
+    img.src = url;
   });
 }
 
@@ -1405,13 +1410,10 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           onChange={async (e) => {
                             const file = e.target.files?.[0];
                             if (file) {
-                              const formData = new FormData();
-                              formData.append('file', file);
                               try {
-                                const res = await fetch('/api/image/upload', { method: 'POST', body: formData });
-                                const data = await res.json();
-                                if (data.url) {
-                                  editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, characterThreeViewImage: data.url } });
+                                const url = await fal.storage.upload(file);
+                                if (url) {
+                                  editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, characterThreeViewImage: url } });
                                 }
                               } catch {}
                             }
@@ -1848,11 +1850,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                               setIsUploadingMulti(true);
                               const newUrls = [...urls];
                               for (const file of toUpload) {
-                                const formData = new FormData();
-                                formData.append('file', file);
-                                const res = await fetch('/api/image/upload', { method: 'POST', body: formData });
-                                const data = await res.json();
-                                if (data.url) newUrls.push(data.url);
+                                const url = await fal.storage.upload(file);
+                                if (url) newUrls.push(url);
                               }
                               editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImageUrls: JSON.stringify(newUrls) } });
                               setIsUploadingMulti(false);
@@ -1909,15 +1908,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                                 const newUrls = [...existing];
                                 for (const file of toUpload) {
                                   try {
-                                    const formData = new FormData();
-                                    formData.append('file', file);
-                                    const res = await fetch('/api/image/upload', {
-                                      method: 'POST',
-                                      body: formData,
-                                    });
-                                    const data = await res.json();
-                                    if (data.url) newUrls.push(data.url);
-                                    else console.error('上传失败:', data.error);
+                                    const url = await fal.storage.upload(file);
+                                    if (url) newUrls.push(url);
                                   } catch (err) {
                                     console.error('上传异常:', err);
                                   }
