@@ -1851,8 +1851,12 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                                       body: JSON.stringify({ imageBase64: base64 }),
                                     });
                                     const data = await res.json();
+                                    console.log('上传结果:', data);
                                     if (data.url) newUrls.push(data.url);
-                                  } catch {}
+                                    else console.error('上传失败:', data.error);
+                                  } catch (err) {
+                                    console.error('上传异常:', err);
+                                  }
                                 }
                                 editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImageUrls: JSON.stringify(newUrls) } });
                                 setIsUploadingMulti(false);
