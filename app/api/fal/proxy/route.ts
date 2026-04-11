@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const FAL_KEY = process.env.FAL_KEY!;
-const FAL_REST = 'https://rest.fal.ai';
 
 async function handler(req: NextRequest) {
   try {
-    const url = new URL(req.url);
-    // fal client 会把路径拼在 proxyUrl 后面
-    const targetPath = url.pathname.replace('/api/fal/proxy', '') + url.search;
-    const targetUrl = `${FAL_REST}${targetPath}`;
+    const targetUrl = req.headers.get('x-fal-target-url');
+    if (!targetUrl) {
+      return NextResponse.json({ error: '缺少 x-fal-target-url' }, { status: 400 });
+    }
 
     const headers: Record<string, string> = {
       'Authorization': `Key ${FAL_KEY}`,
