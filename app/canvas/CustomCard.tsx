@@ -1832,15 +1832,25 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                             onChange={async (e) => {
                               const files = Array.from(e.target.files || []);
                               if (model === 'nano-banana-pro') {
-                                // 上传到 fal storage 拿 URL
+                                // 上传到 fal storage 拿 URL（通过服务端接口）
                                 const existing = uploadedImageUrls ? JSON.parse(uploadedImageUrls) : [];
                                 const remaining = 2 - existing.length;
                                 const toUpload = files.slice(0, remaining);
                                 const newUrls = [...existing];
                                 for (const file of toUpload) {
                                   try {
-                                    const falUrl = await fal.storage.upload(file);
-                                    newUrls.push(falUrl);
+                                    const reader = new FileReader();
+                                    const base64 = await new Promise<string>((resolve) => {
+                                      reader.onload = (ev) => resolve(ev.target?.result as string);
+                                      reader.readAsDataURL(file);
+                                    });
+                                    const res = await fetch('/api/image/upload', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ imageBase64: base64 }),
+                                    });
+                                    const data = await res.json();
+                                    if (data.url) newUrls.push(data.url);
                                   } catch {}
                                 }
                                 editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImageUrls: JSON.stringify(newUrls) } });
