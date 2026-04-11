@@ -2214,38 +2214,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
             {/* 镜头控制面板 */}
             {cardType === 'image' && showCameraControl && (
               <div className="mt-2 p-3 bg-black/40 border border-white/10 rounded-lg space-y-3">
-                {/* 图片上传区域 */}
-                <div>
-                  <label className="text-gray-400 text-xs mb-1 block">上传参考图片</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
-                    onClick={(e) => e.stopPropagation()}
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
-                          const imageData = event.target?.result as string;
-                          editor.updateShape({
-                            id: shape.id,
-                            type: 'custom-card' as any,
-                            props: {
-                              ...shape.props,
-                              uploadedImage: imageData,
-                            },
-                          });
-                        };
-                        reader.readAsDataURL(file);
-                      }
-                      e.target.value = '';
-                    }}
-                  />
-                </div>
 
-                {/* 图片预览 */}
+                {/* 图片预览（使用上方已上传的图片） */}
                 {uploadedImage && (
                   <div className="relative w-full h-24 bg-black/30 rounded-lg overflow-hidden">
                     <img
