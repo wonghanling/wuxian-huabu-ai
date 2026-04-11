@@ -33,13 +33,11 @@ function ZoomControlsExternal({ editor }: { editor: Editor }) {
   useEffect(() => {
     const interval = setInterval(() => {
       const currentZoom = Math.round(editor.getCamera().z * 100);
-      if (currentZoom !== zoom) {
-        setZoom(currentZoom);
-      }
+      setZoom(prev => prev !== currentZoom ? currentZoom : prev);
     }, 100);
 
     return () => clearInterval(interval);
-  }, [editor, zoom]);
+  }, [editor]);
 
   const handleZoomChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     console.log('滑块改变');
@@ -891,13 +889,11 @@ function ZoomControls() {
   useEffect(() => {
     const interval = setInterval(() => {
       const currentZoom = Math.round(editor.getCamera().z * 100);
-      if (currentZoom !== zoom) {
-        setZoom(currentZoom);
-      }
+      setZoom(prev => prev !== currentZoom ? currentZoom : prev);
     }, 100);
 
     return () => clearInterval(interval);
-  }, [editor, zoom]);
+  }, [editor]);
 
   const handleZoomChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newZoom = parseInt(e.target.value);
@@ -1664,7 +1660,7 @@ function CanvasPageContent() {
     })();
 
     // ── 监听变化标记未保存 ──────────────────────────────────────
-    editor.store.listen(() => {
+    const unsubscribeUnsaved = editor.store.listen(() => {
       if (isRestoringRef.current) return;
       if (!canvasIdRef.current) return;
       hasUnsavedRef.current = true;
@@ -1761,17 +1757,20 @@ function CanvasPageContent() {
     container.addEventListener('pointerdown', handlePointerDown, { capture: true });
     container.addEventListener('pointermove', handlePointerMove, { capture: true });
     container.addEventListener('pointerup', handlePointerUp, { capture: true });
-    container.addEventListener('pointerleave', () => { isDraggingCanvas = false; });
+    const handlePointerLeave = () => { isDraggingCanvas = false; };
+    container.addEventListener('pointerleave', handlePointerLeave);
 
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);
       unsubscribe();
+      unsubscribeUnsaved();
       container.removeEventListener('contextmenu', handleContextMenu);
       container.removeEventListener('pointerdown', handlePointerDown, { capture: true });
       container.removeEventListener('pointermove', handlePointerMove, { capture: true });
       container.removeEventListener('pointerup', handlePointerUp, { capture: true });
+      container.removeEventListener('pointerleave', handlePointerLeave);
     };
   };
 
