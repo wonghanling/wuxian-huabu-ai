@@ -11,7 +11,7 @@ export const MEMBERSHIP_PRICE = 115; // 元/月
 // ============================================================
 export const IMAGE_PRICING: Record<string, number> = {
   'nano-banana':          0.5,
-  'nano-banana-pro-2k':   0.7,
+  'nano-banana-pro-2k':   1.2,
   'nano-banana-pro-4k':   1.5,
   'flux-kontext':         0.6,
   'flux-kontext-max':     1.0,

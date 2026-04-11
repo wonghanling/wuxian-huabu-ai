@@ -33,9 +33,8 @@ const IMAGE_MODELS: Record<string, {
     supportsImage: true,
   },
   'nano-banana-pro': {
-    provider: 'n1n',
-    yunwuModel: 'gemini-3-pro-image-preview',
-    apiType: 'gemini-native',
+    provider: 'fal',
+    falEndpoint: 'fal-ai/nano-banana-2',
     supportsImage: true,
   },
   'mj_imagine': {
@@ -129,6 +128,15 @@ export async function POST(req: NextRequest) {
         delete input.aspect_ratio;
         delete input.output_format;
         delete input.safety_tolerance;
+      } else if (model === 'nano-banana-pro') {
+        // nano-banana-2：resolution 控制清晰度，图片可选
+        input.resolution = imageQuality === '4k' ? '4K' : '2K';
+        delete input.aspect_ratio;
+        delete input.output_format;
+        delete input.safety_tolerance;
+        if (imageUrlArray && Array.isArray(imageUrlArray) && imageUrlArray.length > 0) {
+          input.image_urls = imageUrlArray;
+        }
       } else if (imageBase64) {
         input.image_url = imageBase64;
       }

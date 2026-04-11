@@ -1447,7 +1447,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                             });
                           }}
                         >
-                          <option value="nano-banana-pro">Nano Banana Pro（2K/4K可选）</option>
+                          <option value="nano-banana-pro">Nano Banana 2（2K ¥1.2 / 4K ¥1.5）</option>
                           <option value="nano-banana">Nano Banana — ¥0.5/次</option>
                           <option value="flux-kontext">Flux Kontext — ¥0.6/次</option>
                           <option value="flux-kontext-max">Flux Kontext Max — ¥1.0/次</option>
@@ -1630,7 +1630,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   {cardType === 'image' && (
                     <>
                       <optgroup label="Gemini">
-                        <option value="nano-banana-pro">Nano Banana Pro（2K/4K可选）</option>
+                        <option value="nano-banana-pro">Nano Banana 2（2K ¥1.2 / 4K ¥1.5）</option>
                         <option value="nano-banana">Nano Banana — ¥0.5/次</option>
                         <option value="nano-banana-pro-multi">多图融合 Nano Banana Pro（2K ¥1.5 / 4K ¥2.5）</option>
                       </optgroup>
@@ -1814,53 +1814,80 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     })()}
                   </>
                 ) : ['nano-banana', 'nano-banana-pro'].includes(model || '') ? (
-                  /* n1n 模型：最多2张，base64 */
+                  /* nano-banana-pro 走 fal storage URL，nano-banana 走 base64 */
                   <>
                     {(() => {
                       const imgs: string[] = uploadedImages ? JSON.parse(uploadedImages) : [];
+                      const urls: string[] = uploadedImageUrls ? JSON.parse(uploadedImageUrls) : [];
                       return (
                         <>
                           <input
                             type="file"
                             accept="image/*"
                             multiple
-                            disabled={imgs.length >= 2}
+                            disabled={model === 'nano-banana-pro' ? urls.length >= 2 : imgs.length >= 2}
                             className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer disabled:opacity-50"
                             onClick={(e) => e.stopPropagation()}
                             onPointerDown={(e) => e.stopPropagation()}
-                            onChange={(e) => {
+                            onChange={async (e) => {
                               const files = Array.from(e.target.files || []);
-                              const remaining = 2 - imgs.length;
-                              const toLoad = files.slice(0, remaining);
-                              let loaded = 0;
-                              const newImgs = [...imgs];
-                              toLoad.forEach(file => {
-                                const reader = new FileReader();
-                                reader.onload = async (ev) => {
-                                  const compressed = await softCompressImage(ev.target?.result as string);
-                                  newImgs.push(compressed);
-                                  loaded++;
-                                  if (loaded === toLoad.length) {
-                                    editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImages: JSON.stringify(newImgs) } });
-                                  }
-                                };
-                                reader.readAsDataURL(file);
-                              });
+                              if (model === 'nano-banana-pro') {
+                                // 上传到 fal storage 拿 URL
+                                const existing = uploadedImageUrls ? JSON.parse(uploadedImageUrls) : [];
+                                const remaining = 2 - existing.length;
+                                const toUpload = files.slice(0, remaining);
+                                const newUrls = [...existing];
+                                for (const file of toUpload) {
+                                  try {
+                                    const falUrl = await fal.storage.upload(file);
+                                    newUrls.push(falUrl);
+                                  } catch {}
+                                }
+                                editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImageUrls: JSON.stringify(newUrls) } });
+                              } else {
+                                // nano-banana：base64
+                                const remaining = 2 - imgs.length;
+                                const toLoad = files.slice(0, remaining);
+                                let loaded = 0;
+                                const newImgs = [...imgs];
+                                toLoad.forEach(file => {
+                                  const reader = new FileReader();
+                                  reader.onload = async (ev) => {
+                                    const compressed = await softCompressImage(ev.target?.result as string);
+                                    newImgs.push(compressed);
+                                    loaded++;
+                                    if (loaded === toLoad.length) {
+                                      editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImages: JSON.stringify(newImgs) } });
+                                    }
+                                  };
+                                  reader.readAsDataURL(file);
+                                });
+                              }
                               e.target.value = '';
                             }}
                           />
-                          {imgs.length > 0 && (
+                          {model === 'nano-banana-pro' && urls.length > 0 && (
+                            <div className="mt-1 flex gap-1 flex-wrap">
+                              {urls.map((url, idx) => (
+                                <div key={idx} className="relative w-16 h-16 bg-black/30 rounded-lg overflow-hidden group">
+                                  <img src={url} className="w-full h-full object-cover" />
+                                  <button
+                                    className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/60 hover:bg-red-500/80 rounded text-white text-[9px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onClick={(e) => { e.stopPropagation(); const next = urls.filter((_, i) => i !== idx); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImageUrls: next.length ? JSON.stringify(next) : '' } }); }}
+                                    onPointerDown={(e) => e.stopPropagation()}
+                                  >✕</button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {model === 'nano-banana' && imgs.length > 0 && (
                             <div className="mt-1 flex gap-1 flex-wrap">
                               {imgs.map((img, idx) => (
                                 <div key={idx} className="relative w-16 h-16 bg-black/30 rounded-lg overflow-hidden group">
                                   <img src={img} className="w-full h-full object-cover" />
                                   <button
                                     className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/60 hover:bg-red-500/80 rounded text-white text-[9px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      const next = imgs.filter((_, i) => i !== idx);
-                                      editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImages: next.length ? JSON.stringify(next) : '' } });
-                                    }}
+                                    onClick={(e) => { e.stopPropagation(); const next = imgs.filter((_, i) => i !== idx); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImages: next.length ? JSON.stringify(next) : '' } }); }}
                                     onPointerDown={(e) => e.stopPropagation()}
                                   >✕</button>
                                 </div>
@@ -2354,10 +2381,10 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         prompt: fullPrompt,
                         aspectRatio: aspectRatio || '1:1',
                         imageBase64: uploadedImage || undefined,
-                        imageBase64Array: ['nano-banana', 'nano-banana-pro'].includes(model || '') && uploadedImages
+                        imageBase64Array: model === 'nano-banana' && uploadedImages
                           ? JSON.parse(uploadedImages)
                           : undefined,
-                        imageUrlArray: model === 'nano-banana-pro-multi' && uploadedImageUrls
+                        imageUrlArray: ['nano-banana-pro', 'nano-banana-pro-multi'].includes(model || '') && uploadedImageUrls
                           ? JSON.parse(uploadedImageUrls)
                           : undefined,
                         imageQuality: ['nano-banana-pro', 'nano-banana-pro-multi'].includes(model || '') ? (imageQuality ?? '2k') : undefined,
@@ -2389,9 +2416,10 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       const falEndpointMap: Record<string, string> = {
                         'flux-kontext': 'fal-ai/flux-pro/kontext/max',
                         'flux-kontext-max': 'fal-ai/flux-pro/kontext/max/text-to-image',
+                        'nano-banana-pro': 'fal-ai/nano-banana-2',
                         'nano-banana-pro-multi': 'fal-ai/nano-banana-pro/edit',
                       };
-                      const falEndpoint = falEndpointMap[data.model] || 'fal-ai/nano-banana-pro/edit';
+                      const falEndpoint = falEndpointMap[data.model] || 'fal-ai/nano-banana-2';
                       const falPoll = async (): Promise<string> => {
                         await new Promise(r => setTimeout(r, 3000));
                         const qRes = await fetch(`/api/image/fal-query?requestId=${encodeURIComponent(data.requestId)}&endpoint=${encodeURIComponent(falEndpoint)}`);
