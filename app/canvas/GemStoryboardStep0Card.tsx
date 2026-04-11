@@ -7,7 +7,6 @@ import {
   useEditor,
   Rectangle2d,
 } from 'tldraw';
-import { useState } from 'react';
 
 export type GemStep0CardShape = TLBaseShape<
   'gem-step0-card',
@@ -56,15 +55,6 @@ export class GemStep0CardUtil extends BaseBoxShapeUtil<GemStep0CardShape> {
   component(shape: GemStep0CardShape) {
     const { w, h, story, result, isGenerating, isMinimized } = shape.props;
     const editor = useEditor();
-    const [copied, setCopied] = useState(false);
-  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
-
-  const copyBeat = (content: string, index: number) => {
-    navigator.clipboard.writeText(content).then(() => {
-      setCopiedIndex(index);
-      setTimeout(() => setCopiedIndex(null), 2000);
-    });
-  };
 
     const update = (props: Partial<GemStep0CardShape['props']>) => {
       editor.updateShape({ id: shape.id, type: 'gem-step0-card' as any, props: { ...shape.props, ...props } });
@@ -89,12 +79,6 @@ export class GemStep0CardUtil extends BaseBoxShapeUtil<GemStep0CardShape> {
         alert('生成失败: ' + err.message);
         update({ isGenerating: false });
       }
-    };
-
-    const copyResult = () => {
-      navigator.clipboard.writeText(result);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
     };
 
     const toggleMinimize = (e: React.MouseEvent) => {
@@ -170,37 +154,17 @@ export class GemStep0CardUtil extends BaseBoxShapeUtil<GemStep0CardShape> {
                 {isGenerating ? '分析中...' : '生成剧情分段'}
               </button>
 
-              {/* 结果：beats 列表 */}
+              {/* 结果：自然语言段落 */}
               {beats.length > 0 && (
                 <div className="flex-1 flex flex-col min-h-0">
-                  <div className="flex items-center justify-between mb-1 flex-shrink-0">
-                    <span className="text-xs text-gray-400">叙事段落（{beats.length} 段）</span>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); copyResult(); }}
-                      onPointerDown={(e) => e.stopPropagation()}
-                      className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
-                    >
-                      {copied ? '已复制 ✓' : '复制 JSON'}
-                    </button>
-                  </div>
-                  <div className="flex-1 flex flex-col gap-1.5 overflow-y-auto min-h-0">
+                  <span className="text-xs text-gray-400 mb-1 flex-shrink-0">叙事段落（{beats.length} 段）— 选中文字后复制</span>
+                  <div className="flex-1 bg-black/30 border border-white/8 rounded-xl p-3 overflow-y-auto min-h-0 select-text">
                     {beats.map((beat, i) => (
-                      <div
-                        key={i}
-                        className="bg-black/30 border border-white/8 rounded-lg p-2"
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[10px] font-mono text-purple-400 bg-purple-900/30 px-1.5 py-0.5 rounded">
-                            {beat.beat_type}
-                          </span>
-                          <button
-                            onPointerDown={(e) => { e.stopPropagation(); copyBeat(beat.content, i); }}
-                            className="text-[10px] text-purple-400 hover:text-purple-300 transition-colors px-1.5 py-0.5 rounded hover:bg-purple-900/20"
-                          >
-                            {copiedIndex === i ? '已复制 ✓' : '复制'}
-                          </button>
-                        </div>
-                        <p className="text-gray-300 text-[11px] leading-relaxed">{beat.content}</p>
+                      <div key={i} className="mb-3 last:mb-0">
+                        <span className="text-[10px] font-mono text-purple-400 bg-purple-900/30 px-1.5 py-0.5 rounded mr-2">
+                          {beat.beat_type}
+                        </span>
+                        <span className="text-gray-200 text-xs leading-relaxed">{beat.content}</span>
                       </div>
                     ))}
                   </div>
@@ -210,17 +174,8 @@ export class GemStep0CardUtil extends BaseBoxShapeUtil<GemStep0CardShape> {
               {/* raw fallback */}
               {result && beats.length === 0 && (
                 <div className="flex-1 flex flex-col min-h-0">
-                  <div className="flex items-center justify-between mb-1 flex-shrink-0">
-                    <span className="text-xs text-gray-400">原始输出</span>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); copyResult(); }}
-                      onPointerDown={(e) => e.stopPropagation()}
-                      className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
-                    >
-                      {copied ? '已复制 ✓' : '复制'}
-                    </button>
-                  </div>
-                  <div className="flex-1 bg-black/40 border border-white/8 rounded-xl p-2 overflow-y-auto min-h-0">
+                  <span className="text-xs text-gray-400 mb-1 flex-shrink-0">原始输出 — 选中文字后复制</span>
+                  <div className="flex-1 bg-black/40 border border-white/8 rounded-xl p-2 overflow-y-auto min-h-0 select-text">
                     <pre className="text-gray-300 text-[10px] font-mono whitespace-pre-wrap break-all">{result}</pre>
                   </div>
                 </div>
