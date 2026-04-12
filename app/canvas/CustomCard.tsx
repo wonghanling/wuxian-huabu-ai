@@ -541,20 +541,25 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
         alert('仅支持 mp4 或 mov 视频');
         return;
       }
-      if (file.size > 100 * 1024 * 1024) {
-        alert('视频文件不能超过 100MB');
+      if (file.size > 500 * 1024 * 1024) {
+        alert('视频文件不能超过 500MB');
         return;
       }
       setIsUploadingKlingVideo(true);
       try {
-        const formData = new FormData();
-        formData.append('file', file);
-        const res = await fetch('/api/video/upload', { method: 'POST', body: formData });
-        const data = await res.json();
-        if (!res.ok || !data?.url) throw new Error(data?.error || '视频上传失败');
+        // 直接从浏览器上传到 Supabase Storage，绕过 Vercel 4.5MB 限制
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('请先登录');
+        const ext = lowerName.endsWith('.mov') ? '.mov' : '.mp4';
+        const contentType = ext === '.mov' ? 'video/quicktime' : 'video/mp4';
+        const filename = `videos/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
+        const { error } = await supabase.storage.from('assets').upload(filename, file, { contentType, upsert: false });
+        if (error) throw new Error(`上传失败: ${error.message}`);
+        const { data: urlData } = supabase.storage.from('assets').getPublicUrl(filename);
         const latestShape = editor.getShape(shape.id);
         const latestProps = latestShape ? (latestShape as any).props : shape.props;
-        editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...latestProps, klingVideoUrl: data.url, klingVideoName: file.name } });
+        editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...latestProps, klingVideoUrl: urlData.publicUrl, klingVideoName: file.name } });
       } catch (error: any) {
         alert(error?.message || '视频上传失败');
       } finally {

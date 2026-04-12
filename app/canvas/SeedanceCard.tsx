@@ -269,17 +269,22 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
     };
 
     const handleRefVideoUpload = async (file: File) => {
-      if (file.size > 50 * 1024 * 1024) { alert('视频文件不能超过 50MB'); return; }
+      if (file.size > 500 * 1024 * 1024) { alert('视频文件不能超过 500MB'); return; }
       up({ refVideoName: '上传中...', refVideoUrl: '' });
       try {
-        const formData = new FormData();
-        formData.append('file', file);
-        const res = await fetch('/api/video/upload', { method: 'POST', body: formData });
-        const data = await res.json();
-        if (!res.ok || !data?.url) throw new Error(data?.error || '上传失败');
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('请先登录');
+        const lowerName = file.name.toLowerCase();
+        const ext = lowerName.endsWith('.mov') ? '.mov' : '.mp4';
+        const contentType = ext === '.mov' ? 'video/quicktime' : 'video/mp4';
+        const filename = `videos/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
+        const { error } = await supabase.storage.from('assets').upload(filename, file, { contentType, upsert: false });
+        if (error) throw new Error(`上传失败: ${error.message}`);
+        const { data: urlData } = supabase.storage.from('assets').getPublicUrl(filename);
         const ls = editor.getShape(shape.id);
         const lp = ls ? (ls as any).props : shape.props;
-        editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...lp, refVideoUrl: data.url, refVideoName: file.name } });
+        editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...lp, refVideoUrl: urlData.publicUrl, refVideoName: file.name } });
       } catch (err: any) {
         alert(err?.message || '视频上传失败');
         up({ refVideoName: '', refVideoUrl: '' });
