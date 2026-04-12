@@ -1657,9 +1657,7 @@ function CanvasPageContent() {
 
         const snapshot = await loadCanvasSnapshot(canvasId);
         if (snapshot) {
-          isRestoringRef.current = true;
           loadSnapshot(editor.store, snapshot);
-          isRestoringRef.current = false;
           console.log('画布已恢复');
         }
       } catch (err) {
@@ -1667,13 +1665,12 @@ function CanvasPageContent() {
       }
     })();
 
-    // ── 监听变化标记未保存 ──────────────────────────────────────
+    // ── 监听变化标记未保存（只监听用户操作，忽略 loadSnapshot 的批量写入）──
     const unsubscribeUnsaved = editor.store.listen(() => {
-      if (isRestoringRef.current) return;
       if (!canvasIdRef.current) return;
       hasUnsavedRef.current = true;
       setSaveStatus('unsaved');
-    });
+    }, { source: 'user', scope: 'document' });
 
     // ── 自动保存：进入后30/60/90分钟各保存一次 ──────────────────
     const doAutoSave = async () => {
@@ -1706,7 +1703,7 @@ function CanvasPageContent() {
       });
     };
     updateCamera();
-    const unsubscribe = editor.store.listen(updateCamera);
+    const unsubscribe = editor.store.listen(updateCamera, { scope: 'session' });
 
     // 监听鼠标事件，实现右键拖动画布
     let isDraggingCanvas = false;
