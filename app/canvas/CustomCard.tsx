@@ -519,7 +519,14 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
     const [isUploadingKlingVideo, setIsUploadingKlingVideo] = useState(false);
     const [lightboxVideo, setLightboxVideo] = useState<string | null>(null);
 
-    // debounce 写入 tldraw，避免每次打字都触发 store 更新
+    // 本地 state 做显示层，防抖写 tldraw store，避免输入法冲突
+    const [localPrompt, setLocalPrompt] = useState(shape.props.prompt ?? '');
+    const [localCharacterAnchorJson, setLocalCharacterAnchorJson] = useState(shape.props.characterAnchorJson ?? '');
+    const [localCharacterThreeViewJson, setLocalCharacterThreeViewJson] = useState(shape.props.characterThreeViewJson ?? '');
+    const [localKlingVideoUrl, setLocalKlingVideoUrl] = useState(shape.props.klingVideoUrl ?? '');
+    const [localKlingLipSyncFaceId, setLocalKlingLipSyncFaceId] = useState(shape.props.klingLipSyncFaceId ?? '');
+    const isComposing = useRef(false);
+
     const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const updateShapeDebounced = useCallback((props: Partial<CustomCardShape['props']>) => {
       if (debounceTimer.current) clearTimeout(debounceTimer.current);
@@ -974,14 +981,21 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         : 'Describe the video...'
                     }
                     value={cardType === 'image' && ((cameraVertical ?? 0) !== 0 || (cameraHorizontal ?? 0) !== 0)
-                      ? `${prompt} [Camera: vertical ${(cameraVertical ?? 0) >= 0 ? '+' : ''}${cameraVertical ?? 0}°, horizontal ${(cameraHorizontal ?? 0) >= 0 ? '+' : ''}${cameraHorizontal ?? 0}°]`
-                      : prompt}
+                      ? `${localPrompt} [Camera: vertical ${(cameraVertical ?? 0) >= 0 ? '+' : ''}${cameraVertical ?? 0}°, horizontal ${(cameraHorizontal ?? 0) >= 0 ? '+' : ''}${cameraHorizontal ?? 0}°]`
+                      : localPrompt}
                     onClick={(e) => e.stopPropagation()}
                     onPointerDown={(e) => e.stopPropagation()}
-                    onChange={(e) => {
-                      // 移除镜头参数，只保存用户输入的文本
-                      const userInput = e.target.value.replace(/\[Camera: vertical [+-]?\d+°, horizontal [+-]?\d+°\]/g, '').trim();
+                    onCompositionStart={() => { isComposing.current = true; }}
+                    onCompositionEnd={(e) => {
+                      isComposing.current = false;
+                      const userInput = (e.target as HTMLTextAreaElement).value.replace(/\[Camera: vertical [+-]?\d+°, horizontal [+-]?\d+°\]/g, '').trim();
+                      setLocalPrompt(userInput);
                       updateShapeDebounced({ prompt: userInput });
+                    }}
+                    onChange={(e) => {
+                      const userInput = e.target.value.replace(/\[Camera: vertical [+-]?\d+°, horizontal [+-]?\d+°\]/g, '').trim();
+                      setLocalPrompt(userInput);
+                      if (!isComposing.current) updateShapeDebounced({ prompt: userInput });
                     }}
                   />
                   {/* 镜头参数提示 */}
@@ -1246,11 +1260,19 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         <textarea
                           className="w-full h-24 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-[10px] font-mono resize-none focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all placeholder-gray-500"
                           placeholder="粘贴步骤1生成的Anchor JSON..."
-                          value={characterAnchorJson || ''}
+                          value={localCharacterAnchorJson}
                           onClick={(e) => e.stopPropagation()}
                           onPointerDown={(e) => e.stopPropagation()}
+                          onCompositionStart={() => { isComposing.current = true; }}
+                          onCompositionEnd={(e) => {
+                            isComposing.current = false;
+                            const v = (e.target as HTMLTextAreaElement).value;
+                            setLocalCharacterAnchorJson(v);
+                            updateShapeDebounced({ characterAnchorJson: v });
+                          }}
                           onChange={(e) => {
-                            updateShapeDebounced({ characterAnchorJson: e.target.value });
+                            setLocalCharacterAnchorJson(e.target.value);
+                            if (!isComposing.current) updateShapeDebounced({ characterAnchorJson: e.target.value });
                           }}
                         />
                       </div>
@@ -1472,11 +1494,19 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         <textarea
                           className="w-full h-24 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-[10px] font-mono resize-none focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all placeholder-gray-500 overflow-y-auto"
                           placeholder="粘贴步骤2生成的三视角JSON..."
-                          value={characterThreeViewJson || ''}
+                          value={localCharacterThreeViewJson}
                           onClick={(e) => e.stopPropagation()}
                           onPointerDown={(e) => e.stopPropagation()}
+                          onCompositionStart={() => { isComposing.current = true; }}
+                          onCompositionEnd={(e) => {
+                            isComposing.current = false;
+                            const v = (e.target as HTMLTextAreaElement).value;
+                            setLocalCharacterThreeViewJson(v);
+                            updateShapeDebounced({ characterThreeViewJson: v });
+                          }}
                           onChange={(e) => {
-                            updateShapeDebounced({ characterThreeViewJson: e.target.value });
+                            setLocalCharacterThreeViewJson(e.target.value);
+                            if (!isComposing.current) updateShapeDebounced({ characterThreeViewJson: e.target.value });
                           }}
                         />
                       </div>
@@ -3034,9 +3064,19 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     <label className="text-gray-400 text-xs mb-1 block">提示词（可选）</label>
                     <textarea className="w-full h-14 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs resize-none focus:outline-none focus:border-white/15 transition-all placeholder-gray-500"
                       placeholder="让图片的人像视频一样..."
-                      value={prompt}
+                      value={localPrompt}
                       onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                      onChange={(e) => updateShapeDebounced({ prompt: e.target.value })}
+                      onCompositionStart={() => { isComposing.current = true; }}
+                      onCompositionEnd={(e) => {
+                        isComposing.current = false;
+                        const v = (e.target as HTMLTextAreaElement).value;
+                        setLocalPrompt(v);
+                        updateShapeDebounced({ prompt: v });
+                      }}
+                      onChange={(e) => {
+                        setLocalPrompt(e.target.value);
+                        if (!isComposing.current) updateShapeDebounced({ prompt: e.target.value });
+                      }}
                     />
                   </div>
                   <div>
@@ -3137,9 +3177,12 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     <label className="text-gray-400 text-xs mb-1 block">源视频 URL</label>
                     <input className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 transition-all placeholder-gray-500"
                       placeholder="https://..."
-                      value={klingVideoUrl && !klingVideoName ? klingVideoUrl : ''}
+                      value={localKlingVideoUrl && !klingVideoName ? localKlingVideoUrl : ''}
                       onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                      onChange={(e) => updateShapeDebounced({ klingVideoUrl: e.target.value, klingVideoName: '' })}
+                      onChange={(e) => {
+                        setLocalKlingVideoUrl(e.target.value);
+                        if (!isComposing.current) updateShapeDebounced({ klingVideoUrl: e.target.value, klingVideoName: '' });
+                      }}
                     />
                   </div>
                   <div>
@@ -3370,9 +3413,12 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
               <div>
                 <label className="text-gray-400 text-xs mb-1 block">Face ID（自动填充，可手动改）</label>
                 <input className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none transition-all"
-                  value={klingLipSyncFaceId || '-1'}
+                  value={localKlingLipSyncFaceId}
                   onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                  onChange={(e) => updateShapeDebounced({ klingLipSyncFaceId: e.target.value })} />
+                  onChange={(e) => {
+                    setLocalKlingLipSyncFaceId(e.target.value);
+                    if (!isComposing.current) updateShapeDebounced({ klingLipSyncFaceId: e.target.value });
+                  }} />
               </div>
               <div className="grid grid-cols-3 gap-2">
                 <div>
@@ -3380,21 +3426,21 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   <input type="number" className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none transition-all"
                     value={klingLipSyncSoundStart ?? 0}
                     onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                    onChange={(e) => updateShapeDebounced({ klingLipSyncSoundStart: parseInt(e.target.value) || 0 })} />
+                    onChange={(e) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingLipSyncSoundStart: parseInt(e.target.value) || 0 } })} />
                 </div>
                 <div>
                   <label className="text-gray-400 text-xs mb-1 block">结束(ms)</label>
                   <input type="number" className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none transition-all"
                     value={klingLipSyncSoundEnd ?? 5000}
                     onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                    onChange={(e) => updateShapeDebounced({ klingLipSyncSoundEnd: parseInt(e.target.value) || 5000 })} />
+                    onChange={(e) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingLipSyncSoundEnd: parseInt(e.target.value) || 5000 } })} />
                 </div>
                 <div>
                   <label className="text-gray-400 text-xs mb-1 block">插入(ms)</label>
                   <input type="number" className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none transition-all"
                     value={klingLipSyncSoundInsert ?? 0}
                     onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                    onChange={(e) => updateShapeDebounced({ klingLipSyncSoundInsert: parseInt(e.target.value) || 0 })} />
+                    onChange={(e) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingLipSyncSoundInsert: parseInt(e.target.value) || 0 } })} />
                 </div>
               </div>
               <div>
@@ -3402,14 +3448,14 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                 <input type="range" min="0" max="2" step="0.1" className="w-full"
                   value={klingLipSyncSoundVolume ?? 1}
                   onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                  onChange={(e) => updateShapeDebounced({ klingLipSyncSoundVolume: parseFloat(e.target.value) })} />
+                  onChange={(e) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingLipSyncSoundVolume: parseFloat(e.target.value) } })} />
               </div>
               <div>
                 <label className="text-gray-400 text-xs mb-1 block">原声音量 ({klingLipSyncOriginalVolume ?? 1})</label>
                 <input type="range" min="0" max="2" step="0.1" className="w-full"
                   value={klingLipSyncOriginalVolume ?? 1}
                   onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                  onChange={(e) => updateShapeDebounced({ klingLipSyncOriginalVolume: parseFloat(e.target.value) })} />
+                  onChange={(e) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingLipSyncOriginalVolume: parseFloat(e.target.value) } })} />
               </div>
             </>)}
           </div>

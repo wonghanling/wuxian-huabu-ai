@@ -1545,6 +1545,7 @@ function CanvasPageContent() {
   const isRestoringRef = useRef(false);
   const hasUnsavedRef = useRef(false);
   const editorRef = useRef<Editor | null>(null);
+  const mountCleanupRef = useRef<(() => void) | null>(null);
 
   // 退出页面自动保存
   useEffect(() => {
@@ -1608,6 +1609,13 @@ function CanvasPageContent() {
   // 当编辑器加载完成时的设置
   const handleMount = (editor: Editor) => {
     console.log('编辑器已加载');
+
+    // 先清理上一次 mount 留下的监听器
+    if (mountCleanupRef.current) {
+      mountCleanupRef.current();
+      mountCleanupRef.current = null;
+    }
+
     setEditorInstance(editor);
     editorRef.current = editor;
 
@@ -1760,7 +1768,7 @@ function CanvasPageContent() {
     const handlePointerLeave = () => { isDraggingCanvas = false; };
     container.addEventListener('pointerleave', handlePointerLeave);
 
-    return () => {
+    mountCleanupRef.current = () => {
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);
