@@ -966,8 +966,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     <label className="text-gray-400 text-xs">Prompt</label>
                     <button
                       className="text-[10px] text-gray-400 hover:text-gray-300 transition-colors"
-                      onClick={async (e) => {
-                            onClick={async (e) => { e.stopPropagation(); try { const text = await navigator.clipboard.readText(); if (text) { const newPrompt = (localPrompt ? localPrompt + '\n' : '') + text; setLocalPrompt(newPrompt); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, prompt: newPrompt } }); } } catch {} }}
+                      onClick={async (e) => { e.stopPropagation(); try { const text = await navigator.clipboard.readText(); if (text) { const newPrompt = (localPrompt ? localPrompt + '\n' : '') + text; setLocalPrompt(newPrompt); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, prompt: newPrompt } }); } } catch {} }}
                       onPointerDown={(e) => e.stopPropagation()}
                     >粘贴</button>
                   </div>
