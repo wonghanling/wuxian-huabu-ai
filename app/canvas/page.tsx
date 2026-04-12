@@ -29,14 +29,15 @@ import { MEMBERSHIP_PRICE } from '@/lib/pricing';
 function ZoomControlsExternal({ editor }: { editor: Editor }) {
   const [zoom, setZoom] = useState(100);
 
-  // 同步编辑器的缩放级别到状态
+  // 用 store.listen 替代 setInterval，避免标签页切回时积压回调卡顿
   useEffect(() => {
-    const interval = setInterval(() => {
+    const update = () => {
       const currentZoom = Math.round(editor.getCamera().z * 100);
       setZoom(prev => prev !== currentZoom ? currentZoom : prev);
-    }, 100);
-
-    return () => clearInterval(interval);
+    };
+    update();
+    const unsub = editor.store.listen(update, { scope: 'session' });
+    return () => unsub();
   }, [editor]);
 
   const handleZoomChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -885,14 +886,15 @@ function ZoomControls() {
   const editor = useEditor();
   const [zoom, setZoom] = useState(100);
 
-  // 同步编辑器的缩放级别到状态
+  // 用 store.listen 替代 setInterval，避免标签页切回时积压回调卡顿
   useEffect(() => {
-    const interval = setInterval(() => {
+    const update = () => {
       const currentZoom = Math.round(editor.getCamera().z * 100);
       setZoom(prev => prev !== currentZoom ? currentZoom : prev);
-    }, 100);
-
-    return () => clearInterval(interval);
+    };
+    update();
+    const unsub = editor.store.listen(update, { scope: 'session' });
+    return () => unsub();
   }, [editor]);
 
   const handleZoomChange = (e: React.ChangeEvent<HTMLInputElement>) => {
