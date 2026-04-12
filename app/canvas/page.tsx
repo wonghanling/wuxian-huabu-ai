@@ -1547,37 +1547,27 @@ function CanvasPageContent() {
   const editorRef = useRef<Editor | null>(null);
   const mountCleanupRef = useRef<(() => void) | null>(null);
 
-  // 退出页面自动保存
+  // 退出页面自动保存（改用异步直写 Supabase，去掉同步 XHR 阻塞主线程）
   useEffect(() => {
-    const doSaveSync = () => {
-      // 没有未保存内容、或画布还没加载完，不保存（防止保存空白画布）
+    const doSaveAsync = () => {
       if (!canvasIdRef.current || !editorRef.current) return;
       if (!hasUnsavedRef.current) return;
-      try {
-        const snapshot = getSnapshot(editorRef.current.store);
-        const payload = JSON.stringify({ canvasId: canvasIdRef.current, snapshot });
-        // 同步 XHR，唯一能在页面关闭时可靠执行的请求
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', '/api/canvas/save', false);
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.send(payload);
-      } catch (e) {
-        console.error('退出保存失败:', e);
-      }
+      const snapshot = getSnapshot(editorRef.current.store);
+      saveSnapshot(canvasIdRef.current, snapshot).catch(e => console.error('退出保存失败:', e));
     };
 
     const onVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') doSaveSync();
+      if (document.visibilityState === 'hidden') doSaveAsync();
     };
 
-    window.addEventListener('beforeunload', doSaveSync);
+    window.addEventListener('beforeunload', doSaveAsync);
     document.addEventListener('visibilitychange', onVisibilityChange);
-    window.addEventListener('pagehide', doSaveSync);
+    window.addEventListener('pagehide', doSaveAsync);
 
     return () => {
-      window.removeEventListener('beforeunload', doSaveSync);
+      window.removeEventListener('beforeunload', doSaveAsync);
       document.removeEventListener('visibilitychange', onVisibilityChange);
-      window.removeEventListener('pagehide', doSaveSync);
+      window.removeEventListener('pagehide', doSaveAsync);
     };
   }, []);
 
