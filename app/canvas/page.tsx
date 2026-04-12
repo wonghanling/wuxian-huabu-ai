@@ -1504,6 +1504,8 @@ function CanvasPageContent() {
   const isTutorial = searchParams.get('tutorial') === 'true';
 
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
+  const [cameraZoom, setCameraZoom] = useState(1);
+  const [cameraPos, setCameraPos] = useState({ x: 0, y: 0 });
   const [showIntro, setShowIntro] = useState(true);
   const [showTutorial, setShowTutorial] = useState(isTutorial);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('unsaved');
@@ -1681,6 +1683,20 @@ function CanvasPageContent() {
     const t2 = setTimeout(doAutoSave, 60 * 60 * 1000);
     const t3 = setTimeout(doAutoSave, 90 * 60 * 1000);
 
+    // 监听相机变化，更新缩放级别和位置（RAF 节流，避免 store 批量更新时主线程卡顿）
+    let rafId: number | null = null;
+    const updateCamera = () => {
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        const camera = editor.getCamera();
+        setCameraZoom(camera.z);
+        setCameraPos({ x: camera.x, y: camera.y });
+      });
+    };
+    updateCamera();
+    const unsubscribe = editor.store.listen(updateCamera, { scope: 'session' });
+
     // 监听鼠标事件，实现右键拖动画布
     let isDraggingCanvas = false;
     let lastX = 0;
@@ -1750,6 +1766,8 @@ function CanvasPageContent() {
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      unsubscribe();
       unsubscribeUnsaved();
       container.removeEventListener('contextmenu', handleContextMenu);
       container.removeEventListener('pointerdown', handlePointerDown, { capture: true });
@@ -2082,13 +2100,14 @@ function CanvasPageContent() {
 
       {/* 自定义样式 - 纯黑色主题 */}
       <style jsx global>{`
-        /* tldraw 画布背景 - 纯黑色 */
+        /* tldraw 画布背景 - 细线网格，随缩放和位置变化 */
         .tl-background {
           background-color: #000000 !important;
           background-image:
             linear-gradient(rgba(100, 100, 100, 0.4) 1px, transparent 1px),
             linear-gradient(90deg, rgba(100, 100, 100, 0.4) 1px, transparent 1px);
-          background-size: 30px 30px;
+          background-size: ${30 * cameraZoom}px ${30 * cameraZoom}px;
+          background-position: ${-cameraPos.x * cameraZoom}px ${-cameraPos.y * cameraZoom}px;
         }
 
         /* 网格颜色 */
