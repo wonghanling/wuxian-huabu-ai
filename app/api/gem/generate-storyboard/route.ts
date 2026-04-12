@@ -30,23 +30,22 @@ CORE GOAL
 
 Generate a 2x2 storyboard (4 shots total).
 
-Expand this single script segment into 4 high-impact visual moments.
+Visualize a SINGLE frozen moment from this segment across 4 shots.
 
 ROLE (STRICT)
 
 You are NOT responsible for story logic.
 You ONLY visualize the given script segment.
 
-EXPANSION STRUCTURE (CRITICAL)
+━━━━━━━━━━━━━━━━━━━
+SHOT FLOW (CRITICAL)
+━━━━━━━━━━━━━━━━━━━
 
-You MUST expand into exactly 4 visual stages:
+Follow a tight cinematic progression:
 
-1. Setup
-2. Action
-3. Escalation
-4. Outcome
+Wide → Medium → Close-up → Detail
 
-Each shot must be visually distinct.
+Each shot must get visually closer or more specific.
 
 VISUAL CONSISTENCY RULES
 
@@ -78,6 +77,46 @@ Allowed:
 - subject placement
 - visible action
 - environment
+
+━━━━━━━━━━━━━━━━━━━
+FRAME LOCK RULE (CRITICAL)
+━━━━━━━━━━━━━━━━━━━
+
+Each shot represents a SINGLE frozen frame.
+
+- No sequence of actions
+- No before/after
+- No transitions
+
+Only describe what is visible in this exact moment.
+
+━━━━━━━━━━━━━━━━━━━
+CONTINUITY RULE (CRITICAL)
+━━━━━━━━━━━━━━━━━━━
+
+Shots must be visually continuous.
+
+Each shot must:
+- continue from the previous shot
+- refine, zoom, or focus on the same moment
+
+Each shot must inherit at least one element:
+- same character
+- same object
+- same environment
+
+Do NOT jump to new scenes or events.
+
+━━━━━━━━━━━━━━━━━━━
+ANTI-STORY RULE
+━━━━━━━━━━━━━━━━━━━
+
+Forbidden words and patterns:
+- then, after, suddenly
+- begins to, starts to
+- multiple actions in one shot
+
+Each shot must describe ONLY ONE moment.
 
 PROMPT FORMULA
 
@@ -142,27 +181,27 @@ CORE GOAL
 
 Generate a 3x3 storyboard (9 shots total).
 
-Expand this segment into a balanced cinematic sequence.
+Visualize a SINGLE frozen moment from this segment across 9 shots with increasing visual depth.
 
 ROLE (STRICT)
 
 You ONLY visualize the given segment.
 
-EXPANSION STRUCTURE (CRITICAL)
+━━━━━━━━━━━━━━━━━━━
+SHOT FLOW (CRITICAL)
+━━━━━━━━━━━━━━━━━━━
 
-You MUST structure the 9 shots as:
+1 Wide establishing
+2 Medium subject
+3 Action focus
+4 Closer framing
+5 Detail emphasis
+6 Micro detail
+7 Texture or tension
+8 Extreme detail
+9 Final visual emphasis
 
-1. Environment setup
-2. Subject introduction
-3. Situation setup
-4. First visible change
-5. Action progression
-6. Reaction or tension
-7. Escalation
-8. Peak moment
-9. Immediate aftermath
-
-Each shot must advance the same segment.
+All shots must stay within the same moment.
 
 VISUAL CONSISTENCY RULES
 
@@ -185,6 +224,46 @@ Forbidden:
 - zoom
 - tracking
 - motion description
+
+━━━━━━━━━━━━━━━━━━━
+FRAME LOCK RULE (CRITICAL)
+━━━━━━━━━━━━━━━━━━━
+
+Each shot represents a SINGLE frozen frame.
+
+- No sequence of actions
+- No before/after
+- No transitions
+
+Only describe what is visible in this exact moment.
+
+━━━━━━━━━━━━━━━━━━━
+CONTINUITY RULE (CRITICAL)
+━━━━━━━━━━━━━━━━━━━
+
+Shots must be visually continuous.
+
+Each shot must:
+- continue from the previous shot
+- refine, zoom, or focus on the same moment
+
+Each shot must inherit at least one element:
+- same character
+- same object
+- same environment
+
+Do NOT jump to new scenes or events.
+
+━━━━━━━━━━━━━━━━━━━
+ANTI-STORY RULE
+━━━━━━━━━━━━━━━━━━━
+
+Forbidden words and patterns:
+- then, after, suddenly
+- begins to, starts to
+- multiple actions in one shot
+
+Each shot must describe ONLY ONE moment.
 
 PROMPT FORMULA
 
@@ -249,25 +328,21 @@ CORE GOAL
 
 Generate a 5x5 storyboard (25 shots total).
 
-Expand this segment into detailed visual progression.
+Visualize a SINGLE frozen moment from this segment with maximum visual depth.
 
 ROLE (STRICT)
 
 You ONLY expand the given segment.
 
-EXPANSION STRUCTURE (CRITICAL)
+━━━━━━━━━━━━━━━━━━━
+SHOT FLOW (CRITICAL)
+━━━━━━━━━━━━━━━━━━━
 
-Break into micro progression:
+Follow a tight cinematic progression:
 
-- setup
-- approach
-- interaction
-- reaction
-- escalation
-- peak
-- aftermath
+Wide → Medium → Close-up → Detail → Extreme Detail
 
-All 25 shots must show progression, not repetition.
+Each shot must get visually closer or more specific.
 
 VISUAL CONSISTENCY RULES
 
@@ -289,12 +364,54 @@ Forbidden:
 - camera movement
 - tracking / pan / zoom
 
+━━━━━━━━━━━━━━━━━━━
+FRAME LOCK RULE (CRITICAL)
+━━━━━━━━━━━━━━━━━━━
+
+Each shot represents a SINGLE frozen frame.
+
+- No sequence of actions
+- No before/after
+- No transitions
+
+Only describe what is visible in this exact moment.
+
+━━━━━━━━━━━━━━━━━━━
+CONTINUITY RULE (CRITICAL)
+━━━━━━━━━━━━━━━━━━━
+
+Shots must be visually continuous.
+
+Each shot must:
+- continue from the previous shot
+- refine, zoom, or focus on the same moment
+
+Each shot must inherit at least one element:
+- same character
+- same object
+- same environment
+
+Do NOT jump to new scenes or events.
+
+━━━━━━━━━━━━━━━━━━━
+ANTI-STORY RULE
+━━━━━━━━━━━━━━━━━━━
+
+Forbidden words and patterns:
+- then, after, suddenly
+- begins to, starts to
+- multiple actions in one shot
+
+Each shot must describe ONLY ONE moment.
+
 PROMPT RULES
 
 - English
 - 20-30 words
 - comma-separated
 - cinematic and consistent
+
+All 25 shots must represent the SAME moment, with increasing visual depth and detail. No new events. No story progression.
 
 OUTPUT FORMAT
 
@@ -395,19 +512,12 @@ Generate the ${label}.`;
       return allParts.map((p: any) => p.text ?? '').join('').trim();
     })();
 
-    const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, text];
-    const jsonText = (jsonMatch[1] || text).trim();
+    // 清理 markdown 代码块
+    const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
 
-    let parsed;
-    try {
-      parsed = JSON.parse(jsonText);
-    } catch {
-      return NextResponse.json({ success: true, result: text, raw: true });
-    }
-
-    return NextResponse.json({ success: true, result: JSON.stringify(parsed, null, 2) });
+    return NextResponse.json({ result: cleaned });
   } catch (error: any) {
-    console.error('GEM storyboard error:', error);
-    return NextResponse.json({ error: error.message || '服务器错误' }, { status: 500 });
+    console.error('generate-storyboard error:', error);
+    return NextResponse.json({ error: error.message || '生成失败' }, { status: 500 });
   }
 }
