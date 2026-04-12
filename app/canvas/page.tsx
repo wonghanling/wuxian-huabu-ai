@@ -1694,11 +1694,16 @@ function CanvasPageContent() {
     const t2 = setTimeout(doAutoSave, 60 * 60 * 1000);
     const t3 = setTimeout(doAutoSave, 90 * 60 * 1000);
 
-    // 监听相机变化，更新缩放级别和位置
+    // 监听相机变化，更新缩放级别和位置（RAF 节流，避免 store 批量更新时主线程卡顿）
+    let rafId: number | null = null;
     const updateCamera = () => {
-      const camera = editor.getCamera();
-      setCameraZoom(camera.z);
-      setCameraPos({ x: camera.x, y: camera.y });
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        const camera = editor.getCamera();
+        setCameraZoom(camera.z);
+        setCameraPos({ x: camera.x, y: camera.y });
+      });
     };
     updateCamera();
     const unsubscribe = editor.store.listen(updateCamera);
@@ -1772,6 +1777,7 @@ function CanvasPageContent() {
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);
+      if (rafId !== null) cancelAnimationFrame(rafId);
       unsubscribe();
       unsubscribeUnsaved();
       container.removeEventListener('contextmenu', handleContextMenu);
