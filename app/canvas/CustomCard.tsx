@@ -1588,13 +1588,23 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                               if (data.pending && data.requestId) {
                                 const hasImg = imageUrlArray && imageUrlArray.length > 0;
                                 const endpoint = hasImg ? 'fal-ai/nano-banana-2/edit' : 'fal-ai/nano-banana-2';
+                                let pollAttempts = 0;
                                 const poll = async (): Promise<string> => {
+                                  pollAttempts++;
                                   await new Promise(r => setTimeout(r, 3000));
-                                  const qRes = await fetch(`/api/image/fal-query?requestId=${encodeURIComponent(data.requestId)}&endpoint=${encodeURIComponent(endpoint)}`);
-                                  const qData = await qRes.json();
-                                  if (qData.success && qData.imageUrl) return qData.imageUrl;
-                                  if (qData.error) throw new Error(qData.error);
-                                  return poll();
+                                  try {
+                                    const qRes = await fetch(`/api/image/fal-query?requestId=${encodeURIComponent(data.requestId)}&endpoint=${encodeURIComponent(endpoint)}`);
+                                    const qData = await qRes.json();
+                                    if (qData.success && qData.imageUrl) return qData.imageUrl;
+                                    if (qData.error) throw new Error(qData.error);
+                                    if (pollAttempts > 60) throw new Error('生成超时');
+                                    return poll();
+                                  } catch (e: any) {
+                                    if (e.message && (e.message.includes('超时') || e.message.includes('error'))) throw e;
+                                    if (pollAttempts > 60) throw new Error('生成超时');
+                                    await new Promise(r => setTimeout(r, 5000));
+                                    return poll();
+                                  }
                                 };
                                 imageUrl = await poll();
                               }
@@ -2487,13 +2497,23 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         'nano-banana-pro-multi': 'fal-ai/nano-banana-pro/edit',
                       };
                       const falEndpoint = falEndpointMap[data.model] || 'fal-ai/nano-banana-2';
+                      let falPollAttempts = 0;
                       const falPoll = async (): Promise<string> => {
+                        falPollAttempts++;
                         await new Promise(r => setTimeout(r, 3000));
-                        const qRes = await fetch(`/api/image/fal-query?requestId=${encodeURIComponent(data.requestId)}&endpoint=${encodeURIComponent(falEndpoint)}`);
-                        const qData = await qRes.json();
-                        if (qData.success && qData.imageUrl) return qData.imageUrl;
-                        if (qData.error) throw new Error(qData.error);
-                        return falPoll();
+                        try {
+                          const qRes = await fetch(`/api/image/fal-query?requestId=${encodeURIComponent(data.requestId)}&endpoint=${encodeURIComponent(falEndpoint)}`);
+                          const qData = await qRes.json();
+                          if (qData.success && qData.imageUrl) return qData.imageUrl;
+                          if (qData.error) throw new Error(qData.error);
+                          if (falPollAttempts > 60) throw new Error('生成超时');
+                          return falPoll();
+                        } catch (e: any) {
+                          if (e.message && (e.message.includes('超时') || e.message.includes('error'))) throw e;
+                          if (falPollAttempts > 60) throw new Error('生成超时');
+                          await new Promise(r => setTimeout(r, 5000));
+                          return falPoll();
+                        }
                       };
                       data.imageUrl = await falPoll();
                     }
@@ -3146,18 +3166,26 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         let attempts = 0;
                         const poll = async () => {
                           attempts++;
-                          const qRes = await fetch(`/api/kling/query?taskId=${taskId}&mode=motion-control`);
-                          const qData = await qRes.json();
-                          const ls = editor.getShape(shape.id); const lp = ls ? (ls as any).props : shape.props;
-                          if (qData.status === 'completed' && qData.videoUrl) {
-                            editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...lp, isGenerating: false, klingGeneratedVideo: qData.videoUrl, generationProgress: 100, generationStatus: '完成' } });
-                          } else if (qData.status === 'failed') {
-                            editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...lp, isGenerating: false, generationStatus: '生成失败' } });
-                          } else if (attempts < 60) {
-                            editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...lp, generationStatus: '生成中...', generationProgress: Math.min(90, attempts * 2) } });
-                            setTimeout(poll, 5000);
-                          } else {
-                            editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...lp, isGenerating: false, generationStatus: '超时' } });
+                          try {
+                            const qRes = await fetch(`/api/kling/query?taskId=${taskId}&mode=motion-control`);
+                            const qData = await qRes.json();
+                            const ls = editor.getShape(shape.id); const lp = ls ? (ls as any).props : shape.props;
+                            if (qData.status === 'completed' && qData.videoUrl) {
+                              editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...lp, isGenerating: false, klingGeneratedVideo: qData.videoUrl, generationProgress: 100, generationStatus: '完成' } });
+                            } else if (qData.status === 'failed') {
+                              editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...lp, isGenerating: false, generationStatus: '生成失败' } });
+                            } else if (attempts < 60) {
+                              editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...lp, generationStatus: '生成中...', generationProgress: Math.min(90, attempts * 2) } });
+                              setTimeout(poll, 5000);
+                            } else {
+                              editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...lp, isGenerating: false, generationStatus: '超时' } });
+                            }
+                          } catch (e) {
+                            if (attempts < 60) {
+                              const ls = editor.getShape(shape.id); const lp = ls ? (ls as any).props : shape.props;
+                              editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...lp, generationStatus: '网络重试中...' } });
+                              setTimeout(poll, 8000);
+                            }
                           }
                         };
                         setTimeout(poll, 5000);
@@ -3263,18 +3291,26 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         let attempts = 0;
                         const poll = async () => {
                           attempts++;
-                          const qRes = await fetch(`/api/kling/query?taskId=${taskId}&mode=lip-sync`);
-                          const qData = await qRes.json();
-                          const ls = editor.getShape(shape.id); const lp = ls ? (ls as any).props : shape.props;
-                          if (qData.status === 'completed' && qData.videoUrl) {
-                            editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...lp, isGenerating: false, klingGeneratedVideo: qData.videoUrl, generationProgress: 100, generationStatus: '完成' } });
-                          } else if (qData.status === 'failed') {
-                            editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...lp, isGenerating: false, generationStatus: '生成失败' } });
-                          } else if (attempts < 60) {
-                            editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...lp, generationStatus: '生成中...', generationProgress: Math.min(90, 20 + attempts * 2) } });
-                            setTimeout(poll, 5000);
-                          } else {
-                            editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...lp, isGenerating: false, generationStatus: '超时' } });
+                          try {
+                            const qRes = await fetch(`/api/kling/query?taskId=${taskId}&mode=lip-sync`);
+                            const qData = await qRes.json();
+                            const ls = editor.getShape(shape.id); const lp = ls ? (ls as any).props : shape.props;
+                            if (qData.status === 'completed' && qData.videoUrl) {
+                              editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...lp, isGenerating: false, klingGeneratedVideo: qData.videoUrl, generationProgress: 100, generationStatus: '完成' } });
+                            } else if (qData.status === 'failed') {
+                              editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...lp, isGenerating: false, generationStatus: '生成失败' } });
+                            } else if (attempts < 60) {
+                              editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...lp, generationStatus: '生成中...', generationProgress: Math.min(90, 20 + attempts * 2) } });
+                              setTimeout(poll, 5000);
+                            } else {
+                              editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...lp, isGenerating: false, generationStatus: '超时' } });
+                            }
+                          } catch (e) {
+                            if (attempts < 60) {
+                              const ls = editor.getShape(shape.id); const lp = ls ? (ls as any).props : shape.props;
+                              editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...lp, generationStatus: '网络重试中...' } });
+                              setTimeout(poll, 8000);
+                            }
                           }
                         };
                         setTimeout(poll, 5000);

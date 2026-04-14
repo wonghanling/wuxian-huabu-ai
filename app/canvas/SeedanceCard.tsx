@@ -235,20 +235,30 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
         let attempts = 0;
         const poll = async () => {
           attempts++;
-          const qRes = await fetch('/api/seedance/query?taskId=' + taskId);
-          const qData = await qRes.json();
-          const ls = editor.getShape(shape.id);
-          const lp = ls ? (ls as any).props : shape.props;
-          if (qData.status === 'completed' && qData.videoUrl) {
-            editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...lp, isGenerating: false, generatedVideo: qData.videoUrl, generationProgress: 100, generationStatus: '完成' } });
-          } else if (qData.status === 'failed') {
-            editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...lp, isGenerating: false, generationStatus: '失败: ' + (qData.error || '') } });
-          } else if (attempts < 120) {
-            const prog = qData.status === 'queued' ? 10 : Math.min(90, 10 + attempts * 1.5);
-            editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...lp, generationProgress: prog, generationStatus: qData.status === 'queued' ? '排队中...' : '生成中...' } });
-            setTimeout(poll, 5000);
-          } else {
-            editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...lp, isGenerating: false, generationStatus: '超时' } });
+          try {
+            const qRes = await fetch('/api/seedance/query?taskId=' + taskId);
+            const qData = await qRes.json();
+            const ls = editor.getShape(shape.id);
+            const lp = ls ? (ls as any).props : shape.props;
+            if (qData.status === 'completed' && qData.videoUrl) {
+              editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...lp, isGenerating: false, generatedVideo: qData.videoUrl, generationProgress: 100, generationStatus: '完成' } });
+            } else if (qData.status === 'failed') {
+              editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...lp, isGenerating: false, generationStatus: '失败: ' + (qData.error || '') } });
+            } else if (attempts < 120) {
+              const prog = qData.status === 'queued' ? 10 : Math.min(90, 10 + attempts * 1.5);
+              editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...lp, generationProgress: prog, generationStatus: qData.status === 'queued' ? '排队中...' : '生成中...' } });
+              setTimeout(poll, 5000);
+            } else {
+              editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...lp, isGenerating: false, generationStatus: '超时' } });
+            }
+          } catch (e) {
+            // 网络错误（ERR_CONNECTION_CLOSED 等）继续重试，不中断轮询
+            if (attempts < 120) {
+              const ls = editor.getShape(shape.id);
+              const lp = ls ? (ls as any).props : shape.props;
+              editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...lp, generationStatus: '网络重试中...' } });
+              setTimeout(poll, 8000);
+            }
           }
         };
         setTimeout(poll, 5000);
