@@ -132,6 +132,21 @@ PROMPT RULES
 - Visually strong and cinematic
 - Avoid repetition
 
+━━━━━━━━━━━━━━━━━━━
+STYLE PRIORITY RULE (CRITICAL)
+━━━━━━━━━━━━━━━━━━━
+
+If reference images are provided:
+- Follow the visual style of the reference images as the primary style
+- Do NOT override or contradict the reference image style
+
+If no reference images are provided:
+- Follow the visual style described in the user input
+
+In all cases:
+- Maintain a single consistent visual style across all shots
+- Do NOT mix conflicting styles
+
 OUTPUT FORMAT
 
 {
@@ -277,6 +292,21 @@ PROMPT RULES
 - visually distinct
 - no repetition
 
+━━━━━━━━━━━━━━━━━━━
+STYLE PRIORITY RULE (CRITICAL)
+━━━━━━━━━━━━━━━━━━━
+
+If reference images are provided:
+- Follow the visual style of the reference images as the primary style
+- Do NOT override or contradict the reference image style
+
+If no reference images are provided:
+- Follow the visual style described in the user input
+
+In all cases:
+- Maintain a single consistent visual style across all shots
+- Do NOT mix conflicting styles
+
 OUTPUT FORMAT
 
 {
@@ -410,6 +440,21 @@ PROMPT RULES
 - 20-30 words
 - comma-separated
 - cinematic and consistent
+
+━━━━━━━━━━━━━━━━━━━
+STYLE PRIORITY RULE (CRITICAL)
+━━━━━━━━━━━━━━━━━━━
+
+If reference images are provided:
+- Follow the visual style of the reference images as the primary style
+- Do NOT override or contradict the reference image style
+
+If no reference images are provided:
+- Follow the visual style described in the user input
+
+In all cases:
+- Maintain a single consistent visual style across all shots
+- Do NOT mix conflicting styles
 
 All 25 shots must represent the SAME moment, with increasing visual depth and detail. No new events. No story progression.
 
