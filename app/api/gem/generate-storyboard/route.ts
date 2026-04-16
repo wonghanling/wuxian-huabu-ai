@@ -56,6 +56,36 @@ VISUAL CONSISTENCY RULES
 - Do NOT introduce conflicting visual elements
 - Prioritize visual_bible over script if conflicts occur
 
+━━━━━━━━━━━━━━━━━━━
+GLOBAL CONSISTENCY RULE (CRITICAL)
+━━━━━━━━━━━━━━━━━━━
+
+All shots must exist within the same continuous world.
+
+Every visual element must remain consistent across all shots.
+
+This includes but is NOT limited to:
+
+- Characters
+- Environments
+- Architecture
+- Vehicles
+- Props
+- Materials
+- Textures
+- Damage patterns
+- Scale and proportions
+- Spatial relationships
+
+Requirements:
+
+- Do NOT redesign any element between shots
+- Do NOT reinterpret objects in different ways
+- Do NOT change proportions, structure, or layout
+- Do NOT reset or alter the scene between shots
+
+All shots must feel like different camera views of the SAME moment and SAME world.
+
 ANCHOR RULE (CRITICAL)
 
 Every prompt MUST begin with the primary subject tag from visual_tags
@@ -226,6 +256,36 @@ VISUAL CONSISTENCY RULES
 - Maintain environment and style
 - No conflicting visuals
 
+━━━━━━━━━━━━━━━━━━━
+GLOBAL CONSISTENCY RULE (CRITICAL)
+━━━━━━━━━━━━━━━━━━━
+
+All shots must exist within the same continuous world.
+
+Every visual element must remain consistent across all shots.
+
+This includes but is NOT limited to:
+
+- Characters
+- Environments
+- Architecture
+- Vehicles
+- Props
+- Materials
+- Textures
+- Damage patterns
+- Scale and proportions
+- Spatial relationships
+
+Requirements:
+
+- Do NOT redesign any element between shots
+- Do NOT reinterpret objects in different ways
+- Do NOT change proportions, structure, or layout
+- Do NOT reset or alter the scene between shots
+
+All shots must feel like different camera views of the SAME moment and SAME world.
+
 ANCHOR RULE (CRITICAL)
 
 Every prompt MUST begin with the primary subject tag from visual_tags
@@ -380,6 +440,36 @@ VISUAL CONSISTENCY RULES
 - Maintain character identity
 - Maintain consistent environment and style
 - No conflicting visual elements
+
+━━━━━━━━━━━━━━━━━━━
+GLOBAL CONSISTENCY RULE (CRITICAL)
+━━━━━━━━━━━━━━━━━━━
+
+All shots must exist within the same continuous world.
+
+Every visual element must remain consistent across all shots.
+
+This includes but is NOT limited to:
+
+- Characters
+- Environments
+- Architecture
+- Vehicles
+- Props
+- Materials
+- Textures
+- Damage patterns
+- Scale and proportions
+- Spatial relationships
+
+Requirements:
+
+- Do NOT redesign any element between shots
+- Do NOT reinterpret objects in different ways
+- Do NOT change proportions, structure, or layout
+- Do NOT reset or alter the scene between shots
+
+All shots must feel like different camera views of the SAME moment and SAME world.
 
 ANCHOR RULE
 
