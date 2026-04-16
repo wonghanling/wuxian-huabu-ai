@@ -2518,29 +2518,37 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       data.imageUrl = await falPoll();
                     }
 
-                    // 上传到 Supabase Storage，获取永久 URL
-                    let finalImageUrl = data.imageUrl;
-                    try {
-                      const supabase = createClient();
-                      const { data: { user } } = await supabase.auth.getUser();
-                      if (user && data.imageUrl) {
-                        finalImageUrl = await mirrorUrlToStorage(user.id, data.imageUrl, 'image');
-                      }
-                    } catch (uploadErr) {
-                      console.warn('上传到 Storage 失败，使用原始 URL:', uploadErr);
-                    }
-
+                    // 先立即显示图片，不等上传
                     editor.updateShape({
                       id: shape.id,
                       type: 'custom-card' as any,
                       props: {
                         ...shape.props,
-                        generatedImage: finalImageUrl,
+                        generatedImage: data.imageUrl,
                         showImageOutput: true,
                         isGenerating: false,
                       },
                     });
                     refreshBalance();
+
+                    // 后台异步上传到 Supabase Storage，完成后替换为永久 URL
+                    try {
+                      const supabase = createClient();
+                      const { data: { user } } = await supabase.auth.getUser();
+                      if (user && data.imageUrl) {
+                        const permanentUrl = await mirrorUrlToStorage(user.id, data.imageUrl, 'image');
+                        const latest = editor.getShape(shape.id);
+                        if (latest) {
+                          editor.updateShape({
+                            id: shape.id,
+                            type: 'custom-card' as any,
+                            props: { ...(latest.props as any), generatedImage: permanentUrl },
+                          });
+                        }
+                      }
+                    } catch (uploadErr) {
+                      console.warn('上传到 Storage 失败，保留原始 URL:', uploadErr);
+                    }
                   } catch (error) {
                     console.error('图片生成错误:', error);
                     // fal 异步失败时退款
