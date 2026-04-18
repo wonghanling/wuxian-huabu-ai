@@ -41,6 +41,7 @@ const IMAGE_MODELS: Record<string, {
     provider: 'n1n',
     yunwuModel: 'midjourney',
     apiType: 'midjourney',
+    supportsImage: true,
   },
   'doubao-seedream-4-5-251128': {
     provider: 'n1n',
@@ -206,10 +207,11 @@ export async function POST(req: NextRequest) {
       if (!imageUrl) throw new Error('无法解析图片');
 
     } else if (modelConfig.apiType === 'midjourney') {
+      const base64Array = imageBase64 ? [imageBase64] : [];
       const response = await fetch(`${YUNWU_BASE_URL}/mj/submit/imagine`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${YUNWU_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ botType: 'MID_JOURNEY', prompt, base64Array: [], notifyHook: '', state: '' }),
+        body: JSON.stringify({ botType: 'MID_JOURNEY', prompt, base64Array, notifyHook: '', state: '' }),
       });
       if (!response.ok) throw new Error(`API 错误: ${response.status}`);
       const data = await response.json();

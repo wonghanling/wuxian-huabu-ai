@@ -1850,7 +1850,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
             )}
 
             {/* 图片上传 - 支持图生图的模型才显示 */}
-            {cardType === 'image' && ['nano-banana', 'nano-banana-pro', 'nano-banana-pro-multi', 'doubao-seedream-4-5-251128', 'flux-kontext'].includes(model || '') && (
+            {cardType === 'image' && ['nano-banana', 'nano-banana-pro', 'nano-banana-pro-multi', 'doubao-seedream-4-5-251128', 'flux-kontext', 'mj_imagine'].includes(model || '') && (
               <div className="mb-2">
                 <label className="text-gray-400 text-xs mb-1 block">
                   {model === 'nano-banana-pro-multi'
@@ -2013,15 +2013,20 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
                       onClick={(e) => e.stopPropagation()}
                       onPointerDown={(e) => e.stopPropagation()}
-                      onChange={(e) => {
+                      onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (file) {
                           const reader = new FileReader();
-                          reader.onload = (event) => {
+                          reader.onload = async (event) => {
+                            let imageData = event.target?.result as string;
+                            // MJ 需要压缩图片
+                            if (model === 'mj_imagine') {
+                              imageData = await softCompressImage(imageData);
+                            }
                             editor.updateShape({
                               id: shape.id,
                               type: 'custom-card' as any,
-                              props: { ...shape.props, uploadedImage: event.target?.result as string },
+                              props: { ...shape.props, uploadedImage: imageData },
                             });
                           };
                           reader.readAsDataURL(file);
