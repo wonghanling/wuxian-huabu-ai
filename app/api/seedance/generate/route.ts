@@ -18,6 +18,8 @@ const SEEDANCE_PRICE: Record<string, { member: number; normal: number }> = {
   'doubao-seedance-2-0-260128_480p_audio':   { member: 1.0,  normal: 1.2  },
   'doubao-seedance-2-0-260128_720p_silent':  { member: 1.5,  normal: 1.7  },
   'doubao-seedance-2-0-260128_720p_audio':   { member: 1.9,  normal: 2.1  },
+  'doubao-seedance-2-0-260128_1080p_silent': { member: 2.6,  normal: 2.8  },
+  'doubao-seedance-2-0-260128_1080p_audio':  { member: 2.8,  normal: 3.0  },
   'doubao-seedance-2-0-fast-260128_480p_silent': { member: 0.75, normal: 0.95 },
   'doubao-seedance-2-0-fast-260128_480p_audio':  { member: 0.9,  normal: 1.1  },
   'doubao-seedance-2-0-fast-260128_720p_silent': { member: 1.3,  normal: 1.5  },

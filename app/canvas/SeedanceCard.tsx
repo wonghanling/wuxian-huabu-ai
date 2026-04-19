@@ -424,7 +424,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
                   onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
                   onChange={(e) => up({ model: e.target.value })}
                 >
-                  <option value="doubao-seedance-2-0-260128">Seedance 2.0 (480p无声0.7/有声1.0，720p无声1.5/有声1.9 元/秒)</option>
+                  <option value="doubao-seedance-2-0-260128">Seedance 2.0 (480p无声0.7/有声1.0，720p无声1.5/有声1.9，1080p无声2.8/有声3.0 元/秒)</option>
                   <option value="doubao-seedance-2-0-fast-260128">Seedance 2.0 Fast (480p无声0.75/有声0.9，720p无声1.3/有声1.7 元/秒)</option>
                 </select>
               </div>
@@ -589,7 +589,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
                   <div>
                     <label className="text-gray-400 text-xs mb-1 block">分辨率</label>
                     <div className="flex gap-1">
-                      {['480p', '720p'].map((r) => (
+                      {(model === 'doubao-seedance-2-0-260128' ? ['480p', '720p', '1080p'] : ['480p', '720p']).map((r) => (
                         <button key={r}
                           className={`px-3 py-1 rounded-lg border text-[10px] font-medium transition-all ${(resolution || '720p') === r ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
                           onClick={(e) => { e.stopPropagation(); up({ resolution: r }); }} onPointerDown={(e) => e.stopPropagation()}
