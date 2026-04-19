@@ -490,7 +490,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
       characterKeywords: '',
       characterForbiddenWords: '',
       characterReferenceImage: '',
-      characterStep: 'analyze',
+      characterStep: 'generate',
       characterAnalyzeImage: '',
       characterAnchorJson: '',
       characterThreeViewJson: '',
@@ -1012,63 +1012,6 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
               {/* 角色卡片专属输入区域 */}
               {cardType === 'character' && (
                 <div className="space-y-2">
-                  {/* 步骤切换按钮 */}
-                  <div className="flex gap-1 mb-3">
-                    <button
-                      className={`flex-1 py-2 px-2 rounded-lg text-[10px] font-semibold transition-all ${
-                        (characterStep || 'analyze') === 'analyze'
-                          ? 'bg-blue-500/80 text-white'
-                          : 'bg-black/30 text-gray-400 hover:bg-black/40'
-                      }`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        editor.updateShape({
-                          id: shape.id,
-                          type: 'custom-card' as any,
-                          props: { ...shape.props, characterStep: 'analyze' },
-                        });
-                      }}
-                      onPointerDown={(e) => e.stopPropagation()}
-                    >
-                      1.分析图片
-                    </button>
-                    <button
-                      className={`flex-1 py-2 px-2 rounded-lg text-[10px] font-semibold transition-all ${
-                        characterStep === 'three-view-json'
-                          ? 'bg-blue-500/80 text-white'
-                          : 'bg-black/30 text-gray-400 hover:bg-black/40'
-                      }`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        editor.updateShape({
-                          id: shape.id,
-                          type: 'custom-card' as any,
-                          props: { ...shape.props, characterStep: 'three-view-json' },
-                        });
-                      }}
-                      onPointerDown={(e) => e.stopPropagation()}
-                    >
-                      2.三视角JSON
-                    </button>
-                    <button
-                      className={`flex-1 py-2 px-2 rounded-lg text-[10px] font-semibold transition-all ${
-                        characterStep === 'generate'
-                          ? 'bg-blue-500/80 text-white'
-                          : 'bg-black/30 text-gray-400 hover:bg-black/40'
-                      }`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        editor.updateShape({
-                          id: shape.id,
-                          type: 'custom-card' as any,
-                          props: { ...shape.props, characterStep: 'generate' },
-                        });
-                      }}
-                      onPointerDown={(e) => e.stopPropagation()}
-                    >
-                      3.生成图片
-                    </button>
-                  </div>
 
                   {/* 步骤1: 分析图片 */}
                   {(characterStep || 'analyze') === 'analyze' && (
@@ -1419,7 +1362,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       <div className="space-y-2">
                       {/* 上传图片 */}
                       <div>
-                        <label className="text-gray-400 text-xs mb-1 block">上传参考图片（可选）</label>
+                        <label className="text-gray-400 text-xs mb-1 block">上传角色参考图片（必填）</label>
                         <input
                           type="file"
                           accept="image/*"
@@ -1482,40 +1425,12 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         </div>
                       )}
 
-                      {/* 粘贴完整JSON */}
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <label className="text-gray-400 text-xs">粘贴完整 JSON</label>
-                          <button className="text-[10px] text-gray-400 hover:text-gray-300 transition-colors"
-                            onClick={async (e) => { e.stopPropagation(); try { const t = await navigator.clipboard.readText(); if (t) { setLocalCharacterThreeViewJson(t); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, characterThreeViewJson: t } }); } } catch {} }}
-                            onPointerDown={(e) => e.stopPropagation()}>粘贴</button>
-                        </div>
-                        <textarea
-                          className="w-full h-24 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-[10px] font-mono resize-none focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all placeholder-gray-500 overflow-y-auto"
-                          placeholder="粘贴步骤2生成的三视角JSON..."
-                          value={localCharacterThreeViewJson}
-                          onClick={(e) => e.stopPropagation()}
-                          onPointerDown={(e) => e.stopPropagation()}
-                          onCompositionStart={() => { isComposing.current = true; }}
-                          onCompositionEnd={(e) => {
-                            isComposing.current = false;
-                            const v = (e.target as HTMLTextAreaElement).value;
-                            setLocalCharacterThreeViewJson(v);
-                            updateShapeDebounced({ characterThreeViewJson: v });
-                          }}
-                          onChange={(e) => {
-                            setLocalCharacterThreeViewJson(e.target.value);
-                            if (!isComposing.current) updateShapeDebounced({ characterThreeViewJson: e.target.value });
-                          }}
-                        />
-                      </div>
-
                       {/* 选择图片生成模型 */}
                       <div>
                         <label className="text-gray-400 text-xs mb-1 block">选择图片生成模型</label>
                         <select
                           className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all"
-                          value={characterImageModel || 'Nano Banana Pro'}
+                          value={characterImageModel || 'nano-banana-pro'}
                           onClick={(e) => e.stopPropagation()}
                           onPointerDown={(e) => e.stopPropagation()}
                           onChange={(e) => {
@@ -1537,7 +1452,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       {/* 生成三视角图片按钮 */}
                       <button
                         className={`w-full py-2 rounded-lg font-semibold text-white text-xs transition-all shadow-lg backdrop-blur-sm ${isGenerating ? 'bg-gray-500 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-r from-green-500/80 to-green-600/80 hover:from-green-500 hover:to-green-600'}`}
-                        disabled={isGenerating || !characterThreeViewImage || !characterThreeViewJson}
+                        disabled={isGenerating || !characterThreeViewImage}
                         onClick={async (e) => {
                           e.stopPropagation();
 
@@ -1572,7 +1487,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
                                   model: characterImageModel || 'nano-banana-pro',
-                                  prompt: `Character three-view sheet (front, side, back), same character, same outfit, same hairstyle. Based on: ${characterThreeViewJson}`,
+                                  prompt: `use the uploaded image as the ONLY character reference, character turnaround sheet, TOP SECTION: full body views front view, side view, back view, full body, head to toe visible, BOTTOM SECTION: head detail views reuse the SAME head from the original image, do not generate a new face, close-up crops of the same character head, front face, side profile, 3/4 view, same character, identical face, preserve facial features exactly, preserve hairstyle exactly, same hair shape, same hair volume, no variation, reuse the same identity across all views, no redesign, no reinterpretation, keep original outfit exactly, do not redesign, match the original image style exactly, same rendering, same lighting, same material, no duplicate character generation, no alternate versions, neutral pose, clean studio background, arranged in one frame, structured grid layout, clear separation`,
                                   aspectRatio: aspectRatio || '16:9',
                                   imageBase64: (characterImageModel || 'nano-banana-pro') === 'nano-banana-pro' ? undefined : (characterThreeViewImage || undefined),
                                   imageUrlArray: (characterImageModel || 'nano-banana-pro') === 'nano-banana-pro' ? imageUrlArray : undefined,
