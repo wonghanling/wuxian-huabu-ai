@@ -1197,13 +1197,335 @@ function ImageSplitModal({ onClose }: { onClose: () => void }) {
   const [rows, setRows] = useState(5);
   const [isDragging, setIsDragging] = useState(false);
   const [isSplitting, setIsSplitting] = useState(false);
-  const [mode, setMode] = useState<'grid' | 'custom'>('grid');
-  // 自定义切线：0-1 的比例值
-  const [hLines, setHLines] = useState<number[]>([]); // 横线
-  const [vLines, setVLines] = useState<number[]>([]); // 竖线
+  const [mode, setMode] = useState<'grid' | 'custom' | 'select'>('grid');
+  // 自定义切线
+  const [hLines, setHLines] = useState<number[]>([]);
+  const [vLines, setVLines] = useState<number[]>([]);
   const [draggingLine, setDraggingLine] = useState<{ type: 'h' | 'v'; idx: number } | null>(null);
+  // 框选模式
+  const [boxes, setBoxes] = useState<{ x: number; y: number; w: number; h: number }[]>([]);
+  const [drawing, setDrawing] = useState<{ x: number; y: number } | null>(null);
+  const [currentBox, setCurrentBox] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const loadImage = (file: File) => {
+    if (!file.type.startsWith('image/')) return;
+    setImageFile(file);
+    const img = new Image();
+    img.onload = () => setImage(img);
+    img.src = URL.createObjectURL(file);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) loadImage(file);
+  };
+
+  // 切线模式
+  const handlePreviewClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (draggingLine) return;
+    const rect = previewRef.current!.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+    const threshold = 0.02;
+    const nearH = hLines.findIndex(l => Math.abs(l - y) < threshold);
+    const nearV = vLines.findIndex(l => Math.abs(l - x) < threshold);
+    if (nearH >= 0 || nearV >= 0) return;
+    if (e.shiftKey) {
+      setVLines(prev => [...prev, x].sort((a, b) => a - b));
+    } else {
+      setHLines(prev => [...prev, y].sort((a, b) => a - b));
+    }
+  };
+
+  const handleLineMouseDown = (e: React.MouseEvent, type: 'h' | 'v', idx: number) => {
+    e.stopPropagation();
+    setDraggingLine({ type, idx });
+  };
+
+  const handleCustomMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!draggingLine) return;
+    const rect = previewRef.current!.getBoundingClientRect();
+    if (draggingLine.type === 'h') {
+      const y = Math.max(0.01, Math.min(0.99, (e.clientY - rect.top) / rect.height));
+      setHLines(prev => { const n = [...prev]; n[draggingLine.idx] = y; return [...n].sort((a, b) => a - b); });
+    } else {
+      const x = Math.max(0.01, Math.min(0.99, (e.clientX - rect.left) / rect.width));
+      setVLines(prev => { const n = [...prev]; n[draggingLine.idx] = x; return [...n].sort((a, b) => a - b); });
+    }
+  };
+
+  const handleLineContextMenu = (e: React.MouseEvent, type: 'h' | 'v', idx: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (type === 'h') setHLines(prev => prev.filter((_, i) => i !== idx));
+    else setVLines(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  // 框选模式
+  const getRelPos = (e: React.MouseEvent) => {
+    const rect = previewRef.current!.getBoundingClientRect();
+    return {
+      x: Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)),
+      y: Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height)),
+    };
+  };
+
+  const handleSelectMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    const pos = getRelPos(e);
+    setDrawing(pos);
+    setCurrentBox(null);
+  };
+
+  const handleSelectMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!drawing) return;
+    const pos = getRelPos(e);
+    setCurrentBox({
+      x: Math.min(drawing.x, pos.x),
+      y: Math.min(drawing.y, pos.y),
+      w: Math.abs(pos.x - drawing.x),
+      h: Math.abs(pos.y - drawing.y),
+    });
+  };
+
+  const handleSelectMouseUp = () => {
+    if (currentBox && currentBox.w > 0.01 && currentBox.h > 0.01) {
+      setBoxes(prev => [...prev, currentBox]);
+    }
+    setDrawing(null);
+    setCurrentBox(null);
+  };
+
+  const handleSplit = async () => {
+    if (!image) return;
+    setIsSplitting(true);
+    try {
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+      const W = image.naturalWidth;
+      const H = image.naturalHeight;
+
+      if (mode === 'grid') {
+        const cellW = Math.floor(W / cols);
+        const cellH = Math.floor(H / rows);
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            const canvas = document.createElement('canvas');
+            canvas.width = cellW; canvas.height = cellH;
+            canvas.getContext('2d')!.drawImage(image, c * cellW, r * cellH, cellW, cellH, 0, 0, cellW, cellH);
+            const blob = await new Promise<Blob>((res) => canvas.toBlob((b) => res(b!), 'image/png'));
+            zip.file(`${r + 1}-${c + 1}.png`, blob);
+          }
+        }
+      } else if (mode === 'custom') {
+        const xs = [0, ...vLines.map(v => Math.round(v * W)), W];
+        const ys = [0, ...hLines.map(h => Math.round(h * H)), H];
+        let idx = 1;
+        for (let r = 0; r < ys.length - 1; r++) {
+          for (let c = 0; c < xs.length - 1; c++) {
+            const x = xs[c], y = ys[r], w = xs[c + 1] - xs[c], h = ys[r + 1] - ys[r];
+            if (w <= 0 || h <= 0) continue;
+            const canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d')!.drawImage(image, x, y, w, h, 0, 0, w, h);
+            const blob = await new Promise<Blob>((res) => canvas.toBlob((b) => res(b!), 'image/png'));
+            zip.file(`${idx++}.png`, blob);
+          }
+        }
+      } else {
+        // 框选模式
+        for (let i = 0; i < boxes.length; i++) {
+          const b = boxes[i];
+          const x = Math.round(b.x * W), y = Math.round(b.y * H);
+          const w = Math.round(b.w * W), h = Math.round(b.h * H);
+          if (w <= 0 || h <= 0) continue;
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d')!.drawImage(image, x, y, w, h, 0, 0, w, h);
+          const blob = await new Promise<Blob>((res) => canvas.toBlob((b) => res(b!), 'image/png'));
+          zip.file(`${i + 1}.png`, blob);
+        }
+      }
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = mode === 'grid' ? `split_${rows}x${cols}.zip` : 'split_custom.zip';
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setIsSplitting(false);
+    }
+  };
+
+  const PRESETS = [
+    { label: '2×2', r: 2, c: 2 },
+    { label: '3×3', r: 3, c: 3 },
+    { label: '4×4', r: 4, c: 4 },
+    { label: '5×5', r: 5, c: 5 },
+  ];
+
+  const customPieceCount = (hLines.length + 1) * (vLines.length + 1);
+  const splitDisabled = !image || isSplitting ||
+    (mode === 'custom' && hLines.length === 0 && vLines.length === 0) ||
+    (mode === 'select' && boxes.length === 0);
+  const splitLabel = isSplitting ? '切割中...' :
+    mode === 'grid' ? `切割并下载 (${rows * cols} 张)` :
+    mode === 'custom' ? `切割并下载 (${customPieceCount} 张)` :
+    `切割并下载 (${boxes.length} 张)`;
+
+  return (
+    <>
+      <div className="fixed inset-0 bg-black/60 z-[9999]" onClick={onClose} />
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[10000] w-[520px] max-h-[90vh] overflow-y-auto bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl p-6">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-white font-semibold text-base">图片切割</h2>
+          <button onClick={onClose} className="w-7 h-7 rounded-lg hover:bg-white/10 flex items-center justify-center transition-all">
+            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* 模式切换 */}
+        <div className="flex gap-2 mb-4">
+          {(['grid', 'custom', 'select'] as const).map((m) => (
+            <button key={m} onClick={() => setMode(m)}
+              className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${mode === m ? 'bg-blue-500/80 text-white border border-blue-400/50' : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'}`}
+            >{m === 'grid' ? '等分切割' : m === 'custom' ? '自定义切线' : '框选切割'}</button>
+          ))}
+        </div>
+
+        {/* 上传区域 */}
+        <div
+          className={`relative border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all mb-4 ${isDragging ? 'border-white/40 bg-white/5' : 'border-white/15 hover:border-white/30'}`}
+          onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) loadImage(f); }} />
+          {image ? (
+            <div className="flex items-center gap-3">
+              <img src={image.src} className="w-12 h-12 object-cover rounded-lg flex-shrink-0" />
+              <div className="text-left">
+                <p className="text-white text-sm truncate max-w-[280px]">{imageFile?.name}</p>
+                <p className="text-gray-500 text-xs mt-0.5">{image.naturalWidth} × {image.naturalHeight}px · 点击更换</p>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <svg className="w-8 h-8 text-gray-500 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <p className="text-gray-400 text-sm">点击或拖拽上传图片</p>
+            </div>
+          )}
+        </div>
+
+        {/* 等分模式 */}
+        {mode === 'grid' && (
+          <div className="mb-4">
+            <div className="flex gap-2 mb-3">
+              {PRESETS.map((p) => (
+                <button key={p.label} onClick={() => { setRows(p.r); setCols(p.c); }}
+                  className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${rows === p.r && cols === p.c ? 'bg-white/20 text-white border border-white/30' : 'bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10'}`}
+                >{p.label}</button>
+              ))}
+            </div>
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <p className="text-gray-500 text-xs mb-1">列数</p>
+                <input type="number" min={1} max={20} value={cols} onChange={(e) => setCols(Math.max(1, Math.min(20, Number(e.target.value))))}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-white/30" />
+              </div>
+              <div className="flex-1">
+                <p className="text-gray-500 text-xs mb-1">行数</p>
+                <input type="number" min={1} max={20} value={rows} onChange={(e) => setRows(Math.max(1, Math.min(20, Number(e.target.value))))}
+                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-white/30" />
+              </div>
+            </div>
+            {image && <p className="text-gray-600 text-xs mt-2">每张 {Math.floor(image.naturalWidth / cols)} × {Math.floor(image.naturalHeight / rows)}px，共 {rows * cols} 张</p>}
+          </div>
+        )}
+
+        {/* 自定义切线模式 */}
+        {mode === 'custom' && image && (
+          <div className="mb-4">
+            <p className="text-gray-400 text-xs mb-1">点击添加横线，Shift+点击添加竖线，拖动调整，右键删除</p>
+            <p className="text-gray-600 text-xs mb-2">{hLines.length} 横线 · {vLines.length} 竖线 · 共 {customPieceCount} 块</p>
+            <div ref={previewRef} className="relative w-full bg-black/30 rounded-lg overflow-hidden cursor-crosshair select-none"
+              style={{ aspectRatio: `${image.naturalWidth}/${image.naturalHeight}` }}
+              onClick={handlePreviewClick} onMouseMove={handleCustomMouseMove}
+              onMouseUp={() => setDraggingLine(null)} onMouseLeave={() => setDraggingLine(null)}
+            >
+              <img src={image.src} className="w-full h-full object-fill pointer-events-none" draggable={false} />
+              {hLines.map((y, i) => (
+                <div key={`h-${i}`} className="absolute left-0 right-0 cursor-row-resize group"
+                  style={{ top: `${y * 100}%`, height: '10px', transform: 'translateY(-50%)', zIndex: 10 }}
+                  onMouseDown={(e) => handleLineMouseDown(e, 'h', i)} onContextMenu={(e) => handleLineContextMenu(e, 'h', i)}>
+                  <div className="absolute left-0 right-0 bg-yellow-400/80 group-hover:bg-yellow-300" style={{ height: '2px', top: '4px' }} />
+                </div>
+              ))}
+              {vLines.map((x, i) => (
+                <div key={`v-${i}`} className="absolute top-0 bottom-0 cursor-col-resize group"
+                  style={{ left: `${x * 100}%`, width: '10px', transform: 'translateX(-50%)', zIndex: 10 }}
+                  onMouseDown={(e) => handleLineMouseDown(e, 'v', i)} onContextMenu={(e) => handleLineContextMenu(e, 'v', i)}>
+                  <div className="absolute top-0 bottom-0 bg-blue-400/80 group-hover:bg-blue-300" style={{ width: '2px', left: '4px' }} />
+                </div>
+              ))}
+            </div>
+            <button onClick={() => { setHLines([]); setVLines([]); }} className="mt-2 text-xs text-gray-500 hover:text-gray-300 transition-colors">清除所有切线</button>
+          </div>
+        )}
+
+        {/* 框选模式 */}
+        {mode === 'select' && image && (
+          <div className="mb-4">
+            <p className="text-gray-400 text-xs mb-1">在图片上拖动鼠标框选要切割的区域，右键删除框</p>
+            <p className="text-gray-600 text-xs mb-2">已框选 {boxes.length} 个区域</p>
+            <div ref={previewRef} className="relative w-full bg-black/30 rounded-lg overflow-hidden select-none"
+              style={{ aspectRatio: `${image.naturalWidth}/${image.naturalHeight}`, cursor: 'crosshair' }}
+              onMouseDown={handleSelectMouseDown} onMouseMove={handleSelectMouseMove}
+              onMouseUp={handleSelectMouseUp} onMouseLeave={handleSelectMouseUp}
+            >
+              <img src={image.src} className="w-full h-full object-fill pointer-events-none" draggable={false} />
+              {/* 已保存的框 */}
+              {boxes.map((b, i) => (
+                <div key={i} className="absolute border-2 border-green-400/80 bg-green-400/10 group"
+                  style={{ left: `${b.x * 100}%`, top: `${b.y * 100}%`, width: `${b.w * 100}%`, height: `${b.h * 100}%` }}
+                  onContextMenu={(e) => { e.preventDefault(); setBoxes(prev => prev.filter((_, j) => j !== i)); }}
+                >
+                  <span className="absolute top-0.5 left-1 text-green-300 text-[10px] font-bold">{i + 1}</span>
+                </div>
+              ))}
+              {/* 正在画的框 */}
+              {currentBox && (
+                <div className="absolute border-2 border-blue-400/80 bg-blue-400/10 pointer-events-none"
+                  style={{ left: `${currentBox.x * 100}%`, top: `${currentBox.y * 100}%`, width: `${currentBox.w * 100}%`, height: `${currentBox.h * 100}%` }}
+                />
+              )}
+            </div>
+            <button onClick={() => setBoxes([])} className="mt-2 text-xs text-gray-500 hover:text-gray-300 transition-colors">清除所有框</button>
+          </div>
+        )}
+
+        {mode !== 'grid' && !image && (
+          <p className="text-gray-500 text-xs mb-4">请先上传图片</p>
+        )}
+
+        <button onClick={handleSplit} disabled={splitDisabled}
+          className="w-full py-3 rounded-xl bg-white text-black font-semibold text-sm hover:bg-gray-100 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+        >{splitLabel}</button>
+      </div>
+    </>
+  );
+}
 
   const loadImage = (file: File) => {
     if (!file.type.startsWith('image/')) return;
