@@ -9,12 +9,13 @@ import {
 } from 'tldraw';
 import { useState } from 'react';
 
-type GridSize = '4' | '9' | '25';
+type GridSize = '4' | '9' | '12' | '16';
 
 const GRID_OPTIONS: { value: GridSize; label: string; desc: string }[] = [
   { value: '4',  label: '2×2', desc: '4格' },
   { value: '9',  label: '3×3', desc: '9格' },
-  { value: '25', label: '5×5', desc: '25格' },
+  { value: '12', label: '3×4', desc: '12格 ⭐' },
+  { value: '16', label: '4×4', desc: '16格' },
 ];
 
 export type GemStep2CardShape = TLBaseShape<
@@ -59,7 +60,7 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
       h: 520,
       visualProfile: '',
       script: '',
-      gridSize: '25',
+      gridSize: '12',
       result: '',
       isGenerating: false,
       isMinimized: false,
