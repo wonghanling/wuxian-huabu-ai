@@ -1749,17 +1749,16 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
             {/* 宫格布局 - 图片卡片（可选） */}
             {cardType === 'image' && (
               <div className="mb-2">
-                <label className="text-gray-400 text-xs mb-1 block">宫格布局（可选）</label>
+                <label className="text-gray-400 text-xs mb-1 block">分镜宫格</label>
                 <div className="flex gap-1 flex-wrap">
                   {[
-                    { value: '', label: '单图' },
                     { value: '2x2', label: '2×2', panels: 4 },
                     { value: '3x3', label: '3×3', panels: 9 },
                     { value: '3x4', label: '3×4', panels: 12 },
                     { value: '4x4', label: '4×4', panels: 16 },
                   ].map((opt) => (
                     <button key={opt.value}
-                      onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, gridLayout: opt.value } }); }}
+                      onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, gridLayout: (gridLayout || '') === opt.value ? '' : opt.value } }); }}
                       onPointerDown={(e) => e.stopPropagation()}
                       className={`px-2 py-1 rounded text-[10px] font-medium border transition-all ${(gridLayout || '') === opt.value ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
                     >{opt.label}</button>
