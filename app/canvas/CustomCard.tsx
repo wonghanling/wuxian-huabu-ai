@@ -287,6 +287,7 @@ export type CustomCardShape = TLBaseShape<
     showCameraControl?: boolean;
     generatedImage?: string;
     aspectRatio?: string; // 图片/视频比例
+    gridLayout?: string; // 宫格布局（可选）：'2x2' | '3x3' | '3x4' | '4x4'
     videoMode?: 'text' | 'first-frame' | 'first-last-frame';
     firstFrameImage?: string;
     lastFrameImage?: string;
@@ -371,6 +372,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
     showCameraControl: T.boolean.optional(),
     generatedImage: T.string.optional(),
     aspectRatio: T.string.optional(),
+    gridLayout: T.string.optional(),
     videoMode: T.literalEnum('text', 'first-frame', 'first-last-frame').optional(),
     firstFrameImage: T.string.optional(),
     lastFrameImage: T.string.optional(),
@@ -510,7 +512,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
   }
 
   component(shape: CustomCardShape) {
-    const { cardType, title, prompt, model, w, h, uploadedImage, uploadedImages, uploadedImageUrls, cameraVertical, cameraHorizontal, showCameraControl, generatedImage, aspectRatio, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showVideoOutput, capturedFrame, videoDuration, videoResolution, videoGenerateAudio, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterAnalyzeImage, characterAnchorJson, characterThreeViewJson, characterThreeViewImage, characterGeneratedImage, characterImageModel, imageQuality, cameraTemplate, cameraStrength, showCharacterOutput, showAnalyzePanel, showThreeViewJsonPanel, showGeneratePanel, isMinimized, textOutput, isGenerating, generationProgress, generationStatus, klingDuration, klingAspectRatio, klingImage, klingGeneratedVideo, klingShowSettingsPanel, klingMode, klingVideoUrl, klingVideoName, klingCharacterOrientation, klingKeepSound, klingVideoMode, klingLipSyncSessionId, klingLipSyncFaceId, klingLipSyncAudio, klingLipSyncAudioName, klingLipSyncPhase, klingLipSyncSoundStart, klingLipSyncSoundEnd, klingLipSyncSoundInsert, klingLipSyncSoundVolume, klingLipSyncOriginalVolume } = shape.props;
+    const { cardType, title, prompt, model, w, h, uploadedImage, uploadedImages, uploadedImageUrls, cameraVertical, cameraHorizontal, showCameraControl, generatedImage, aspectRatio, gridLayout, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showVideoOutput, capturedFrame, videoDuration, videoResolution, videoGenerateAudio, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterAnalyzeImage, characterAnchorJson, characterThreeViewJson, characterThreeViewImage, characterGeneratedImage, characterImageModel, imageQuality, cameraTemplate, cameraStrength, showCharacterOutput, showAnalyzePanel, showThreeViewJsonPanel, showGeneratePanel, isMinimized, textOutput, isGenerating, generationProgress, generationStatus, klingDuration, klingAspectRatio, klingImage, klingGeneratedVideo, klingShowSettingsPanel, klingMode, klingVideoUrl, klingVideoName, klingCharacterOrientation, klingKeepSound, klingVideoMode, klingLipSyncSessionId, klingLipSyncFaceId, klingLipSyncAudio, klingLipSyncAudioName, klingLipSyncPhase, klingLipSyncSoundStart, klingLipSyncSoundEnd, klingLipSyncSoundInsert, klingLipSyncSoundVolume, klingLipSyncOriginalVolume } = shape.props;
     const editor = useEditor();
     const videoRef = useRef<HTMLVideoElement>(null);
     const { isMember, userId, refresh: refreshBalance } = useMembership();
@@ -1744,6 +1746,28 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
               </div>
             )}
 
+            {/* 宫格布局 - 图片卡片（可选） */}
+            {cardType === 'image' && (
+              <div className="mb-2">
+                <label className="text-gray-400 text-xs mb-1 block">宫格布局（可选）</label>
+                <div className="flex gap-1 flex-wrap">
+                  {[
+                    { value: '', label: '单图' },
+                    { value: '2x2', label: '2×2', panels: 4 },
+                    { value: '3x3', label: '3×3', panels: 9 },
+                    { value: '3x4', label: '3×4', panels: 12 },
+                    { value: '4x4', label: '4×4', panels: 16 },
+                  ].map((opt) => (
+                    <button key={opt.value}
+                      onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, gridLayout: opt.value } }); }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      className={`px-2 py-1 rounded text-[10px] font-medium border transition-all ${(gridLayout || '') === opt.value ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
+                    >{opt.label}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* 清晰度选择 - nano-banana-pro 和多图融合 */}
             {cardType === 'image' && ['nano-banana-pro', 'nano-banana-pro-multi'].includes(model || '') && (
               <div className="mb-2">
@@ -2349,7 +2373,16 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   const basePrompt = ((cameraVertical ?? 0) !== 0 || (cameraHorizontal ?? 0) !== 0)
                     ? `${prompt} [Camera: vertical ${(cameraVertical ?? 0) >= 0 ? '+' : ''}${cameraVertical ?? 0}°, horizontal ${(cameraHorizontal ?? 0) >= 0 ? '+' : ''}${cameraHorizontal ?? 0}°]`
                     : prompt;
-                  const fullPrompt = shotPrompt ? `${shotPrompt}\n${basePrompt}` : basePrompt;
+                  // 宫格布局 prompt 追加
+                  const GRID_PROMPTS: Record<string, string> = {
+                    '2x2': 'storyboard sheet, 2x2 grid layout, 4 panels in one image, all panels visible, clean panel borders, equal sized panels, storyboard contact sheet, multi-panel composition, not a single image, not full-frame illustration, each panel contains a different shot, grid enforced layout, overall image aspect ratio 16:9, each panel framed in widescreen 16:9 composition, cinematic framing inside each panel',
+                    '3x3': 'storyboard sheet, 3x3 grid layout, 9 panels in one image, all panels visible, clean panel borders, equal sized panels, storyboard contact sheet, multi-panel composition, not a single image, not full-frame illustration, each panel contains a different shot, grid enforced layout, overall image aspect ratio 16:9, each panel framed in widescreen 16:9 composition, cinematic framing inside each panel',
+                    '3x4': 'storyboard sheet, 3x4 grid layout, 12 panels in one image, all panels visible, clean panel borders, equal sized panels, storyboard contact sheet, multi-panel composition, not a single image, not full-frame illustration, each panel contains a different shot, grid enforced layout, overall image aspect ratio 16:9, each panel framed in widescreen 16:9 composition, cinematic framing inside each panel',
+                    '4x4': 'storyboard sheet, 4x4 grid layout, 16 panels in one image, all panels visible, clean panel borders, equal sized panels, storyboard contact sheet, multi-panel composition, not a single image, not full-frame illustration, each panel contains a different shot, grid enforced layout, overall image aspect ratio 16:9, each panel framed in widescreen 16:9 composition, cinematic framing inside each panel',
+                  };
+                  const gridPrompt = gridLayout ? GRID_PROMPTS[gridLayout] : '';
+                  const promptWithGrid = gridPrompt ? `${gridPrompt}, ${basePrompt}` : basePrompt;
+                  const fullPrompt = shotPrompt ? `${shotPrompt}\n${promptWithGrid}` : promptWithGrid;
                   console.log('生成图片，完整Prompt:', fullPrompt);
                   console.log('模型:', model);
                   console.log('上传的图片:', uploadedImage ? '已上传' : '未上传');
