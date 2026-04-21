@@ -86,6 +86,26 @@ export class GemStep3CardUtil extends BaseBoxShapeUtil<GemStep3CardShape> {
       editor.updateShape({ id: shape.id, type: 'gem-step3-card' as any, props: { ...shape.props, ...props } });
     };
 
+    const handleOutputPortDown = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+      editor.setCurrentTool('port', {
+        shapeId: shape.id,
+        portId: 'output',
+        terminal: 'start',
+      });
+    };
+
+    const handleInputPortDown = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+      editor.setCurrentTool('port', {
+        shapeId: shape.id,
+        portId: 'input',
+        terminal: 'end',
+      });
+    };
+
     const loadImage = (setter: (s: string) => void) => (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file) return;
@@ -123,6 +143,34 @@ export class GemStep3CardUtil extends BaseBoxShapeUtil<GemStep3CardShape> {
 
     return (
       <HTMLContainer style={{ width: w, height: h, pointerEvents: 'all', overflow: 'visible' }}>
+        {/* 输出端口 - Right */}
+        <div
+          className="absolute top-1/2 -translate-y-1/2 cursor-crosshair group"
+          style={{ right: '-6px', zIndex: 101, pointerEvents: 'all' }}
+          data-port-type="output"
+          data-node-id={shape.id}
+          onMouseDown={handleOutputPortDown}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="w-3 h-3 rounded-full transition-all group-hover:scale-150"
+            style={{ backgroundColor: '#27272a', border: '2px solid #34d399', boxShadow: '0 0 8px #34d399', pointerEvents: 'none' }} />
+        </div>
+
+        {/* 输入端口 - Left */}
+        <div
+          className="absolute top-1/2 -translate-y-1/2 cursor-crosshair group"
+          style={{ left: '-6px', zIndex: 101, pointerEvents: 'all' }}
+          data-port-type="input"
+          data-node-id={shape.id}
+          onMouseDown={handleInputPortDown}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="w-3 h-3 rounded-full transition-all group-hover:scale-150"
+            style={{ backgroundColor: '#27272a', border: '2px solid #34d399', boxShadow: '0 0 8px #34d399', pointerEvents: 'none' }} />
+        </div>
+
         <div className="w-full h-full bg-zinc-900/95 backdrop-blur-sm border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
           {/* 标题栏 */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/8 flex-shrink-0">

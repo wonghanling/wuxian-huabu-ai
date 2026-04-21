@@ -148,6 +148,26 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
       editor.updateShape({ id: shape.id, type: 'gem-step2-card' as any, props: { ...shape.props, ...props } });
     };
 
+    const handleOutputPortDown = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+      editor.setCurrentTool('port', {
+        shapeId: shape.id,
+        portId: 'output',
+        terminal: 'start',
+      });
+    };
+
+    const handleInputPortDown = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+      editor.setCurrentTool('port', {
+        shapeId: shape.id,
+        portId: 'input',
+        terminal: 'end',
+      });
+    };
+
     const applyStyle = (stylePrompt: string) => {
       // 去掉已有的风格提示词（如果之前选过），替换为新的
       // 检测 script 开头是否已有风格提示词（以逗号结尾的英文行）
@@ -210,6 +230,34 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
 
     return (
       <HTMLContainer style={{ width: w, height: h, pointerEvents: 'all', overflow: 'visible' }}>
+        {/* 输出端口 - Right */}
+        <div
+          className="absolute top-1/2 -translate-y-1/2 cursor-crosshair group"
+          style={{ right: '-6px', zIndex: 101, pointerEvents: 'all' }}
+          data-port-type="output"
+          data-node-id={shape.id}
+          onMouseDown={handleOutputPortDown}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="w-3 h-3 rounded-full transition-all group-hover:scale-150"
+            style={{ backgroundColor: '#27272a', border: '2px solid #60a5fa', boxShadow: '0 0 8px #60a5fa', pointerEvents: 'none' }} />
+        </div>
+
+        {/* 输入端口 - Left */}
+        <div
+          className="absolute top-1/2 -translate-y-1/2 cursor-crosshair group"
+          style={{ left: '-6px', zIndex: 101, pointerEvents: 'all' }}
+          data-port-type="input"
+          data-node-id={shape.id}
+          onMouseDown={handleInputPortDown}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="w-3 h-3 rounded-full transition-all group-hover:scale-150"
+            style={{ backgroundColor: '#27272a', border: '2px solid #60a5fa', boxShadow: '0 0 8px #60a5fa', pointerEvents: 'none' }} />
+        </div>
+
         {/* Step2 菜单按钮 - 右侧 */}
         {!isMinimized && (
           <div
