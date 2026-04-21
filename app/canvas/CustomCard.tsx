@@ -922,7 +922,19 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
             /* 正常状态 - 显示所有内容 */
             <div className="p-4 h-full flex flex-col">
             {/* 标题栏 */}
-            <div className="flex items-center gap-2 mb-3">
+            <div
+              className="flex items-center gap-2 mb-3 cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (cardType !== 'image') return;
+                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                window.dispatchEvent(new CustomEvent('card-menu-open', {
+                  detail: { x: rect.left, y: rect.bottom + 6, shapeId: shape.id, type: 'image-card' },
+                }));
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              title={cardType === 'image' ? '点击打开菜单' : undefined}
+            >
               <div className={`w-8 h-8 rounded-lg ${color.iconBg} flex items-center justify-center flex-shrink-0 backdrop-blur-sm`}>
                 {cardType === 'text' && (
                   <span className={`${color.icon} text-base font-bold`}>T</span>

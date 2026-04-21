@@ -100,17 +100,49 @@ export class GemStep1CardUtil extends BaseBoxShapeUtil<GemStep1CardShape> {
     const removeImage = (idx: number) => setImages(prev => prev.filter((_, i) => i !== idx));
 
     const analyze = async () => {
-      if (images.length === 0) { alert('请先上传图片'); return; }
+      // 收集连接的图片卡片的 generatedImage
+      const connectedImages: string[] = [];
+      const inputBindings = editor.getBindingsToShape(shape.id, 'connection');
+      for (const binding of inputBindings) {
+        if ((binding as any).props?.terminal !== 'end') continue;
+        const connBindings = editor.getBindingsFromShape(binding.fromId, 'connection');
+        for (const cb of connBindings) {
+          if ((cb as any).props?.terminal !== 'start') continue;
+          const srcShape = editor.getShape((cb as any).toId) as any;
+          if (!srcShape || srcShape.type !== 'custom-card') continue;
+          if (srcShape.props?.generatedImage) connectedImages.push(srcShape.props.generatedImage);
+        }
+      }
+
+      const allImages = [...connectedImages, ...images];
+      if (allImages.length === 0) { alert('请先上传图片或连接图片卡片'); return; }
       update({ isGenerating: true, result: '' });
       try {
         const res = await fetch('/api/gem/analyze-images', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ images }),
+          body: JSON.stringify({ images: allImages }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || '请求失败');
         update({ result: data.result, isGenerating: false });
+
+        // 自动填充连接的 Step2 卡片
+        const outBindings = editor.getBindingsFromShape(shape.id, 'connection');
+        for (const binding of outBindings) {
+          if ((binding as any).props?.terminal !== 'start') continue;
+          const connBindings2 = editor.getBindingsFromShape(binding.fromId, 'connection');
+          for (const ob of connBindings2) {
+            if ((ob as any).props?.terminal !== 'end') continue;
+            const targetShape = editor.getShape((ob as any).toId) as any;
+            if (!targetShape || targetShape.type !== 'gem-step2-card') continue;
+            editor.updateShape({
+              id: (ob as any).toId,
+              type: 'gem-step2-card' as any,
+              props: { ...targetShape.props, visualProfile: data.result },
+            });
+          }
+        }
       } catch (err: any) {
         alert('分析失败: ' + err.message);
         update({ isGenerating: false });

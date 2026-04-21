@@ -1687,6 +1687,7 @@ function CanvasPageContent() {
   const [showRechargeModal, setShowRechargeModal] = useState(false);
   const [showImageSplitModal, setShowImageSplitModal] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [floatingMenu, setFloatingMenu] = useState<{ x: number; y: number; shapeId: string; type: 'image-card' | 'step2-card' } | null>(null);
   const { isMember, balance, refresh: refreshMembership } = useMembership();
 
   const handlePay = async (plan: 'membership' | 'recharge', amount: number) => {
@@ -1931,6 +1932,13 @@ function CanvasPageContent() {
     const handlePointerLeave = () => { isDraggingCanvas = false; };
     container.addEventListener('pointerleave', handlePointerLeave);
 
+    // 监听卡片悬浮菜单事件
+    const handleCardMenu = (e: Event) => {
+      const ce = e as CustomEvent;
+      setFloatingMenu({ x: ce.detail.x, y: ce.detail.y, shapeId: ce.detail.shapeId, type: ce.detail.type });
+    };
+    window.addEventListener('card-menu-open', handleCardMenu);
+
     mountCleanupRef.current = () => {
       clearTimeout(t1);
       clearTimeout(t2);
@@ -1943,6 +1951,7 @@ function CanvasPageContent() {
       container.removeEventListener('pointermove', handlePointerMove, { capture: true });
       container.removeEventListener('pointerup', handlePointerUp, { capture: true });
       container.removeEventListener('pointerleave', handlePointerLeave);
+      window.removeEventListener('card-menu-open', handleCardMenu);
     };
   };
 
@@ -2234,6 +2243,160 @@ function CanvasPageContent() {
       {/* 图片切割弹窗 */}
       {showImageSplitModal && (
         <ImageSplitModal onClose={() => setShowImageSplitModal(false)} />
+      )}
+
+      {/* 卡片悬浮菜单 */}
+      {floatingMenu && editorInstance && (() => {
+        const editor = editorInstance;
+
+        // 创建连接线
+        const createConnection = (fromId: string, toId: string) => {
+          const connId = createShapeId();
+          editor.createShape({ id: connId, type: 'connection' as any, props: {} });
+          editor.createBinding({ type: 'connection', fromId: connId, toId: fromId, props: { terminal: 'start', portId: 'output' } });
+          editor.createBinding({ type: 'connection', fromId: connId, toId: toId, props: { terminal: 'end', portId: 'input' } });
+        };
+
+        // 获取卡片右侧位置（用于新卡片放置）
+        const getShapeRight = (shapeId: string) => {
+          const shape = editor.getShape(shapeId) as any;
+          if (!shape) return { x: 400, y: 300 };
+          return { x: shape.x + (shape.props?.w ?? 380) + 40, y: shape.y };
+        };
+
+        // 图片卡片菜单选项
+        const imageCardOptions = [
+          {
+            icon: '🎬',
+            label: '镜头控制',
+            onClick: () => {
+              const srcShape = editor.getShape(floatingMenu.shapeId) as any;
+              if (!srcShape) return;
+              const newId = createShapeId();
+              const pos = getShapeRight(floatingMenu.shapeId);
+              editor.createShape({
+                id: newId,
+                type: 'custom-card' as any,
+                x: pos.x,
+                y: pos.y,
+                props: {
+                  w: 380, h: 380,
+                  cardType: 'image',
+                  title: 'Image Generation',
+                  prompt: '',
+                  model: 'nano-banana-pro',
+                  uploadedImage: srcShape.props?.generatedImage ?? '',
+                },
+              });
+              createConnection(floatingMenu.shapeId, newId);
+              editor.select(newId);
+            },
+          },
+          {
+            icon: '🎞️',
+            label: 'GEM 分镜设计',
+            onClick: () => {
+              const srcShape = editor.getShape(floatingMenu.shapeId) as any;
+              if (!srcShape) return;
+              const baseX = srcShape.x + (srcShape.props?.w ?? 380) + 40;
+              const baseY = srcShape.y;
+              const step1Id = createShapeId();
+              const step2Id = createShapeId();
+              editor.createShape({ id: step1Id, type: 'gem-step1-card' as any, x: baseX, y: baseY, props: { w: 400, h: 520 } });
+              editor.createShape({ id: step2Id, type: 'gem-step2-card' as any, x: baseX + 440, y: baseY, props: { w: 400, h: 580 } });
+              // 图片卡片 → Step1
+              createConnection(floatingMenu.shapeId, step1Id);
+              // Step1 → Step2
+              createConnection(step1Id, step2Id);
+              editor.select(step1Id);
+            },
+          },
+          {
+            icon: '👤',
+            label: '角色设计',
+            onClick: () => {
+              const srcShape = editor.getShape(floatingMenu.shapeId) as any;
+              if (!srcShape) return;
+              const pos = getShapeRight(floatingMenu.shapeId);
+              const newId = createShapeId();
+              editor.createShape({
+                id: newId,
+                type: 'custom-card' as any,
+                x: pos.x,
+                y: pos.y,
+                props: {
+                  w: 380, h: 380,
+                  cardType: 'character',
+                  title: 'Character Design',
+                  prompt: '',
+                  model: 'nano-banana-pro',
+                },
+              });
+              createConnection(floatingMenu.shapeId, newId);
+              editor.select(newId);
+            },
+          },
+        ];
+
+        // Step2 菜单选项
+        const step2CardOptions = [
+          {
+            icon: '🖼️',
+            label: '图片生成卡片',
+            onClick: () => {
+              const srcShape = editor.getShape(floatingMenu.shapeId) as any;
+              if (!srcShape) return;
+              const pos = getShapeRight(floatingMenu.shapeId);
+              const newId = createShapeId();
+              editor.createShape({
+                id: newId,
+                type: 'custom-card' as any,
+                x: pos.x,
+                y: pos.y,
+                props: {
+                  w: 380, h: 380,
+                  cardType: 'image',
+                  title: 'Image Generation',
+                  prompt: srcShape.props?.result ?? '',
+                  model: 'nano-banana-pro',
+                },
+              });
+              createConnection(floatingMenu.shapeId, newId);
+              editor.select(newId);
+            },
+          },
+        ];
+
+        const options = floatingMenu.type === 'image-card' ? imageCardOptions : step2CardOptions;
+
+        return (
+          <div
+            className="fixed bg-zinc-900/95 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl py-2 px-1.5 flex flex-col gap-1"
+            style={{ left: floatingMenu.x, top: floatingMenu.y, zIndex: 100000, minWidth: '200px' }}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {options.map((opt, idx) => (
+              <button
+                key={idx}
+                onClick={() => { opt.onClick(); setFloatingMenu(null); }}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/8 transition-all text-left"
+              >
+                <span className="text-lg">{opt.icon}</span>
+                <span className="text-white text-sm">{opt.label}</span>
+              </button>
+            ))}
+          </div>
+        );
+      })()}
+
+      {/* 点击空白关闭悬浮菜单的遮罩 */}
+      {floatingMenu && (
+        <div
+          className="fixed inset-0"
+          style={{ zIndex: 99999 }}
+          onClick={() => setFloatingMenu(null)}
+        />
       )}
 
       {/* 离开确认弹窗 */}

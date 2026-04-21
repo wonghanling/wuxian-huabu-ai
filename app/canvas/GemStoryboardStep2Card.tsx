@@ -170,6 +170,25 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || '请求失败');
         update({ result: data.result, isGenerating: false });
+
+        // 自动推送 result 到连接的图片卡片
+        const outBindings = editor.getBindingsFromShape(shape.id, 'connection');
+        for (const binding of outBindings) {
+          if ((binding as any).props?.terminal !== 'start') continue;
+          const connBindings = editor.getBindingsFromShape(binding.fromId, 'connection');
+          for (const ob of connBindings) {
+            if ((ob as any).props?.terminal !== 'end') continue;
+            const targetShape = editor.getShape((ob as any).toId) as any;
+            if (!targetShape || targetShape.type !== 'custom-card') continue;
+            if (targetShape.props?.cardType !== 'image') continue;
+            // 找到连接的图片卡片，自动填充 prompt
+            editor.updateShape({
+              id: (ob as any).toId,
+              type: 'custom-card' as any,
+              props: { ...targetShape.props, prompt: data.result },
+            });
+          }
+        }
       } catch (err: any) {
         alert('生成失败: ' + err.message);
         update({ isGenerating: false });
@@ -194,7 +213,18 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
         <div className="w-full h-full bg-zinc-900/95 backdrop-blur-sm border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
           {/* 标题栏 */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/8 flex-shrink-0">
-            <div className="flex items-center gap-2">
+            <div
+              className="flex items-center gap-2 cursor-pointer"
+              onClick={(e) => {
+                e.stopPropagation();
+                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                window.dispatchEvent(new CustomEvent('card-menu-open', {
+                  detail: { x: rect.left, y: rect.bottom + 6, shapeId: shape.id, type: 'step2-card' },
+                }));
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              title="点击打开菜单"
+            >
               <div className="w-2 h-2 rounded-full bg-blue-400"></div>
               <span className="text-white text-sm font-semibold">GEM 分镜 · Step 2</span>
               <span className="text-gray-500 text-xs">分镜生成</span>
