@@ -55,7 +55,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
 
   override isAspectRatioLocked = () => false;
   override canResize = () => true;
-  override canBind = () => false;
+  override canBind = () => true;
 
   getDefaultProps(): GemStep4CardShape['props'] {
     return {
