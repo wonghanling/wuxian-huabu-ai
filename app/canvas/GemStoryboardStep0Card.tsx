@@ -154,29 +154,12 @@ export class GemStep0CardUtil extends BaseBoxShapeUtil<GemStep0CardShape> {
                 {isGenerating ? '分析中...' : '生成剧情分段'}
               </button>
 
-              {/* 结果：自然语言段落 */}
-              {beats.length > 0 && (
+              {/* 结果输出 */}
+              {result && (
                 <div className="flex-1 flex flex-col min-h-0">
-                  <span className="text-xs text-gray-400 mb-1 flex-shrink-0">叙事段落（{beats.length} 段）— 选中文字后复制</span>
+                  <span className="text-xs text-gray-400 mb-1 flex-shrink-0">输出结果 — 选中文字后复制</span>
                   <div className="flex-1 bg-black/30 border border-white/8 rounded-xl p-3 overflow-y-auto min-h-0 select-text">
-                    {beats.map((beat, i) => (
-                      <div key={i} className="mb-3 last:mb-0">
-                        <span className="text-[10px] font-mono text-purple-400 bg-purple-900/30 px-1.5 py-0.5 rounded mr-2">
-                          {beat.beat_type}
-                        </span>
-                        <span className="text-gray-200 text-xs leading-relaxed">{beat.content}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* raw fallback */}
-              {result && beats.length === 0 && (
-                <div className="flex-1 flex flex-col min-h-0">
-                  <span className="text-xs text-gray-400 mb-1 flex-shrink-0">原始输出 — 选中文字后复制</span>
-                  <div className="flex-1 bg-black/40 border border-white/8 rounded-xl p-2 overflow-y-auto min-h-0 select-text">
-                    <pre className="text-gray-300 text-[10px] font-mono whitespace-pre-wrap break-all">{result}</pre>
+                    <pre className="text-gray-200 text-xs font-mono whitespace-pre-wrap break-all">{result}</pre>
                   </div>
                 </div>
               )}
