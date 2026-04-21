@@ -2270,7 +2270,7 @@ function CanvasPageContent() {
             icon: '🎬',
             label: '镜头控制',
             onClick: () => {
-              const srcShape = editor.getShape(floatingMenu.shapeId) as any;
+              const srcShape = editor.getShape(floatingMenu.shapeId as any) as any;
               if (!srcShape) return;
               const newId = createShapeId();
               const pos = getShapeRight(floatingMenu.shapeId);
@@ -2296,7 +2296,7 @@ function CanvasPageContent() {
             icon: '🎞️',
             label: 'GEM 分镜设计',
             onClick: () => {
-              const srcShape = editor.getShape(floatingMenu.shapeId) as any;
+              const srcShape = editor.getShape(floatingMenu.shapeId as any) as any;
               if (!srcShape) return;
               const baseX = srcShape.x + (srcShape.props?.w ?? 380) + 40;
               const baseY = srcShape.y;
@@ -2315,7 +2315,7 @@ function CanvasPageContent() {
             icon: '👤',
             label: '角色设计',
             onClick: () => {
-              const srcShape = editor.getShape(floatingMenu.shapeId) as any;
+              const srcShape = editor.getShape(floatingMenu.shapeId as any) as any;
               if (!srcShape) return;
               const pos = getShapeRight(floatingMenu.shapeId);
               const newId = createShapeId();
@@ -2344,7 +2344,7 @@ function CanvasPageContent() {
             icon: '🖼️',
             label: '图片生成卡片',
             onClick: () => {
-              const srcShape = editor.getShape(floatingMenu.shapeId) as any;
+              const srcShape = editor.getShape(floatingMenu.shapeId as any) as any;
               if (!srcShape) return;
               const pos = getShapeRight(floatingMenu.shapeId);
               const newId = createShapeId();
