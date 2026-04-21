@@ -139,7 +139,10 @@ export class PortTool extends StateNode {
       }
 
       // 检查卡片（支持所有带端口的卡片类型）
-      if (shapeType === 'custom-card' || shapeType === 'shot-card' || shapeType === 'prompt-optimizer-card' || shapeType === 'seedance-card' || shapeType === 'audio-card') {
+      if (shapeType === 'custom-card' || shapeType === 'shot-card' || shapeType === 'prompt-optimizer-card' ||
+          shapeType === 'seedance-card' || shapeType === 'audio-card' ||
+          shapeType === 'gem-step0-card' || shapeType === 'gem-step1-card' || shapeType === 'gem-step2-card' ||
+          shapeType === 'gem-step3-card' || shapeType === 'gem-step4-card' || shapeType === 'camera-control-card') {
         // Check input port (left side)
         if (this.terminal === 'start') {
           const inputX = bounds.minX;

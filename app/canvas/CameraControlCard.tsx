@@ -271,7 +271,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
           onClick={(e) => e.stopPropagation()}
         >
           <div className="w-3 h-3 rounded-full transition-all group-hover:scale-150"
-            style={{ backgroundColor: '#27272a', border: '2px solid #60a5fa', boxShadow: '0 0 8px #60a5fa', pointerEvents: 'none' }} />
+            style={{ backgroundColor: '#27272a', border: '2px solid rgba(192,192,192,0.8)', boxShadow: '0 0 8px rgba(192,192,192,0.4)', pointerEvents: 'none' }} />
         </div>
 
         {/* 输入端口 - Left */}
@@ -285,7 +285,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
           onClick={(e) => e.stopPropagation()}
         >
           <div className="w-3 h-3 rounded-full transition-all group-hover:scale-150"
-            style={{ backgroundColor: '#27272a', border: '2px solid #60a5fa', boxShadow: '0 0 8px #60a5fa', pointerEvents: 'none' }} />
+            style={{ backgroundColor: '#27272a', border: '2px solid rgba(192,192,192,0.8)', boxShadow: '0 0 8px rgba(192,192,192,0.4)', pointerEvents: 'none' }} />
         </div>
 
         {/* 放大查看 */}

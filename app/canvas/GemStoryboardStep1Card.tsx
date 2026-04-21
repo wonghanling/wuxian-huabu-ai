@@ -217,7 +217,7 @@ export class GemStep1CardUtil extends BaseBoxShapeUtil<GemStep1CardShape> {
           onClick={(e) => e.stopPropagation()}
         >
           <div className="w-3 h-3 rounded-full transition-all group-hover:scale-150"
-            style={{ backgroundColor: '#27272a', border: '2px solid #a855f7', boxShadow: '0 0 8px #a855f7', pointerEvents: 'none' }} />
+            style={{ backgroundColor: '#27272a', border: '2px solid rgba(192,192,192,0.8)', boxShadow: '0 0 8px rgba(192,192,192,0.4)', pointerEvents: 'none' }} />
         </div>
 
         {/* 输入端口 - Left */}
@@ -231,7 +231,7 @@ export class GemStep1CardUtil extends BaseBoxShapeUtil<GemStep1CardShape> {
           onClick={(e) => e.stopPropagation()}
         >
           <div className="w-3 h-3 rounded-full transition-all group-hover:scale-150"
-            style={{ backgroundColor: '#27272a', border: '2px solid #a855f7', boxShadow: '0 0 8px #a855f7', pointerEvents: 'none' }} />
+            style={{ backgroundColor: '#27272a', border: '2px solid rgba(192,192,192,0.8)', boxShadow: '0 0 8px rgba(192,192,192,0.4)', pointerEvents: 'none' }} />
         </div>
 
         <div className="w-full h-full bg-zinc-900/95 backdrop-blur-sm border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
