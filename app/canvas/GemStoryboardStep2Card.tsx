@@ -210,21 +210,33 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
 
     return (
       <HTMLContainer style={{ width: w, height: h, pointerEvents: 'all', overflow: 'visible' }}>
+        {/* Step2 菜单按钮 - 右侧 */}
+        {!isMinimized && (
+          <div
+            className="absolute cursor-pointer group"
+            style={{ right: '-32px', top: '50%', transform: 'translateY(-50%)', zIndex: 102, pointerEvents: 'all' }}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+              window.dispatchEvent(new CustomEvent('card-menu-open', {
+                detail: { x: rect.right + 6, y: rect.top - 20, shapeId: shape.id, type: 'step2-card' },
+              }));
+            }}
+            title="卡片菜单"
+          >
+            <div className="w-6 h-6 rounded-full bg-zinc-800/90 border border-white/15 flex items-center justify-center text-gray-400 group-hover:text-white group-hover:border-white/30 transition-all shadow-lg">
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+              </svg>
+            </div>
+          </div>
+        )}
+
         <div className="w-full h-full bg-zinc-900/95 backdrop-blur-sm border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
           {/* 标题栏 */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/8 flex-shrink-0">
-            <div
-              className="flex items-center gap-2 cursor-pointer"
-              onClick={(e) => {
-                e.stopPropagation();
-                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                window.dispatchEvent(new CustomEvent('card-menu-open', {
-                  detail: { x: rect.left, y: rect.bottom + 6, shapeId: shape.id, type: 'step2-card' },
-                }));
-              }}
-              onPointerDown={(e) => e.stopPropagation()}
-              title="点击打开菜单"
-            >
+            <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-blue-400"></div>
               <span className="text-white text-sm font-semibold">GEM 分镜 · Step 2</span>
               <span className="text-gray-500 text-xs">分镜生成</span>

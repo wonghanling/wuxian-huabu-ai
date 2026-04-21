@@ -824,6 +824,29 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
             </div>
           </div>
         )}
+        {/* 图片卡片菜单按钮 - 右侧端口上方 */}
+        {cardType === 'image' && !isMinimized && (
+          <div
+            className="absolute cursor-pointer group"
+            style={{ right: '-32px', top: '50%', transform: 'translateY(-50%)', zIndex: 102, pointerEvents: 'all' }}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+              window.dispatchEvent(new CustomEvent('card-menu-open', {
+                detail: { x: rect.right + 6, y: rect.top - 40, shapeId: shape.id, type: 'image-card' },
+              }));
+            }}
+            title="卡片菜单"
+          >
+            <div className="w-6 h-6 rounded-full bg-zinc-800/90 border border-white/15 flex items-center justify-center text-gray-400 group-hover:text-white group-hover:border-white/30 transition-all shadow-lg">
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+              </svg>
+            </div>
+          </div>
+        )}
+
         {/* 输出端口 - Right */}
         <div
           className="absolute top-1/2 -translate-y-1/2 cursor-crosshair group"
@@ -922,19 +945,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
             /* 正常状态 - 显示所有内容 */
             <div className="p-4 h-full flex flex-col">
             {/* 标题栏 */}
-            <div
-              className="flex items-center gap-2 mb-3 cursor-pointer"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (cardType !== 'image') return;
-                const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                window.dispatchEvent(new CustomEvent('card-menu-open', {
-                  detail: { x: rect.left, y: rect.bottom + 6, shapeId: shape.id, type: 'image-card' },
-                }));
-              }}
-              onPointerDown={(e) => e.stopPropagation()}
-              title={cardType === 'image' ? '点击打开菜单' : undefined}
-            >
+            <div className="flex items-center gap-2 mb-3">
               <div className={`w-8 h-8 rounded-lg ${color.iconBg} flex items-center justify-center flex-shrink-0 backdrop-blur-sm`}>
                 {cardType === 'text' && (
                   <span className={`${color.icon} text-base font-bold`}>T</span>

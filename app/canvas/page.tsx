@@ -2249,12 +2249,12 @@ function CanvasPageContent() {
       {floatingMenu && editorInstance && (() => {
         const editor = editorInstance;
 
-        // 创建连接线
-        const createConnection = (fromId: string, toId: string) => {
+        // 创建连接线（使用正确的 binding 方式）
+        const createConnection = (fromShapeId: string, toShapeId: string) => {
           const connId = createShapeId();
-          editor.createShape({ id: connId, type: 'connection' as any, props: {} });
-          editor.createBinding({ type: 'connection', fromId: connId, toId: fromId as any, props: { terminal: 'start', portId: 'output' } });
-          editor.createBinding({ type: 'connection', fromId: connId, toId: toId as any, props: { terminal: 'end', portId: 'input' } });
+          editor.createShape({ id: connId, type: 'connection' as any, props: { start: { x: 0, y: 0 }, end: { x: 0, y: 0 } } });
+          editor.createBinding({ type: 'connection', fromId: connId, toId: fromShapeId as any, props: { terminal: 'start', portId: 'output' } });
+          editor.createBinding({ type: 'connection', fromId: connId, toId: toShapeId as any, props: { terminal: 'end', portId: 'input' } });
         };
 
         // 获取卡片右侧位置（用于新卡片放置）
@@ -2271,25 +2271,13 @@ function CanvasPageContent() {
             label: '镜头控制',
             onClick: () => {
               const srcShape = editor.getShape(floatingMenu.shapeId as any) as any;
-              if (!srcShape) return;
-              const newId = createShapeId();
-              const pos = getShapeRight(floatingMenu.shapeId);
-              editor.createShape({
-                id: newId,
+              if (!srcShape || srcShape.props?.cardType !== 'image') return;
+              // 切换镜头控制面板
+              editor.updateShape({
+                id: floatingMenu.shapeId as any,
                 type: 'custom-card' as any,
-                x: pos.x,
-                y: pos.y,
-                props: {
-                  w: 380, h: 380,
-                  cardType: 'image',
-                  title: 'Image Generation',
-                  prompt: '',
-                  model: 'nano-banana-pro',
-                  uploadedImage: srcShape.props?.generatedImage ?? '',
-                },
+                props: { ...srcShape.props, showCameraControl: !srcShape.props.showCameraControl },
               });
-              createConnection(floatingMenu.shapeId, newId);
-              editor.select(newId);
             },
           },
           {
@@ -2305,9 +2293,9 @@ function CanvasPageContent() {
               editor.createShape({ id: step1Id, type: 'gem-step1-card' as any, x: baseX, y: baseY, props: { w: 400, h: 520 } });
               editor.createShape({ id: step2Id, type: 'gem-step2-card' as any, x: baseX + 440, y: baseY, props: { w: 400, h: 580 } });
               // 图片卡片 → Step1
-              createConnection(floatingMenu.shapeId, step1Id);
+              createConnection(floatingMenu.shapeId, step1Id as any);
               // Step1 → Step2
-              createConnection(step1Id, step2Id);
+              createConnection(step1Id as any, step2Id as any);
               editor.select(step1Id);
             },
           },
@@ -2332,7 +2320,7 @@ function CanvasPageContent() {
                   model: 'nano-banana-pro',
                 },
               });
-              createConnection(floatingMenu.shapeId, newId);
+              createConnection(floatingMenu.shapeId, newId as any);
               editor.select(newId);
             },
           },
@@ -2361,7 +2349,7 @@ function CanvasPageContent() {
                   model: 'nano-banana-pro',
                 },
               });
-              createConnection(floatingMenu.shapeId, newId);
+              createConnection(floatingMenu.shapeId, newId as any);
               editor.select(newId);
             },
           },
@@ -2371,8 +2359,8 @@ function CanvasPageContent() {
 
         return (
           <div
-            className="fixed bg-zinc-900/95 backdrop-blur-md border border-white/10 rounded-2xl shadow-2xl py-2 px-1.5 flex flex-col gap-1"
-            style={{ left: floatingMenu.x, top: floatingMenu.y, zIndex: 100000, minWidth: '200px' }}
+            className="fixed bg-zinc-900/95 backdrop-blur-md border border-white/10 rounded-xl shadow-2xl py-1.5 px-1 flex flex-col gap-0.5"
+            style={{ left: floatingMenu.x, top: floatingMenu.y, zIndex: 100000, minWidth: '160px' }}
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
           >
@@ -2380,10 +2368,10 @@ function CanvasPageContent() {
               <button
                 key={idx}
                 onClick={() => { opt.onClick(); setFloatingMenu(null); }}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/8 transition-all text-left"
+                className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-white/8 transition-all text-left"
               >
-                <span className="text-lg">{opt.icon}</span>
-                <span className="text-white text-sm">{opt.label}</span>
+                <span className="text-base">{opt.icon}</span>
+                <span className="text-white text-xs font-medium">{opt.label}</span>
               </button>
             ))}
           </div>
