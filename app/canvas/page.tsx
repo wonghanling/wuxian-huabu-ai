@@ -2259,7 +2259,7 @@ function CanvasPageContent() {
 
         // 获取卡片右侧位置（用于新卡片放置）
         const getShapeRight = (shapeId: string) => {
-          const shape = editor.getShape(shapeId) as any;
+          const shape = editor.getShape(shapeId as any) as any;
           if (!shape) return { x: 400, y: 300 };
           return { x: shape.x + (shape.props?.w ?? 380) + 40, y: shape.y };
         };
