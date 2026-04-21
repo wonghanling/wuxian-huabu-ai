@@ -41,22 +41,11 @@ export async function loadSnapshot(canvasId: string): Promise<any | null> {
   return data?.snapshot ?? null;
 }
 
-// 保存快照（只保留最新3个）
+// 保存快照（数据库触发器自动保留最新3个）
 export async function saveSnapshot(canvasId: string, snapshot: any): Promise<void> {
   const supabase = createClient();
 
   await supabase.from('canvas_snapshots').insert({ canvas_id: canvasId, snapshot });
-
-  const { data: all } = await supabase
-    .from('canvas_snapshots')
-    .select('id, created_at')
-    .eq('canvas_id', canvasId)
-    .order('created_at', { ascending: false });
-
-  if (all && all.length > 3) {
-    const toDelete = all.slice(3).map((r: any) => r.id);
-    await supabase.from('canvas_snapshots').delete().in('id', toDelete);
-  }
 
   await supabase.from('canvases').update({ updated_at: new Date().toISOString() }).eq('id', canvasId);
 }
