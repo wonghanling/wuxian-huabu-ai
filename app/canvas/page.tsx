@@ -2252,10 +2252,35 @@ function CanvasPageContent() {
 
         // 创建连接线（使用正确的 binding 方式）
         const createConnection = (fromShapeId: string, toShapeId: string) => {
+          const fromShape = editor.getShape(fromShapeId as any);
+          if (!fromShape) return;
+          const fromBounds = editor.getShapePageBounds(fromShapeId as any);
+          if (!fromBounds) return;
+
+          // 计算起始端口位置（右侧输出端口）
+          const portX = fromBounds.maxX;
+          const portY = fromBounds.midY;
+
           const connId = createShapeId();
-          editor.createShape({ id: connId, type: 'connection' as any, props: { start: { x: 0, y: 0 }, end: { x: 0, y: 0 } } });
-          editor.createBinding({ type: 'connection', fromId: connId, toId: fromShapeId as any, props: { terminal: 'start', portId: 'output' } });
-          editor.createBinding({ type: 'connection', fromId: connId, toId: toShapeId as any, props: { terminal: 'end', portId: 'input' } });
+          editor.createShape({
+            id: connId,
+            type: 'connection' as any,
+            x: portX,
+            y: portY,
+            props: { start: { x: 0, y: 0 }, end: { x: 0, y: 0 } }
+          });
+          editor.createBinding({
+            type: 'connection',
+            fromId: connId,
+            toId: fromShapeId as any,
+            props: { terminal: 'start', portId: 'output' }
+          });
+          editor.createBinding({
+            type: 'connection',
+            fromId: connId,
+            toId: toShapeId as any,
+            props: { terminal: 'end', portId: 'input' }
+          });
         };
 
         // 获取卡片右侧位置（用于新卡片放置）
