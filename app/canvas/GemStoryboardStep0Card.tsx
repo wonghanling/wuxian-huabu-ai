@@ -157,7 +157,14 @@ export class GemStep0CardUtil extends BaseBoxShapeUtil<GemStep0CardShape> {
               {/* 结果输出 */}
               {result && (
                 <div className="flex-1 flex flex-col min-h-0">
-                  <span className="text-xs text-gray-400 mb-1 flex-shrink-0">输出结果 — 选中文字后复制</span>
+                  <div className="flex items-center justify-between mb-1 flex-shrink-0">
+                    <span className="text-xs text-gray-400">输出结果</span>
+                    <button
+                      className="text-[10px] text-gray-500 hover:text-white transition-colors px-2 py-0.5 rounded bg-white/5 hover:bg-white/10"
+                      onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(result); }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >复制全部</button>
+                  </div>
                   <div className="flex-1 bg-black/30 border border-white/8 rounded-xl p-3 overflow-y-auto min-h-0 select-text">
                     <pre className="text-gray-200 text-xs font-mono whitespace-pre-wrap break-all">{result}</pre>
                   </div>
