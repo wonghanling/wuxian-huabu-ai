@@ -2253,8 +2253,8 @@ function CanvasPageContent() {
         const createConnection = (fromId: string, toId: string) => {
           const connId = createShapeId();
           editor.createShape({ id: connId, type: 'connection' as any, props: {} });
-          editor.createBinding({ type: 'connection', fromId: connId, toId: fromId, props: { terminal: 'start', portId: 'output' } });
-          editor.createBinding({ type: 'connection', fromId: connId, toId: toId, props: { terminal: 'end', portId: 'input' } });
+          editor.createBinding({ type: 'connection', fromId: connId, toId: fromId as any, props: { terminal: 'start', portId: 'output' } });
+          editor.createBinding({ type: 'connection', fromId: connId, toId: toId as any, props: { terminal: 'end', portId: 'input' } });
         };
 
         // 获取卡片右侧位置（用于新卡片放置）
