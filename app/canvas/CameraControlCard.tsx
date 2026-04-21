@@ -326,21 +326,22 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
           {!isMinimized && (
             <div className="flex-1 flex flex-col overflow-hidden p-3 gap-2">
 
-              {/* 源图片预览 */}
-              <div className="flex-shrink-0">
-                <span className="text-[10px] text-gray-500 mb-1 block">源图片</span>
-                <div className="w-full aspect-video bg-black/30 rounded-xl overflow-hidden border border-white/8 flex items-center justify-center">
-                  {sourceImage ? (
-                    <img src={sourceImage} alt="source" className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-gray-600 text-[10px]">连接图片卡片后自动显示</span>
-                  )}
+              {/* 源图片小预览（仅有图时显示） */}
+              {sourceImage && (
+                <div className="flex-shrink-0 relative w-full h-20 bg-black/30 rounded-lg overflow-hidden border border-white/8">
+                  <img src={sourceImage} alt="source" className="w-full h-full object-cover" />
+                  <div className="absolute bottom-1 left-1 text-[9px] text-white/40 bg-black/40 px-1 rounded">源图片</div>
                 </div>
-              </div>
+              )}
+              {!sourceImage && (
+                <div className="flex-shrink-0 w-full h-10 bg-black/20 rounded-lg border border-white/5 flex items-center justify-center">
+                  <span className="text-gray-600 text-[10px]">连接图片卡片后自动读取源图</span>
+                </div>
+              )}
 
               {/* 摄像头控制球 */}
               <div className="flex-shrink-0">
-                <span className="text-[10px] text-gray-400 mb-1 block">拖动调整镜头角度</span>
+                <label className="text-gray-400 text-xs mb-2 block">拖动摄像头调整角度</label>
                 <CameraController
                   vertical={cameraVertical}
                   horizontal={cameraHorizontal}
@@ -348,17 +349,21 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
                 />
               </div>
 
-              {/* Prompt 输入 */}
-              <div className="flex-shrink-0">
-                <label className="text-[10px] text-gray-400 mb-1 block">附加描述（可选）</label>
-                <textarea
-                  className="w-full h-14 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs resize-none focus:outline-none focus:border-white/15 placeholder-gray-600"
-                  placeholder="额外的画面描述..."
-                  value={prompt}
-                  onClick={(e) => e.stopPropagation()}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onChange={(e) => update({ prompt: e.target.value })}
-                />
+              {/* 角度显示 */}
+              <div className="flex justify-between text-xs flex-shrink-0">
+                <div className="bg-black/30 px-3 py-1.5 rounded">
+                  <span className="text-gray-400">垂直: </span>
+                  <span className="text-white font-mono">{cameraVertical}°</span>
+                </div>
+                <div className="bg-black/30 px-3 py-1.5 rounded">
+                  <span className="text-gray-400">水平: </span>
+                  <span className="text-white font-mono">{cameraHorizontal}°</span>
+                </div>
+              </div>
+
+              {/* 提示 */}
+              <div className="text-[10px] text-gray-500 bg-black/30 p-2 rounded flex-shrink-0">
+                拖动摄像头图标旋转，参数自动添加到生成词
               </div>
 
               {/* 生成按钮 */}
@@ -366,10 +371,10 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
                 onClick={(e) => { e.stopPropagation(); generate(); }}
                 onPointerDown={(e) => e.stopPropagation()}
                 disabled={isGenerating || !sourceImage}
-                className={`flex-shrink-0 w-full py-2 rounded-xl text-sm font-semibold transition-all ${
+                className={`flex-shrink-0 w-full py-2 rounded-lg font-semibold text-white text-xs transition-all shadow-lg ${
                   isGenerating || !sourceImage
                     ? 'bg-white/5 text-gray-500 cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg'
+                    : 'bg-blue-600 hover:bg-blue-500'
                 }`}
               >
                 {isGenerating ? '生成中...' : '生成'}
@@ -381,28 +386,13 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
                   <div className="flex items-center justify-between mb-1 flex-shrink-0">
                     <span className="text-[10px] text-gray-400">生成结果</span>
                     <div className="flex gap-2">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setLightbox(true); }}
-                        onPointerDown={(e) => e.stopPropagation()}
-                        className="text-[10px] text-gray-400 hover:text-white transition-colors"
-                      >查看</button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); downloadImage(); }}
-                        onPointerDown={(e) => e.stopPropagation()}
-                        className="text-[10px] text-gray-400 hover:text-white transition-colors"
-                      >下载</button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); update({ generatedImage: '' }); }}
-                        onPointerDown={(e) => e.stopPropagation()}
-                        className="text-[10px] text-gray-400 hover:text-red-400 transition-colors"
-                      >删除</button>
+                      <button onClick={(e) => { e.stopPropagation(); setLightbox(true); }} onPointerDown={(e) => e.stopPropagation()} className="text-[10px] text-gray-400 hover:text-white transition-colors">查看</button>
+                      <button onClick={(e) => { e.stopPropagation(); downloadImage(); }} onPointerDown={(e) => e.stopPropagation()} className="text-[10px] text-gray-400 hover:text-white transition-colors">下载</button>
+                      <button onClick={(e) => { e.stopPropagation(); update({ generatedImage: '' }); }} onPointerDown={(e) => e.stopPropagation()} className="text-[10px] text-gray-400 hover:text-red-400 transition-colors">删除</button>
                     </div>
                   </div>
-                  <div
-                    className="flex-1 bg-black/30 rounded-xl overflow-hidden border border-white/8 cursor-pointer min-h-0"
-                    onClick={(e) => { e.stopPropagation(); setLightbox(true); }}
-                    onPointerDown={(e) => e.stopPropagation()}
-                  >
+                  <div className="flex-1 bg-black/30 rounded-xl overflow-hidden border border-white/8 cursor-pointer min-h-0"
+                    onClick={(e) => { e.stopPropagation(); setLightbox(true); }} onPointerDown={(e) => e.stopPropagation()}>
                     <img src={generatedImage} alt="result" className="w-full h-full object-cover" />
                   </div>
                 </div>

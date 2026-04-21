@@ -172,6 +172,25 @@ export function getConnectionBindingPosition(
     }
   }
 
+  // Handle GEM storyboard cards
+  if (shapeType === 'gem-step0-card' || shapeType === 'gem-step1-card' || shapeType === 'gem-step2-card' ||
+      shapeType === 'gem-step3-card' || shapeType === 'gem-step4-card') {
+    if (binding.props.terminal === 'start') {
+      return { x: bounds.maxX, y: bounds.midY };
+    } else {
+      return { x: bounds.minX, y: bounds.midY };
+    }
+  }
+
+  // Handle camera-control-card shape connections
+  if (shapeType === 'camera-control-card') {
+    if (binding.props.terminal === 'start') {
+      return { x: bounds.maxX, y: bounds.midY };
+    } else {
+      return { x: bounds.minX, y: bounds.midY };
+    }
+  }
+
   return null;
 }
 
