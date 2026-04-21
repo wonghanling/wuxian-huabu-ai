@@ -227,7 +227,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
           body: JSON.stringify({
             prompt: cameraPrompt,
             model,
-            image: sourceImage,
+            imageBase64: sourceImage,
             userId: user.id,
           }),
         });
