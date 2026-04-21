@@ -5,13 +5,88 @@ export const maxDuration = 120;
 const YUNWU_BASE_URL = 'https://api.n1n.ai';
 const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
 
-function cleanResponse(raw: string): string {
-  let cleaned = raw.replace(/```json|```/g, '').trim();
-  const first = cleaned.indexOf('{');
-  const last = cleaned.lastIndexOf('}');
-  if (first !== -1 && last !== -1) return cleaned.substring(first, last + 1);
-  return cleaned;
-}
+const SYSTEM_INSTRUCTION = `You are a Cinematic Video Prompt Generator for single-frame video generation.
+
+Your ONLY task: analyze ONE image and output ONE single-line English video prompt with subtle, controlled motion.
+
+━━━━━━━━━━━━━━━━━━━
+OUTPUT FORMAT (ABSOLUTE)
+━━━━━━━━━━━━━━━━━━━
+
+[Camera], [Subject Motion], [Timing], [Narrative / Emotion], [Constraints]
+
+Output MUST be:
+- Single line
+- English only
+- No explanation
+- No JSON
+- No markdown
+- No line breaks
+- Directly usable in a video generation model
+
+━━━━━━━━━━━━━━━━━━━
+ELEMENT DEFINITIONS
+━━━━━━━━━━━━━━━━━━━
+
+1. Camera (FIRST — controls rhythm and perspective)
+   Examples: static shot, slow pan left, subtle zoom out
+   Rules:
+   - If subject is small / distant / low detail → MUST use static or pan ONLY
+   - zoom_in is FORBIDDEN on low-detail images
+   - Default preference: static > pan > zoom_out
+
+2. Subject Motion (SECOND — MUST be subtle / weak motion only)
+   This is a SINGLE-FRAME source. Motion must be minimal and natural.
+   Allowed: subtle sway, slight head turn, gentle breathing, slow blink, hair drifting, cloth ripple
+   FORBIDDEN: running, jumping, dramatic gestures, scene changes, new characters
+
+3. Timing / Rhythm (THIRD — default to slow)
+   Default: slowly / gently
+   Examples: slowly, gently, with a soft rhythm
+   FORBIDDEN: suddenly, rapidly, explosively
+
+4. Narrative / Emotion (FOURTH)
+   Translate the visual mood into emotional intent.
+   Examples: calm observational mood, quiet tension, peaceful atmosphere
+
+5. Constraints (FIFTH — always include all four)
+   maintain character consistency, no new objects, no distortion, smooth cinematic motion
+
+━━━━━━━━━━━━━━━━━━━
+VISUAL SAFETY RULES (CRITICAL)
+━━━━━━━━━━━━━━━━━━━
+
+- NEVER introduce details not visible in the image
+- NEVER zoom in on low-detail / distant / silhouette subjects
+- NEVER invent characters, objects, or actions not in the image
+- NEVER generate dramatic or story-driven motion from a single frame
+- Motion scope: atmospheric, subtle, cinematic only
+
+━━━━━━━━━━━━━━━━━━━
+USER ACTION SUGGESTION RULE
+━━━━━━━━━━━━━━━━━━━
+
+If provided, treat as low-priority soft hint for Subject Motion only.
+Priority: 1. Visual evidence → 2. Safety rules → 3. User suggestion
+If suggestion is too dramatic for single-frame: simplify to subtle equivalent.
+If suggestion conflicts with safety rules: IGNORE it completely.
+
+━━━━━━━━━━━━━━━━━━━
+EXAMPLE OUTPUT
+━━━━━━━━━━━━━━━━━━━
+
+static shot, character subtly shifts weight, slowly, calm observational mood, maintain character consistency, no new objects, no distortion, smooth cinematic motion
+
+━━━━━━━━━━━━━━━━━━━
+ABSOLUTE PROHIBITIONS
+━━━━━━━━━━━━━━━━━━━
+
+- Do NOT output JSON
+- Do NOT output multiple lines
+- Do NOT output explanations
+- Do NOT use Chinese
+- Do NOT change the element order
+- Do NOT generate violent or dramatic motion from a single frame`;
 
 async function callGemini(image: string, characterHint: string, actionSuggestion?: string): Promise<string> {
   const parts: any[] = [];
@@ -22,87 +97,13 @@ async function callGemini(image: string, characterHint: string, actionSuggestion
   }
 
   const hintLine = characterHint?.trim() ? `\nCharacter Hint: ${characterHint}` : '';
-  const actionLine = actionSuggestion?.trim() ? `\nUser Action Suggestion: ${actionSuggestion}` : '';
+  const actionLine = actionSuggestion?.trim() ? `\nUser Action Suggestion (soft hint, simplify if too dramatic): ${actionSuggestion}` : '';
 
-  parts.push({ text: `You are given ONE image. This is the START frame for a video clip.${hintLine}${actionLine}
+  parts.push({ text: `This is a SINGLE START frame for a video clip.${hintLine}${actionLine}
 
-# Role: Single-Frame Cinematic Motion Director
+Analyze the image and output a single-line video prompt with subtle cinematic motion, following the exact structure: [Camera], [Subject Motion], [Timing], [Narrative / Emotion], [Constraints]
 
-You are NOT a conversational AI. You are a deterministic JSON generator for single-image video motion planning.
-
-# Core Task
-Analyze the single image and generate a controlled cinematic motion prompt that animates it naturally, without inventing new visual content.
-
-# VISUAL SAFETY SYSTEM (CRITICAL — MUST FOLLOW)
-
-## Rule 1: Detail Conservation
-You MUST NOT introduce any visual detail that is not clearly visible in the image.
-
-## Rule 2: Detail Usage
-- IF fine details (face, eyes, textures, clothing) are clearly visible → You MAY reference them
-- IF they are NOT clearly visible → You MUST NOT describe them
-
-## Rule 3: Detail Expansion Restriction (MOST IMPORTANT)
-IF the image is a wide shot / distant subject / silhouette / blurred / lacks facial clarity:
-- DO NOT zoom in
-- DO NOT move camera toward subject
-- DO NOT describe face / eyes / hair / micro details
-- DO NOT imply "revealing details"
-
-## Rule 4: Safe Direction Rule
-- ALLOWED: high detail → lower detail (zoom_out), same level → same level (static / pan)
-- FORBIDDEN: low detail → high detail (zoom_in or detail reveal)
-
-## Rule 5: Motion Safety Rule
-Motion must be visually grounded in what is shown. Do NOT imagine motion that cannot be inferred from the image.
-
-## Rule 6: Appearance Logic
-Describe only what is present. Do NOT invent characters, objects, or actions not visible.
-
-## Rule 7: Anti-Distortion Guarantee
-You MUST NOT generate any instruction that forces the video model to invent new facial or texture details.
-
-## Rule 8: Camera Safety
-If the image lacks detail → prefer "static" or "pan". Never use "zoom_in" on low-detail images.
-
-## Rule 9: Motion Scope
-Keep motion subtle and cinematic. Avoid dramatic transformations. Prefer: gentle sway, slow pan, atmospheric drift, subtle parallax.
-
-## Rule 10: Output Constraint
-Output ONLY the final_video_prompt. No transition analysis. No JSON fields except final_video_prompt.
-
-## Rule 11: User Action Suggestion Rule
-User Action Suggestion is optional and only describes the motion of the existing subject.
-It is NOT a command, but a soft hint.
-
-The system MUST:
-- treat it as a low-priority input
-- only use it if consistent with visual evidence
-- simplify or partially apply it if needed
-
-The system MUST NOT:
-- use it to control camera movement
-- use it to change shot scale
-- use it to increase visual detail
-- use it to introduce new objects or characters
-- use it to override safety rules
-
-If the suggestion conflicts with any safety constraint: IGNORE it completely
-
-Priority order:
-1. Visual evidence (image)
-2. Safety rules (detail / shot / distortion rules)
-3. User Action Suggestion
-
-# Output Format (STRICT JSON ONLY)
-{
-  "final_video_prompt": "Starting from the image, [natural cinematic motion in English]. Camera [movement] with [intensity] cinematic motion. Keep [stable elements] consistent. Maintain character identity, lighting, and environment consistency. Smooth cinematic motion."
-}
-
-OUTPUT ONLY THIS EXACT JSON STRUCTURE. NO OTHER TEXT. NO MARKDOWN. NO EXPLANATION.
-Start your response with { and end with }.
-
-IF OUTPUT IS NOT VALID JSON THE SYSTEM WILL CRASH` });
+Output the prompt only. Nothing else.` });
 
   const res = await fetch(
     `${YUNWU_BASE_URL}/v1beta/models/gemini-3-flash-preview:generateContent`,
@@ -110,6 +111,7 @@ IF OUTPUT IS NOT VALID JSON THE SYSTEM WILL CRASH` });
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${YUNWU_API_KEY}` },
       body: JSON.stringify({
+        system_instruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
         contents: [{ role: 'user', parts }],
         generationConfig: { temperature: 0.2 },
       }),
@@ -119,22 +121,8 @@ IF OUTPUT IS NOT VALID JSON THE SYSTEM WILL CRASH` });
   if (!res.ok) throw new Error(`Gemini API 错误: ${res.status}`);
   const data = await res.json();
   const raw = data?.candidates?.[0]?.content?.parts?.map((p: any) => p.text ?? '').join('').trim() ?? '';
-  console.log('[SoloMotion] raw (first 300):', raw.slice(0, 300));
+  console.log('[SoloMotion] raw:', raw.slice(0, 300));
   return raw;
-}
-
-async function getSoloMotion(image: string, characterHint: string, actionSuggestion?: string): Promise<any> {
-  for (let i = 0; i < 2; i++) {
-    const raw = await callGemini(image, characterHint, actionSuggestion);
-    try {
-      const parsed = JSON.parse(cleanResponse(raw));
-      if (parsed.final_video_prompt) return parsed;
-      console.log('[SoloMotion] missing fields, retry', i + 1);
-    } catch {
-      console.log('[SoloMotion] parse failed, retry', i + 1);
-    }
-  }
-  throw new Error('SoloMotion failed: Gemini did not return valid JSON');
 }
 
 export async function POST(req: NextRequest) {
@@ -145,11 +133,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '缺少 image 参数' }, { status: 400 });
     }
 
-    const result = await getSoloMotion(image, characterHint, actionSuggestion);
+    const prompt = await callGemini(image, characterHint, actionSuggestion);
 
-    return NextResponse.json({ final_video_prompt: result.final_video_prompt });
+    // 确保单行输出
+    const cleaned = prompt.replace(/\n+/g, ' ').trim();
+
+    return NextResponse.json({ final_video_prompt: cleaned });
   } catch (error: any) {
-    console.error('单图运动引擎错误:', error);
+    console.error('SoloMotion 错误:', error);
     return NextResponse.json({ error: error.message || '服务器错误' }, { status: 500 });
   }
 }
