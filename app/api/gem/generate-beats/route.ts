@@ -5,105 +5,42 @@ const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
 
 export const maxDuration = 300;
 
-const SYSTEM_INSTRUCTION = `You are Narrative Segmentation Engine.
+const SYSTEM_INSTRUCTION = `你是剧情分析助手。
 
-Your task is to convert a Chinese story segment into a dynamic number of narrative beats.
+任务：分析用户提供的中文故事片段，输出结构化的剧情分段分析。
 
-━━━━━━━━━━━━━━━━━━━
-INPUT
-━━━━━━━━━━━━━━━━━━━
+输入：
+- 中文故事文本（最多 800 字）
 
-You will receive:
+输出要求：
+1. 用中文输出
+2. 自然语言描述，不要输出 JSON
+3. 按照以下结构组织：
 
-1. Chinese story text (MAX 800 Chinese characters)
+【剧情分段】
+根据故事内容，将其分为 3-6 个关键节拍（beats），每个节拍用一句话概括：
 
-━━━━━━━━━━━━━━━━━━━
-CORE GOAL
-━━━━━━━━━━━━━━━━━━━
+1. [节拍类型] 描述
+2. [节拍类型] 描述
+...
 
-Generate 3 to 6 narrative beats based on the actual content density.
+可用的节拍类型：
+- 建立（世界观/场景）
+- 触发（引发事件）
+- 发展（情节推进）
+- 升级（张力增强）
+- 高潮（关键动作）
+- 结局（收尾/余波）
 
-Do NOT force all 6 beats if unnecessary.
+【视觉化建议】
+简要说明这个故事适合用什么视觉风格呈现（2-3 句话）
 
-━━━━━━━━━━━━━━━━━━━
-AVAILABLE BEAT TYPES
-━━━━━━━━━━━━━━━━━━━
+规则：
+- 只分析给定的片段，不要扩展或编造
+- 每个节拍一句话，10-25 字
+- 聚焦可视化的动作和场景，避免抽象情绪
+- 根据实际内容密度决定节拍数量，不要强行凑满 6 个`;
 
-You may choose from:
-
-- establish   (world / setting)
-- inciting    (trigger event)
-- build       (development)
-- escalate    (tension increase)
-- climax      (peak action)
-- resolution  (aftermath)
-
-━━━━━━━━━━━━━━━━━━━
-SELECTION RULES (CRITICAL)
-━━━━━━━━━━━━━━━━━━━
-
-- Use ONLY the beats that are necessary
-- Minimum: 3 beats
-- Maximum: 6 beats
-- Always maintain logical progression:
-  establish → inciting → build → escalate → climax → resolution
-- You may skip intermediate beats if not needed
-
-━━━━━━━━━━━━━━━━━━━
-BEAT RULES
-━━━━━━━━━━━━━━━━━━━
-
-Each beat MUST:
-
-- Be ONE sentence
-- Be written in English
-- Contain 10–25 words
-- Describe ONE clear visual moment
-- Be action-based and visually observable
-
-━━━━━━━━━━━━━━━━━━━
-FILTERING RULES
-━━━━━━━━━━━━━━━━━━━
-
-REMOVE:
-
-- inner thoughts
-- abstract narration
-- emotions without visible action
-
-KEEP:
-
-- physical actions
-- character interaction
-- environment changes
-
-━━━━━━━━━━━━━━━━━━━
-IMPORTANT
-━━━━━━━━━━━━━━━━━━━
-
-- Do NOT artificially expand weak content
-- Do NOT invent new events
-- Compress when needed
-
-━━━━━━━━━━━━━━━━━━━
-OUTPUT FORMAT
-━━━━━━━━━━━━━━━━━━━
-
-{
-  "narrative_beats": [
-    { "beat_type": "", "content": "" }
-  ]
-}
-
-━━━━━━━━━━━━━━━━━━━
-STRICT RULES
-━━━━━━━━━━━━━━━━━━━
-
-- 3 to 6 beats only
-- Maintain correct order
-- No duplicates
-- Output ONLY JSON
-- No explanation`;
 
 export async function POST(req: NextRequest) {
   try {
@@ -113,7 +50,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '缺少故事文本' }, { status: 400 });
     }
 
-    const userMessage = `Here is the Chinese story text:\n\n${story}\n\nGenerate the narrative beats JSON.`;
+    const userMessage = `以下是中文故事文本：\n\n${story}\n\n请分析并输出剧情分段。`;
 
     const response = await fetch(
       `${YUNWU_BASE_URL}/v1beta/models/gemini-3-pro-preview-thinking:generateContent`,
@@ -140,17 +77,7 @@ export async function POST(req: NextRequest) {
     const allParts: any[] = data?.candidates?.[0]?.content?.parts ?? [];
     const text = allParts.map((p: any) => p.text ?? '').join('').trim();
 
-    const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, text];
-    const jsonText = (jsonMatch[1] || text).trim();
-
-    let parsed;
-    try {
-      parsed = JSON.parse(jsonText);
-    } catch {
-      return NextResponse.json({ success: true, result: text, raw: true });
-    }
-
-    return NextResponse.json({ success: true, result: parsed });
+    return NextResponse.json({ success: true, result: text });
   } catch (error: any) {
     console.error('GEM beats error:', error);
     return NextResponse.json({ error: error.message || '服务器错误' }, { status: 500 });
