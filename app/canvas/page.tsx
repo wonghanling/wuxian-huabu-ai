@@ -18,6 +18,7 @@ import { GemStep2CardUtil } from './GemStoryboardStep2Card';
 import { GemStep3CardUtil } from './GemStoryboardStep3Card';
 import { GemStep4CardUtil } from './GemStoryboardStep4Card';
 import { AudioCardUtil } from './AudioCard';
+import { CameraControlCardUtil } from './CameraControlCard';
 import { SeedanceCardUtil } from './SeedanceCard';
 import TutorialOverlay from './TutorialOverlay';
 import { createClient } from '@/lib/supabase/client';
@@ -1744,7 +1745,7 @@ function CanvasPageContent() {
   }, []);
 
   // 自定义形状工具和绑定工具
-  const customShapeUtils = [CustomCardShapeUtil, ConnectionShapeUtil, TimelineShapeUtil, ShotCardShapeUtil, PromptOptimizerCardUtil, GemStep0CardUtil, GemStep1CardUtil, GemStep2CardUtil, GemStep3CardUtil, GemStep4CardUtil, AudioCardUtil, SeedanceCardUtil];
+  const customShapeUtils = [CustomCardShapeUtil, ConnectionShapeUtil, TimelineShapeUtil, ShotCardShapeUtil, PromptOptimizerCardUtil, GemStep0CardUtil, GemStep1CardUtil, GemStep2CardUtil, GemStep3CardUtil, GemStep4CardUtil, AudioCardUtil, SeedanceCardUtil, CameraControlCardUtil];
   const customBindingUtils = [ConnectionBindingUtil];
   const customTools = [PortTool];
 
@@ -2267,21 +2268,34 @@ function CanvasPageContent() {
         // 图片卡片菜单选项
         const imageCardOptions = [
           {
-            icon: '🎬',
             label: '镜头控制',
             onClick: () => {
               const srcShape = editor.getShape(floatingMenu.shapeId as any) as any;
-              if (!srcShape || srcShape.props?.cardType !== 'image') return;
-              // 切换镜头控制面板
-              editor.updateShape({
-                id: floatingMenu.shapeId as any,
-                type: 'custom-card' as any,
-                props: { ...srcShape.props, showCameraControl: !srcShape.props.showCameraControl },
+              if (!srcShape) return;
+              const pos = getShapeRight(floatingMenu.shapeId);
+              const newId = createShapeId();
+              editor.createShape({
+                id: newId,
+                type: 'camera-control-card' as any,
+                x: pos.x,
+                y: pos.y,
+                props: {
+                  w: 360, h: 520,
+                  sourceShapeId: floatingMenu.shapeId,
+                  cameraVertical: 0,
+                  cameraHorizontal: 0,
+                  generatedImage: '',
+                  isGenerating: false,
+                  isMinimized: false,
+                  model: srcShape.props?.model ?? 'nano-banana-pro',
+                  prompt: srcShape.props?.prompt ?? '',
+                },
               });
+              createConnection(floatingMenu.shapeId, newId as any);
+              editor.select(newId);
             },
           },
           {
-            icon: '🎞️',
             label: 'GEM 分镜设计',
             onClick: () => {
               const srcShape = editor.getShape(floatingMenu.shapeId as any) as any;
@@ -2292,15 +2306,12 @@ function CanvasPageContent() {
               const step2Id = createShapeId();
               editor.createShape({ id: step1Id, type: 'gem-step1-card' as any, x: baseX, y: baseY, props: { w: 400, h: 520 } });
               editor.createShape({ id: step2Id, type: 'gem-step2-card' as any, x: baseX + 440, y: baseY, props: { w: 400, h: 580 } });
-              // 图片卡片 → Step1
               createConnection(floatingMenu.shapeId, step1Id as any);
-              // Step1 → Step2
               createConnection(step1Id as any, step2Id as any);
               editor.select(step1Id);
             },
           },
           {
-            icon: '👤',
             label: '角色设计',
             onClick: () => {
               const srcShape = editor.getShape(floatingMenu.shapeId as any) as any;
@@ -2329,7 +2340,6 @@ function CanvasPageContent() {
         // Step2 菜单选项
         const step2CardOptions = [
           {
-            icon: '🖼️',
             label: '图片生成卡片',
             onClick: () => {
               const srcShape = editor.getShape(floatingMenu.shapeId as any) as any;
@@ -2360,7 +2370,7 @@ function CanvasPageContent() {
         return (
           <div
             className="fixed bg-zinc-900/95 backdrop-blur-md border border-white/10 rounded-xl shadow-2xl py-1.5 px-1 flex flex-col gap-0.5"
-            style={{ left: floatingMenu.x, top: floatingMenu.y, zIndex: 100000, minWidth: '160px' }}
+            style={{ left: floatingMenu.x, top: floatingMenu.y, zIndex: 100000, minWidth: '140px' }}
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
           >
@@ -2368,9 +2378,8 @@ function CanvasPageContent() {
               <button
                 key={idx}
                 onClick={() => { opt.onClick(); setFloatingMenu(null); }}
-                className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-white/8 transition-all text-left"
+                className="flex items-center px-3 py-2 rounded-lg hover:bg-white/8 transition-all text-left"
               >
-                <span className="text-base">{opt.icon}</span>
                 <span className="text-white text-xs font-medium">{opt.label}</span>
               </button>
             ))}
