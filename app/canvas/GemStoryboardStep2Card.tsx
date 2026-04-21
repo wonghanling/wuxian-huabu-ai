@@ -18,6 +18,73 @@ const GRID_OPTIONS: { value: GridSize; label: string; desc: string }[] = [
   { value: '16', label: '4×4', desc: '16格' },
 ];
 
+const STYLE_OPTIONS: { label: string; prompt: string }[] = [
+  {
+    label: '电影写实3D',
+    prompt: '3D animation style, game cinematic, Unreal Engine lighting, realistic shadows, high detail, consistent character,',
+  },
+  {
+    label: '超写实电影',
+    prompt: 'cinematic film still, photorealistic, natural skin texture, global illumination, volumetric lighting, depth of field,',
+  },
+  {
+    label: '游戏CG',
+    prompt: 'AAA game cinematic, Unreal Engine 5 render, real-time rendering, cinematic lighting, epic atmosphere,',
+  },
+  {
+    label: '动漫3D',
+    prompt: 'anime 3D style, stylized character, clean face shading, soft lighting, anime cinematic,',
+  },
+  {
+    label: '宫崎骏',
+    prompt: 'Studio Ghibli style, hand-painted background, soft warm lighting, anime film look,',
+  },
+  {
+    label: '新海诚',
+    prompt: 'Makoto Shinkai style, ultra detailed sky, light bloom, emotional atmosphere,',
+  },
+  {
+    label: '黑暗电影',
+    prompt: 'dark cinematic, moody lighting, low key lighting, dramatic shadows, foggy atmosphere,',
+  },
+  {
+    label: '武侠电影',
+    prompt: 'ancient Chinese wuxia style, dusty atmosphere, wind movement, cinematic composition, epic tone,',
+  },
+  {
+    label: '赛博朋克3D',
+    prompt: 'cyberpunk, futuristic city, neon lights, holographic displays, 3D render, Unreal Engine 5, game cinematic, realistic lighting, realistic shadows, PBR materials, realistic textures, cinematic composition, depth of field, high detail, ultra detailed, not illustration, not painting, not anime, not 2D,',
+  },
+  {
+    label: '赛博江湖',
+    prompt: 'cyberpunk wuxia, futuristic ancient China, neon lanterns, glowing Chinese signs, traditional robe mixed with technology, cybernetic swordsman, energy blade, dark cinematic lighting, foggy atmosphere, Unreal Engine lighting, high detail, consistent character,',
+  },
+  {
+    label: '迪士尼3D',
+    prompt: 'Disney Pixar style, smooth skin, cartoon proportions, bright lighting,',
+  },
+  {
+    label: '梦工厂',
+    prompt: 'DreamWorks style, expressive face, stylized realism,',
+  },
+  {
+    label: '卡通渲染',
+    prompt: 'toon shading, cel shading, flat color, anime render,',
+  },
+  {
+    label: '油画风',
+    prompt: 'oil painting, brush strokes, classical art,',
+  },
+  {
+    label: '水墨风',
+    prompt: 'ink wash painting, Chinese ink style, minimalist composition,',
+  },
+  {
+    label: '电影胶片',
+    prompt: 'film grain, analog film, vintage cinematic,',
+  },
+];
+
 export type GemStep2CardShape = TLBaseShape<
   'gem-step2-card',
   {
@@ -57,7 +124,7 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
   getDefaultProps(): GemStep2CardShape['props'] {
     return {
       w: 400,
-      h: 520,
+      h: 580,
       visualProfile: '',
       script: '',
       gridSize: '12',
@@ -72,12 +139,22 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
   }
 
   component(shape: GemStep2CardShape) {
-    const { w, h, visualProfile, script, gridSize = '25', result, isGenerating, isMinimized } = shape.props;
+    const { w, h, visualProfile, script, gridSize = '12', result, isGenerating, isMinimized } = shape.props;
     const editor = useEditor();
     const [copied, setCopied] = useState(false);
+    const [showStyles, setShowStyles] = useState(false);
 
     const update = (props: Partial<GemStep2CardShape['props']>) => {
       editor.updateShape({ id: shape.id, type: 'gem-step2-card' as any, props: { ...shape.props, ...props } });
+    };
+
+    const applyStyle = (stylePrompt: string) => {
+      // 去掉已有的风格提示词（如果之前选过），替换为新的
+      // 检测 script 开头是否已有风格提示词（以逗号结尾的英文行）
+      const stylePattern = /^[a-zA-Z0-9 ,.\-()]+,\s*\n/;
+      const cleanScript = stylePattern.test(script) ? script.replace(stylePattern, '') : script;
+      update({ script: stylePrompt + '\n' + cleanScript });
+      setShowStyles(false);
     };
 
     const generate = async () => {
@@ -107,7 +184,7 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
 
     const toggleMinimize = (e: React.MouseEvent) => {
       e.stopPropagation();
-      update({ isMinimized: !isMinimized, w: isMinimized ? 400 : 160, h: isMinimized ? 520 : 60 });
+      update({ isMinimized: !isMinimized, w: isMinimized ? 400 : 160, h: isMinimized ? 580 : 60 });
     };
 
     const selectedGrid = GRID_OPTIONS.find(o => o.value === gridSize) ?? GRID_OPTIONS[2];
@@ -180,12 +257,42 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
                 />
               </div>
 
-              {/* 剧本输入 */}
+              {/* 剧本输入 + 风格选择 */}
               <div className="flex-shrink-0">
-                <label className="text-xs text-gray-400 mb-1 block">剧本 / 故事</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs text-gray-400">剧本 / 故事</label>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setShowStyles(v => !v); }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    className="text-[10px] px-2 py-0.5 rounded bg-blue-600/30 border border-blue-500/40 text-blue-300 hover:bg-blue-600/50 transition-colors"
+                  >
+                    🎨 选风格
+                  </button>
+                </div>
+
+                {/* 风格选择面板 */}
+                {showStyles && (
+                  <div
+                    className="mb-1.5 flex flex-wrap gap-1"
+                    onClick={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => e.stopPropagation()}
+                  >
+                    {STYLE_OPTIONS.map(s => (
+                      <button
+                        key={s.label}
+                        onClick={(e) => { e.stopPropagation(); applyStyle(s.prompt); }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        className="text-[10px] px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-gray-300 hover:bg-blue-600/40 hover:border-blue-500/50 hover:text-white transition-all"
+                      >
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
                 <textarea
                   className="w-full h-20 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs resize-none focus:outline-none focus:border-white/15 placeholder-gray-600"
-                  placeholder="输入中文剧本或故事内容..."
+                  placeholder="选择风格后提示词会出现在这里，后面接着写剧本内容..."
                   value={script}
                   onClick={(e) => e.stopPropagation()}
                   onPointerDown={(e) => e.stopPropagation()}
