@@ -356,7 +356,7 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
                     onPointerDown={(e) => e.stopPropagation()}
                     className="text-[10px] px-2 py-0.5 rounded bg-blue-600/30 border border-blue-500/40 text-blue-300 hover:bg-blue-600/50 transition-colors"
                   >
-                    🎨 选风格
+                    选风格
                   </button>
                 </div>
 
