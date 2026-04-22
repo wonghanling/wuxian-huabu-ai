@@ -1590,7 +1590,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                             });
 
                             try {
-                              const effectiveImage = connectedGeneratedImage || characterThreeViewImage;
+                              const effectiveImage = connectedGeneratedImage || characterThreeViewImage || '';
                               const prepared = await prepareImageForModel(effectiveImage, characterImageModel || 'nano-banana-pro');
 
                               const res = await fetch('/api/image/generate', {
