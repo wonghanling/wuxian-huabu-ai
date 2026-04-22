@@ -88,11 +88,6 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     usePassThroughWheelEvents(scrollContainerRef);
 
-    // 实时读取连接的图片用于 UI 显示
-    const connectedInputs = getConnectedInputs();
-    const connFirstFrame = connectedInputs.imageUrls[0] || '';
-    const connLastFrame = connectedInputs.imageUrls[1] || '';
-
     const captureCurrentFrame = useCallback(() => {
       const video = videoRef.current;
       if (!video) return;
@@ -146,6 +141,11 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
 
       return { imageUrls, audioBase64, videoUrl };
     };
+
+    // 实时读取连接的图片用于 UI 显示
+    const connectedInputs = getConnectedInputs();
+    const connFirstFrame = connectedInputs.imageUrls[0] || '';
+    const connLastFrame = connectedInputs.imageUrls[1] || '';
 
     const handleGenerate = async () => {
       // 读取上游连接数据，按模式自动填充
