@@ -1074,6 +1074,31 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       if (!isComposing.current) updateShapeDebounced({ prompt: userInput });
                     }}
                   />
+                  {/* 连接提示标签 */}
+                  {cardType === 'video' && (() => {
+                    const tags: string[] = [];
+                    const inputBindings = editor.getBindingsToShape(shape.id, 'connection');
+                    for (const binding of inputBindings) {
+                      if ((binding as any).props?.terminal !== 'end') continue;
+                      const connBindings = editor.getBindingsFromShape(binding.fromId, 'connection');
+                      for (const cb of connBindings) {
+                        if ((cb as any).props?.terminal !== 'start') continue;
+                        const src = editor.getShape((cb as any).toId) as any;
+                        if (!src) continue;
+                        if (src.type === 'shot-card') tags.push('景别参数已连接');
+                        if (src.type === 'gem-step3-card') tags.push('Step3 prompt 已连接');
+                        if (src.type === 'gem-step4-card') tags.push('Step4 prompt 已连接');
+                      }
+                    }
+                    if (tags.length === 0) return null;
+                    return (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {tags.map((tag, i) => (
+                          <span key={i} className="text-[10px] text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded px-2 py-0.5">{tag}</span>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </>
               )}
 
