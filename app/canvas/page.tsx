@@ -20,6 +20,7 @@ import { GemStep4CardUtil } from './GemStoryboardStep4Card';
 import { AudioCardUtil } from './AudioCard';
 import { CameraControlCardUtil } from './CameraControlCard';
 import { SeedanceCardUtil } from './SeedanceCard';
+import { MediaUploadCardUtil } from './MediaUploadCard';
 import TutorialOverlay from './TutorialOverlay';
 import { createClient } from '@/lib/supabase/client';
 import { getOrCreateCanvas, loadSnapshot as loadCanvasSnapshot, saveSnapshot } from '@/lib/canvas-storage';
@@ -1745,7 +1746,7 @@ function CanvasPageContent() {
   }, []);
 
   // 自定义形状工具和绑定工具
-  const customShapeUtils = [CustomCardShapeUtil, ConnectionShapeUtil, TimelineShapeUtil, ShotCardShapeUtil, PromptOptimizerCardUtil, GemStep0CardUtil, GemStep1CardUtil, GemStep2CardUtil, GemStep3CardUtil, GemStep4CardUtil, AudioCardUtil, SeedanceCardUtil, CameraControlCardUtil];
+  const customShapeUtils = [CustomCardShapeUtil, ConnectionShapeUtil, TimelineShapeUtil, ShotCardShapeUtil, PromptOptimizerCardUtil, GemStep0CardUtil, GemStep1CardUtil, GemStep2CardUtil, GemStep3CardUtil, GemStep4CardUtil, AudioCardUtil, SeedanceCardUtil, CameraControlCardUtil, MediaUploadCardUtil];
   const customBindingUtils = [ConnectionBindingUtil];
   const customTools = [PortTool];
 
@@ -1940,6 +1941,23 @@ function CanvasPageContent() {
     };
     window.addEventListener('card-menu-open', handleCardMenu);
 
+    // 双击空白画布创建上传卡片
+    const handleDblClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('.tl-shape')) return;
+      const camera = editor.getCamera();
+      const x = (e.clientX - camera.x * camera.z) / camera.z - 160;
+      const y = (e.clientY - camera.y * camera.z) / camera.z - 110;
+      const { createShapeId } = require('tldraw');
+      editor.createShape({
+        id: createShapeId(),
+        type: 'media-upload-card',
+        x, y,
+        props: { w: 320, h: 220, mediaType: 'none', imageData: '', videoUrl: '', videoName: '', isUploading: false, isMinimized: false },
+      });
+    };
+    container.addEventListener('dblclick', handleDblClick);
+
     mountCleanupRef.current = () => {
       clearTimeout(t1);
       clearTimeout(t2);
@@ -1953,6 +1971,7 @@ function CanvasPageContent() {
       container.removeEventListener('pointerup', handlePointerUp, { capture: true });
       container.removeEventListener('pointerleave', handlePointerLeave);
       window.removeEventListener('card-menu-open', handleCardMenu);
+      container.removeEventListener('dblclick', handleDblClick);
     };
   };
 

@@ -132,6 +132,10 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
             if (sp.generatedVideo) videoUrl = sp.generatedVideo;
             // Seedance 保存的帧图片
             if (sp.capturedFrame) imageUrls.push(sp.capturedFrame);
+          } else if (srcType === 'media-upload-card') {
+            // 上传卡片
+            if (sp.mediaType === 'image' && sp.imageData) imageUrls.push(sp.imageData);
+            if (sp.mediaType === 'video' && sp.videoUrl) videoUrl = sp.videoUrl;
           } else if (srcType === 'audio-card') {
             // 音频卡片：取生成的音频 URL
             if (sp.audioUrl && !audioBase64) audioBase64 = sp.audioUrl;

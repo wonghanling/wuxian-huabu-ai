@@ -96,8 +96,9 @@ export class GemStep3CardUtil extends BaseBoxShapeUtil<GemStep3CardShape> {
         for (const cb of connBindings) {
           if ((cb as any).props?.terminal !== 'start') continue;
           const src = editor.getShape((cb as any).toId) as any;
-          if (!src || src.type !== 'custom-card') continue;
-          if (src.props?.generatedImage) imgs.push(src.props.generatedImage);
+          if (!src) continue;
+          if (src.type === 'custom-card' && src.props?.generatedImage) imgs.push(src.props.generatedImage);
+          else if (src.type === 'media-upload-card' && src.props?.mediaType === 'image' && src.props?.imageData) imgs.push(src.props.imageData);
           if (imgs.length >= 2) return imgs;
         }
       }

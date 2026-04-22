@@ -652,7 +652,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
       return '';
     };
 
-    // 实时读取连接的上游图片卡片的 generatedImage
+    // 实时读取连接的上游图片卡片的 generatedImage 或上传卡片的图片
     const getConnectedGeneratedImage = (): string => {
       const inputBindings = editor.getBindingsToShape(shape.id, 'connection');
       for (const binding of inputBindings) {
@@ -661,8 +661,9 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
         for (const cb of connBindings) {
           if ((cb as any).props?.terminal !== 'start') continue;
           const srcShape = editor.getShape((cb as any).toId) as any;
-          if (!srcShape || srcShape.type !== 'custom-card') continue;
-          if (srcShape.props?.generatedImage) return srcShape.props.generatedImage;
+          if (!srcShape) continue;
+          if (srcShape.type === 'custom-card' && srcShape.props?.generatedImage) return srcShape.props.generatedImage;
+          if (srcShape.type === 'media-upload-card' && srcShape.props?.mediaType === 'image' && srcShape.props?.imageData) return srcShape.props.imageData;
         }
       }
       return '';
@@ -670,7 +671,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
     const connectedGeneratedImage = getConnectedGeneratedImage();
 
-    // 读取连接的上游卡片生成的视频
+    // 读取连接的上游卡片生成的视频或上传卡片的视频
     const getConnectedGeneratedVideo = (): string => {
       const inputBindings = editor.getBindingsToShape(shape.id, 'connection');
       for (const binding of inputBindings) {
@@ -680,10 +681,9 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
           if ((cb as any).props?.terminal !== 'start') continue;
           const src = editor.getShape((cb as any).toId) as any;
           if (!src) continue;
-          // 视频卡片
           if (src.type === 'custom-card' && src.props?.generatedVideo) return src.props.generatedVideo;
-          // Seedance 卡片
           if (src.type === 'seedance-card' && src.props?.generatedVideo) return src.props.generatedVideo;
+          if (src.type === 'media-upload-card' && src.props?.mediaType === 'video' && src.props?.videoUrl) return src.props.videoUrl;
         }
       }
       return '';
@@ -701,8 +701,9 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
         for (const cb of connBindings) {
           if ((cb as any).props?.terminal !== 'start') continue;
           const src = editor.getShape((cb as any).toId) as any;
-          if (!src || src.type !== 'custom-card') continue;
-          if (src.props?.generatedImage) imgs.push(src.props.generatedImage);
+          if (!src) continue;
+          if (src.type === 'custom-card' && src.props?.generatedImage) imgs.push(src.props.generatedImage);
+          else if (src.type === 'media-upload-card' && src.props?.mediaType === 'image' && src.props?.imageData) imgs.push(src.props.imageData);
           if (imgs.length >= maxCount) return imgs;
         }
       }
