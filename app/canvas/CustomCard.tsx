@@ -1463,7 +1463,10 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       <div className="space-y-2">
                       {/* 上传图片 */}
                       <div>
-                        <label className="text-gray-400 text-xs mb-1 block">上传角色参考图片（必填）</label>
+                        <label className="text-gray-400 text-xs mb-1 block">
+                          上传角色参考图片（必填）{connectedGeneratedImage && <span className="text-purple-400 ml-1">·来自连接</span>}
+                        </label>
+                        {!connectedGeneratedImage && (
                         <input
                           type="file"
                           accept="image/*"
@@ -1483,14 +1486,20 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                             e.target.value = '';
                           }}
                         />
-                        {characterThreeViewImage && (
+                        )}
+                        {(connectedGeneratedImage || characterThreeViewImage) && (
                           <div className="mt-2 relative w-full h-24 bg-black/30 rounded-lg overflow-hidden group">
-                            <img src={characterThreeViewImage} alt="Reference" className="w-full h-full object-cover" />
+                            <img src={connectedGeneratedImage || characterThreeViewImage} alt="Reference" className="w-full h-full object-cover" />
+                            {connectedGeneratedImage && (
+                              <div className="absolute bottom-0 left-0 right-0 bg-purple-600/80 text-white text-[10px] text-center py-0.5">来自连接</div>
+                            )}
+                            {!connectedGeneratedImage && (
                             <button
                               className="absolute top-1 right-1 w-5 h-5 bg-black/60 hover:bg-red-500/80 rounded text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                               onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, characterThreeViewImage: '' } }); }}
                               onPointerDown={(e) => e.stopPropagation()}
                             >✕</button>
+                            )}
                           </div>
                         )}
                       </div>
@@ -1553,7 +1562,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       {/* 生成三视角图片按钮 */}
                       <button
                         className={`w-full py-2 rounded-lg font-semibold text-white text-xs transition-all shadow-lg backdrop-blur-sm ${isGenerating ? 'bg-gray-500 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-r from-green-500/80 to-green-600/80 hover:from-green-500 hover:to-green-600'}`}
-                        disabled={isGenerating || !characterThreeViewImage}
+                        disabled={isGenerating || (!characterThreeViewImage && !connectedGeneratedImage)}
                         onClick={async (e) => {
                           e.stopPropagation();
 
@@ -1580,8 +1589,9 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                             });
 
                             try {
-                              // characterThreeViewImage 现在已经是 fal URL，直接用
-                              const imageUrlArray = characterThreeViewImage ? [characterThreeViewImage] : undefined;
+                              const effectiveImage = connectedGeneratedImage || characterThreeViewImage;
+                              const imageUrlArray = (characterImageModel || 'nano-banana-pro') === 'nano-banana-pro' && characterThreeViewImage ? [characterThreeViewImage] : undefined;
+                              const imageBase64 = (characterImageModel || 'nano-banana-pro') !== 'nano-banana-pro' ? (connectedGeneratedImage || characterThreeViewImage || undefined) : undefined;
 
                               const res = await fetch('/api/image/generate', {
                                 method: 'POST',
@@ -1590,8 +1600,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                                   model: characterImageModel || 'nano-banana-pro',
                                   prompt: `use the uploaded image as the ONLY character reference, character turnaround sheet, TOP SECTION: full body views front view, side view, back view, full body, head to toe visible, BOTTOM SECTION: head detail views reuse the SAME head from the original image, do not generate a new face, close-up crops of the same character head, front face, side profile, 3/4 view, same character, identical face, preserve facial features exactly, preserve hairstyle exactly, same hair shape, same hair volume, no variation, reuse the same identity across all views, no redesign, no reinterpretation, keep original outfit exactly, do not redesign, match the original image style exactly, same rendering, same lighting, same material, no duplicate character generation, no alternate versions, neutral pose, clean studio background, arranged in one frame, structured grid layout, clear separation`,
                                   aspectRatio: aspectRatio || '16:9',
-                                  imageBase64: (characterImageModel || 'nano-banana-pro') === 'nano-banana-pro' ? undefined : (characterThreeViewImage || undefined),
-                                  imageUrlArray: (characterImageModel || 'nano-banana-pro') === 'nano-banana-pro' ? imageUrlArray : undefined,
+                                  imageBase64,
+                                  imageUrlArray,
                                   imageQuality: imageQuality || '2k',
                                   userId: userId || undefined,
                                 }),
