@@ -88,6 +88,11 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     usePassThroughWheelEvents(scrollContainerRef);
 
+    // 实时读取连接的图片用于 UI 显示
+    const connectedInputs = getConnectedInputs();
+    const connFirstFrame = connectedInputs.imageUrls[0] || '';
+    const connLastFrame = connectedInputs.imageUrls[1] || '';
+
     const captureCurrentFrame = useCallback(() => {
       const video = videoRef.current;
       if (!video) return;
@@ -144,8 +149,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
 
     const handleGenerate = async () => {
       // 读取上游连接数据，按模式自动填充
-      const connected = getConnectedInputs();
-      let effectiveFirstFrame = firstFrameImage;
+      const connected = getConnectedInputs();      let effectiveFirstFrame = firstFrameImage;
       let effectiveLastFrame = lastFrameImage;
       let effectiveRefImages = parsedRefImages;
       let effectiveRefVideoUrl = refVideoUrl;
@@ -448,17 +452,23 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
               {/* 首帧 */}
               {(mode === 'i2v' || mode === 'first-last') && (
                 <div className="mb-2">
-                  <label className="text-gray-400 text-xs mb-1 block">首帧图片（必填）</label>
-                  <input type="file" accept="image/*"
-                    className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
-                    onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                    onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = (ev) => up({ firstFrameImage: ev.target?.result as string }); r.readAsDataURL(f); e.target.value = ''; }}
-                  />
-                  {firstFrameImage && (
-                    <div className="mt-1 relative w-full h-14 bg-black/30 rounded-lg overflow-hidden group">
-                      <img src={firstFrameImage} className="w-full h-full object-cover" />
-                      <button className="absolute top-1 right-1 w-5 h-5 bg-black/60 hover:bg-red-500/80 rounded text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={(e) => { e.stopPropagation(); up({ firstFrameImage: '' }); }} onPointerDown={(e) => e.stopPropagation()}>x</button>
+                  <label className="text-gray-400 text-xs mb-1 block">
+                    首帧图片（必填）{connFirstFrame && <span className="text-blue-400 ml-1">·来自连接</span>}
+                  </label>
+                  {!connFirstFrame && (
+                    <input type="file" accept="image/*"
+                      className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
+                      onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
+                      onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = (ev) => up({ firstFrameImage: ev.target?.result as string }); r.readAsDataURL(f); e.target.value = ''; }}
+                    />
+                  )}
+                  {(connFirstFrame || firstFrameImage) && (
+                    <div className="mt-1 relative w-full bg-black/30 rounded-lg overflow-hidden group" style={{ aspectRatio: '16/9' }}>
+                      <img src={connFirstFrame || firstFrameImage} className="w-full h-full object-cover" />
+                      {!connFirstFrame && (
+                        <button className="absolute top-1 right-1 w-5 h-5 bg-black/60 hover:bg-red-500/80 rounded text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => { e.stopPropagation(); up({ firstFrameImage: '' }); }} onPointerDown={(e) => e.stopPropagation()}>✕</button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -467,17 +477,23 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
               {/* 尾帧 */}
               {mode === 'first-last' && (
                 <div className="mb-2">
-                  <label className="text-gray-400 text-xs mb-1 block">尾帧图片（必填）</label>
-                  <input type="file" accept="image/*"
-                    className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
-                    onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                    onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = (ev) => up({ lastFrameImage: ev.target?.result as string }); r.readAsDataURL(f); e.target.value = ''; }}
-                  />
-                  {lastFrameImage && (
-                    <div className="mt-1 relative w-full h-14 bg-black/30 rounded-lg overflow-hidden group">
-                      <img src={lastFrameImage} className="w-full h-full object-cover" />
-                      <button className="absolute top-1 right-1 w-5 h-5 bg-black/60 hover:bg-red-500/80 rounded text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={(e) => { e.stopPropagation(); up({ lastFrameImage: '' }); }} onPointerDown={(e) => e.stopPropagation()}>x</button>
+                  <label className="text-gray-400 text-xs mb-1 block">
+                    尾帧图片（必填）{connLastFrame && <span className="text-blue-400 ml-1">·来自连接</span>}
+                  </label>
+                  {!connLastFrame && (
+                    <input type="file" accept="image/*"
+                      className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
+                      onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
+                      onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = (ev) => up({ lastFrameImage: ev.target?.result as string }); r.readAsDataURL(f); e.target.value = ''; }}
+                    />
+                  )}
+                  {(connLastFrame || lastFrameImage) && (
+                    <div className="mt-1 relative w-full bg-black/30 rounded-lg overflow-hidden group" style={{ aspectRatio: '16/9' }}>
+                      <img src={connLastFrame || lastFrameImage} className="w-full h-full object-cover" />
+                      {!connLastFrame && (
+                        <button className="absolute top-1 right-1 w-5 h-5 bg-black/60 hover:bg-red-500/80 rounded text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => { e.stopPropagation(); up({ lastFrameImage: '' }); }} onPointerDown={(e) => e.stopPropagation()}>✕</button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -487,20 +503,28 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
               {mode === 'multimodal' && (
                 <div className="mb-2 space-y-2">
                   <div>
-                    <label className="text-gray-400 text-xs mb-1 block">参考图片（最多9张）</label>
+                    <label className="text-gray-400 text-xs mb-1 block">
+                      参考图片（最多9张）{connectedInputs.imageUrls.length > 0 && <span className="text-blue-400 ml-1">·{connectedInputs.imageUrls.length}张来自连接</span>}
+                    </label>
                     <input type="file" accept="image/*" multiple
                       className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
                       onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
                       onChange={(e) => { Array.from(e.target.files || []).forEach(f => { const r = new FileReader(); r.onload = (ev) => addRefImage(ev.target?.result as string); r.readAsDataURL(f); }); e.target.value = ''; }}
                     />
-                    {parsedRefImages.length > 0 && (
+                    {(connectedInputs.imageUrls.length > 0 || parsedRefImages.length > 0) && (
                       <div className="mt-1 flex flex-wrap gap-1">
+                        {connectedInputs.imageUrls.map((img: string, i: number) => (
+                          <div key={`conn-${i}`} className="relative w-12 h-12 bg-black/30 rounded overflow-hidden">
+                            <img src={img} className="w-full h-full object-cover" />
+                            <span className="absolute bottom-0 left-0 text-[8px] text-blue-300 bg-black/60 px-0.5">[{i + 1}]</span>
+                          </div>
+                        ))}
                         {parsedRefImages.map((img: string, i: number) => (
-                          <div key={i} className="relative w-12 h-12 bg-black/30 rounded overflow-hidden group">
+                          <div key={`upload-${i}`} className="relative w-12 h-12 bg-black/30 rounded overflow-hidden group">
                             <img src={img} className="w-full h-full object-cover" />
                             <button className="absolute top-0 right-0 w-4 h-4 bg-black/60 hover:bg-red-500/80 rounded text-white text-[8px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                               onClick={(e) => { e.stopPropagation(); removeRefImage(i); }} onPointerDown={(e) => e.stopPropagation()}>x</button>
-                            <span className="absolute bottom-0 left-0 text-[8px] text-white bg-black/50 px-0.5">[{i + 1}]</span>
+                            <span className="absolute bottom-0 left-0 text-[8px] text-white bg-black/50 px-0.5">[{connectedInputs.imageUrls.length + i + 1}]</span>
                           </div>
                         ))}
                       </div>
