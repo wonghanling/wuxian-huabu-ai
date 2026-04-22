@@ -205,23 +205,15 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
     // 从连接的上游卡片读取图片（通过 binding 系统）
     const getSourceImage = (): string => {
       const inputBindings = editor.getBindingsToShape(shape.id, 'connection');
-      console.log('[CameraControl] inputBindings:', inputBindings.length);
       for (const binding of inputBindings) {
-        console.log('[CameraControl] binding terminal:', (binding as any).props?.terminal);
         if ((binding as any).props?.terminal !== 'end') continue;
         const connBindings = editor.getBindingsFromShape(binding.fromId, 'connection');
-        console.log('[CameraControl] connBindings:', connBindings.length);
         for (const cb of connBindings) {
-          console.log('[CameraControl] cb terminal:', (cb as any).props?.terminal);
           if ((cb as any).props?.terminal !== 'start') continue;
           const src = editor.getShape((cb as any).toId) as any;
-          console.log('[CameraControl] src shape:', src?.type, src?.props?.mediaType);
           if (!src) continue;
           if (src.type === 'custom-card' && src.props?.generatedImage) return src.props.generatedImage;
-          if (src.type === 'media-upload-card' && src.props?.mediaType === 'image' && src.props?.imageData) {
-            console.log('[CameraControl] Found media-upload-card image!');
-            return src.props.imageData;
-          }
+          if (src.type === 'media-upload-card' && src.props?.mediaType === 'image' && src.props?.imageData) return src.props.imageData;
         }
       }
       return '';
@@ -230,7 +222,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
     const sourceImage = getSourceImage();
 
     const generate = async () => {
-      if (!sourceImage) { alert('源图片卡片还没有生成图片'); return; }
+      if (!sourceImage) { alert('请先连接图片卡片'); return; }
       update({ isGenerating: true });
       try {
         const supabase = createClient();
@@ -239,24 +231,66 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
 
         const cameraPrompt = `${prompt} [Camera: vertical ${cameraVertical >= 0 ? '+' : ''}${cameraVertical}°, horizontal ${cameraHorizontal >= 0 ? '+' : ''}${cameraHorizontal}°]`;
 
-        const res = await fetch('/api/image/generate', {
+        // 压缩图片
+        const compressedImage = await compressImage(sourceImage);
+
+        const response = await fetch('/api/image/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            model: model || 'nano-banana-pro',
             prompt: cameraPrompt,
-            model,
-            imageBase64: sourceImage,
+            aspectRatio: '16:9',
+            imageBase64: compressedImage,
+            imageQuality: '2k',
             userId: user.id,
           }),
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || '生成失败');
 
-        let imgUrl = data.imageUrl || data.url || '';
-        if (imgUrl && !imgUrl.startsWith('data:')) {
-          try { imgUrl = await mirrorUrlToStorage(user.id, imgUrl, 'image'); } catch {}
+        if (!response.ok) throw new Error('API 调用失败');
+        const data = await response.json();
+
+        // fal 异步轮询
+        if (data.pending && data.requestId) {
+          const falEndpoint = 'fal-ai/nano-banana-2/edit';
+          let pollAttempts = 0;
+          const poll = async (): Promise<string> => {
+            pollAttempts++;
+            await new Promise(r => setTimeout(r, 3000));
+            try {
+              const qRes = await fetch(`/api/image/fal-query?requestId=${encodeURIComponent(data.requestId)}&endpoint=${encodeURIComponent(falEndpoint)}`);
+              const qData = await qRes.json();
+              if (qData.success && qData.imageUrl) return qData.imageUrl;
+              if (qData.error) throw new Error(qData.error);
+              if (pollAttempts > 60) throw new Error('生成超时');
+              return poll();
+            } catch (e: any) {
+              if (e.message && (e.message.includes('超时') || e.message.includes('error'))) throw e;
+              if (pollAttempts > 60) throw new Error('生成超时');
+              await new Promise(r => setTimeout(r, 5000));
+              return poll();
+            }
+          };
+          data.imageUrl = await poll();
         }
-        update({ generatedImage: imgUrl, isGenerating: false });
+
+        // 显示图片
+        update({ generatedImage: data.imageUrl, isGenerating: false });
+
+        // 后台上传到 Supabase
+        try {
+          if (data.imageUrl) {
+            const permanentUrl = await mirrorUrlToStorage(user.id, data.imageUrl, 'image');
+            const latest = editor.getShape(shape.id);
+            if (latest) {
+              editor.updateShape({
+                id: shape.id,
+                type: 'camera-control-card' as any,
+                props: { ...(latest.props as any), generatedImage: permanentUrl },
+              });
+            }
+          }
+        } catch {}
       } catch (err: any) {
         alert('生成失败: ' + err.message);
         update({ isGenerating: false });
@@ -344,7 +378,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
           {!isMinimized && (
             <div className="flex-1 flex flex-col overflow-y-auto p-3 gap-2" onPointerDown={(e) => e.stopPropagation()} onWheelCapture={(e) => e.stopPropagation()}>
 
-              {/* 源图片小预览（仅有图时显示） */}
+              {/* 源图片小预览 */}
               {sourceImage && (
                 <div className="flex-shrink-0 relative w-full h-20 bg-black/30 rounded-lg overflow-hidden border border-white/8">
                   <img src={sourceImage} alt="source" className="w-full h-full object-cover" />
