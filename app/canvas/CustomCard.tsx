@@ -509,6 +509,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
     const { isMember, userId, refresh: refreshBalance } = useMembership();
     const [showMemberModal, setShowMemberModal] = useState(false);
     const [isUploadingMulti, setIsUploadingMulti] = useState(false);
+    const [uploadedImageRatio, setUploadedImageRatio] = useState<'16/9' | '9/16'>('16/9');
+    const [uploadedImgRatios, setUploadedImgRatios] = useState<Record<number, '16/9' | '9/16'>>({});
     const [isUploadingKlingVideo, setIsUploadingKlingVideo] = useState(false);
     const [lightboxVideo, setLightboxVideo] = useState<string | null>(null);
 
@@ -1916,8 +1918,14 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           {model === 'nano-banana-pro' && urls.length > 0 && (
                             <div className="mt-1 flex flex-col gap-2">
                               {urls.map((url, idx) => (
-                                <div key={idx} className="relative w-full bg-black/30 rounded-xl overflow-hidden group" style={{ aspectRatio: '16/9' }}>
-                                  <img src={url} className="w-full h-full object-cover" />
+                                <div key={idx} className="relative w-full bg-black/30 rounded-xl overflow-hidden group"
+                                  style={{ aspectRatio: uploadedImgRatios[idx] ?? '16/9' }}>
+                                  <img src={url} className="w-full h-full object-cover"
+                                    onLoad={(e) => {
+                                      const el = e.currentTarget;
+                                      setUploadedImgRatios(prev => ({ ...prev, [idx]: el.naturalHeight > el.naturalWidth ? '9/16' : '16/9' }));
+                                    }}
+                                  />
                                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                     <button
                                       className="px-3 py-1.5 bg-red-500/40 hover:bg-red-500/60 rounded-lg text-white text-xs transition-colors"
@@ -1932,8 +1940,14 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           {model === 'nano-banana' && imgs.length > 0 && (
                             <div className="mt-1 flex flex-col gap-2">
                               {imgs.map((img, idx) => (
-                                <div key={idx} className="relative w-full bg-black/30 rounded-xl overflow-hidden group" style={{ aspectRatio: '16/9' }}>
-                                  <img src={img} className="w-full h-full object-cover" />
+                                <div key={idx} className="relative w-full bg-black/30 rounded-xl overflow-hidden group"
+                                  style={{ aspectRatio: uploadedImgRatios[idx] ?? '16/9' }}>
+                                  <img src={img} className="w-full h-full object-cover"
+                                    onLoad={(e) => {
+                                      const el = e.currentTarget;
+                                      setUploadedImgRatios(prev => ({ ...prev, [idx]: el.naturalHeight > el.naturalWidth ? '9/16' : '16/9' }));
+                                    }}
+                                  />
                                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                     <button
                                       className="px-3 py-1.5 bg-red-500/40 hover:bg-red-500/60 rounded-lg text-white text-xs transition-colors"
@@ -1960,6 +1974,12 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         if (model === 'mj_imagine') {
                           imageData = await softCompressImage(imageData);
                         }
+                        // 检测宽高比
+                        const img = new Image();
+                        img.onload = () => {
+                          setUploadedImageRatio(img.height > img.width ? '9/16' : '16/9');
+                        };
+                        img.src = imageData;
                         editor.updateShape({
                           id: shape.id,
                           type: 'custom-card' as any,
@@ -1986,7 +2006,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         {uploadedImage ? (
                           <div
                             className="relative w-full bg-black/30 rounded-xl overflow-hidden group cursor-pointer"
-                            style={{ aspectRatio: '16/9' }}
+                            style={{ aspectRatio: uploadedImageRatio }}
                             onClick={(e) => { e.stopPropagation(); singleImgInputRef.current?.click(); }}
                             onPointerDown={(e) => e.stopPropagation()}
                           >
