@@ -1967,52 +1967,78 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   </>
                 ) : (
                   /* 其他模型：单图上传 */
-                  <>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
-                      onClick={(e) => e.stopPropagation()}
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onload = async (event) => {
-                            let imageData = event.target?.result as string;
-                            // MJ 需要压缩图片
-                            if (model === 'mj_imagine') {
-                              imageData = await softCompressImage(imageData);
-                            }
-                            editor.updateShape({
-                              id: shape.id,
-                              type: 'custom-card' as any,
-                              props: { ...shape.props, uploadedImage: imageData },
-                            });
-                          };
-                          reader.readAsDataURL(file);
+                  (() => {
+                    const singleImgInputRef = { current: null as HTMLInputElement | null };
+                    const handleSingleFile = async (file: File) => {
+                      const reader = new FileReader();
+                      reader.onload = async (event) => {
+                        let imageData = event.target?.result as string;
+                        if (model === 'mj_imagine') {
+                          imageData = await softCompressImage(imageData);
                         }
-                        e.target.value = '';
-                      }}
-                    />
-                    {uploadedImage && (
-                      <div className="mt-1 relative w-full h-20 bg-black/30 rounded-lg overflow-hidden group">
-                        <img src={uploadedImage} alt="参考图" className="w-full h-full object-cover" />
-                        <button
-                          className="absolute top-1 right-1 w-5 h-5 bg-black/60 hover:bg-red-500/80 rounded text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            editor.updateShape({
-                              id: shape.id,
-                              type: 'custom-card' as any,
-                              props: { ...shape.props, uploadedImage: '' },
-                            });
-                          }}
+                        editor.updateShape({
+                          id: shape.id,
+                          type: 'custom-card' as any,
+                          props: { ...shape.props, uploadedImage: imageData },
+                        });
+                      };
+                      reader.readAsDataURL(file);
+                    };
+                    return (
+                      <>
+                        <input
+                          ref={(el) => { singleImgInputRef.current = el; }}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onClick={(e) => e.stopPropagation()}
                           onPointerDown={(e) => e.stopPropagation()}
-                        >✕</button>
-                      </div>
-                    )}
-                  </>
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) await handleSingleFile(file);
+                            e.target.value = '';
+                          }}
+                        />
+                        {uploadedImage ? (
+                          <div
+                            className="relative w-full bg-black/30 rounded-xl overflow-hidden group cursor-pointer"
+                            style={{ aspectRatio: '4/3' }}
+                            onClick={(e) => { e.stopPropagation(); singleImgInputRef.current?.click(); }}
+                            onPointerDown={(e) => e.stopPropagation()}
+                          >
+                            <img src={uploadedImage} alt="参考图" className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                              <button
+                                className="px-3 py-1.5 bg-white/15 hover:bg-white/25 rounded-lg text-white text-xs transition-colors"
+                                onClick={(e) => { e.stopPropagation(); singleImgInputRef.current?.click(); }}
+                                onPointerDown={(e) => e.stopPropagation()}
+                              >更换</button>
+                              <button
+                                className="px-3 py-1.5 bg-red-500/40 hover:bg-red-500/60 rounded-lg text-white text-xs transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImage: '' } });
+                                }}
+                                onPointerDown={(e) => e.stopPropagation()}
+                              >删除</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div
+                            className="w-full flex flex-col items-center justify-center gap-1.5 border border-dashed border-white/15 rounded-xl cursor-pointer hover:border-white/30 hover:bg-white/3 transition-all"
+                            style={{ aspectRatio: '4/3' }}
+                            onClick={(e) => { e.stopPropagation(); singleImgInputRef.current?.click(); }}
+                            onPointerDown={(e) => e.stopPropagation()}
+                          >
+                            <svg className="w-6 h-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span className="text-gray-500 text-xs">点击上传参考图</span>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()
                 )}
               </div>
             )}
