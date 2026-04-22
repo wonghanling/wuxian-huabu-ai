@@ -652,7 +652,23 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
       return '';
     };
 
-    // 切换缩放
+    // 实时读取连接的上游图片卡片的 generatedImage
+    const getConnectedGeneratedImage = (): string => {
+      const inputBindings = editor.getBindingsToShape(shape.id, 'connection');
+      for (const binding of inputBindings) {
+        if ((binding as any).props?.terminal !== 'end') continue;
+        const connBindings = editor.getBindingsFromShape(binding.fromId, 'connection');
+        for (const cb of connBindings) {
+          if ((cb as any).props?.terminal !== 'start') continue;
+          const srcShape = editor.getShape((cb as any).toId) as any;
+          if (!srcShape || srcShape.type !== 'custom-card') continue;
+          if (srcShape.props?.generatedImage) return srcShape.props.generatedImage;
+        }
+      }
+      return '';
+    };
+
+    const connectedGeneratedImage = getConnectedGeneratedImage();
     const toggleMinimize = (e: React.MouseEvent) => {
       e.stopPropagation();
 
@@ -1025,33 +1041,40 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     <div className="relative">
                       <div className="space-y-2">{/* 上传图片 */}
                         <div>
-                          <label className="text-gray-400 text-xs mb-1 block">上传图片</label>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
-                            onClick={(e) => e.stopPropagation()}
-                            onPointerDown={(e) => e.stopPropagation()}
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                const reader = new FileReader();
-                                reader.onload = (event) => {
-                                  const imageData = event.target?.result as string;
-                                  editor.updateShape({
-                                    id: shape.id,
-                                    type: 'custom-card' as any,
-                                    props: { ...shape.props, characterAnalyzeImage: imageData },
-                                  });
-                                };
-                                reader.readAsDataURL(file);
-                              }
-                              e.target.value = '';
-                            }}
-                          />
-                        {characterAnalyzeImage && (
+                          <label className="text-gray-400 text-xs mb-1 block">
+                            上传图片{connectedGeneratedImage && <span className="text-purple-400 ml-1">(已从连接获取)</span>}
+                          </label>
+                          {!connectedGeneratedImage && (
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
+                              onClick={(e) => e.stopPropagation()}
+                              onPointerDown={(e) => e.stopPropagation()}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  const reader = new FileReader();
+                                  reader.onload = (event) => {
+                                    const imageData = event.target?.result as string;
+                                    editor.updateShape({
+                                      id: shape.id,
+                                      type: 'custom-card' as any,
+                                      props: { ...shape.props, characterAnalyzeImage: imageData },
+                                    });
+                                  };
+                                  reader.readAsDataURL(file);
+                                }
+                                e.target.value = '';
+                              }}
+                            />
+                          )}
+                        {(connectedGeneratedImage || characterAnalyzeImage) && (
                           <div className="mt-2 relative w-full h-32 bg-black/30 rounded-lg overflow-hidden">
-                            <img src={characterAnalyzeImage} alt="Analyze" className="w-full h-full object-cover" />
+                            <img src={connectedGeneratedImage || characterAnalyzeImage} alt="Analyze" className="w-full h-full object-cover" />
+                            {connectedGeneratedImage && (
+                              <div className="absolute bottom-0 left-0 right-0 bg-purple-600/80 text-white text-[10px] text-center py-1">来自连接的图片卡片</div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -1090,7 +1113,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       {/* 分析按钮 */}
                       <button
                         className={`w-full py-2 rounded-lg font-semibold text-white text-xs transition-all shadow-lg backdrop-blur-sm ${isGenerating ? 'bg-gray-500 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98] bg-gradient-to-r from-blue-500/80 to-blue-600/80 hover:from-blue-500 hover:to-blue-600'}`}
-                        disabled={isGenerating || !characterAnalyzeImage}
+                        disabled={isGenerating || (!connectedGeneratedImage && !characterAnalyzeImage)}
                         onClick={async (e) => {
                           e.stopPropagation();
                           if (!isMember) { setShowMemberModal(true); return; }
@@ -1122,7 +1145,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                                 body: JSON.stringify({
                                   model: model || 'gpt-5.2',
                                   prompt: '请分析这张图片中的角色，生成一个【单人成功范式 JSON】。只做单人分析，反推出稳定可复现的人物 JSON。不要加三视角、不要加转面、不要做设定稿。请直接输出 JSON，不要解释。',
-                                  imageUrl: characterAnalyzeImage,
+                                  imageUrl: connectedGeneratedImage || characterAnalyzeImage,
                                   stream: false,
                                 }),
                               });

@@ -119,6 +119,26 @@ export class GemStep1CardUtil extends BaseBoxShapeUtil<GemStep1CardShape> {
 
     const removeImage = (idx: number) => setImages(prev => prev.filter((_, i) => i !== idx));
 
+    // 实时读取连接的图片卡片的图片
+    const getConnectedImages = (): string[] => {
+      const connectedImages: string[] = [];
+      const inputBindings = editor.getBindingsToShape(shape.id, 'connection');
+      for (const binding of inputBindings) {
+        if ((binding as any).props?.terminal !== 'end') continue;
+        const connBindings = editor.getBindingsFromShape(binding.fromId, 'connection');
+        for (const cb of connBindings) {
+          if ((cb as any).props?.terminal !== 'start') continue;
+          const srcShape = editor.getShape((cb as any).toId) as any;
+          if (!srcShape || srcShape.type !== 'custom-card') continue;
+          if (srcShape.props?.generatedImage) connectedImages.push(srcShape.props.generatedImage);
+        }
+      }
+      return connectedImages;
+    };
+
+    const connectedImages = getConnectedImages();
+    const allDisplayImages = [...connectedImages, ...images];
+
     const analyze = async () => {
       // 收集连接的图片卡片的 generatedImage
       const connectedImages: string[] = [];
@@ -256,8 +276,8 @@ export class GemStep1CardUtil extends BaseBoxShapeUtil<GemStep1CardShape> {
               {/* 图片上传区 */}
               <div className="flex-shrink-0">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs text-gray-400">参考图片 ({images.length}/10)</span>
-                  {images.length > 0 && images.length < 10 && (
+                  <span className="text-xs text-gray-400">参考图片 ({allDisplayImages.length}/10){connectedImages.length > 0 && <span className="text-purple-400 ml-1">({connectedImages.length}张来自连接)</span>}</span>
+                  {images.length < 10 && allDisplayImages.length > 0 && (
                     <label className="text-xs text-purple-400 hover:text-purple-300 cursor-pointer transition-colors" onPointerDown={(e) => e.stopPropagation()}>
                       + 添加
                       <input type="file" accept="image/*" multiple className="hidden" onChange={handleImageUpload} onClick={(e) => e.stopPropagation()} />
@@ -265,18 +285,24 @@ export class GemStep1CardUtil extends BaseBoxShapeUtil<GemStep1CardShape> {
                   )}
                 </div>
 
-                {images.length === 0 ? (
+                {allDisplayImages.length === 0 ? (
                   <label className="flex flex-col items-center justify-center w-full h-24 border border-dashed border-white/15 rounded-xl cursor-pointer hover:border-purple-400/40 hover:bg-purple-400/5 transition-all" onPointerDown={(e) => e.stopPropagation()}>
                     <svg className="w-6 h-6 text-gray-500 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    <span className="text-gray-500 text-xs">上传 5-10 张参考图</span>
+                    <span className="text-gray-500 text-xs">上传 5-10 张参考图，或连接图片卡片</span>
                     <input type="file" accept="image/*" multiple className="hidden" onChange={handleImageUpload} onClick={(e) => e.stopPropagation()} />
                   </label>
                 ) : (
                   <div className="grid grid-cols-5 gap-1">
+                    {connectedImages.map((img, idx) => (
+                      <div key={`conn-${idx}`} className="relative aspect-square rounded-lg overflow-hidden bg-black/30 group">
+                        <img src={img} alt="" className="w-full h-full object-cover" />
+                        <div className="absolute bottom-0 left-0 right-0 bg-purple-600/60 text-white text-[8px] text-center py-0.5">连接</div>
+                      </div>
+                    ))}
                     {images.map((img, idx) => (
-                      <div key={idx} className="relative aspect-square rounded-lg overflow-hidden bg-black/30 group">
+                      <div key={`upload-${idx}`} className="relative aspect-square rounded-lg overflow-hidden bg-black/30 group">
                         <img src={img} alt="" className="w-full h-full object-cover" />
                         <button
                           onClick={(e) => { e.stopPropagation(); removeImage(idx); }}
@@ -293,9 +319,9 @@ export class GemStep1CardUtil extends BaseBoxShapeUtil<GemStep1CardShape> {
               <button
                 onClick={(e) => { e.stopPropagation(); analyze(); }}
                 onPointerDown={(e) => e.stopPropagation()}
-                disabled={isGenerating || images.length === 0}
+                disabled={isGenerating || allDisplayImages.length === 0}
                 className={`flex-shrink-0 w-full py-2 rounded-xl text-sm font-semibold transition-all ${
-                  isGenerating || images.length === 0
+                  isGenerating || allDisplayImages.length === 0
                     ? 'bg-white/5 text-gray-500 cursor-not-allowed'
                     : 'bg-purple-600 hover:bg-purple-500 text-white shadow-lg'
                 }`}
