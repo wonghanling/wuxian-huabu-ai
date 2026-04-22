@@ -3118,23 +3118,29 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     />
                   </div>
                   <div>
-                    <label className="text-gray-400 text-xs mb-1 block">参考图（必填）</label>
-                    <input type="file" accept="image/*"
-                      className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-blue-600/70 file:text-white hover:file:bg-blue-600 file:cursor-pointer"
-                      onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0]; if (!file) return;
-                        const r = new FileReader();
-                        r.onload = (ev) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingImage: ev.target?.result as string } });
-                        r.readAsDataURL(file); e.target.value = '';
-                      }}
-                    />
-                    {klingImage && (
-                      <div className="mt-1 relative w-full h-16 bg-black/30 rounded-lg overflow-hidden group">
-                        <img src={klingImage} className="w-full h-full object-cover" />
-                        <button className="absolute top-1 right-1 w-5 h-5 bg-black/60 hover:bg-red-500/80 rounded text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingImage: '' } }); }}
-                          onPointerDown={(e) => e.stopPropagation()}>x</button>
+                    <label className="text-gray-400 text-xs mb-1 block">
+                      参考图（必填）{connectedGeneratedImage && <span className="text-blue-400 ml-1">·来自连接</span>}
+                    </label>
+                    {!connectedGeneratedImage && (
+                      <input type="file" accept="image/*"
+                        className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-blue-600/70 file:text-white hover:file:bg-blue-600 file:cursor-pointer"
+                        onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]; if (!file) return;
+                          const r = new FileReader();
+                          r.onload = (ev) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingImage: ev.target?.result as string } });
+                          r.readAsDataURL(file); e.target.value = '';
+                        }}
+                      />
+                    )}
+                    {(connectedGeneratedImage || klingImage) && (
+                      <div className="mt-1 relative w-full bg-black/30 rounded-lg overflow-hidden group" style={{ aspectRatio: '16/9' }}>
+                        <img src={connectedGeneratedImage || klingImage} className="w-full h-full object-cover" />
+                        {!connectedGeneratedImage && (
+                          <button className="absolute top-1 right-1 w-5 h-5 bg-black/60 hover:bg-red-500/80 rounded text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingImage: '' } }); }}
+                            onPointerDown={(e) => e.stopPropagation()}>✕</button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -3167,13 +3173,13 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     disabled={isGenerating}
                     onClick={async (e) => {
                       e.stopPropagation();
-                      if (!klingImage) { alert('请上传参考图'); return; }
+                      if (!(connectedGeneratedImage || klingImage)) { alert('请上传或连接参考图'); return; }
                       if (!klingVideoUrl) { alert('请上传动作视频'); return; }
                       editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, isGenerating: true, generationStatus: '提交中...', generationProgress: 0 } });
                       try {
                         const res = await fetch('/api/kling/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
                           mode: 'motion-control', prompt: prompt || '',
-                          image_url: klingImage, video_url: klingVideoUrl,
+                          image_url: connectedGeneratedImage || klingImage, video_url: klingVideoUrl,
                           keep_original_sound: klingKeepSound || 'no',
                           character_orientation: klingCharacterOrientation || 'image',
                           videoMode: klingVideoMode || 'std',
