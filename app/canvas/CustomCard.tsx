@@ -655,30 +655,21 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
     // 实时读取连接的上游图片卡片的 generatedImage 或上传卡片的图片
     const getConnectedGeneratedImage = (): string => {
       const inputBindings = editor.getBindingsToShape(shape.id, 'connection');
-      console.log('[CustomCard] inputBindings:', inputBindings.length, 'cardType:', cardType);
       for (const binding of inputBindings) {
-        console.log('[CustomCard] binding terminal:', (binding as any).props?.terminal);
         if ((binding as any).props?.terminal !== 'end') continue;
         const connBindings = editor.getBindingsFromShape(binding.fromId, 'connection');
-        console.log('[CustomCard] connBindings:', connBindings.length);
         for (const cb of connBindings) {
-          console.log('[CustomCard] cb terminal:', (cb as any).props?.terminal);
           if ((cb as any).props?.terminal !== 'start') continue;
           const srcShape = editor.getShape((cb as any).toId) as any;
-          console.log('[CustomCard] srcShape:', srcShape?.type, srcShape?.props?.mediaType);
           if (!srcShape) continue;
           if (srcShape.type === 'custom-card' && srcShape.props?.generatedImage) return srcShape.props.generatedImage;
-          if (srcShape.type === 'media-upload-card' && srcShape.props?.mediaType === 'image' && srcShape.props?.imageData) {
-            console.log('[CustomCard] Found media-upload-card image!');
-            return srcShape.props.imageData;
-          }
+          if (srcShape.type === 'media-upload-card' && srcShape.props?.mediaType === 'image' && srcShape.props?.imageData) return srcShape.props.imageData;
         }
       }
       return '';
     };
 
     const connectedGeneratedImage = getConnectedGeneratedImage();
-    console.log('[CustomCard] connectedGeneratedImage:', connectedGeneratedImage ? 'has image' : 'no image');
 
     // 读取连接的上游卡片生成的视频或上传卡片的视频
     const getConnectedGeneratedVideo = (): string => {

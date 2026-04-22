@@ -158,7 +158,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
   getDefaultProps(): CameraControlCardShape['props'] {
     return {
       w: 360,
-      h: 520,
+      h: 620,
       sourceShapeId: '',
       cameraVertical: 0,
       cameraHorizontal: 0,
@@ -228,7 +228,6 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
     };
 
     const sourceImage = getSourceImage();
-    console.log('[CameraControl] sourceImage:', sourceImage ? 'has image' : 'no image');
 
     const generate = async () => {
       if (!sourceImage) { alert('源图片卡片还没有生成图片'); return; }
@@ -383,6 +382,23 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
               {/* 提示 */}
               <div className="text-[10px] text-gray-500 bg-black/30 p-2 rounded flex-shrink-0">
                 拖动摄像头图标旋转，参数自动添加到生成词
+              </div>
+
+              {/* 模型选择 */}
+              <div className="flex-shrink-0">
+                <label className="text-gray-400 text-xs mb-1 block">模型</label>
+                <select
+                  className="w-full bg-black/30 border border-white/8 rounded-lg px-2 py-1.5 text-white text-xs focus:outline-none focus:border-white/15 transition-all"
+                  value={model}
+                  onClick={(e) => e.stopPropagation()}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onChange={(e) => update({ model: e.target.value })}
+                >
+                  <option value="nano-banana-pro">Nano Banana 2（2K ¥1.2 / 4K ¥1.5）</option>
+                  <option value="nano-banana">Nano Banana — ¥0.5/次</option>
+                  <option value="flux-kontext">Flux Kontext — ¥0.6/次</option>
+                  <option value="doubao-seedream-4-5-251128">豆包 Seedream — ¥0.3/次</option>
+                </select>
               </div>
 
               {/* Prompt 输入 */}
