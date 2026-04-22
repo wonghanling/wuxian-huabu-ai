@@ -3166,22 +3166,32 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     )}
                   </div>
                   <div>
-                    <label className="text-gray-400 text-xs mb-1 block">动作视频（必填）</label>
-                    <input type="file" accept="video/mp4,video/quicktime"
-                      className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-blue-600/70 file:text-white hover:file:bg-blue-600 file:cursor-pointer"
-                      onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0]; if (!file) return;
-                        await handleKlingVideoUpload(file); e.target.value = '';
-                      }}
-                    />
-                    {klingVideoName && (
-                      <div className="mt-1 flex items-center gap-2 bg-black/20 border border-white/10 rounded p-1">
-                        <span className="text-gray-300 text-xs truncate flex-1">{klingVideoName}</span>
-                        <button className="text-gray-500 hover:text-red-400 text-xs"
-                          onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingVideoUrl: '', klingVideoName: '' } }); }}
-                          onPointerDown={(e) => e.stopPropagation()}>x</button>
+                    <label className="text-gray-400 text-xs mb-1 block">
+                      动作视频（必填）{connectedGeneratedVideo && <span className="text-blue-400 ml-1">·来自连接</span>}
+                    </label>
+                    {connectedGeneratedVideo ? (
+                      <div className="bg-black/20 border border-blue-500/30 rounded-lg p-2">
+                        <span className="text-blue-300 text-xs break-all line-clamp-2">{connectedGeneratedVideo}</span>
                       </div>
+                    ) : (
+                      <>
+                        <input type="file" accept="video/mp4,video/quicktime"
+                          className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-blue-600/70 file:text-white hover:file:bg-blue-600 file:cursor-pointer"
+                          onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0]; if (!file) return;
+                            await handleKlingVideoUpload(file); e.target.value = '';
+                          }}
+                        />
+                        {klingVideoName && (
+                          <div className="mt-1 flex items-center gap-2 bg-black/20 border border-white/10 rounded p-1">
+                            <span className="text-gray-300 text-xs truncate flex-1">{klingVideoName}</span>
+                            <button className="text-gray-500 hover:text-red-400 text-xs"
+                              onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingVideoUrl: '', klingVideoName: '' } }); }}
+                              onPointerDown={(e) => e.stopPropagation()}>✕</button>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                   <button
@@ -3195,12 +3205,12 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     onClick={async (e) => {
                       e.stopPropagation();
                       if (!(connectedGeneratedImage || klingImage)) { alert('请上传或连接参考图'); return; }
-                      if (!klingVideoUrl) { alert('请上传动作视频'); return; }
+                      if (!(connectedGeneratedVideo || klingVideoUrl)) { alert('请上传或连接动作视频'); return; }
                       editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, isGenerating: true, generationStatus: '提交中...', generationProgress: 0 } });
                       try {
                         const res = await fetch('/api/kling/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
                           mode: 'motion-control', prompt: prompt || '',
-                          image_url: connectedGeneratedImage || klingImage, video_url: klingVideoUrl,
+                          image_url: connectedGeneratedImage || klingImage, video_url: connectedGeneratedVideo || klingVideoUrl,
                           keep_original_sound: klingKeepSound || 'no',
                           character_orientation: klingCharacterOrientation || 'image',
                           videoMode: klingVideoMode || 'std',
