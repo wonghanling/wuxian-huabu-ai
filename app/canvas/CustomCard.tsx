@@ -1836,19 +1836,27 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           />
                           {isUploadingMulti && <p className="text-xs text-gray-400 mt-1">上传中...</p>}
                           {urls.length > 0 && (
-                            <div className="mt-1 flex gap-1 flex-wrap">
+                            <div className="mt-1 flex flex-col gap-2">
                               {urls.map((url, idx) => (
-                                <div key={idx} className="relative w-16 h-16 bg-black/30 rounded-lg overflow-hidden group">
-                                  <img src={url} className="w-full h-full object-cover" />
-                                  <button
-                                    className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/60 hover:bg-red-500/80 rounded text-white text-[9px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      const next = urls.filter((_, i) => i !== idx);
-                                      editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImageUrls: next.length ? JSON.stringify(next) : '' } });
+                                <div key={idx} className="relative w-full bg-black/30 rounded-xl overflow-hidden group"
+                                  style={{ aspectRatio: uploadedImgRatios[idx] ?? '16/9' }}>
+                                  <img src={url} className="w-full h-full object-cover"
+                                    onLoad={(e) => {
+                                      const el = e.currentTarget;
+                                      setUploadedImgRatios(prev => ({ ...prev, [idx]: el.naturalHeight > el.naturalWidth ? '9/16' : '16/9' }));
                                     }}
-                                    onPointerDown={(e) => e.stopPropagation()}
-                                  >✕</button>
+                                  />
+                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <button
+                                      className="px-3 py-1.5 bg-red-500/40 hover:bg-red-500/60 rounded-lg text-white text-xs transition-colors"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        const next = urls.filter((_, i) => i !== idx);
+                                        editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImageUrls: next.length ? JSON.stringify(next) : '' } });
+                                      }}
+                                      onPointerDown={(e) => e.stopPropagation()}
+                                    >删除</button>
+                                  </div>
                                 </div>
                               ))}
                             </div>
