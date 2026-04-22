@@ -10,6 +10,7 @@ import {
 import { useState, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { mirrorUrlToStorage } from '@/lib/canvas-storage';
+import { prepareImageForModel } from '@/lib/image-prepare';
 
 function compressImage(dataUrl: string, maxSize = 1280, quality = 0.85): Promise<string> {
   return new Promise((resolve) => {
@@ -231,8 +232,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
 
         const cameraPrompt = `${prompt} [Camera: vertical ${cameraVertical >= 0 ? '+' : ''}${cameraVertical}°, horizontal ${cameraHorizontal >= 0 ? '+' : ''}${cameraHorizontal}°]`;
 
-        // 压缩图片
-        const compressedImage = await compressImage(sourceImage);
+        const prepared = await prepareImageForModel(sourceImage, model || 'nano-banana-pro');
 
         const response = await fetch('/api/image/generate', {
           method: 'POST',
@@ -241,20 +241,38 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
             model: model || 'nano-banana-pro',
             prompt: cameraPrompt,
             aspectRatio: '16:9',
-            imageBase64: compressedImage,
             imageQuality: '2k',
             userId: user.id,
+            ...prepared,
           }),
         });
 
         if (!response.ok) throw new Error('API 调用失败');
         const data = await response.json();
 
+        // MJ 异步轮询
+        if (data.pending && data.taskId) {
+          const mjPoll = async (): Promise<string> => {
+            await new Promise(r => setTimeout(r, 3000));
+            const qRes = await fetch(`/api/image/mj-query?taskId=${encodeURIComponent(data.taskId)}`);
+            const qData = await qRes.json();
+            if (qData.status === 'completed' && qData.imageUrl) return qData.imageUrl;
+            if (qData.status === 'failed') throw new Error(qData.error || 'MJ 生成失败');
+            return mjPoll();
+          };
+          data.imageUrl = await mjPoll();
+        }
+
         // fal 异步轮询
         if (data.pending && data.requestId) {
-          const falEndpoint = 'fal-ai/nano-banana-2/edit';
+          const hasImages = prepared.imageUrlArray && prepared.imageUrlArray.length > 0;
+          const falEndpointMap: Record<string, string> = {
+            'flux-kontext': 'fal-ai/flux-pro/kontext/max',
+            'nano-banana-pro': hasImages ? 'fal-ai/nano-banana-2/edit' : 'fal-ai/nano-banana-2',
+          };
+          const falEndpoint = falEndpointMap[model] || 'fal-ai/nano-banana-2/edit';
           let pollAttempts = 0;
-          const poll = async (): Promise<string> => {
+          const falPoll = async (): Promise<string> => {
             pollAttempts++;
             await new Promise(r => setTimeout(r, 3000));
             try {
@@ -263,18 +281,17 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
               if (qData.success && qData.imageUrl) return qData.imageUrl;
               if (qData.error) throw new Error(qData.error);
               if (pollAttempts > 60) throw new Error('生成超时');
-              return poll();
+              return falPoll();
             } catch (e: any) {
-              if (e.message && (e.message.includes('超时') || e.message.includes('error'))) throw e;
+              if (e.message?.includes('超时') || e.message?.includes('error')) throw e;
               if (pollAttempts > 60) throw new Error('生成超时');
               await new Promise(r => setTimeout(r, 5000));
-              return poll();
+              return falPoll();
             }
           };
-          data.imageUrl = await poll();
+          data.imageUrl = await falPoll();
         }
 
-        // 显示图片
         update({ generatedImage: data.imageUrl, isGenerating: false });
 
         // 后台上传到 Supabase
@@ -284,8 +301,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
             const latest = editor.getShape(shape.id);
             if (latest) {
               editor.updateShape({
-                id: shape.id,
-                type: 'camera-control-card' as any,
+                id: shape.id, type: 'camera-control-card' as any,
                 props: { ...(latest.props as any), generatedImage: permanentUrl },
               });
             }

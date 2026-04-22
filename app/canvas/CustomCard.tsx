@@ -15,6 +15,7 @@ import { createClient } from '@/lib/supabase/client';
 import { mirrorUrlToStorage } from '@/lib/canvas-storage';
 import { useMembership } from '@/lib/useMembership';
 import MembershipModal from './MembershipModal';
+import { prepareImageForModel } from '@/lib/image-prepare';
 
 fal.config({ proxyUrl: '/api/fal/proxy' });
 
@@ -1590,8 +1591,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
                             try {
                               const effectiveImage = connectedGeneratedImage || characterThreeViewImage;
-                              const imageUrlArray = (characterImageModel || 'nano-banana-pro') === 'nano-banana-pro' && characterThreeViewImage ? [characterThreeViewImage] : undefined;
-                              const imageBase64 = (characterImageModel || 'nano-banana-pro') !== 'nano-banana-pro' ? (connectedGeneratedImage || characterThreeViewImage || undefined) : undefined;
+                              const prepared = await prepareImageForModel(effectiveImage, characterImageModel || 'nano-banana-pro');
 
                               const res = await fetch('/api/image/generate', {
                                 method: 'POST',
@@ -1600,10 +1600,9 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                                   model: characterImageModel || 'nano-banana-pro',
                                   prompt: `use the uploaded image as the ONLY character reference, character turnaround sheet, TOP SECTION: full body views front view, side view, back view, full body, head to toe visible, BOTTOM SECTION: head detail views reuse the SAME head from the original image, do not generate a new face, close-up crops of the same character head, front face, side profile, 3/4 view, same character, identical face, preserve facial features exactly, preserve hairstyle exactly, same hair shape, same hair volume, no variation, reuse the same identity across all views, no redesign, no reinterpretation, keep original outfit exactly, do not redesign, match the original image style exactly, same rendering, same lighting, same material, no duplicate character generation, no alternate versions, neutral pose, clean studio background, arranged in one frame, structured grid layout, clear separation`,
                                   aspectRatio: aspectRatio || '16:9',
-                                  imageBase64,
-                                  imageUrlArray,
                                   imageQuality: imageQuality || '2k',
                                   userId: userId || undefined,
+                                  ...prepared,
                                 }),
                               });
                               const data = await res.json();
@@ -2519,6 +2518,11 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   });
 
                   try {
+                    // 连接图片用 prepareImageForModel 处理，手动上传的图片保持原有逻辑
+                    const connectedPrepared = connectedGeneratedImage
+                      ? await prepareImageForModel(connectedGeneratedImage, model || 'nano-banana-pro')
+                      : {};
+
                     const response = await fetch('/api/image/generate', {
                       method: 'POST',
                       headers: {
@@ -2528,13 +2532,16 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         model: model || 'nano-banana-pro',
                         prompt: fullPrompt,
                         aspectRatio: aspectRatio || '1:1',
-                        imageBase64: (connectedGeneratedImage || uploadedImage) || undefined,
-                        imageBase64Array: model === 'nano-banana' && uploadedImages
-                          ? JSON.parse(uploadedImages)
-                          : undefined,
-                        imageUrlArray: ['nano-banana-pro', 'nano-banana-pro-multi'].includes(model || '') && uploadedImageUrls
-                          ? JSON.parse(uploadedImageUrls)
-                          : undefined,
+                        // 连接图片优先，否则用手动上传
+                        imageBase64: connectedGeneratedImage
+                          ? connectedPrepared.imageBase64
+                          : (uploadedImage || undefined),
+                        imageBase64Array: connectedGeneratedImage
+                          ? connectedPrepared.imageBase64Array
+                          : (model === 'nano-banana' && uploadedImages ? JSON.parse(uploadedImages) : undefined),
+                        imageUrlArray: connectedGeneratedImage
+                          ? connectedPrepared.imageUrlArray
+                          : (['nano-banana-pro', 'nano-banana-pro-multi'].includes(model || '') && uploadedImageUrls ? JSON.parse(uploadedImageUrls) : undefined),
                         imageQuality: ['nano-banana-pro', 'nano-banana-pro-multi'].includes(model || '') ? (imageQuality ?? '2k') : undefined,
                         userId: userId || undefined,
                       }),
