@@ -1948,10 +1948,9 @@ function CanvasPageContent() {
       const camera = editor.getCamera();
       const x = (e.clientX - camera.x * camera.z) / camera.z - 160;
       const y = (e.clientY - camera.y * camera.z) / camera.z - 110;
-      const { createShapeId } = require('tldraw');
       editor.createShape({
         id: createShapeId(),
-        type: 'media-upload-card',
+        type: 'media-upload-card' as any,
         x, y,
         props: { w: 320, h: 220, mediaType: 'none', imageData: '', videoUrl: '', videoName: '', isUploading: false, isMinimized: false },
       });
