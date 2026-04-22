@@ -202,14 +202,33 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
       });
     };
 
-    // 从连接的源图片卡片读取图片
+    // 从连接的上游卡片读取图片（通过 binding 系统）
     const getSourceImage = (): string => {
-      if (!sourceShapeId) return '';
-      const src = editor.getShape(sourceShapeId as any) as any;
-      return src?.props?.generatedImage ?? '';
+      const inputBindings = editor.getBindingsToShape(shape.id, 'connection');
+      console.log('[CameraControl] inputBindings:', inputBindings.length);
+      for (const binding of inputBindings) {
+        console.log('[CameraControl] binding terminal:', (binding as any).props?.terminal);
+        if ((binding as any).props?.terminal !== 'end') continue;
+        const connBindings = editor.getBindingsFromShape(binding.fromId, 'connection');
+        console.log('[CameraControl] connBindings:', connBindings.length);
+        for (const cb of connBindings) {
+          console.log('[CameraControl] cb terminal:', (cb as any).props?.terminal);
+          if ((cb as any).props?.terminal !== 'start') continue;
+          const src = editor.getShape((cb as any).toId) as any;
+          console.log('[CameraControl] src shape:', src?.type, src?.props?.mediaType);
+          if (!src) continue;
+          if (src.type === 'custom-card' && src.props?.generatedImage) return src.props.generatedImage;
+          if (src.type === 'media-upload-card' && src.props?.mediaType === 'image' && src.props?.imageData) {
+            console.log('[CameraControl] Found media-upload-card image!');
+            return src.props.imageData;
+          }
+        }
+      }
+      return '';
     };
 
     const sourceImage = getSourceImage();
+    console.log('[CameraControl] sourceImage:', sourceImage ? 'has image' : 'no image');
 
     const generate = async () => {
       if (!sourceImage) { alert('源图片卡片还没有生成图片'); return; }

@@ -655,21 +655,30 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
     // 实时读取连接的上游图片卡片的 generatedImage 或上传卡片的图片
     const getConnectedGeneratedImage = (): string => {
       const inputBindings = editor.getBindingsToShape(shape.id, 'connection');
+      console.log('[CustomCard] inputBindings:', inputBindings.length, 'cardType:', cardType);
       for (const binding of inputBindings) {
+        console.log('[CustomCard] binding terminal:', (binding as any).props?.terminal);
         if ((binding as any).props?.terminal !== 'end') continue;
         const connBindings = editor.getBindingsFromShape(binding.fromId, 'connection');
+        console.log('[CustomCard] connBindings:', connBindings.length);
         for (const cb of connBindings) {
+          console.log('[CustomCard] cb terminal:', (cb as any).props?.terminal);
           if ((cb as any).props?.terminal !== 'start') continue;
           const srcShape = editor.getShape((cb as any).toId) as any;
+          console.log('[CustomCard] srcShape:', srcShape?.type, srcShape?.props?.mediaType);
           if (!srcShape) continue;
           if (srcShape.type === 'custom-card' && srcShape.props?.generatedImage) return srcShape.props.generatedImage;
-          if (srcShape.type === 'media-upload-card' && srcShape.props?.mediaType === 'image' && srcShape.props?.imageData) return srcShape.props.imageData;
+          if (srcShape.type === 'media-upload-card' && srcShape.props?.mediaType === 'image' && srcShape.props?.imageData) {
+            console.log('[CustomCard] Found media-upload-card image!');
+            return srcShape.props.imageData;
+          }
         }
       }
       return '';
     };
 
     const connectedGeneratedImage = getConnectedGeneratedImage();
+    console.log('[CustomCard] connectedGeneratedImage:', connectedGeneratedImage ? 'has image' : 'no image');
 
     // 读取连接的上游卡片生成的视频或上传卡片的视频
     const getConnectedGeneratedVideo = (): string => {
@@ -2069,6 +2078,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   /* 其他模型：单图上传 */
                   (() => {
                     const singleImgInputRef = { current: null as HTMLInputElement | null };
+                    const effectiveImage = connectedGeneratedImage || uploadedImage;
                     const handleSingleFile = async (file: File) => {
                       const reader = new FileReader();
                       reader.onload = async (event) => {
@@ -2105,41 +2115,46 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                             e.target.value = '';
                           }}
                         />
-                        {uploadedImage ? (
+                        {effectiveImage ? (
                           <div
                             className="relative w-full bg-black/30 rounded-xl overflow-hidden group cursor-pointer"
                             style={{ aspectRatio: uploadedImageRatio }}
-                            onClick={(e) => { e.stopPropagation(); singleImgInputRef.current?.click(); }}
+                            onClick={(e) => { e.stopPropagation(); if (!connectedGeneratedImage) singleImgInputRef.current?.click(); }}
                             onPointerDown={(e) => e.stopPropagation()}
                           >
-                            <img src={uploadedImage} alt="参考图" className="w-full h-full object-cover" />
-                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                              <button
-                                className="px-3 py-1.5 bg-white/15 hover:bg-white/25 rounded-lg text-white text-xs transition-colors"
-                                onClick={(e) => { e.stopPropagation(); singleImgInputRef.current?.click(); }}
-                                onPointerDown={(e) => e.stopPropagation()}
-                              >更换</button>
-                              <button
-                                className="px-3 py-1.5 bg-red-500/40 hover:bg-red-500/60 rounded-lg text-white text-xs transition-colors"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImage: '' } });
-                                }}
-                                onPointerDown={(e) => e.stopPropagation()}
-                              >删除</button>
-                            </div>
+                            <img src={effectiveImage} alt="参考图" className="w-full h-full object-cover" />
+                            {connectedGeneratedImage && (
+                              <div className="absolute bottom-0 left-0 right-0 bg-blue-600/70 text-white text-[10px] text-center py-0.5">来自连接</div>
+                            )}
+                            {!connectedGeneratedImage && (
+                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                                <button
+                                  className="px-3 py-1.5 bg-white/15 hover:bg-white/25 rounded-lg text-white text-xs transition-colors"
+                                  onClick={(e) => { e.stopPropagation(); singleImgInputRef.current?.click(); }}
+                                  onPointerDown={(e) => e.stopPropagation()}
+                                >更换</button>
+                                <button
+                                  className="px-3 py-1.5 bg-red-500/40 hover:bg-red-500/60 rounded-lg text-white text-xs transition-colors"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImage: '' } });
+                                  }}
+                                  onPointerDown={(e) => e.stopPropagation()}
+                                >删除</button>
+                              </div>
+                            )}
                           </div>
                         ) : (
                           <div
                             className="w-full flex flex-col items-center justify-center gap-1.5 border border-dashed border-white/15 rounded-xl cursor-pointer hover:border-white/30 hover:bg-white/3 transition-all"
-                            style={{ aspectRatio: '4/3' }}
+                            style={{ aspectRatio: '16/9' }}
                             onClick={(e) => { e.stopPropagation(); singleImgInputRef.current?.click(); }}
                             onPointerDown={(e) => e.stopPropagation()}
                           >
                             <svg className="w-6 h-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            <span className="text-gray-500 text-xs">点击上传参考图</span>
+                            <span className="text-gray-500 text-xs">点击上传或连接图片卡片</span>
                           </div>
                         )}
                       </>
@@ -2512,7 +2527,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         model: model || 'nano-banana-pro',
                         prompt: fullPrompt,
                         aspectRatio: aspectRatio || '1:1',
-                        imageBase64: uploadedImage || undefined,
+                        imageBase64: (connectedGeneratedImage || uploadedImage) || undefined,
                         imageBase64Array: model === 'nano-banana' && uploadedImages
                           ? JSON.parse(uploadedImages)
                           : undefined,

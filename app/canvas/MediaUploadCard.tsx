@@ -89,11 +89,13 @@ export class MediaUploadCardUtil extends BaseBoxShapeUtil<MediaUploadCardShape> 
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) { alert('请先登录'); up({ isUploading: false }); return; }
-        const ext = file.name.split('.').pop();
-        const path = `videos/${user.id}/${Date.now()}.${ext}`;
-        const { error } = await supabase.storage.from('canvas-assets').upload(path, file, { upsert: true });
-        if (error) throw error;
-        const { data: urlData } = supabase.storage.from('canvas-assets').getPublicUrl(path);
+        const lowerName = file.name.toLowerCase();
+        const ext = lowerName.endsWith('.mov') ? '.mov' : '.mp4';
+        const contentType = ext === '.mov' ? 'video/quicktime' : 'video/mp4';
+        const filename = `videos/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
+        const { error } = await supabase.storage.from('assets').upload(filename, file, { contentType, upsert: false });
+        if (error) throw new Error(`上传失败: ${error.message}`);
+        const { data: urlData } = supabase.storage.from('assets').getPublicUrl(filename);
         // 检测视频比例
         const video = document.createElement('video');
         video.onloadedmetadata = () => {
