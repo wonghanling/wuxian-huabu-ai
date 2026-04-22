@@ -141,7 +141,6 @@ export class GemStep1CardUtil extends BaseBoxShapeUtil<GemStep1CardShape> {
     const allDisplayImages = [...connectedImages, ...images];
 
     const analyze = async () => {
-      // 收集连接的图片卡片的 generatedImage
       const connectedImages: string[] = [];
       const inputBindings = editor.getBindingsToShape(shape.id, 'connection');
       for (const binding of inputBindings) {
@@ -150,8 +149,9 @@ export class GemStep1CardUtil extends BaseBoxShapeUtil<GemStep1CardShape> {
         for (const cb of connBindings) {
           if ((cb as any).props?.terminal !== 'start') continue;
           const srcShape = editor.getShape((cb as any).toId) as any;
-          if (!srcShape || srcShape.type !== 'custom-card') continue;
-          if (srcShape.props?.generatedImage) connectedImages.push(srcShape.props.generatedImage);
+          if (!srcShape) continue;
+          if (srcShape.type === 'custom-card' && srcShape.props?.generatedImage) connectedImages.push(srcShape.props.generatedImage);
+          else if (srcShape.type === 'media-upload-card' && srcShape.props?.mediaType === 'image' && srcShape.props?.imageData) connectedImages.push(srcShape.props.imageData);
         }
       }
 
