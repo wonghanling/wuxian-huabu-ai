@@ -3,6 +3,7 @@ import { BaseBoxShapeUtil, TLBaseShape, HTMLContainer, RecordProps, T, useEditor
 import { useState, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { mirrorUrlToStorage } from '@/lib/canvas-storage';
+import { FloatingMenu, FloatingMenuOption } from './FloatingMenu';
 
 export type MediaUploadCardShape = TLBaseShape<
   'media-upload-card',
@@ -59,6 +60,8 @@ export class MediaUploadCardUtil extends BaseBoxShapeUtil<MediaUploadCardShape> 
     const editor = useEditor();
     const imgInputRef = useRef<HTMLInputElement>(null);
     const vidInputRef = useRef<HTMLInputElement>(null);
+    const [showSideMenu, setShowSideMenu] = useState(false);
+    const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
 
     const up = (props: Partial<MediaUploadCardShape['props']>) =>
       editor.updateShape({ id: shape.id, type: 'media-upload-card' as any, props: { ...shape.props, ...props } });
@@ -117,6 +120,24 @@ export class MediaUploadCardUtil extends BaseBoxShapeUtil<MediaUploadCardShape> 
 
     const scale = Math.min(1, w / 320, h / 220);
 
+    const createLinkedCard = (type: 'camera-control-card' | 'character') => {
+      const bounds = editor.getShapePageBounds(shape.id);
+      if (!bounds) return;
+      const x = bounds.maxX + 40;
+      const y = bounds.midY - 260;
+      if (type === 'camera-control-card') {
+        editor.createShape({ type: 'camera-control-card' as any, x, y, props: {} });
+      } else {
+        editor.createShape({ type: 'custom-card' as any, x, y, props: { cardType: 'character', w: 380, h: 520 } });
+      }
+      setShowSideMenu(false);
+    };
+
+    const sideMenuOptions: FloatingMenuOption[] = [
+      { label: '镜头控制', icon: '🎥', onClick: () => createLinkedCard('camera-control-card') },
+      { label: '角色设计', icon: '🎨', onClick: () => createLinkedCard('character') },
+    ];
+
     return (
       <HTMLContainer style={{ width: w, height: h, pointerEvents: 'all' }}>
         {/* 左端口 */}
@@ -142,6 +163,37 @@ export class MediaUploadCardUtil extends BaseBoxShapeUtil<MediaUploadCardShape> 
           <div className="w-3 h-3 rounded-full transition-all group-hover:scale-150"
             style={{ backgroundColor: '#27272a', border: '2px solid rgba(192,192,192,0.8)', boxShadow: '0 0 8px rgba(192,192,192,0.4)' }} />
         </div>
+
+        {/* 右侧按钮 */}
+        {mediaType !== 'none' && (
+          <button
+            className="absolute right-0 top-1/2 translate-x-full ml-2 w-8 h-8 bg-zinc-800/90 hover:bg-zinc-700 border border-white/10 rounded-lg flex items-center justify-center transition-all shadow-lg"
+            style={{ transform: 'translateX(calc(100% + 8px)) translateY(-50%)', zIndex: 10 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              const bounds = editor.getShapePageBounds(shape.id);
+              if (bounds) {
+                setMenuPos({ x: bounds.maxX + 50, y: bounds.midY });
+                setShowSideMenu(true);
+              }
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <svg className="w-4 h-4 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+          </button>
+        )}
+
+        {/* 浮动菜单 */}
+        {showSideMenu && (
+          <FloatingMenu
+            x={menuPos.x}
+            y={menuPos.y}
+            options={sideMenuOptions}
+            onClose={() => setShowSideMenu(false)}
+          />
+        )}
 
         {/* 卡片主体 */}
         <div
