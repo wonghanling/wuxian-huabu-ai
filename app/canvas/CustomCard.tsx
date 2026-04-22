@@ -282,9 +282,6 @@ export type CustomCardShape = TLBaseShape<
     uploadedImage?: string;
     uploadedImages?: string; // JSON 数组字符串，nano-banana/pro 多图用（最多2张）
     uploadedImageUrls?: string; // JSON 数组字符串，多图融合模型用（fal storage URL）
-    cameraVertical?: number;
-    cameraHorizontal?: number;
-    showCameraControl?: boolean;
     generatedImage?: string;
     aspectRatio?: string; // 图片/视频比例
     gridLayout?: string; // 宫格布局（可选）：'2x2' | '3x3' | '3x4' | '4x4'
@@ -367,9 +364,6 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
     uploadedImage: T.string.optional(),
     uploadedImages: T.string.optional(),
     uploadedImageUrls: T.string.optional(),
-    cameraVertical: T.number.optional(),
-    cameraHorizontal: T.number.optional(),
-    showCameraControl: T.boolean.optional(),
     generatedImage: T.string.optional(),
     aspectRatio: T.string.optional(),
     gridLayout: T.string.optional(),
@@ -468,9 +462,6 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
       prompt: '',
       model: 'gpt-5.2',
       uploadedImage: '',
-      cameraVertical: 0,
-      cameraHorizontal: 0,
-      showCameraControl: false,
       generatedImage: '',
       aspectRatio: '1:1',
       videoMode: 'text',
@@ -512,7 +503,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
   }
 
   component(shape: CustomCardShape) {
-    const { cardType, title, prompt, model, w, h, uploadedImage, uploadedImages, uploadedImageUrls, cameraVertical, cameraHorizontal, showCameraControl, generatedImage, aspectRatio, gridLayout, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showVideoOutput, capturedFrame, videoDuration, videoResolution, videoGenerateAudio, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterAnalyzeImage, characterAnchorJson, characterThreeViewJson, characterThreeViewImage, characterGeneratedImage, characterImageModel, imageQuality, cameraTemplate, cameraStrength, showCharacterOutput, showAnalyzePanel, showThreeViewJsonPanel, showGeneratePanel, isMinimized, textOutput, isGenerating, generationProgress, generationStatus, klingDuration, klingAspectRatio, klingImage, klingGeneratedVideo, klingShowSettingsPanel, klingMode, klingVideoUrl, klingVideoName, klingCharacterOrientation, klingKeepSound, klingVideoMode, klingLipSyncSessionId, klingLipSyncFaceId, klingLipSyncAudio, klingLipSyncAudioName, klingLipSyncPhase, klingLipSyncSoundStart, klingLipSyncSoundEnd, klingLipSyncSoundInsert, klingLipSyncSoundVolume, klingLipSyncOriginalVolume } = shape.props;
+    const { cardType, title, prompt, model, w, h, uploadedImage, uploadedImages, uploadedImageUrls, generatedImage, aspectRatio, gridLayout, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showVideoOutput, capturedFrame, videoDuration, videoResolution, videoGenerateAudio, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterAnalyzeImage, characterAnchorJson, characterThreeViewJson, characterThreeViewImage, characterGeneratedImage, characterImageModel, imageQuality, cameraTemplate, cameraStrength, showCharacterOutput, showAnalyzePanel, showThreeViewJsonPanel, showGeneratePanel, isMinimized, textOutput, isGenerating, generationProgress, generationStatus, klingDuration, klingAspectRatio, klingImage, klingGeneratedVideo, klingShowSettingsPanel, klingMode, klingVideoUrl, klingVideoName, klingCharacterOrientation, klingKeepSound, klingVideoMode, klingLipSyncSessionId, klingLipSyncFaceId, klingLipSyncAudio, klingLipSyncAudioName, klingLipSyncPhase, klingLipSyncSoundStart, klingLipSyncSoundEnd, klingLipSyncSoundInsert, klingLipSyncSoundVolume, klingLipSyncOriginalVolume } = shape.props;
     const editor = useEditor();
     const videoRef = useRef<HTMLVideoElement>(null);
     const { isMember, userId, refresh: refreshBalance } = useMembership();
@@ -1004,33 +995,22 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         ? 'Describe the image...'
                         : 'Describe the video...'
                     }
-                    value={cardType === 'image' && ((cameraVertical ?? 0) !== 0 || (cameraHorizontal ?? 0) !== 0)
-                      ? `${localPrompt} [Camera: vertical ${(cameraVertical ?? 0) >= 0 ? '+' : ''}${cameraVertical ?? 0}°, horizontal ${(cameraHorizontal ?? 0) >= 0 ? '+' : ''}${cameraHorizontal ?? 0}°]`
-                      : localPrompt}
+                    value={localPrompt}
                     onClick={(e) => e.stopPropagation()}
                     onPointerDown={(e) => e.stopPropagation()}
                     onCompositionStart={() => { isComposing.current = true; }}
                     onCompositionEnd={(e) => {
                       isComposing.current = false;
-                      const userInput = (e.target as HTMLTextAreaElement).value.replace(/\[Camera: vertical [+-]?\d+°, horizontal [+-]?\d+°\]/g, '').trim();
+                      const userInput = (e.target as HTMLTextAreaElement).value;
                       setLocalPrompt(userInput);
                       updateShapeDebounced({ prompt: userInput });
                     }}
                     onChange={(e) => {
-                      const userInput = e.target.value.replace(/\[Camera: vertical [+-]?\d+°, horizontal [+-]?\d+°\]/g, '').trim();
+                      const userInput = e.target.value;
                       setLocalPrompt(userInput);
                       if (!isComposing.current) updateShapeDebounced({ prompt: userInput });
                     }}
                   />
-                  {/* 镜头参数提示 */}
-                  {cardType === 'image' && (cameraVertical !== 0 || cameraHorizontal !== 0) && (
-                    <div className="text-[10px] text-blue-400 mt-1 flex items-center gap-1">
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span>镜头参数已自动添加</span>
-                    </div>
-                  )}
                 </>
               )}
 
@@ -1934,29 +1914,33 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           />
                           {model === 'nano-banana-pro' && isUploadingMulti && <p className="text-xs text-gray-400 mt-1">上传中...</p>}
                           {model === 'nano-banana-pro' && urls.length > 0 && (
-                            <div className="mt-1 flex gap-1 flex-wrap">
+                            <div className="mt-1 flex flex-col gap-2">
                               {urls.map((url, idx) => (
-                                <div key={idx} className="relative w-16 h-16 bg-black/30 rounded-lg overflow-hidden group">
+                                <div key={idx} className="relative w-full bg-black/30 rounded-xl overflow-hidden group" style={{ aspectRatio: '16/9' }}>
                                   <img src={url} className="w-full h-full object-cover" />
-                                  <button
-                                    className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/60 hover:bg-red-500/80 rounded text-white text-[9px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                    onClick={(e) => { e.stopPropagation(); const next = urls.filter((_, i) => i !== idx); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImageUrls: next.length ? JSON.stringify(next) : '' } }); }}
-                                    onPointerDown={(e) => e.stopPropagation()}
-                                  >✕</button>
+                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <button
+                                      className="px-3 py-1.5 bg-red-500/40 hover:bg-red-500/60 rounded-lg text-white text-xs transition-colors"
+                                      onClick={(e) => { e.stopPropagation(); const next = urls.filter((_, i) => i !== idx); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImageUrls: next.length ? JSON.stringify(next) : '' } }); }}
+                                      onPointerDown={(e) => e.stopPropagation()}
+                                    >删除</button>
+                                  </div>
                                 </div>
                               ))}
                             </div>
                           )}
                           {model === 'nano-banana' && imgs.length > 0 && (
-                            <div className="mt-1 flex gap-1 flex-wrap">
+                            <div className="mt-1 flex flex-col gap-2">
                               {imgs.map((img, idx) => (
-                                <div key={idx} className="relative w-16 h-16 bg-black/30 rounded-lg overflow-hidden group">
+                                <div key={idx} className="relative w-full bg-black/30 rounded-xl overflow-hidden group" style={{ aspectRatio: '16/9' }}>
                                   <img src={img} className="w-full h-full object-cover" />
-                                  <button
-                                    className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/60 hover:bg-red-500/80 rounded text-white text-[9px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                    onClick={(e) => { e.stopPropagation(); const next = imgs.filter((_, i) => i !== idx); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImages: next.length ? JSON.stringify(next) : '' } }); }}
-                                    onPointerDown={(e) => e.stopPropagation()}
-                                  >✕</button>
+                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                    <button
+                                      className="px-3 py-1.5 bg-red-500/40 hover:bg-red-500/60 rounded-lg text-white text-xs transition-colors"
+                                      onClick={(e) => { e.stopPropagation(); const next = imgs.filter((_, i) => i !== idx); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImages: next.length ? JSON.stringify(next) : '' } }); }}
+                                      onPointerDown={(e) => e.stopPropagation()}
+                                    >删除</button>
+                                  </div>
                                 </div>
                               ))}
                             </div>
@@ -2002,7 +1986,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         {uploadedImage ? (
                           <div
                             className="relative w-full bg-black/30 rounded-xl overflow-hidden group cursor-pointer"
-                            style={{ aspectRatio: '4/3' }}
+                            style={{ aspectRatio: '16/9' }}
                             onClick={(e) => { e.stopPropagation(); singleImgInputRef.current?.click(); }}
                             onPointerDown={(e) => e.stopPropagation()}
                           >
@@ -2272,84 +2256,11 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                 )}
               </div>
             )}
-            {cardType === 'image' && (
-              <button
-                className="w-full py-2 mt-2 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-blue-500/80 to-blue-600/80 hover:from-blue-500 hover:to-blue-600"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  editor.updateShape({
-                    id: shape.id,
-                    type: 'custom-card' as any,
-                    props: {
-                      ...shape.props,
-                      showCameraControl: !showCameraControl,
-                    },
-                  });
-                }}
-                onPointerDown={(e) => e.stopPropagation()}
-              >
-                {showCameraControl ? '隐藏镜头控制' : '镜头控制器'}
-              </button>
-            )}
-
-            {/* 镜头控制面板 */}
-            {cardType === 'image' && showCameraControl && (
-              <div className="mt-2 p-3 bg-black/40 border border-white/10 rounded-lg space-y-3">
-
-                {/* 图片预览（使用上方已上传的图片） */}
-                {uploadedImage && (
-                  <div className="relative w-full h-24 bg-black/30 rounded-lg overflow-hidden">
-                    <img
-                      src={uploadedImage}
-                      alt="Uploaded"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-
-                {/* 交互式摄像头控制器 */}
-                <div>
-                  <label className="text-gray-400 text-xs mb-2 block">拖动摄像头调整角度</label>
-                  <CameraController
-                    vertical={cameraVertical || 0}
-                    horizontal={cameraHorizontal || 0}
-                    onAngleChange={(vertical, horizontal) => {
-                      editor.updateShape({
-                        id: shape.id,
-                        type: 'custom-card' as any,
-                        props: {
-                          ...shape.props,
-                          cameraVertical: vertical,
-                          cameraHorizontal: horizontal,
-                        },
-                      });
-                    }}
-                  />
-                </div>
-
-                {/* 角度显示 */}
-                <div className="flex justify-between text-xs">
-                  <div className="bg-black/30 px-3 py-1.5 rounded">
-                    <span className="text-gray-400">垂直: </span>
-                    <span className="text-white font-mono">{cameraVertical || 0}°</span>
-                  </div>
-                  <div className="bg-black/30 px-3 py-1.5 rounded">
-                    <span className="text-gray-400">水平: </span>
-                    <span className="text-white font-mono">{cameraHorizontal || 0}°</span>
-                  </div>
-                </div>
-
-                {/* 镜头信息提示 */}
-                <div className="text-[10px] text-gray-500 bg-black/30 p-2 rounded">
-                  拖动摄像头图标旋转，参数自动添加到生成词
-                </div>
-              </div>
-            )}
 
             {/* 生成按钮 - 仅非角色/kling卡片显示 */}
             {cardType !== 'character' && cardType !== 'kling' && (
             <button
-              className={`w-full py-2 ${showCameraControl && cardType === 'image' ? 'mt-2' : 'mt-0'} rounded-lg font-semibold text-white text-xs transition-all shadow-lg backdrop-blur-sm ${
+              className={`w-full py-2 mt-0 rounded-lg font-semibold text-white text-xs transition-all shadow-lg backdrop-blur-sm ${
                 isGenerating
                   ? 'bg-gray-500 cursor-not-allowed'
                   : `hover:scale-[1.02] active:scale-[0.98] ${color.buttonBg}`
@@ -2418,9 +2329,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                 } else if (cardType === 'image') {
                   // 图片生成逻辑
                   const shotPrompt = getShotCardPrompt();
-                  const basePrompt = ((cameraVertical ?? 0) !== 0 || (cameraHorizontal ?? 0) !== 0)
-                    ? `${prompt} [Camera: vertical ${(cameraVertical ?? 0) >= 0 ? '+' : ''}${cameraVertical ?? 0}°, horizontal ${(cameraHorizontal ?? 0) >= 0 ? '+' : ''}${cameraHorizontal ?? 0}°]`
-                    : prompt;
+                  const basePrompt = prompt;
                   // 宫格布局 prompt 追加
                   const GRID_PROMPTS: Record<string, string> = {
                     '2x2': 'storyboard sheet, 2x2 grid layout, 4 panels in one image, all panels visible, clean panel borders, equal sized panels, storyboard contact sheet, multi-panel composition, not a single image, not full-frame illustration, each panel contains a different shot, grid enforced layout, overall image aspect ratio 16:9, each panel framed in widescreen 16:9 composition, cinematic framing inside each panel',

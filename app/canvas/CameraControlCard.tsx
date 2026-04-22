@@ -366,6 +366,19 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
                 拖动摄像头图标旋转，参数自动添加到生成词
               </div>
 
+              {/* Prompt 输入 */}
+              <div className="flex-shrink-0">
+                <label className="text-gray-400 text-xs mb-1 block">补充描述（可选）</label>
+                <textarea
+                  className="w-full h-16 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs resize-none focus:outline-none focus:border-white/20 placeholder-gray-600"
+                  placeholder="描述镜头细节，如：低角度仰拍，背景虚化..."
+                  value={prompt}
+                  onClick={(e) => e.stopPropagation()}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onChange={(e) => update({ prompt: e.target.value })}
+                />
+              </div>
+
               {/* 生成按钮 */}
               <button
                 onClick={(e) => { e.stopPropagation(); generate(); }}
@@ -382,8 +395,8 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
 
               {/* 生成结果 */}
               {generatedImage && (
-                <div className="flex-1 flex flex-col min-h-0">
-                  <div className="flex items-center justify-between mb-1 flex-shrink-0">
+                <div className="flex-shrink-0 flex flex-col">
+                  <div className="flex items-center justify-between mb-1">
                     <span className="text-[10px] text-gray-400">生成结果</span>
                     <div className="flex gap-2">
                       <button onClick={(e) => { e.stopPropagation(); setLightbox(true); }} onPointerDown={(e) => e.stopPropagation()} className="text-[10px] text-gray-400 hover:text-white transition-colors">查看</button>
@@ -391,9 +404,16 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
                       <button onClick={(e) => { e.stopPropagation(); update({ generatedImage: '' }); }} onPointerDown={(e) => e.stopPropagation()} className="text-[10px] text-gray-400 hover:text-red-400 transition-colors">删除</button>
                     </div>
                   </div>
-                  <div className="flex-1 bg-black/30 rounded-xl overflow-hidden border border-white/8 cursor-pointer min-h-0"
-                    onClick={(e) => { e.stopPropagation(); setLightbox(true); }} onPointerDown={(e) => e.stopPropagation()}>
+                  <div
+                    className="relative w-full bg-black/30 rounded-xl overflow-hidden border border-white/8 cursor-pointer group"
+                    style={{ aspectRatio: '16/9' }}
+                    onClick={(e) => { e.stopPropagation(); setLightbox(true); }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                  >
                     <img src={generatedImage} alt="result" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <span className="text-white text-xs">点击放大</span>
+                    </div>
                   </div>
                 </div>
               )}
