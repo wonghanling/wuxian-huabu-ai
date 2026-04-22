@@ -158,7 +158,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
   getDefaultProps(): CameraControlCardShape['props'] {
     return {
       w: 360,
-      h: 620,
+      h: 720,
       sourceShapeId: '',
       cameraVertical: 0,
       cameraHorizontal: 0,
@@ -273,7 +273,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
 
     const toggleMinimize = (e: React.MouseEvent) => {
       e.stopPropagation();
-      update({ isMinimized: !isMinimized, w: isMinimized ? 360 : 160, h: isMinimized ? 520 : 60 });
+      update({ isMinimized: !isMinimized, w: isMinimized ? 360 : 160, h: isMinimized ? 720 : 60 });
     };
 
     return (
