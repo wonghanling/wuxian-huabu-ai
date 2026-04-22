@@ -531,32 +531,42 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
                     )}
                   </div>
                   <div>
-                    <label className="text-gray-400 text-xs mb-1 block">参考视频（可选，mp4/mov ≤50MB）</label>
-                    <input type="file" accept="video/mp4,video/quicktime"
-                      className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
-                      onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                      onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; await handleRefVideoUpload(f); e.target.value = ''; }}
-                    />
-                    {refVideoName && refVideoName !== '上传中...' && (
-                      <div className="mt-1 flex items-center gap-2 bg-black/20 border border-white/10 rounded p-1">
-                        <span className="text-gray-300 text-xs truncate flex-1">{refVideoName}</span>
-                        <button className="text-gray-500 hover:text-red-400 text-xs"
-                          onClick={(e) => { e.stopPropagation(); up({ refVideoUrl: '', refVideoName: '' }); }} onPointerDown={(e) => e.stopPropagation()}>x</button>
+                    <label className="text-gray-400 text-xs mb-1 block">
+                      参考视频（可选，mp4/mov ≤50MB）{connectedInputs.videoUrl && <span className="text-blue-400 ml-1">·来自连接</span>}
+                    </label>
+                    {connectedInputs.videoUrl ? (
+                      <div className="bg-black/20 border border-blue-500/30 rounded-lg p-2">
+                        <span className="text-blue-300 text-xs break-all line-clamp-2">{connectedInputs.videoUrl}</span>
                       </div>
-                    )}
-                    {refVideoName === '上传中...' && (
-                      <div className="mt-1 text-gray-400 text-xs">上传中...</div>
-                    )}
-                    {!refVideoName && (
-                      <div className="mt-1">
-                        <input
-                          className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 transition-all placeholder-gray-500"
-                          placeholder="或直接填写视频 URL https://..."
-                          value={refVideoUrl && !refVideoName ? refVideoUrl : ''}
+                    ) : (
+                      <>
+                        <input type="file" accept="video/mp4,video/quicktime"
+                          className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
                           onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                          onChange={(e) => up({ refVideoUrl: e.target.value, refVideoName: '' })}
+                          onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; await handleRefVideoUpload(f); e.target.value = ''; }}
                         />
-                      </div>
+                        {refVideoName && refVideoName !== '上传中...' && (
+                          <div className="mt-1 flex items-center gap-2 bg-black/20 border border-white/10 rounded p-1">
+                            <span className="text-gray-300 text-xs truncate flex-1">{refVideoName}</span>
+                            <button className="text-gray-500 hover:text-red-400 text-xs"
+                              onClick={(e) => { e.stopPropagation(); up({ refVideoUrl: '', refVideoName: '' }); }} onPointerDown={(e) => e.stopPropagation()}>x</button>
+                          </div>
+                        )}
+                        {refVideoName === '上传中...' && (
+                          <div className="mt-1 text-gray-400 text-xs">上传中...</div>
+                        )}
+                        {!refVideoName && (
+                          <div className="mt-1">
+                            <input
+                              className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 transition-all placeholder-gray-500"
+                              placeholder="或直接填写视频 URL https://..."
+                              value={refVideoUrl && !refVideoName ? refVideoUrl : ''}
+                              onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
+                              onChange={(e) => up({ refVideoUrl: e.target.value, refVideoName: '' })}
+                            />
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                   <div>
