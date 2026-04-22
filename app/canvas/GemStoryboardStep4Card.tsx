@@ -83,6 +83,45 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
       editor.updateShape({ id: shape.id, type: 'gem-step4-card' as any, props: { ...shape.props, ...props } });
     };
 
+    // 实时读取连接的上游图片卡片（1张）
+    const getConnectedImage = (): string => {
+      const inputBindings = editor.getBindingsToShape(shape.id, 'connection');
+      for (const binding of inputBindings) {
+        if ((binding as any).props?.terminal !== 'end') continue;
+        const connBindings = editor.getBindingsFromShape(binding.fromId, 'connection');
+        for (const cb of connBindings) {
+          if ((cb as any).props?.terminal !== 'start') continue;
+          const src = editor.getShape((cb as any).toId) as any;
+          if (!src || src.type !== 'custom-card') continue;
+          if (src.props?.generatedImage) return src.props.generatedImage;
+        }
+      }
+      return '';
+    };
+
+    const connectedImage = getConnectedImage();
+    const displayImage = connectedImage || image;
+
+    // 生成完后推送 result 到连接的下游视频卡片
+    const pushResultToDownstream = (resultText: string) => {
+      const outBindings = editor.getBindingsFromShape(shape.id, 'connection');
+      for (const binding of outBindings) {
+        if ((binding as any).props?.terminal !== 'start') continue;
+        const connBindings = editor.getBindingsFromShape(binding.fromId, 'connection');
+        for (const ob of connBindings) {
+          if ((ob as any).props?.terminal !== 'end') continue;
+          const target = editor.getShape((ob as any).toId) as any;
+          if (!target) continue;
+          if (target.type === 'custom-card' && target.props?.cardType === 'video') {
+            editor.updateShape({ id: (ob as any).toId, type: 'custom-card' as any, props: { ...target.props, prompt: resultText } });
+          }
+          if (target.type === 'seedance-card') {
+            editor.updateShape({ id: (ob as any).toId, type: 'seedance-card' as any, props: { ...target.props, prompt: resultText } });
+          }
+        }
+      }
+    };
+
     const handleOutputPortDown = (e: React.MouseEvent) => {
       e.stopPropagation();
       e.preventDefault();
@@ -116,17 +155,18 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
     };
 
     const generate = async () => {
-      if (!image) { alert('请上传图片'); return; }
+      if (!displayImage) { alert('请上传或连接图片'); return; }
       update({ isGenerating: true, result: '' });
       try {
         const res = await fetch('/api/gem/generate-solo-motion', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image, characterHint, actionSuggestion }),
+          body: JSON.stringify({ image: displayImage, characterHint, actionSuggestion }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || '请求失败');
         update({ result: data.final_video_prompt, isGenerating: false });
+        pushResultToDownstream(data.final_video_prompt);
       } catch (err: any) {
         alert('生成失败: ' + err.message);
         update({ isGenerating: false });
@@ -190,23 +230,27 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
 
               {/* 图片上传区 */}
               <div className="flex-shrink-0">
-                <span className="text-[10px] text-gray-400 mb-1 block">Image</span>
+                <span className="text-[10px] text-gray-400 mb-1 block">
+                  Image{connectedImage && <span className="text-sky-400 ml-1">·来自连接</span>}
+                </span>
                 <label
-                  className="relative flex items-center justify-center w-full rounded-lg overflow-hidden border border-dashed border-white/15 cursor-pointer hover:border-sky-400/40 hover:bg-sky-400/5 transition-all bg-black/20"
-                  style={{ aspectRatio: '16/9' }}
+                  className="relative flex items-center justify-center w-full rounded-lg overflow-hidden border border-dashed cursor-pointer transition-all bg-black/20"
+                  style={{ aspectRatio: '16/9', borderColor: connectedImage ? 'rgba(56,189,248,0.4)' : 'rgba(255,255,255,0.15)' }}
                   onPointerDown={(e) => e.stopPropagation()}
                 >
-                  {image ? (
+                  {displayImage ? (
                     <>
-                      <img src={image} alt="input" className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 flex items-center justify-center transition-all">
-                        <span className="text-white text-[10px]">更换</span>
-                      </div>
+                      <img src={displayImage} alt="input" className="w-full h-full object-cover" />
+                      {!connectedImage && (
+                        <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 flex items-center justify-center transition-all">
+                          <span className="text-white text-[10px]">更换</span>
+                        </div>
+                      )}
                     </>
                   ) : (
-                    <span className="text-gray-600 text-[10px]">上传图片</span>
+                    <span className="text-gray-600 text-[10px]">上传图片或连接图片卡片</span>
                   )}
-                  <input type="file" accept="image/*" className="hidden" onChange={loadImage} onClick={(e) => e.stopPropagation()} />
+                  {!connectedImage && <input type="file" accept="image/*" className="hidden" onChange={loadImage} onClick={(e) => e.stopPropagation()} />}
                 </label>
               </div>
 
@@ -251,9 +295,9 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
               <button
                 onClick={(e) => { e.stopPropagation(); generate(); }}
                 onPointerDown={(e) => e.stopPropagation()}
-                disabled={isGenerating || !image}
+                disabled={isGenerating || !displayImage}
                 className={`flex-shrink-0 w-full py-2 rounded-xl text-sm font-semibold transition-all ${
-                  isGenerating || !image
+                  isGenerating || !displayImage
                     ? 'bg-white/5 text-gray-500 cursor-not-allowed'
                     : 'bg-emerald-700 hover:bg-emerald-600 text-white shadow-lg'
                 }`}

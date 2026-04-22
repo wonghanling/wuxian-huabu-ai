@@ -86,6 +86,48 @@ export class GemStep3CardUtil extends BaseBoxShapeUtil<GemStep3CardShape> {
       editor.updateShape({ id: shape.id, type: 'gem-step3-card' as any, props: { ...shape.props, ...props } });
     };
 
+    // 实时读取连接的上游图片卡片（最多2张）
+    const getConnectedImages = (): string[] => {
+      const imgs: string[] = [];
+      const inputBindings = editor.getBindingsToShape(shape.id, 'connection');
+      for (const binding of inputBindings) {
+        if ((binding as any).props?.terminal !== 'end') continue;
+        const connBindings = editor.getBindingsFromShape(binding.fromId, 'connection');
+        for (const cb of connBindings) {
+          if ((cb as any).props?.terminal !== 'start') continue;
+          const src = editor.getShape((cb as any).toId) as any;
+          if (!src || src.type !== 'custom-card') continue;
+          if (src.props?.generatedImage) imgs.push(src.props.generatedImage);
+          if (imgs.length >= 2) return imgs;
+        }
+      }
+      return imgs;
+    };
+
+    const connectedImages = getConnectedImages();
+    const displayStart = connectedImages[0] || startImage;
+    const displayEnd = connectedImages[1] || endImage;
+
+    // 生成完后推送 result 到连接的下游视频卡片
+    const pushResultToDownstream = (resultText: string) => {
+      const outBindings = editor.getBindingsFromShape(shape.id, 'connection');
+      for (const binding of outBindings) {
+        if ((binding as any).props?.terminal !== 'start') continue;
+        const connBindings = editor.getBindingsFromShape(binding.fromId, 'connection');
+        for (const ob of connBindings) {
+          if ((ob as any).props?.terminal !== 'end') continue;
+          const target = editor.getShape((ob as any).toId) as any;
+          if (!target) continue;
+          if (target.type === 'custom-card' && target.props?.cardType === 'video') {
+            editor.updateShape({ id: (ob as any).toId, type: 'custom-card' as any, props: { ...target.props, prompt: resultText } });
+          }
+          if (target.type === 'seedance-card') {
+            editor.updateShape({ id: (ob as any).toId, type: 'seedance-card' as any, props: { ...target.props, prompt: resultText } });
+          }
+        }
+      }
+    };
+
     const handleOutputPortDown = (e: React.MouseEvent) => {
       e.stopPropagation();
       e.preventDefault();
@@ -119,17 +161,18 @@ export class GemStep3CardUtil extends BaseBoxShapeUtil<GemStep3CardShape> {
     };
 
     const generate = async () => {
-      if (!startImage || !endImage) { alert('请上传起始图和结束图'); return; }
+      if (!displayStart || !displayEnd) { alert('请上传或连接起始图和结束图（需要2张）'); return; }
       update({ isGenerating: true, result: '' });
       try {
         const res = await fetch('/api/gem/generate-transitions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ startImage, endImage, characterHint, actionSuggestion }),
+          body: JSON.stringify({ startImage: displayStart, endImage: displayEnd, characterHint, actionSuggestion }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || '请求失败');
         update({ result: data.final_video_prompt, isGenerating: false });
+        pushResultToDownstream(data.final_video_prompt);
       } catch (err: any) {
         alert('生成失败: ' + err.message);
         update({ isGenerating: false });
@@ -194,26 +237,34 @@ export class GemStep3CardUtil extends BaseBoxShapeUtil<GemStep3CardShape> {
               {/* 图片上传区 */}
               <div className="flex gap-2 flex-shrink-0">
                 {(['start', 'end'] as const).map((type) => {
-                  const img = type === 'start' ? startImage : endImage;
+                  const connImg = type === 'start' ? connectedImages[0] : connectedImages[1];
+                  const localImg = type === 'start' ? startImage : endImage;
                   const setter = type === 'start' ? setStartImage : setEndImage;
+                  const displayImg = connImg || localImg;
                   return (
                     <div key={type} className="flex-1">
-                      <span className="text-[10px] text-gray-400 mb-1 block">{type === 'start' ? 'Start Image' : 'End Image'}</span>
+                      <span className="text-[10px] text-gray-400 mb-1 block">
+                        {type === 'start' ? 'Start Image' : 'End Image'}
+                        {connImg && <span className="text-emerald-400 ml-1">·连接</span>}
+                      </span>
                       <label
-                        className="relative flex items-center justify-center w-full aspect-video rounded-lg overflow-hidden border border-dashed border-white/15 cursor-pointer hover:border-emerald-400/40 hover:bg-emerald-400/5 transition-all bg-black/20"
+                        className="relative flex items-center justify-center w-full aspect-video rounded-lg overflow-hidden border border-dashed cursor-pointer transition-all bg-black/20"
+                        style={{ borderColor: connImg ? 'rgba(52,211,153,0.4)' : 'rgba(255,255,255,0.15)' }}
                         onPointerDown={(e) => e.stopPropagation()}
                       >
-                        {img ? (
+                        {displayImg ? (
                           <>
-                            <img src={img} alt={type} className="w-full h-full object-cover" />
-                            <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 flex items-center justify-center transition-all">
-                              <span className="text-white text-[10px]">更换</span>
-                            </div>
+                            <img src={displayImg} alt={type} className="w-full h-full object-cover" />
+                            {!connImg && (
+                              <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 flex items-center justify-center transition-all">
+                                <span className="text-white text-[10px]">更换</span>
+                              </div>
+                            )}
                           </>
                         ) : (
                           <span className="text-gray-600 text-[10px]">{type === 'start' ? '上传图A' : '上传图B'}</span>
                         )}
-                        <input type="file" accept="image/*" className="hidden" onChange={loadImage(setter)} onClick={(e) => e.stopPropagation()} />
+                        {!connImg && <input type="file" accept="image/*" className="hidden" onChange={loadImage(setter)} onClick={(e) => e.stopPropagation()} />}
                       </label>
                     </div>
                   );
@@ -261,9 +312,9 @@ export class GemStep3CardUtil extends BaseBoxShapeUtil<GemStep3CardShape> {
               <button
                 onClick={(e) => { e.stopPropagation(); generate(); }}
                 onPointerDown={(e) => e.stopPropagation()}
-                disabled={isGenerating || !startImage || !endImage}
+                disabled={isGenerating || !displayStart || !displayEnd}
                 className={`flex-shrink-0 w-full py-2 rounded-xl text-sm font-semibold transition-all ${
-                  isGenerating || !startImage || !endImage
+                  isGenerating || !displayStart || !displayEnd
                     ? 'bg-white/5 text-gray-500 cursor-not-allowed'
                     : 'bg-emerald-700 hover:bg-emerald-600 text-white shadow-lg'
                 }`}
