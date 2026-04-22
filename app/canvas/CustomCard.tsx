@@ -670,6 +670,27 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
     const connectedGeneratedImage = getConnectedGeneratedImage();
 
+    // 读取连接的上游卡片生成的视频
+    const getConnectedGeneratedVideo = (): string => {
+      const inputBindings = editor.getBindingsToShape(shape.id, 'connection');
+      for (const binding of inputBindings) {
+        if ((binding as any).props?.terminal !== 'end') continue;
+        const connBindings = editor.getBindingsFromShape(binding.fromId, 'connection');
+        for (const cb of connBindings) {
+          if ((cb as any).props?.terminal !== 'start') continue;
+          const src = editor.getShape((cb as any).toId) as any;
+          if (!src) continue;
+          // 视频卡片
+          if (src.type === 'custom-card' && src.props?.generatedVideo) return src.props.generatedVideo;
+          // Seedance 卡片
+          if (src.type === 'seedance-card' && src.props?.generatedVideo) return src.props.generatedVideo;
+        }
+      }
+      return '';
+    };
+
+    const connectedGeneratedVideo = getConnectedGeneratedVideo();
+
     // 读取连接的上游图片卡片（最多 maxCount 张）
     const getConnectedImages = (maxCount: number): string[] => {
       const imgs: string[] = [];
@@ -3226,36 +3247,46 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                 {/* 对口型模式 */}
                 {klingMode === 'lip-sync' && (<>
                   <div>
-                    <label className="text-gray-400 text-xs mb-1 block">源视频 URL</label>
-                    <input className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 transition-all placeholder-gray-500"
-                      placeholder="https://..."
-                      value={localKlingVideoUrl && !klingVideoName ? localKlingVideoUrl : ''}
-                      onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                      onChange={(e) => {
-                        setLocalKlingVideoUrl(e.target.value);
-                        if (!isComposing.current) updateShapeDebounced({ klingVideoUrl: e.target.value, klingVideoName: '' });
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-gray-400 text-xs mb-1 block">或上传视频（mp4/mov ≤100MB）</label>
-                    <input type="file" accept="video/mp4,video/quicktime"
-                      className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-blue-600/70 file:text-white hover:file:bg-blue-600 file:cursor-pointer"
-                      onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0]; if (!file) return;
-                        await handleKlingVideoUpload(file); e.target.value = '';
-                      }}
-                    />
-                    {klingVideoName && (
-                      <div className="mt-1 flex items-center gap-2 bg-black/20 border border-white/10 rounded p-1">
-                        <span className="text-gray-300 text-xs truncate flex-1">{klingVideoName}</span>
-                        <button className="text-gray-500 hover:text-red-400 text-xs"
-                          onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingVideoUrl: '', klingVideoName: '', klingLipSyncSessionId: '', klingLipSyncFaceId: '' } }); }}
-                          onPointerDown={(e) => e.stopPropagation()}>x</button>
+                    <label className="text-gray-400 text-xs mb-1 block">
+                      源视频 URL{connectedGeneratedVideo && <span className="text-blue-400 ml-1">·来自连接</span>}
+                    </label>
+                    {connectedGeneratedVideo ? (
+                      <div className="bg-black/20 border border-blue-500/30 rounded-lg p-2">
+                        <span className="text-blue-300 text-xs break-all">{connectedGeneratedVideo}</span>
                       </div>
+                    ) : (
+                      <input className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 transition-all placeholder-gray-500"
+                        placeholder="https://..."
+                        value={localKlingVideoUrl && !klingVideoName ? localKlingVideoUrl : ''}
+                        onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
+                        onChange={(e) => {
+                          setLocalKlingVideoUrl(e.target.value);
+                          if (!isComposing.current) updateShapeDebounced({ klingVideoUrl: e.target.value, klingVideoName: '' });
+                        }}
+                      />
                     )}
                   </div>
+                  {!connectedGeneratedVideo && (
+                    <div>
+                      <label className="text-gray-400 text-xs mb-1 block">或上传视频（mp4/mov ≤100MB）</label>
+                      <input type="file" accept="video/mp4,video/quicktime"
+                        className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-blue-600/70 file:text-white hover:file:bg-blue-600 file:cursor-pointer"
+                        onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0]; if (!file) return;
+                          await handleKlingVideoUpload(file); e.target.value = '';
+                        }}
+                      />
+                      {klingVideoName && (
+                        <div className="mt-1 flex items-center gap-2 bg-black/20 border border-white/10 rounded p-1">
+                          <span className="text-gray-300 text-xs truncate flex-1">{klingVideoName}</span>
+                          <button className="text-gray-500 hover:text-red-400 text-xs"
+                            onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingVideoUrl: '', klingVideoName: '', klingLipSyncSessionId: '', klingLipSyncFaceId: '' } }); }}
+                            onPointerDown={(e) => e.stopPropagation()}>✕</button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <div>
                     <label className="text-gray-400 text-xs mb-1 block">音频（mp3/wav/m4a 2-60秒）</label>
                     <input type="file" accept="audio/*"
@@ -3287,12 +3318,13 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     disabled={isGenerating}
                     onClick={async (e) => {
                       e.stopPropagation();
-                      if (!klingVideoUrl) { alert('请上传视频'); return; }
+                      if (!(connectedGeneratedVideo || klingVideoUrl)) { alert('请上传或连接视频'); return; }
                       if (!klingLipSyncAudio) { alert('请上传音频'); return; }
+                      const effectiveVideoUrl = connectedGeneratedVideo || klingVideoUrl;
                       editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, isGenerating: true, generationStatus: '识别人脸中...', generationProgress: 5 } });
                       try {
                         // 第一步：人脸识别
-                        const faceRes = await fetch('/api/kling/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'identify-face', video_url: klingVideoUrl }) });
+                        const faceRes = await fetch('/api/kling/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'identify-face', video_url: effectiveVideoUrl }) });
                         const faceData = await faceRes.json();
                         if (!faceRes.ok) throw new Error(faceData?.error || '人脸识别失败');
                         const sessionId = faceData.sessionId;
