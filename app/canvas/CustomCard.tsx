@@ -1611,7 +1611,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                               // fal 异步轮询
                               let imageUrl = data.imageUrl;
                               if (data.pending && data.requestId) {
-                                const hasImg = imageUrlArray && imageUrlArray.length > 0;
+                                const hasImg = prepared.imageUrlArray && prepared.imageUrlArray.length > 0;
                                 const endpoint = hasImg ? 'fal-ai/nano-banana-2/edit' : 'fal-ai/nano-banana-2';
                                 let pollAttempts = 0;
                                 const poll = async (): Promise<string> => {
