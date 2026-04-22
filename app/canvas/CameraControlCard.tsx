@@ -342,7 +342,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
           </div>
 
           {!isMinimized && (
-            <div className="flex-1 flex flex-col overflow-hidden p-3 gap-2">
+            <div className="flex-1 flex flex-col overflow-y-auto p-3 gap-2" onPointerDown={(e) => e.stopPropagation()} onWheelCapture={(e) => e.stopPropagation()}>
 
               {/* 源图片小预览（仅有图时显示） */}
               {sourceImage && (
