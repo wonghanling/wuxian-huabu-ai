@@ -191,6 +191,15 @@ export function getConnectionBindingPosition(
     }
   }
 
+  // Handle media-upload-card shape connections
+  if (shapeType === 'media-upload-card') {
+    if (binding.props.terminal === 'start') {
+      return { x: bounds.maxX, y: bounds.midY };
+    } else {
+      return { x: bounds.minX, y: bounds.midY };
+    }
+  }
+
   return null;
 }
 
