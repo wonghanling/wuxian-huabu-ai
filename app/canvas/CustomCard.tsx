@@ -15,7 +15,6 @@ import { createClient } from '@/lib/supabase/client';
 import { mirrorUrlToStorage } from '@/lib/canvas-storage';
 import { useMembership } from '@/lib/useMembership';
 import MembershipModal from './MembershipModal';
-import { prepareImageForModel } from '@/lib/image-prepare';
 
 fal.config({ proxyUrl: '/api/fal/proxy' });
 
@@ -1591,18 +1590,54 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
                             try {
                               const effectiveImage = connectedGeneratedImage || characterThreeViewImage || '';
-                              const prepared = await prepareImageForModel(effectiveImage, characterImageModel || 'nano-banana-pro');
+                              const isBase64 = effectiveImage.startsWith('data:');
+                              const charModel = characterImageModel || 'nano-banana-pro';
+
+                              let charImageBase64: string | undefined;
+                              let charImageBase64Array: string[] | undefined;
+                              let charImageUrlArray: string[] | undefined;
+
+                              if (effectiveImage) {
+                                if (['nano-banana-pro'].includes(charModel)) {
+                                  if (isBase64) {
+                                    const blob = await fetch(effectiveImage).then(r => r.blob());
+                                    const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
+                                    const url = await fal.storage.upload(file);
+                                    charImageUrlArray = [url];
+                                  } else {
+                                    charImageUrlArray = [effectiveImage];
+                                  }
+                                } else if (charModel === 'nano-banana') {
+                                  if (isBase64) {
+                                    charImageBase64Array = [await softCompressImage(effectiveImage)];
+                                  } else {
+                                    const blob = await fetch(effectiveImage).then(r => r.blob());
+                                    const base64 = await new Promise<string>(res => { const r = new FileReader(); r.onload = () => res(r.result as string); r.readAsDataURL(blob); });
+                                    charImageBase64Array = [await softCompressImage(base64)];
+                                  }
+                                } else {
+                                  if (isBase64) {
+                                    charImageBase64 = await softCompressImage(effectiveImage);
+                                  } else {
+                                    const blob = await fetch(effectiveImage).then(r => r.blob());
+                                    const base64 = await new Promise<string>(res => { const r = new FileReader(); r.onload = () => res(r.result as string); r.readAsDataURL(blob); });
+                                    charImageBase64 = await softCompressImage(base64);
+                                  }
+                                }
+                              }
 
                               const res = await fetch('/api/image/generate', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
-                                  model: characterImageModel || 'nano-banana-pro',
+                                  model: charModel,
                                   prompt: `use the uploaded image as the ONLY character reference, character turnaround sheet, TOP SECTION: full body views front view, side view, back view, full body, head to toe visible, BOTTOM SECTION: head detail views reuse the SAME head from the original image, do not generate a new face, close-up crops of the same character head, front face, side profile, 3/4 view, same character, identical face, preserve facial features exactly, preserve hairstyle exactly, same hair shape, same hair volume, no variation, reuse the same identity across all views, no redesign, no reinterpretation, keep original outfit exactly, do not redesign, match the original image style exactly, same rendering, same lighting, same material, no duplicate character generation, no alternate versions, neutral pose, clean studio background, arranged in one frame, structured grid layout, clear separation`,
                                   aspectRatio: aspectRatio || '16:9',
+                                  imageBase64: charImageBase64,
+                                  imageBase64Array: charImageBase64Array,
+                                  imageUrlArray: charImageUrlArray,
                                   imageQuality: imageQuality || '2k',
                                   userId: userId || undefined,
-                                  ...prepared,
                                 }),
                               });
                               const data = await res.json();
@@ -2519,9 +2554,45 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
                   try {
                     // 连接图片用 prepareImageForModel 处理，手动上传的图片保持原有逻辑
-                    const connectedPrepared = connectedGeneratedImage
-                      ? await prepareImageForModel(connectedGeneratedImage, model || 'nano-banana-pro')
-                      : {};
+                    // 连接图片按模型处理
+                    let connImageBase64: string | undefined;
+                    let connImageBase64Array: string[] | undefined;
+                    let connImageUrlArray: string[] | undefined;
+
+                    if (connectedGeneratedImage) {
+                      const connImg = connectedGeneratedImage;
+                      const isBase64 = connImg.startsWith('data:');
+                      if (['nano-banana-pro', 'nano-banana-pro-multi'].includes(model || '')) {
+                        // 需要 fal URL
+                        if (isBase64) {
+                          const blob = await fetch(connImg).then(r => r.blob());
+                          const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
+                          const url = await fal.storage.upload(file);
+                          connImageUrlArray = [url];
+                        } else {
+                          connImageUrlArray = [connImg];
+                        }
+                      } else if (model === 'nano-banana') {
+                        // 需要 base64 数组
+                        if (isBase64) {
+                          const compressed = await softCompressImage(connImg);
+                          connImageBase64Array = [compressed];
+                        } else {
+                          const blob = await fetch(connImg).then(r => r.blob());
+                          const base64 = await new Promise<string>(res => { const r = new FileReader(); r.onload = () => res(r.result as string); r.readAsDataURL(blob); });
+                          connImageBase64Array = [await softCompressImage(base64)];
+                        }
+                      } else {
+                        // flux-kontext, doubao, mj 等：base64
+                        if (isBase64) {
+                          connImageBase64 = await softCompressImage(connImg);
+                        } else {
+                          const blob = await fetch(connImg).then(r => r.blob());
+                          const base64 = await new Promise<string>(res => { const r = new FileReader(); r.onload = () => res(r.result as string); r.readAsDataURL(blob); });
+                          connImageBase64 = await softCompressImage(base64);
+                        }
+                      }
+                    }
 
                     const response = await fetch('/api/image/generate', {
                       method: 'POST',
@@ -2532,16 +2603,9 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         model: model || 'nano-banana-pro',
                         prompt: fullPrompt,
                         aspectRatio: aspectRatio || '1:1',
-                        // 连接图片优先，否则用手动上传
-                        imageBase64: connectedGeneratedImage
-                          ? connectedPrepared.imageBase64
-                          : (uploadedImage || undefined),
-                        imageBase64Array: connectedGeneratedImage
-                          ? connectedPrepared.imageBase64Array
-                          : (model === 'nano-banana' && uploadedImages ? JSON.parse(uploadedImages) : undefined),
-                        imageUrlArray: connectedGeneratedImage
-                          ? connectedPrepared.imageUrlArray
-                          : (['nano-banana-pro', 'nano-banana-pro-multi'].includes(model || '') && uploadedImageUrls ? JSON.parse(uploadedImageUrls) : undefined),
+                        imageBase64: connectedGeneratedImage ? connImageBase64 : (uploadedImage || undefined),
+                        imageBase64Array: connectedGeneratedImage ? connImageBase64Array : (model === 'nano-banana' && uploadedImages ? JSON.parse(uploadedImages) : undefined),
+                        imageUrlArray: connectedGeneratedImage ? connImageUrlArray : (['nano-banana-pro', 'nano-banana-pro-multi'].includes(model || '') && uploadedImageUrls ? JSON.parse(uploadedImageUrls) : undefined),
                         imageQuality: ['nano-banana-pro', 'nano-banana-pro-multi'].includes(model || '') ? (imageQuality ?? '2k') : undefined,
                         userId: userId || undefined,
                       }),

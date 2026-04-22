@@ -10,7 +10,6 @@ import {
 import { useState, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { mirrorUrlToStorage } from '@/lib/canvas-storage';
-import { prepareImageForModel } from '@/lib/image-prepare';
 
 function compressImage(dataUrl: string, maxSize = 1280, quality = 0.85): Promise<string> {
   return new Promise((resolve) => {
@@ -232,18 +231,42 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
 
         const cameraPrompt = `${prompt} [Camera: vertical ${cameraVertical >= 0 ? '+' : ''}${cameraVertical}°, horizontal ${cameraHorizontal >= 0 ? '+' : ''}${cameraHorizontal}°]`;
 
-        const prepared = await prepareImageForModel(sourceImage, model || 'nano-banana-pro');
+        const isBase64 = sourceImage.startsWith('data:');
+        const currentModel = model || 'nano-banana-pro';
+        let imgBase64: string | undefined;
+        let imgBase64Array: string[] | undefined;
+        let imgUrlArray: string[] | undefined;
+
+        if (['nano-banana-pro'].includes(currentModel)) {
+          if (isBase64) {
+            const { fal: falClient } = await import('@fal-ai/client');
+            const blob = await fetch(sourceImage).then(r => r.blob());
+            const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
+            const url = await falClient.storage.upload(file);
+            imgUrlArray = [url];
+          } else {
+            imgUrlArray = [sourceImage];
+          }
+        } else if (currentModel === 'nano-banana') {
+          const raw = isBase64 ? sourceImage : await fetch(sourceImage).then(r => r.blob()).then(b => new Promise<string>(res => { const rd = new FileReader(); rd.onload = () => res(rd.result as string); rd.readAsDataURL(b); }));
+          imgBase64Array = [await compressImage(raw)];
+        } else {
+          const raw = isBase64 ? sourceImage : await fetch(sourceImage).then(r => r.blob()).then(b => new Promise<string>(res => { const rd = new FileReader(); rd.onload = () => res(rd.result as string); rd.readAsDataURL(b); }));
+          imgBase64 = await compressImage(raw);
+        }
 
         const response = await fetch('/api/image/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            model: model || 'nano-banana-pro',
+            model: currentModel,
             prompt: cameraPrompt,
             aspectRatio: '16:9',
             imageQuality: '2k',
             userId: user.id,
-            ...prepared,
+            imageBase64: imgBase64,
+            imageBase64Array: imgBase64Array,
+            imageUrlArray: imgUrlArray,
           }),
         });
 
@@ -265,12 +288,12 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
 
         // fal 异步轮询
         if (data.pending && data.requestId) {
-          const hasImages = prepared.imageUrlArray && prepared.imageUrlArray.length > 0;
+          const hasImages = imgUrlArray && imgUrlArray.length > 0;
           const falEndpointMap: Record<string, string> = {
             'flux-kontext': 'fal-ai/flux-pro/kontext/max',
             'nano-banana-pro': hasImages ? 'fal-ai/nano-banana-2/edit' : 'fal-ai/nano-banana-2',
           };
-          const falEndpoint = falEndpointMap[model] || 'fal-ai/nano-banana-2/edit';
+          const falEndpoint = falEndpointMap[currentModel] || 'fal-ai/nano-banana-2/edit';
           let pollAttempts = 0;
           const falPoll = async (): Promise<string> => {
             pollAttempts++;
