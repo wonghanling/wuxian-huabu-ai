@@ -134,8 +134,8 @@ export class MediaUploadCardUtil extends BaseBoxShapeUtil<MediaUploadCardShape> 
     };
 
     const sideMenuOptions: FloatingMenuOption[] = [
-      { label: '镜头控制', icon: '🎥', onClick: () => createLinkedCard('camera-control-card') },
-      { label: '角色设计', icon: '🎨', onClick: () => createLinkedCard('character') },
+      { label: '镜头控制', onClick: () => createLinkedCard('camera-control-card') },
+      { label: '角色设计', onClick: () => createLinkedCard('character') },
     ];
 
     return (
