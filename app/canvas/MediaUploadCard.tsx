@@ -1,9 +1,7 @@
 'use client';
 import { BaseBoxShapeUtil, TLBaseShape, HTMLContainer, RecordProps, T, useEditor, Rectangle2d } from 'tldraw';
-import { useState, useRef } from 'react';
+import { useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { mirrorUrlToStorage } from '@/lib/canvas-storage';
-import { FloatingMenu, FloatingMenuOption } from './FloatingMenu';
 
 export type MediaUploadCardShape = TLBaseShape<
   'media-upload-card',
@@ -11,8 +9,8 @@ export type MediaUploadCardShape = TLBaseShape<
     w: number;
     h: number;
     mediaType: 'image' | 'video' | 'none';
-    imageData: string;   // base64 or url
-    videoUrl: string;    // supabase url
+    imageData: string;
+    videoUrl: string;
     videoName: string;
     isUploading: boolean;
     isMinimized: boolean;
@@ -56,12 +54,10 @@ export class MediaUploadCardUtil extends BaseBoxShapeUtil<MediaUploadCardShape> 
   }
 
   component(shape: MediaUploadCardShape) {
-    const { w, h, mediaType, imageData, videoUrl, videoName, isUploading, isMinimized } = shape.props;
+    const { w, h, mediaType, imageData, videoUrl, videoName, isUploading } = shape.props;
     const editor = useEditor();
     const imgInputRef = useRef<HTMLInputElement>(null);
     const vidInputRef = useRef<HTMLInputElement>(null);
-    const [showSideMenu, setShowSideMenu] = useState(false);
-    const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
 
     const up = (props: Partial<MediaUploadCardShape['props']>) =>
       editor.updateShape({ id: shape.id, type: 'media-upload-card' as any, props: { ...shape.props, ...props } });
@@ -70,7 +66,6 @@ export class MediaUploadCardUtil extends BaseBoxShapeUtil<MediaUploadCardShape> 
       const reader = new FileReader();
       reader.onload = async (ev) => {
         const data = ev.target?.result as string;
-        // 检测比例调整卡片尺寸
         const img = new Image();
         img.onload = () => {
           const ratio = img.width / img.height;
@@ -99,7 +94,6 @@ export class MediaUploadCardUtil extends BaseBoxShapeUtil<MediaUploadCardShape> 
         const { error } = await supabase.storage.from('assets').upload(filename, file, { contentType, upsert: false });
         if (error) throw new Error(`上传失败: ${error.message}`);
         const { data: urlData } = supabase.storage.from('assets').getPublicUrl(filename);
-        // 检测视频比例
         const video = document.createElement('video');
         video.onloadedmetadata = () => {
           const ratio = video.videoWidth / video.videoHeight;
@@ -120,26 +114,8 @@ export class MediaUploadCardUtil extends BaseBoxShapeUtil<MediaUploadCardShape> 
 
     const scale = Math.min(1, w / 320, h / 220);
 
-    const createLinkedCard = (type: 'camera-control-card' | 'character') => {
-      const bounds = editor.getShapePageBounds(shape.id);
-      if (!bounds) return;
-      const x = bounds.maxX + 40;
-      const y = bounds.midY - 260;
-      if (type === 'camera-control-card') {
-        editor.createShape({ type: 'camera-control-card' as any, x, y, props: {} });
-      } else {
-        editor.createShape({ type: 'custom-card' as any, x, y, props: { cardType: 'character', w: 380, h: 520 } });
-      }
-      setShowSideMenu(false);
-    };
-
-    const sideMenuOptions: FloatingMenuOption[] = [
-      { label: '镜头控制', onClick: () => createLinkedCard('camera-control-card') },
-      { label: '角色设计', onClick: () => createLinkedCard('character') },
-    ];
-
     return (
-      <HTMLContainer style={{ width: w, height: h, pointerEvents: 'all' }}>
+      <HTMLContainer style={{ width: w, height: h, pointerEvents: 'all', overflow: 'visible' }}>
         {/* 左端口 */}
         <div
           className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-5 h-5 flex items-center justify-center cursor-crosshair z-10 group"
@@ -152,6 +128,28 @@ export class MediaUploadCardUtil extends BaseBoxShapeUtil<MediaUploadCardShape> 
             style={{ backgroundColor: '#27272a', border: '2px solid rgba(192,192,192,0.8)', boxShadow: '0 0 8px rgba(192,192,192,0.4)' }} />
         </div>
 
+        {/* 右侧菜单按钮（仅上传了图片时显示，视频不需要） */}
+        {mediaType === 'image' && (
+          <div
+            className="absolute cursor-pointer group"
+            style={{ right: '-32px', top: '50%', transform: 'translateY(-50%)', zIndex: 102, pointerEvents: 'all' }}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+              window.dispatchEvent(new CustomEvent('card-menu-open', {
+                detail: { x: rect.right + 6, y: rect.top - 40, shapeId: shape.id, type: 'media-upload-card' },
+              }));
+            }}
+          >
+            <div className="w-6 h-6 rounded-full bg-zinc-800/90 border border-white/15 flex items-center justify-center text-gray-400 group-hover:text-white group-hover:border-white/30 transition-all shadow-lg">
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+              </svg>
+            </div>
+          </div>
+        )}
+
         {/* 右端口 */}
         <div
           className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-5 h-5 flex items-center justify-center cursor-crosshair z-10 group"
@@ -163,37 +161,6 @@ export class MediaUploadCardUtil extends BaseBoxShapeUtil<MediaUploadCardShape> 
           <div className="w-3 h-3 rounded-full transition-all group-hover:scale-150"
             style={{ backgroundColor: '#27272a', border: '2px solid rgba(192,192,192,0.8)', boxShadow: '0 0 8px rgba(192,192,192,0.4)' }} />
         </div>
-
-        {/* 右侧按钮 */}
-        {mediaType !== 'none' && (
-          <button
-            className="absolute right-0 top-1/2 translate-x-full ml-2 w-8 h-8 bg-zinc-800/90 hover:bg-zinc-700 border border-white/10 rounded-lg flex items-center justify-center transition-all shadow-lg"
-            style={{ transform: 'translateX(calc(100% + 8px)) translateY(-50%)', zIndex: 10 }}
-            onClick={(e) => {
-              e.stopPropagation();
-              const bounds = editor.getShapePageBounds(shape.id);
-              if (bounds) {
-                setMenuPos({ x: bounds.maxX + 50, y: bounds.midY });
-                setShowSideMenu(true);
-              }
-            }}
-            onPointerDown={(e) => e.stopPropagation()}
-          >
-            <svg className="w-4 h-4 text-white/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-          </button>
-        )}
-
-        {/* 浮动菜单 */}
-        {showSideMenu && (
-          <FloatingMenu
-            x={menuPos.x}
-            y={menuPos.y}
-            options={sideMenuOptions}
-            onClose={() => setShowSideMenu(false)}
-          />
-        )}
 
         {/* 卡片主体 */}
         <div
@@ -215,15 +182,13 @@ export class MediaUploadCardUtil extends BaseBoxShapeUtil<MediaUploadCardShape> 
                 {mediaType === 'image' ? '图片素材' : mediaType === 'video' ? '视频素材' : '素材上传'}
               </span>
             </div>
-            <div className="flex gap-1">
-              {mediaType !== 'none' && (
-                <button
-                  className="text-[10px] text-gray-400 hover:text-red-400 transition-colors px-1"
-                  onClick={(e) => { e.stopPropagation(); up({ mediaType: 'none', imageData: '', videoUrl: '', videoName: '', w: 320, h: 220 }); }}
-                  onPointerDown={(e) => e.stopPropagation()}
-                >清除</button>
-              )}
-            </div>
+            {mediaType !== 'none' && (
+              <button
+                className="text-[10px] text-gray-400 hover:text-red-400 transition-colors px-1"
+                onClick={(e) => { e.stopPropagation(); up({ mediaType: 'none', imageData: '', videoUrl: '', videoName: '', w: 320, h: 220 }); }}
+                onPointerDown={(e) => e.stopPropagation()}
+              >清除</button>
+            )}
           </div>
 
           {/* 内容区 */}
@@ -255,7 +220,6 @@ export class MediaUploadCardUtil extends BaseBoxShapeUtil<MediaUploadCardShape> 
                 </div>
               </div>
             ) : (
-              /* 空状态：选择上传类型 */
               <div className="w-full h-full flex items-center justify-center gap-3">
                 <button
                   className="flex flex-col items-center gap-2 px-4 py-3 rounded-xl border border-dashed border-white/15 hover:border-white/30 hover:bg-white/5 transition-all cursor-pointer"
@@ -281,7 +245,6 @@ export class MediaUploadCardUtil extends BaseBoxShapeUtil<MediaUploadCardShape> 
             )}
           </div>
 
-          {/* 隐藏 input */}
           <input ref={imgInputRef} type="file" accept="image/*" className="hidden"
             onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageUpload(f); e.target.value = ''; }}
           />

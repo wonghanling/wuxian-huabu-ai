@@ -1689,7 +1689,7 @@ function CanvasPageContent() {
   const [showRechargeModal, setShowRechargeModal] = useState(false);
   const [showImageSplitModal, setShowImageSplitModal] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
-  const [floatingMenu, setFloatingMenu] = useState<{ x: number; y: number; shapeId: string; type: 'image-card' | 'step2-card' } | null>(null);
+  const [floatingMenu, setFloatingMenu] = useState<{ x: number; y: number; shapeId: string; type: 'image-card' | 'step2-card' | 'media-upload-card' } | null>(null);
   const { isMember, balance, refresh: refreshMembership } = useMembership();
 
   const handlePay = async (plan: 'membership' | 'recharge', amount: number) => {
@@ -2408,7 +2408,43 @@ function CanvasPageContent() {
           },
         ];
 
-        const options = floatingMenu.type === 'image-card' ? imageCardOptions : step2CardOptions;
+        // 素材上传卡片菜单选项（只读取上传的图片，不读视频）
+        const mediaUploadCardOptions = [
+          {
+            label: '镜头控制',
+            onClick: () => {
+              const pos = getShapeRight(floatingMenu.shapeId);
+              const newId = createShapeId();
+              editor.createShape({
+                id: newId,
+                type: 'camera-control-card' as any,
+                x: pos.x,
+                y: pos.y,
+                props: { w: 360, h: 520, sourceShapeId: '', cameraVertical: 0, cameraHorizontal: 0, generatedImage: '', isGenerating: false, isMinimized: false, model: 'nano-banana-pro', prompt: '' },
+              });
+              createConnection(floatingMenu.shapeId, newId as any);
+              editor.select(newId);
+            },
+          },
+          {
+            label: '角色设计',
+            onClick: () => {
+              const pos = getShapeRight(floatingMenu.shapeId);
+              const newId = createShapeId();
+              editor.createShape({
+                id: newId,
+                type: 'custom-card' as any,
+                x: pos.x,
+                y: pos.y,
+                props: { w: 380, h: 380, cardType: 'character', title: 'Character Design', prompt: '', model: 'nano-banana-pro' },
+              });
+              createConnection(floatingMenu.shapeId, newId as any);
+              editor.select(newId);
+            },
+          },
+        ];
+
+        const options = floatingMenu.type === 'image-card' ? imageCardOptions : floatingMenu.type === 'media-upload-card' ? mediaUploadCardOptions : step2CardOptions;
 
         return (
           <div
