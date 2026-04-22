@@ -145,10 +145,10 @@ export class MediaUploadCardUtil extends BaseBoxShapeUtil<MediaUploadCardShape> 
 
         {/* 卡片主体 */}
         <div
-          className="w-full h-full rounded-2xl overflow-hidden backdrop-blur-xl shadow-2xl"
+          className="w-full h-full rounded-2xl overflow-hidden shadow-2xl flex flex-col"
           style={{
-            background: 'linear-gradient(135deg,rgba(60,60,80,0.85) 0%,rgba(40,40,60,0.9) 100%)',
-            border: '1px solid rgba(255,255,255,0.12)',
+            background: 'rgba(24,24,27,0.97)',
+            border: '1px solid rgba(255,255,255,0.10)',
             transform: `scale(${scale})`,
             transformOrigin: 'top left',
             width: `${100 / scale}%`,
@@ -156,10 +156,13 @@ export class MediaUploadCardUtil extends BaseBoxShapeUtil<MediaUploadCardShape> 
           }}
         >
           {/* 顶栏 */}
-          <div className="flex items-center justify-between px-3 py-2 border-b border-white/8">
-            <span className="text-white text-xs font-medium">
-              {mediaType === 'image' ? '图片素材' : mediaType === 'video' ? '视频素材' : '素材上传'}
-            </span>
+          <div className="flex items-center justify-between px-3 py-2 border-b border-white/8 flex-shrink-0">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-white/40"></div>
+              <span className="text-white text-xs font-semibold">
+                {mediaType === 'image' ? '图片素材' : mediaType === 'video' ? '视频素材' : '素材上传'}
+              </span>
+            </div>
             <div className="flex gap-1">
               {mediaType !== 'none' && (
                 <button
@@ -203,24 +206,24 @@ export class MediaUploadCardUtil extends BaseBoxShapeUtil<MediaUploadCardShape> 
               /* 空状态：选择上传类型 */
               <div className="w-full h-full flex items-center justify-center gap-3">
                 <button
-                  className="flex flex-col items-center gap-2 px-4 py-3 rounded-xl border border-dashed border-white/20 hover:border-blue-400/50 hover:bg-blue-400/5 transition-all cursor-pointer"
+                  className="flex flex-col items-center gap-2 px-4 py-3 rounded-xl border border-dashed border-white/15 hover:border-white/30 hover:bg-white/5 transition-all cursor-pointer"
                   onClick={(e) => { e.stopPropagation(); imgInputRef.current?.click(); }}
                   onPointerDown={(e) => e.stopPropagation()}
                 >
-                  <svg className="w-7 h-7 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-7 h-7 text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
-                  <span className="text-gray-400 text-xs">上传图片</span>
+                  <span className="text-white/50 text-xs">上传图片</span>
                 </button>
                 <button
-                  className="flex flex-col items-center gap-2 px-4 py-3 rounded-xl border border-dashed border-white/20 hover:border-purple-400/50 hover:bg-purple-400/5 transition-all cursor-pointer"
+                  className="flex flex-col items-center gap-2 px-4 py-3 rounded-xl border border-dashed border-white/15 hover:border-white/30 hover:bg-white/5 transition-all cursor-pointer"
                   onClick={(e) => { e.stopPropagation(); vidInputRef.current?.click(); }}
                   onPointerDown={(e) => e.stopPropagation()}
                 >
-                  <svg className="w-7 h-7 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-7 h-7 text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                   </svg>
-                  <span className="text-gray-400 text-xs">上传视频</span>
+                  <span className="text-white/50 text-xs">上传视频</span>
                 </button>
               </div>
             )}
