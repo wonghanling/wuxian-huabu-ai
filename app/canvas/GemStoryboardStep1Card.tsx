@@ -141,20 +141,7 @@ export class GemStep1CardUtil extends BaseBoxShapeUtil<GemStep1CardShape> {
     const allDisplayImages = [...connectedImages, ...images];
 
     const analyze = async () => {
-      const connectedImages: string[] = [];
-      const inputBindings = editor.getBindingsToShape(shape.id, 'connection');
-      for (const binding of inputBindings) {
-        if ((binding as any).props?.terminal !== 'end') continue;
-        const connBindings = editor.getBindingsFromShape(binding.fromId, 'connection');
-        for (const cb of connBindings) {
-          if ((cb as any).props?.terminal !== 'start') continue;
-          const srcShape = editor.getShape((cb as any).toId) as any;
-          if (!srcShape) continue;
-          if (srcShape.type === 'custom-card' && srcShape.props?.generatedImage) connectedImages.push(srcShape.props.generatedImage);
-          else if (srcShape.type === 'media-upload-card' && srcShape.props?.mediaType === 'image' && srcShape.props?.imageData) connectedImages.push(srcShape.props.imageData);
-        }
-      }
-
+      const connectedImages = getConnectedImages();
       const allImages = [...connectedImages, ...images];
       if (allImages.length === 0) { alert('请先上传图片或连接图片卡片'); return; }
       update({ isGenerating: true, result: '' });
