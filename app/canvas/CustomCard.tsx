@@ -672,6 +672,9 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
     };
 
     const connectedPrompt = getConnectedPrompt();
+    const shotPromptDisplay = getShotCardPrompt();
+    // 输入框显示的前缀：shot-card 指令 + Step 卡片结果
+    const displayPrefix = [shotPromptDisplay, connectedPrompt].filter(Boolean).join('\n');
 
     // 实时读取连接的上游图片卡片的 generatedImage 或上传卡片的图片
     const getConnectedGeneratedImage = (): string => {
@@ -1080,7 +1083,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         ? 'Describe the image...'
                         : 'Describe the video...'
                     }
-                    value={connectedPrompt ? `${connectedPrompt}${localPrompt ? '\n' + localPrompt : ''}` : localPrompt}
+                    value={displayPrefix ? `${displayPrefix}${localPrompt ? '\n' + localPrompt : ''}` : localPrompt}
                     readOnly={false}
                     onClick={(e) => e.stopPropagation()}
                     onPointerDown={(e) => e.stopPropagation()}
@@ -1088,19 +1091,23 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     onCompositionEnd={(e) => {
                       isComposing.current = false;
                       const full = (e.target as HTMLTextAreaElement).value;
-                      const userInput = connectedPrompt ? full.replace(connectedPrompt + '\n', '').replace(connectedPrompt, '') : full;
+                      const prefix = displayPrefix ? displayPrefix + '\n' : '';
+                      const userInput = prefix && full.startsWith(prefix) ? full.slice(prefix.length) : (displayPrefix && full.startsWith(displayPrefix) ? full.slice(displayPrefix.length) : full);
                       setLocalPrompt(userInput);
                       updateShapeDebounced({ prompt: userInput });
                     }}
                     onChange={(e) => {
                       const full = e.target.value;
-                      const userInput = connectedPrompt ? full.replace(connectedPrompt + '\n', '').replace(connectedPrompt, '') : full;
+                      const prefix = displayPrefix ? displayPrefix + '\n' : '';
+                      const userInput = prefix && full.startsWith(prefix) ? full.slice(prefix.length) : (displayPrefix && full.startsWith(displayPrefix) ? full.slice(displayPrefix.length) : full);
                       setLocalPrompt(userInput);
                       if (!isComposing.current) updateShapeDebounced({ prompt: userInput });
                     }}
                   />
-                  {connectedPrompt && (
-                    <div className="text-[10px] text-purple-400 mt-0.5">· 来自连接卡片</div>
+                  {displayPrefix && (
+                    <div className="text-[10px] text-purple-400 mt-0.5">
+                      {shotPromptDisplay && connectedPrompt ? '· 景别 + 连接卡片' : shotPromptDisplay ? '· 来自电影控制器' : '· 来自连接卡片'}
+                    </div>
                   )}
                   {/* 连接提示标签 */}
                   {cardType === 'video' && (() => {
@@ -2551,9 +2558,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   }
                 } else if (cardType === 'image') {
                   // 图片生成逻辑
+                  // 顺序：宫格（隐藏）→ 景别 → connectedPrompt → 用户输入
                   const shotPrompt = getShotCardPrompt();
-                  const basePrompt = connectedPrompt ? `${connectedPrompt}${prompt ? '\n' + prompt : ''}` : prompt;
-                  // 宫格布局 prompt 追加
                   const GRID_PROMPTS: Record<string, string> = {
                     '2x2': 'storyboard sheet, 2x2 grid layout, 4 panels in one image, all panels visible, clean panel borders, equal sized panels, storyboard contact sheet, multi-panel composition, not a single image, not full-frame illustration, each panel contains a different shot, grid enforced layout, overall image aspect ratio 16:9, each panel framed in widescreen 16:9 composition, cinematic framing inside each panel',
                     '3x3': 'storyboard sheet, 3x3 grid layout, 9 panels in one image, all panels visible, clean panel borders, equal sized panels, storyboard contact sheet, multi-panel composition, not a single image, not full-frame illustration, each panel contains a different shot, grid enforced layout, overall image aspect ratio 16:9, each panel framed in widescreen 16:9 composition, cinematic framing inside each panel',
@@ -2561,8 +2567,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     '4x4': 'storyboard sheet, 4x4 grid layout, 16 panels in one image, all panels visible, clean panel borders, equal sized panels, storyboard contact sheet, multi-panel composition, not a single image, not full-frame illustration, each panel contains a different shot, grid enforced layout, overall image aspect ratio 16:9, each panel framed in widescreen 16:9 composition, cinematic framing inside each panel',
                   };
                   const gridPrompt = gridLayout ? GRID_PROMPTS[gridLayout] : '';
-                  const promptWithGrid = gridPrompt ? `${gridPrompt}, ${basePrompt}` : basePrompt;
-                  const fullPrompt = shotPrompt ? `${shotPrompt}\n${promptWithGrid}` : promptWithGrid;
+                  const fullPrompt = [gridPrompt, shotPrompt, connectedPrompt, prompt].filter(Boolean).join('\n');
                   console.log('生成图片，完整Prompt:', fullPrompt);
                   console.log('模型:', model);
                   console.log('上传的图片:', uploadedImage ? '已上传' : '未上传');
@@ -2739,8 +2744,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                 } else if (cardType === 'video') {
                   // 视频生成逻辑
                   const shotPrompt = getShotCardPrompt();
-                  const effectivePrompt = connectedPrompt ? `${connectedPrompt}${prompt ? '\n' + prompt : ''}` : prompt;
-                  const videoPrompt = shotPrompt ? `${shotPrompt}\n${effectivePrompt}` : effectivePrompt;
+                  const videoPrompt = [shotPrompt, connectedPrompt, prompt].filter(Boolean).join('\n');
                   console.log('生成视频，模式:', videoMode || 'text');
                   console.log('Prompt:', videoPrompt);
                   console.log('模型:', model);
