@@ -1839,6 +1839,10 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         <option value="nano-banana">Nano Banana — ¥0.5/次</option>
                         <option value="nano-banana-pro-multi">多图融合 Nano Banana Pro（2K ¥1.5 / 4K ¥2.5）</option>
                       </optgroup>
+                      <optgroup label="GPT Image">
+                        <option value="gpt-image-2">GPT Image 2 — ¥0.5~0.8/次</option>
+                        <option value="gpt-image-2-all">GPT Image 2 多图融合 — ¥0.5~0.8/次</option>
+                      </optgroup>
                       <optgroup label="Flux">
                         <option value="flux-kontext">Flux Kontext — ¥0.6/次</option>
                         <option value="flux-kontext-max">Flux Kontext Max — ¥1.0/次</option>
@@ -1895,7 +1899,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
             )}
 
             {/* 比例选择 - 图片卡片 */}
-            {cardType === 'image' && (
+            {cardType === 'image' && !['gpt-image-2', 'gpt-image-2-all'].includes(model || '') && (
               <div className="mb-2">
                 <label className="text-gray-400 text-xs mb-1 block">比例</label>
                 <select
@@ -1920,6 +1924,46 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   <option value="2:3">2:3 竖图</option>
                   <option value="21:9">21:9 超宽</option>
                 </select>
+              </div>
+            )}
+
+            {/* GPT Image 2 尺寸选择 */}
+            {cardType === 'image' && ['gpt-image-2', 'gpt-image-2-all'].includes(model || '') && (
+              <div className="mb-2">
+                <label className="text-gray-400 text-xs mb-1 block">尺寸</label>
+                <div className="flex gap-1 flex-wrap">
+                  {[
+                    { value: '2048x1152', label: '16:9 横屏' },
+                    { value: '3840x2160', label: '4K 横屏' },
+                    { value: '2160x3840', label: '9:16 竖屏' },
+                    { value: '2048x2048', label: '1:1 正方' },
+                  ].map(({ value, label }) => (
+                    <button key={value}
+                      onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, aspectRatio: value } }); }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      className={`flex-1 py-1.5 rounded-lg border text-xs font-medium transition-all ${(aspectRatio ?? '2048x1152') === value ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
+                    >{label}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* GPT Image 2 画质选择 */}
+            {cardType === 'image' && ['gpt-image-2', 'gpt-image-2-all'].includes(model || '') && (
+              <div className="mb-2">
+                <label className="text-gray-400 text-xs mb-1 block">画质</label>
+                <div className="flex gap-1">
+                  {[
+                    { value: 'medium', label: 'Medium' },
+                    { value: 'high', label: 'High' },
+                  ].map(({ value, label }) => (
+                    <button key={value}
+                      onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, imageQuality: value } }); }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      className={`flex-1 py-1.5 rounded-lg border text-xs font-medium transition-all ${(imageQuality ?? 'medium') === value ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
+                    >{label}</button>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -1966,7 +2010,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
             )}
 
             {/* 图片上传 - 支持图生图的模型才显示 */}
-            {cardType === 'image' && ['nano-banana', 'nano-banana-pro', 'nano-banana-pro-multi', 'doubao-seedream-4-5-251128', 'flux-kontext', 'mj_imagine'].includes(model || '') && (
+            {cardType === 'image' && ['nano-banana', 'nano-banana-pro', 'nano-banana-pro-multi', 'gpt-image-2', 'gpt-image-2-all', 'doubao-seedream-4-5-251128', 'flux-kontext', 'mj_imagine'].includes(model || '') && (
               <div className="mb-2">
                 <label className="text-gray-400 text-xs mb-1 block">
                   {model === 'nano-banana-pro-multi'
@@ -2586,6 +2630,57 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   });
 
                   try {
+                    // GPT Image 2 单独处理
+                    if (['gpt-image-2', 'gpt-image-2-all'].includes(model || '')) {
+                      const imgs: string[] = uploadedImages ? JSON.parse(uploadedImages) : [];
+                      const hasImages = imgs.length > 0 || connectedGeneratedImage;
+
+                      let imagesToSend: string[] = [];
+                      if (connectedGeneratedImage) {
+                        const isBase64 = connectedGeneratedImage.startsWith('data:');
+                        if (isBase64) {
+                          imagesToSend.push(await softCompressImage(connectedGeneratedImage));
+                        } else {
+                          const blob = await fetch(connectedGeneratedImage).then(r => r.blob());
+                          const base64 = await new Promise<string>(res => { const r = new FileReader(); r.onload = () => res(r.result as string); r.readAsDataURL(blob); });
+                          imagesToSend.push(await softCompressImage(base64));
+                        }
+                      }
+                      if (imgs.length > 0) {
+                        for (const img of imgs) {
+                          imagesToSend.push(await softCompressImage(img));
+                        }
+                      }
+
+                      const res = await fetch('/api/image/gpt-image', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          prompt: fullPrompt,
+                          model: model,
+                          size: aspectRatio || '2048x1152',
+                          quality: imageQuality || 'medium',
+                          images: imagesToSend.length > 0 ? imagesToSend : undefined,
+                        }),
+                      });
+                      const data = await res.json();
+                      if (!res.ok) throw new Error(data.error || '生成失败');
+
+                      editor.updateShape({
+                        id: shape.id,
+                        type: 'custom-card' as any,
+                        props: {
+                          ...shape.props,
+                          generatedImage: data.imageUrl,
+                          isGenerating: false,
+                          generationProgress: 100,
+                          generationStatus: '生成完成',
+                        },
+                      });
+                      await refreshBalance();
+                      return;
+                    }
+
                     // 连接图片用 prepareImageForModel 处理，手动上传的图片保持原有逻辑
                     // 连接图片按模型处理
                     let connImageBase64: string | undefined;
