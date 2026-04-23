@@ -153,9 +153,8 @@ export class GemStep3CardUtil extends BaseBoxShapeUtil<GemStep3CardShape> {
       const file = e.target.files?.[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = async (ev) => {
-        const compressed = await compressImage(ev.target?.result as string);
-        setter(compressed);
+      reader.onload = (ev) => {
+        setter(ev.target?.result as string);
       };
       reader.readAsDataURL(file);
       e.target.value = '';
