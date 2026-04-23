@@ -1071,6 +1071,8 @@ const STORY_GRID_LABELS: Record<string, string> = {
   '9':  '3x3 storyboard JSON with exactly 9 shots',
   '25': '5x5 storyboard JSON with exactly 25 shots',
 };
+
+const GRID_LABELS: Record<string, string> = {
   '4': '2x2 storyboard JSON with exactly 4 shots',
   '9': '3x3 storyboard JSON with exactly 9 shots',
   '12': '3x4 storyboard JSON with exactly 12 shots',
