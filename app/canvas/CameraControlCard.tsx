@@ -402,8 +402,8 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/8 flex-shrink-0">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-blue-400"></div>
-              <span className="text-white text-sm font-semibold">镜头控制</span>
-              <span className="text-gray-500 text-xs">Camera Control</span>
+              <span className="text-white text-sm font-semibold">时空镜头延展</span>
+              <span className="text-gray-500 text-xs">Time-Space Extension</span>
             </div>
             <button
               onClick={toggleMinimize}
@@ -416,6 +416,14 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
 
           {!isMinimized && (
             <div className="flex-1 flex flex-col overflow-y-auto p-3 gap-2" onPointerDown={(e) => e.stopPropagation()} onWheelCapture={(e) => e.stopPropagation()}>
+
+              {/* 说明 */}
+              <div className="flex-shrink-0 bg-green-500/10 border border-green-500/20 rounded-lg p-2">
+                <div className="text-[10px] text-green-300 leading-relaxed space-y-0.5">
+                  <div>• 时空后退 —5s：生成画面前5秒的场景</div>
+                  <div>• 时空前进 +5s：生成画面后5秒的场景</div>
+                </div>
+              </div>
 
               {/* 源图片小预览 */}
               {sourceImage && (
