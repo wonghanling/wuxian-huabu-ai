@@ -165,10 +165,14 @@ export class GemStep3CardUtil extends BaseBoxShapeUtil<GemStep3CardShape> {
       if (!displayStart || !displayEnd) { alert('请上传或连接起始图和结束图（需要2张）'); return; }
       update({ isGenerating: true, result: '' });
       try {
+        // 压缩图片到 800px 以内，避免 413 错误
+        const compressedStart = await compressImage(displayStart, 800, 0.8);
+        const compressedEnd = await compressImage(displayEnd, 800, 0.8);
+
         const res = await fetch('/api/gem/generate-transitions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ startImage: displayStart, endImage: displayEnd, characterHint, actionSuggestion }),
+          body: JSON.stringify({ startImage: compressedStart, endImage: compressedEnd, characterHint, actionSuggestion }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || '请求失败');
