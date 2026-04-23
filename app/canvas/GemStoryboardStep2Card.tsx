@@ -148,6 +148,24 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
       editor.updateShape({ id: shape.id, type: 'gem-step2-card' as any, props: { ...shape.props, ...props } });
     };
 
+    // 实时读取连接的 Step1 的 result
+    const getConnectedVisualProfile = (): string => {
+      const inputBindings = editor.getBindingsToShape(shape.id, 'connection');
+      for (const binding of inputBindings) {
+        if ((binding as any).props?.terminal !== 'end') continue;
+        const connBindings = editor.getBindingsFromShape(binding.fromId, 'connection');
+        for (const cb of connBindings) {
+          if ((cb as any).props?.terminal !== 'start') continue;
+          const src = editor.getShape((cb as any).toId) as any;
+          if (src?.type === 'gem-step1-card' && src.props?.result) return src.props.result;
+        }
+      }
+      return '';
+    };
+
+    const connectedVisualProfile = getConnectedVisualProfile();
+    const effectiveVisualProfile = connectedVisualProfile || visualProfile;
+
     const handleOutputPortDown = (e: React.MouseEvent) => {
       e.stopPropagation();
       e.preventDefault();
@@ -178,14 +196,14 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
     };
 
     const generate = async () => {
-      if (!visualProfile.trim()) { alert('请粘贴 Step 1 的视觉档案 JSON'); return; }
+      if (!effectiveVisualProfile.trim()) { alert('请连接 Step 1 或粘贴视觉档案 JSON'); return; }
       if (!script.trim()) { alert('请输入剧本/故事'); return; }
       update({ isGenerating: true, result: '' });
       try {
         const res = await fetch('/api/gem/generate-storyboard', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ visualProfile, script, gridSize }),
+          body: JSON.stringify({ visualProfile: effectiveVisualProfile, script, gridSize }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || '请求失败');
@@ -301,49 +319,33 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
           {!isMinimized && (
             <div className="flex-1 flex flex-col overflow-hidden p-3 gap-2">
 
-              {/* 格数选择 */}
-              <div className="flex-shrink-0">
-                <span className="text-xs text-gray-400 mb-1.5 block">宫格数量</span>
-                <div className="flex gap-2">
-                  {GRID_OPTIONS.map(opt => (
-                    <button
-                      key={opt.value}
-                      onClick={(e) => { e.stopPropagation(); update({ gridSize: opt.value }); }}
-                      onPointerDown={(e) => e.stopPropagation()}
-                      className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
-                        gridSize === opt.value
-                          ? 'bg-blue-600 border-blue-500 text-white'
-                          : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
-                      }`}
-                    >
-                      <div>{opt.label}</div>
-                      <div className="text-[10px] opacity-70">{opt.desc}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* 视觉档案输入 */}
+              {/* 视觉档案 */}
               <div className="flex-shrink-0">
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs text-gray-400">Step 1 视觉档案 JSON</label>
-                  <button
-                    className="text-[10px] text-gray-500 hover:text-gray-300 transition-colors"
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      const text = await navigator.clipboard.readText();
-                      if (text) update({ visualProfile: text });
-                    }}
-                    onPointerDown={(e) => e.stopPropagation()}
-                  >粘贴</button>
+                  <label className="text-xs text-gray-400">
+                    Step 1 视觉档案 JSON
+                    {connectedVisualProfile && <span className="text-purple-400 ml-1">· 已连接</span>}
+                  </label>
+                  {!connectedVisualProfile && (
+                    <button
+                      className="text-[10px] text-gray-500 hover:text-gray-300 transition-colors"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        const text = await navigator.clipboard.readText();
+                        if (text) update({ visualProfile: text });
+                      }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >粘贴</button>
+                  )}
                 </div>
                 <textarea
                   className="w-full h-20 bg-black/30 border border-white/8 rounded-lg p-2 text-gray-300 text-[10px] resize-none focus:outline-none focus:border-white/15 font-mono placeholder-gray-600"
-                  placeholder="粘贴 Step 1 输出的 JSON..."
-                  value={visualProfile}
+                  placeholder="连接 Step 1 自动读取，或手动粘贴 JSON..."
+                  value={effectiveVisualProfile}
+                  readOnly={!!connectedVisualProfile}
                   onClick={(e) => e.stopPropagation()}
                   onPointerDown={(e) => e.stopPropagation()}
-                  onChange={(e) => update({ visualProfile: e.target.value })}
+                  onChange={(e) => { if (!connectedVisualProfile) update({ visualProfile: e.target.value }); }}
                 />
               </div>
 
@@ -360,7 +362,6 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
                   </button>
                 </div>
 
-                {/* 风格选择面板 */}
                 {showStyles && (
                   <div
                     className="mb-1.5 flex flex-wrap gap-1"
@@ -388,6 +389,28 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
                   onPointerDown={(e) => e.stopPropagation()}
                   onChange={(e) => update({ script: e.target.value })}
                 />
+              </div>
+
+              {/* 格数选择 */}
+              <div className="flex-shrink-0">
+                <span className="text-xs text-gray-400 mb-1.5 block">宫格数量</span>
+                <div className="flex gap-2">
+                  {GRID_OPTIONS.map(opt => (
+                    <button
+                      key={opt.value}
+                      onClick={(e) => { e.stopPropagation(); update({ gridSize: opt.value }); }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+                        gridSize === opt.value
+                          ? 'bg-blue-600 border-blue-500 text-white'
+                          : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
+                      }`}
+                    >
+                      <div>{opt.label}</div>
+                      <div className="text-[10px] opacity-70">{opt.desc}</div>
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* 生成按钮 */}
