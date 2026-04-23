@@ -2420,7 +2420,7 @@ function CanvasPageContent() {
                 type: 'camera-control-card' as any,
                 x: pos.x,
                 y: pos.y,
-                props: { w: 360, h: 520, sourceShapeId: '', cameraVertical: 0, cameraHorizontal: 0, generatedImage: '', isGenerating: false, isMinimized: false, model: 'nano-banana-pro', prompt: '' },
+                props: { w: 360, h: 720, sourceShapeId: '', cameraVertical: 0, cameraHorizontal: 0, generatedImage: '', isGenerating: false, isMinimized: false, model: 'nano-banana-pro', prompt: '' },
               });
               createConnection(floatingMenu.shapeId, newId as any);
               editor.select(newId);
@@ -2440,6 +2440,31 @@ function CanvasPageContent() {
               });
               createConnection(floatingMenu.shapeId, newId as any);
               editor.select(newId);
+            },
+          },
+          {
+            label: 'GEM 分镜设计',
+            onClick: () => {
+              const pos = getShapeRight(floatingMenu.shapeId);
+              const step1Id = createShapeId();
+              const step2Id = createShapeId();
+              editor.createShape({
+                id: step1Id,
+                type: 'gem-step1-card' as any,
+                x: pos.x,
+                y: pos.y,
+                props: { w: 400, h: 480, result: '', isGenerating: false, isMinimized: false },
+              });
+              editor.createShape({
+                id: step2Id,
+                type: 'gem-step2-card' as any,
+                x: pos.x + 440,
+                y: pos.y,
+                props: { w: 400, h: 480, result: '', isGenerating: false, isMinimized: false },
+              });
+              createConnection(floatingMenu.shapeId, step1Id as any);
+              createConnection(step1Id as any, step2Id as any);
+              editor.select(step2Id);
             },
           },
         ];
