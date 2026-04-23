@@ -652,6 +652,27 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
       return '';
     };
 
+    // 实时读取上游 Step2/Step3/Step4 的 result 作为 prompt
+    const getConnectedPrompt = (): string => {
+      const inputBindings = editor.getBindingsToShape(shape.id, 'connection');
+      for (const binding of inputBindings) {
+        if ((binding as any).props?.terminal !== 'end') continue;
+        const connBindings = editor.getBindingsFromShape(binding.fromId, 'connection');
+        for (const cb of connBindings) {
+          if ((cb as any).props?.terminal !== 'start') continue;
+          const src = editor.getShape((cb as any).toId) as any;
+          if (!src) continue;
+          if (
+            (src.type === 'gem-step2-card' || src.type === 'gem-step3-card' || src.type === 'gem-step4-card') &&
+            src.props?.result
+          ) return src.props.result;
+        }
+      }
+      return '';
+    };
+
+    const connectedPrompt = getConnectedPrompt();
+
     // 实时读取连接的上游图片卡片的 generatedImage 或上传卡片的图片
     const getConnectedGeneratedImage = (): string => {
       const inputBindings = editor.getBindingsToShape(shape.id, 'connection');
@@ -1059,7 +1080,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         ? 'Describe the image...'
                         : 'Describe the video...'
                     }
-                    value={localPrompt}
+                    value={connectedPrompt || localPrompt}
+                    readOnly={!!connectedPrompt}
                     onClick={(e) => e.stopPropagation()}
                     onPointerDown={(e) => e.stopPropagation()}
                     onCompositionStart={() => { isComposing.current = true; }}
@@ -1070,11 +1092,15 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       updateShapeDebounced({ prompt: userInput });
                     }}
                     onChange={(e) => {
+                      if (connectedPrompt) return;
                       const userInput = e.target.value;
                       setLocalPrompt(userInput);
                       if (!isComposing.current) updateShapeDebounced({ prompt: userInput });
                     }}
                   />
+                  {connectedPrompt && (
+                    <div className="text-[10px] text-purple-400 mt-0.5">· 来自连接卡片</div>
+                  )}
                   {/* 连接提示标签 */}
                   {cardType === 'video' && (() => {
                     const tags: string[] = [];
@@ -2525,7 +2551,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                 } else if (cardType === 'image') {
                   // 图片生成逻辑
                   const shotPrompt = getShotCardPrompt();
-                  const basePrompt = prompt;
+                  const basePrompt = connectedPrompt || prompt;
                   // 宫格布局 prompt 追加
                   const GRID_PROMPTS: Record<string, string> = {
                     '2x2': 'storyboard sheet, 2x2 grid layout, 4 panels in one image, all panels visible, clean panel borders, equal sized panels, storyboard contact sheet, multi-panel composition, not a single image, not full-frame illustration, each panel contains a different shot, grid enforced layout, overall image aspect ratio 16:9, each panel framed in widescreen 16:9 composition, cinematic framing inside each panel',
@@ -2712,7 +2738,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                 } else if (cardType === 'video') {
                   // 视频生成逻辑
                   const shotPrompt = getShotCardPrompt();
-                  const videoPrompt = shotPrompt ? `${shotPrompt}\n${prompt}` : prompt;
+                  const videoPrompt = shotPrompt ? `${shotPrompt}\n${connectedPrompt || prompt}` : (connectedPrompt || prompt);
                   console.log('生成视频，模式:', videoMode || 'text');
                   console.log('Prompt:', videoPrompt);
                   console.log('模型:', model);
