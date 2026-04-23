@@ -1933,6 +1933,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     { value: '3x3', label: '3×3', panels: 9 },
                     { value: '3x4', label: '3×4', panels: 12 },
                     { value: '4x4', label: '4×4', panels: 16 },
+                    { value: '5x5', label: '5×5', panels: 25 },
                   ].map((opt) => (
                     <button key={opt.value}
                       onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, gridLayout: (gridLayout || '') === opt.value ? '' : opt.value } }); }}
