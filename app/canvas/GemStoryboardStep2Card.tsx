@@ -319,6 +319,28 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
           {!isMinimized && (
             <div className="flex-1 flex flex-col overflow-hidden p-3 gap-2">
 
+              {/* 格数选择 */}
+              <div className="flex-shrink-0">
+                <span className="text-xs text-gray-400 mb-1.5 block">宫格数量</span>
+                <div className="flex gap-2">
+                  {GRID_OPTIONS.map(opt => (
+                    <button
+                      key={opt.value}
+                      onClick={(e) => { e.stopPropagation(); update({ gridSize: opt.value }); }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+                        gridSize === opt.value
+                          ? 'bg-blue-600 border-blue-500 text-white'
+                          : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
+                      }`}
+                    >
+                      <div>{opt.label}</div>
+                      <div className="text-[10px] opacity-70">{opt.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* 视觉档案 */}
               <div className="flex-shrink-0">
                 <div className="flex items-center justify-between mb-1">
@@ -389,28 +411,6 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
                   onPointerDown={(e) => e.stopPropagation()}
                   onChange={(e) => update({ script: e.target.value })}
                 />
-              </div>
-
-              {/* 格数选择 */}
-              <div className="flex-shrink-0">
-                <span className="text-xs text-gray-400 mb-1.5 block">宫格数量</span>
-                <div className="flex gap-2">
-                  {GRID_OPTIONS.map(opt => (
-                    <button
-                      key={opt.value}
-                      onClick={(e) => { e.stopPropagation(); update({ gridSize: opt.value }); }}
-                      onPointerDown={(e) => e.stopPropagation()}
-                      className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
-                        gridSize === opt.value
-                          ? 'bg-blue-600 border-blue-500 text-white'
-                          : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
-                      }`}
-                    >
-                      <div>{opt.label}</div>
-                      <div className="text-[10px] opacity-70">{opt.desc}</div>
-                    </button>
-                  ))}
-                </div>
               </div>
 
               {/* 生成按钮 */}
