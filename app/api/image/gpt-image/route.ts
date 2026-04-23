@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { calcImagePrice } from '@/lib/pricing';
+import { deductBalance, refundBalance } from '@/lib/billing';
 
 const YUNWU_BASE_URL = 'https://api.n1n.ai';
 const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
@@ -7,9 +9,25 @@ export const maxDuration = 120;
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, model, size, quality, images } = await req.json();
+    const { prompt, model, size, quality, images, userId } = await req.json();
 
     if (!prompt) return NextResponse.json({ error: '缺少 prompt' }, { status: 400 });
+
+    // 根据尺寸计算价格
+    const pricingKey = `gpt-image-2-${size || '2048x1152'}`;
+    const price = calcImagePrice(pricingKey);
+
+    // 扣费
+    if (userId) {
+      const deduct = await deductBalance(
+        userId, price, 'image_deduct',
+        `GPT Image 2 - ${size || '2048x1152'}`,
+        { model, size },
+      );
+      if (!deduct.success) {
+        return NextResponse.json({ error: '积分不足' }, { status: 402 });
+      }
+    }
 
     const isEdit = model === 'gpt-image-2-all' || (images && images.length > 0);
 
@@ -36,7 +54,11 @@ export async function POST(req: NextRequest) {
         body: formData,
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error?.message || JSON.stringify(data));
+      if (!res.ok) {
+        // 失败退款
+        if (userId) await refundBalance(userId, price, `GPT Image 2 生成失败退款`, { model, size });
+        throw new Error(data.error?.message || JSON.stringify(data));
+      }
       imageUrl = extractImageUrl(data);
     } else {
       // 文生图
@@ -56,7 +78,11 @@ export async function POST(req: NextRequest) {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error?.message || JSON.stringify(data));
+      if (!res.ok) {
+        // 失败退款
+        if (userId) await refundBalance(userId, price, `GPT Image 2 生成失败退款`, { model, size });
+        throw new Error(data.error?.message || JSON.stringify(data));
+      }
       imageUrl = extractImageUrl(data);
     }
 

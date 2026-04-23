@@ -2661,6 +2661,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           size: aspectRatio || '2048x1152',
                           quality: imageQuality || 'medium',
                           images: imagesToSend.length > 0 ? imagesToSend : undefined,
+                          userId: userId || undefined,
                         }),
                       });
                       const data = await res.json();

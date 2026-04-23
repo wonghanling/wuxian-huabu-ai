@@ -19,6 +19,10 @@ export const IMAGE_PRICING: Record<string, number> = {
   'doubao-seedream':      0.3,
   'nano-banana-pro-multi-2k': 1.5,
   'nano-banana-pro-multi-4k': 2.5,
+  'gpt-image-2-2048x1152': 0.5,
+  'gpt-image-2-3840x2160': 0.8,
+  'gpt-image-2-2160x3840': 0.7,
+  'gpt-image-2-2048x2048': 0.5,
 };
 
 // ============================================================
