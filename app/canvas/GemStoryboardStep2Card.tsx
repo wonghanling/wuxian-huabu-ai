@@ -9,9 +9,15 @@ import {
 } from 'tldraw';
 import { useState } from 'react';
 
-type GridSize = '4' | '9' | '12' | '16';
+type GridSize = '4' | '9' | '12' | '16' | '25';
 
-const GRID_OPTIONS: { value: GridSize; label: string; desc: string }[] = [
+const STORY_GRID_OPTIONS: { value: GridSize; label: string; desc: string }[] = [
+  { value: '4',  label: '2×2', desc: '4格' },
+  { value: '9',  label: '3×3', desc: '9格' },
+  { value: '25', label: '5×5', desc: '25格' },
+];
+
+const CINEMATIC_GRID_OPTIONS: { value: GridSize; label: string; desc: string }[] = [
   { value: '4',  label: '2×2', desc: '4格' },
   { value: '9',  label: '3×3', desc: '9格' },
   { value: '12', label: '3×4', desc: '12格 ⭐' },
@@ -93,6 +99,7 @@ export type GemStep2CardShape = TLBaseShape<
     visualProfile: string;
     script: string;
     gridSize?: string;
+    mode?: 'story' | 'cinematic';
     result: string;
     isGenerating: boolean;
     isMinimized: boolean;
@@ -111,6 +118,7 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
     visualProfile: T.string,
     script: T.string,
     gridSize: T.string.optional(),
+    mode: T.literalEnum('story', 'cinematic').optional(),
     result: T.string,
     isGenerating: T.boolean,
     isMinimized: T.boolean,
@@ -127,7 +135,8 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
       h: 580,
       visualProfile: '',
       script: '',
-      gridSize: '12',
+      gridSize: '9',
+      mode: 'story',
       result: '',
       isGenerating: false,
       isMinimized: false,
@@ -139,7 +148,7 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
   }
 
   component(shape: GemStep2CardShape) {
-    const { w, h, visualProfile, script, gridSize = '12', result, isGenerating, isMinimized } = shape.props;
+    const { w, h, visualProfile, script, gridSize = '9', mode = 'story', result, isGenerating, isMinimized } = shape.props;
     const editor = useEditor();
     const [copied, setCopied] = useState(false);
     const [showStyles, setShowStyles] = useState(false);
@@ -203,7 +212,7 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
         const res = await fetch('/api/gem/generate-storyboard', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ visualProfile: effectiveVisualProfile, script, gridSize }),
+          body: JSON.stringify({ visualProfile: effectiveVisualProfile, script, gridSize, mode }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || '请求失败');
@@ -244,7 +253,8 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
       update({ isMinimized: !isMinimized, w: isMinimized ? 400 : 160, h: isMinimized ? 580 : 60 });
     };
 
-    const selectedGrid = GRID_OPTIONS.find(o => o.value === gridSize) ?? GRID_OPTIONS[2];
+    const gridOptions = mode === 'story' ? STORY_GRID_OPTIONS : CINEMATIC_GRID_OPTIONS;
+    const selectedGrid = gridOptions.find(o => o.value === gridSize) ?? gridOptions[1];
 
     return (
       <HTMLContainer style={{ width: w, height: h, pointerEvents: 'all', overflow: 'visible' }}>
@@ -305,7 +315,17 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-blue-400"></div>
               <span className="text-white text-sm font-semibold">GEM 分镜 · Step 2</span>
-              <span className="text-gray-500 text-xs">分镜生成</span>
+              {/* 模式切换 */}
+              <div className="flex rounded-lg overflow-hidden border border-white/10 ml-1" onPointerDown={(e) => e.stopPropagation()}>
+                <button
+                  onClick={(e) => { e.stopPropagation(); update({ mode: 'story', gridSize: '9' }); }}
+                  className={`text-[10px] px-2 py-0.5 transition-all ${mode === 'story' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                >故事</button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); update({ mode: 'cinematic', gridSize: '12' }); }}
+                  className={`text-[10px] px-2 py-0.5 transition-all ${mode === 'cinematic' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                >时空</button>
+              </div>
             </div>
             <button
               onClick={toggleMinimize}
@@ -323,7 +343,7 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
               <div className="flex-shrink-0">
                 <span className="text-xs text-gray-400 mb-1.5 block">宫格数量</span>
                 <div className="flex gap-2">
-                  {GRID_OPTIONS.map(opt => (
+                  {gridOptions.map(opt => (
                     <button
                       key={opt.value}
                       onClick={(e) => { e.stopPropagation(); update({ gridSize: opt.value }); }}
