@@ -2417,6 +2417,22 @@ function CanvasPageContent() {
               const newId = createShapeId();
               editor.createShape({
                 id: newId,
+                type: 'camera-control-card' as any,
+                x: pos.x,
+                y: pos.y,
+                props: { w: 360, h: 720, sourceShapeId: '', cameraVertical: 0, cameraHorizontal: 0, generatedImage: '', isGenerating: false, isMinimized: false, model: 'nano-banana-pro', prompt: '' },
+              });
+              createConnection(floatingMenu.shapeId, newId as any);
+              editor.select(newId);
+            },
+          },
+          {
+            label: '角色设计',
+            onClick: () => {
+              const pos = getShapeRight(floatingMenu.shapeId);
+              const newId = createShapeId();
+              editor.createShape({
+                id: newId,
                 type: 'custom-card' as any,
                 x: pos.x,
                 y: pos.y,

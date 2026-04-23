@@ -418,8 +418,8 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
             <div className="flex-1 flex flex-col overflow-y-auto p-3 gap-2" onPointerDown={(e) => e.stopPropagation()} onWheelCapture={(e) => e.stopPropagation()}>
 
               {/* 说明 */}
-              <div className="flex-shrink-0 bg-green-500/10 border border-green-500/20 rounded-lg p-2">
-                <div className="text-[10px] text-green-300 leading-relaxed space-y-0.5">
+              <div className="flex-shrink-0 p-2">
+                <div className="text-[10px] text-green-400 leading-relaxed space-y-0.5">
                   <div>• 时空后退 —5s：生成画面前5秒的场景</div>
                   <div>• 时空前进 +5s：生成画面后5秒的场景</div>
                 </div>
