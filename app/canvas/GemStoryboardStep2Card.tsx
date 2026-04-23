@@ -417,9 +417,9 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
               <button
                 onClick={(e) => { e.stopPropagation(); generate(); }}
                 onPointerDown={(e) => e.stopPropagation()}
-                disabled={isGenerating || !visualProfile.trim() || !script.trim()}
+                disabled={isGenerating || !effectiveVisualProfile.trim() || !script.trim()}
                 className={`flex-shrink-0 w-full py-2 rounded-xl text-sm font-semibold transition-all ${
-                  isGenerating || !visualProfile.trim() || !script.trim()
+                  isGenerating || !effectiveVisualProfile.trim() || !script.trim()
                     ? 'bg-white/5 text-gray-500 cursor-not-allowed'
                     : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg'
                 }`}
