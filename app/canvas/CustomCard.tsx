@@ -1587,6 +1587,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         >
                           <option value="nano-banana-pro">Nano Banana 2（2K ¥1.2 / 4K ¥1.5）</option>
                           <option value="nano-banana">Nano Banana — ¥0.5/次</option>
+                          <option value="gpt-image-2">GPT Image 2 — ¥0.5~0.8/次</option>
                           <option value="flux-kontext">Flux Kontext — ¥0.6/次</option>
                           <option value="flux-kontext-max">Flux Kontext Max — ¥1.0/次</option>
                           <option value="doubao-seedream-4-5-251128">豆包 Seedream — ¥0.3/次</option>
@@ -1626,6 +1627,36 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                               const effectiveImage = connectedGeneratedImage || characterThreeViewImage || '';
                               const isBase64 = effectiveImage.startsWith('data:');
                               const charModel = characterImageModel || 'nano-banana-pro';
+                              const charPrompt = `use the uploaded image as the ONLY character reference, character turnaround sheet, TOP SECTION: full body views front view, side view, back view, full body, head to toe visible, BOTTOM SECTION: head detail views reuse the SAME head from the original image, do not generate a new face, close-up crops of the same character head, front face, side profile, 3/4 view, same character, identical face, preserve facial features exactly, preserve hairstyle exactly, same hair shape, same hair volume, no variation, reuse the same identity across all views, no redesign, no reinterpretation, keep original outfit exactly, do not redesign, match the original image style exactly, same rendering, same lighting, same material, no duplicate character generation, no alternate versions, neutral pose, clean studio background, arranged in one frame, structured grid layout, clear separation`;
+
+                              // GPT Image 2 单独走 /api/image/gpt-image
+                              if (charModel === 'gpt-image-2') {
+                                let imgToSend: string | undefined;
+                                if (effectiveImage) {
+                                  const raw = isBase64 ? effectiveImage : await fetch(effectiveImage).then(r => r.blob()).then(b => new Promise<string>(res => { const rd = new FileReader(); rd.onload = () => res(rd.result as string); rd.readAsDataURL(b); }));
+                                  imgToSend = await softCompressImage(raw);
+                                }
+                                const res = await fetch('/api/image/gpt-image', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({
+                                    prompt: charPrompt,
+                                    model: 'gpt-image-2',
+                                    size: '2048x1152',
+                                    quality: 'medium',
+                                    images: imgToSend ? [imgToSend] : undefined,
+                                    userId: userId || undefined,
+                                  }),
+                                });
+                                const data = await res.json();
+                                if (!res.ok) throw new Error(data.error || '生成失败');
+                                editor.updateShape({
+                                  id: shape.id, type: 'custom-card' as any,
+                                  props: { ...shape.props, characterGeneratedImage: data.imageUrl, isGenerating: false, showCharacterOutput: true },
+                                });
+                                await refreshBalance();
+                                return;
+                              }
 
                               let charImageBase64: string | undefined;
                               let charImageBase64Array: string[] | undefined;
@@ -1665,7 +1696,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({
                                   model: charModel,
-                                  prompt: `use the uploaded image as the ONLY character reference, character turnaround sheet, TOP SECTION: full body views front view, side view, back view, full body, head to toe visible, BOTTOM SECTION: head detail views reuse the SAME head from the original image, do not generate a new face, close-up crops of the same character head, front face, side profile, 3/4 view, same character, identical face, preserve facial features exactly, preserve hairstyle exactly, same hair shape, same hair volume, no variation, reuse the same identity across all views, no redesign, no reinterpretation, keep original outfit exactly, do not redesign, match the original image style exactly, same rendering, same lighting, same material, no duplicate character generation, no alternate versions, neutral pose, clean studio background, arranged in one frame, structured grid layout, clear separation`,
+                                  prompt: charPrompt,
                                   aspectRatio: aspectRatio || '16:9',
                                   imageBase64: charImageBase64,
                                   imageBase64Array: charImageBase64Array,

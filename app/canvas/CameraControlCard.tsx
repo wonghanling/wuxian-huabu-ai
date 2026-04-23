@@ -237,6 +237,28 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
         let imgBase64Array: string[] | undefined;
         let imgUrlArray: string[] | undefined;
 
+        // GPT Image 2 单独走 /api/image/gpt-image
+        if (currentModel === 'gpt-image-2') {
+          const raw = isBase64 ? sourceImage : await fetch(sourceImage).then(r => r.blob()).then(b => new Promise<string>(res => { const rd = new FileReader(); rd.onload = () => res(rd.result as string); rd.readAsDataURL(b); }));
+          const compressed = await compressImage(raw);
+          const res = await fetch('/api/image/gpt-image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              prompt: cameraPrompt,
+              model: 'gpt-image-2',
+              size: '2048x1152',
+              quality: 'medium',
+              images: [compressed],
+              userId: user.id,
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || '生成失败');
+          update({ generatedImage: data.imageUrl, isGenerating: false });
+          return;
+        }
+
         if (['nano-banana-pro'].includes(currentModel)) {
           if (isBase64) {
             const { fal: falClient } = await import('@fal-ai/client');
@@ -477,6 +499,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
                 >
                   <option value="nano-banana-pro">Nano Banana 2（2K ¥1.2 / 4K ¥1.5）</option>
                   <option value="nano-banana">Nano Banana — ¥0.5/次</option>
+                  <option value="gpt-image-2">GPT Image 2 — ¥0.5~0.8/次</option>
                   <option value="flux-kontext">Flux Kontext — ¥0.6/次</option>
                   <option value="doubao-seedream-4-5-251128">豆包 Seedream — ¥0.3/次</option>
                 </select>
