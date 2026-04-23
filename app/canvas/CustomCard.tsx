@@ -1080,20 +1080,21 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         ? 'Describe the image...'
                         : 'Describe the video...'
                     }
-                    value={connectedPrompt || localPrompt}
-                    readOnly={!!connectedPrompt}
+                    value={connectedPrompt ? `${connectedPrompt}${localPrompt ? '\n' + localPrompt : ''}` : localPrompt}
+                    readOnly={false}
                     onClick={(e) => e.stopPropagation()}
                     onPointerDown={(e) => e.stopPropagation()}
                     onCompositionStart={() => { isComposing.current = true; }}
                     onCompositionEnd={(e) => {
                       isComposing.current = false;
-                      const userInput = (e.target as HTMLTextAreaElement).value;
+                      const full = (e.target as HTMLTextAreaElement).value;
+                      const userInput = connectedPrompt ? full.replace(connectedPrompt + '\n', '').replace(connectedPrompt, '') : full;
                       setLocalPrompt(userInput);
                       updateShapeDebounced({ prompt: userInput });
                     }}
                     onChange={(e) => {
-                      if (connectedPrompt) return;
-                      const userInput = e.target.value;
+                      const full = e.target.value;
+                      const userInput = connectedPrompt ? full.replace(connectedPrompt + '\n', '').replace(connectedPrompt, '') : full;
                       setLocalPrompt(userInput);
                       if (!isComposing.current) updateShapeDebounced({ prompt: userInput });
                     }}
@@ -2551,7 +2552,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                 } else if (cardType === 'image') {
                   // 图片生成逻辑
                   const shotPrompt = getShotCardPrompt();
-                  const basePrompt = connectedPrompt || prompt;
+                  const basePrompt = connectedPrompt ? `${connectedPrompt}${prompt ? '\n' + prompt : ''}` : prompt;
                   // 宫格布局 prompt 追加
                   const GRID_PROMPTS: Record<string, string> = {
                     '2x2': 'storyboard sheet, 2x2 grid layout, 4 panels in one image, all panels visible, clean panel borders, equal sized panels, storyboard contact sheet, multi-panel composition, not a single image, not full-frame illustration, each panel contains a different shot, grid enforced layout, overall image aspect ratio 16:9, each panel framed in widescreen 16:9 composition, cinematic framing inside each panel',
@@ -2738,7 +2739,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                 } else if (cardType === 'video') {
                   // 视频生成逻辑
                   const shotPrompt = getShotCardPrompt();
-                  const videoPrompt = shotPrompt ? `${shotPrompt}\n${connectedPrompt || prompt}` : (connectedPrompt || prompt);
+                  const effectivePrompt = connectedPrompt ? `${connectedPrompt}${prompt ? '\n' + prompt : ''}` : prompt;
+                  const videoPrompt = shotPrompt ? `${shotPrompt}\n${effectivePrompt}` : effectivePrompt;
                   console.log('生成视频，模式:', videoMode || 'text');
                   console.log('Prompt:', videoPrompt);
                   console.log('模型:', model);
