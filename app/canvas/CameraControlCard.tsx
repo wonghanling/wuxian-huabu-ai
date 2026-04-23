@@ -358,12 +358,22 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
       }
     };
 
-    const downloadImage = () => {
+    const downloadImage = async () => {
       if (!generatedImage) return;
-      const a = document.createElement('a');
-      a.href = generatedImage;
-      a.download = `camera-control-${Date.now()}.jpg`;
-      a.click();
+      try {
+        let url = generatedImage;
+        if (!generatedImage.startsWith('data:')) {
+          const blob = await fetch(generatedImage).then(r => r.blob());
+          url = URL.createObjectURL(blob);
+        }
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `camera-control-${Date.now()}.jpg`;
+        a.click();
+        if (!generatedImage.startsWith('data:')) URL.revokeObjectURL(url);
+      } catch {
+        alert('下载失败，请长按图片保存');
+      }
     };
 
     const toggleMinimize = (e: React.MouseEvent) => {
