@@ -195,12 +195,13 @@ export async function POST(req: NextRequest) {
           const url = await fal.storage.upload(file);
           allImages.push(url);
         }
+        const gptEndpoint = allImages.length > 0 ? 'openai/gpt-image-2/edit' : 'openai/gpt-image-2';
         if (allImages.length > 0) input.image_urls = allImages;
 
-        const submitted = await fal.queue.submit('openai/gpt-image-2/edit', { input });
+        const submitted = await fal.queue.submit(gptEndpoint, { input });
         const requestId = submitted.request_id;
         if (!requestId) throw new Error('fal.ai 未返回 requestId');
-        return NextResponse.json({ success: true, requestId, model, prompt, pending: true });
+        return NextResponse.json({ success: true, requestId, endpoint: gptEndpoint, model, prompt, pending: true });
       } else if (imageBase64) {
         input.image_url = imageBase64;
       }

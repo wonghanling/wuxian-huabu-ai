@@ -2702,7 +2702,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           props: { ...shape.props, generationProgress: 20, generationStatus: '排队中...' },
                         });
                         let pollAttempts = 0;
-                        const falEndpoint = 'openai/gpt-image-2/edit';
+                        const falEndpoint = data.endpoint || 'openai/gpt-image-2/edit';
                         const poll = async (): Promise<string> => {
                           pollAttempts++;
                           await new Promise(r => setTimeout(r, 3000));
