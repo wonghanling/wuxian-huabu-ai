@@ -2701,15 +2701,34 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           id: shape.id, type: 'custom-card' as any,
                           props: { ...shape.props, generationProgress: 20, generationStatus: '排队中...' },
                         });
-                        const pollResult = await pollFalResult(data.requestId, (progress, status) => {
+                        let pollAttempts = 0;
+                        const falEndpoint = 'openai/gpt-image-2/edit';
+                        const poll = async (): Promise<string> => {
+                          pollAttempts++;
+                          await new Promise(r => setTimeout(r, 3000));
+                          const progress = Math.min(20 + pollAttempts * 5, 90);
                           const currentShape = editor.getShape(shape.id) as any;
                           if (currentShape) {
                             editor.updateShape({
                               id: shape.id, type: 'custom-card' as any,
-                              props: { ...currentShape.props, generationProgress: progress, generationStatus: status },
+                              props: { ...currentShape.props, generationProgress: progress, generationStatus: '生成中...' },
                             });
                           }
-                        });
+                          try {
+                            const qRes = await fetch(`/api/image/fal-query?requestId=${encodeURIComponent(data.requestId)}&endpoint=${encodeURIComponent(falEndpoint)}`);
+                            const qData = await qRes.json();
+                            if (qData.success && qData.imageUrl) return qData.imageUrl;
+                            if (qData.error) throw new Error(qData.error);
+                            if (pollAttempts > 60) throw new Error('生成超时');
+                            return poll();
+                          } catch (e: any) {
+                            if (e.message && (e.message.includes('超时') || e.message.includes('error'))) throw e;
+                            if (pollAttempts > 60) throw new Error('生成超时');
+                            await new Promise(r => setTimeout(r, 5000));
+                            return poll();
+                          }
+                        };
+                        const pollResult = await poll();
                         editor.updateShape({
                           id: shape.id, type: 'custom-card' as any,
                           props: { ...shape.props, generatedImage: pollResult, isGenerating: false, generationProgress: 100, generationStatus: '生成完成' },
