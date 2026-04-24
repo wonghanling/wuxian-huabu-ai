@@ -237,19 +237,19 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
         let imgBase64Array: string[] | undefined;
         let imgUrlArray: string[] | undefined;
 
-        // GPT Image 2 单独走 /api/image/gpt-image
+        // GPT Image 2 走 /api/image/generate
         if (currentModel === 'gpt-image-2') {
           const raw = isBase64 ? sourceImage : await fetch(sourceImage).then(r => r.blob()).then(b => new Promise<string>(res => { const rd = new FileReader(); rd.onload = () => res(rd.result as string); rd.readAsDataURL(b); }));
           const compressed = await compressImage(raw);
-          const res = await fetch('/api/image/gpt-image', {
+          const res = await fetch('/api/image/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              prompt: cameraPrompt,
               model: 'gpt-image-2',
-              size: '2048x1152',
-              quality: 'medium',
-              images: [compressed],
+              prompt: cameraPrompt,
+              aspectRatio: '2048x1152',
+              imageQuality: 'medium',
+              imageBase64Array: [compressed],
               userId: user.id,
             }),
           });

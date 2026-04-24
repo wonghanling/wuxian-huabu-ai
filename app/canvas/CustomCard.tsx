@@ -1629,22 +1629,22 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                               const charModel = characterImageModel || 'nano-banana-pro';
                               const charPrompt = `use the uploaded image as the ONLY character reference, character turnaround sheet, TOP SECTION: full body views front view, side view, back view, full body, head to toe visible, BOTTOM SECTION: head detail views reuse the SAME head from the original image, do not generate a new face, close-up crops of the same character head, front face, side profile, 3/4 view, same character, identical face, preserve facial features exactly, preserve hairstyle exactly, same hair shape, same hair volume, no variation, reuse the same identity across all views, no redesign, no reinterpretation, keep original outfit exactly, do not redesign, match the original image style exactly, same rendering, same lighting, same material, no duplicate character generation, no alternate versions, neutral pose, clean studio background, arranged in one frame, structured grid layout, clear separation`;
 
-                              // GPT Image 2 单独走 /api/image/gpt-image
+                              // GPT Image 2 走 /api/image/generate
                               if (charModel === 'gpt-image-2') {
                                 let imgToSend: string | undefined;
                                 if (effectiveImage) {
                                   const raw = isBase64 ? effectiveImage : await fetch(effectiveImage).then(r => r.blob()).then(b => new Promise<string>(res => { const rd = new FileReader(); rd.onload = () => res(rd.result as string); rd.readAsDataURL(b); }));
                                   imgToSend = await softCompressImage(raw);
                                 }
-                                const res = await fetch('/api/image/gpt-image', {
+                                const res = await fetch('/api/image/generate', {
                                   method: 'POST',
                                   headers: { 'Content-Type': 'application/json' },
                                   body: JSON.stringify({
-                                    prompt: charPrompt,
                                     model: 'gpt-image-2',
-                                    size: '2048x1152',
-                                    quality: 'medium',
-                                    images: imgToSend ? [imgToSend] : undefined,
+                                    prompt: charPrompt,
+                                    aspectRatio: '2048x1152',
+                                    imageQuality: 'medium',
+                                    imageBase64Array: imgToSend ? [imgToSend] : undefined,
                                     userId: userId || undefined,
                                   }),
                                 });
@@ -2667,18 +2667,12 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     // GPT Image 2 单独处理
                     if (['gpt-image-2', 'gpt-image-2-all'].includes(model || '')) {
                       const imgs: string[] = uploadedImages ? JSON.parse(uploadedImages) : [];
-                      const hasImages = imgs.length > 0 || connectedGeneratedImage;
 
                       let imagesToSend: string[] = [];
                       if (connectedGeneratedImage) {
                         const isBase64 = connectedGeneratedImage.startsWith('data:');
-                        if (isBase64) {
-                          imagesToSend.push(await softCompressImage(connectedGeneratedImage));
-                        } else {
-                          const blob = await fetch(connectedGeneratedImage).then(r => r.blob());
-                          const base64 = await new Promise<string>(res => { const r = new FileReader(); r.onload = () => res(r.result as string); r.readAsDataURL(blob); });
-                          imagesToSend.push(await softCompressImage(base64));
-                        }
+                        const raw = isBase64 ? connectedGeneratedImage : await fetch(connectedGeneratedImage).then(r => r.blob()).then(b => new Promise<string>(res => { const rd = new FileReader(); rd.onload = () => res(rd.result as string); rd.readAsDataURL(b); }));
+                        imagesToSend.push(await softCompressImage(raw));
                       }
                       if (imgs.length > 0) {
                         for (const img of imgs) {
@@ -2686,15 +2680,15 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         }
                       }
 
-                      const res = await fetch('/api/image/gpt-image', {
+                      const res = await fetch('/api/image/generate', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                          prompt: fullPrompt,
                           model: model,
-                          size: aspectRatio || '2048x1152',
-                          quality: imageQuality || 'medium',
-                          images: imagesToSend.length > 0 ? imagesToSend : undefined,
+                          prompt: fullPrompt,
+                          aspectRatio: aspectRatio || '2048x1152',
+                          imageQuality: imageQuality || 'medium',
+                          imageBase64Array: imagesToSend.length > 0 ? imagesToSend : undefined,
                           userId: userId || undefined,
                         }),
                       });

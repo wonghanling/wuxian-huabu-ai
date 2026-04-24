@@ -21,7 +21,7 @@ const IMAGE_MODELS: Record<string, {
   provider: 'n1n' | 'fal';
   yunwuModel?: string;
   falEndpoint?: string;
-  apiType?: 'chat' | 'midjourney' | 'replicate' | 'image-generation' | 'gemini-native';
+  apiType?: 'chat' | 'midjourney' | 'replicate' | 'image-generation' | 'gemini-native' | 'gpt-image';
   requiresImage?: boolean;
   supportsImage?: boolean;
 }> = {
@@ -47,6 +47,16 @@ const IMAGE_MODELS: Record<string, {
     provider: 'n1n',
     yunwuModel: 'doubao-seedream-4-5-251128',
     apiType: 'image-generation',
+    supportsImage: true,
+  },
+  'gpt-image-2': {
+    provider: 'n1n',
+    apiType: 'gpt-image',
+    supportsImage: true,
+  },
+  'gpt-image-2-all': {
+    provider: 'n1n',
+    apiType: 'gpt-image',
     supportsImage: true,
   },
   // --- fal.ai 模型 ---
@@ -240,21 +250,80 @@ export async function POST(req: NextRequest) {
         imageUrl = data.data[0].url || (data.data[0].b64_json ? `data:image/png;base64,${data.data[0].b64_json}` : '');
       }
       if (!imageUrl) throw new Error('无法解析图片 URL');
+
+    } else if (modelConfig.apiType === 'gpt-image') {
+      const hasImages = imageBase64Array && imageBase64Array.length > 0;
+
+      if (hasImages) {
+        // 多图融合/图生图：multipart/form-data
+        const formData = new FormData();
+        for (const imgBase64 of imageBase64Array) {
+          const base64Data = imgBase64.replace(/^data:image\/\w+;base64,/, '');
+          const buffer = Buffer.from(base64Data, 'base64');
+          const blob = new Blob([buffer], { type: 'image/jpeg' });
+          formData.append('image', blob, 'image.jpg');
+        }
+        formData.append('prompt', prompt);
+        formData.append('model', 'gpt-image-2');
+        formData.append('n', '1');
+        if (aspectRatio) formData.append('size', aspectRatio);
+        if (imageQuality) formData.append('quality', imageQuality);
+
+        const response = await fetch(`${YUNWU_BASE_URL}/v1/images/edits`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${YUNWU_API_KEY}` },
+          body: formData,
+        });
+        if (!response.ok) throw new Error(`API 错误: ${response.status}`);
+        const data = await response.json();
+        imageUrl = extractGptImageUrl(data);
+      } else {
+        // 文生图
+        const response = await fetch(`${YUNWU_BASE_URL}/v1/images/generations`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${YUNWU_API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'gpt-image-2',
+            prompt,
+            n: 1,
+            size: aspectRatio || '2048x1152',
+            quality: imageQuality || 'medium',
+            format: 'jpeg',
+          }),
+        });
+        if (!response.ok) throw new Error(`API 错误: ${response.status}`);
+        const data = await response.json();
+        imageUrl = extractGptImageUrl(data);
+      }
+      if (!imageUrl) throw new Error('无法解析图片');
     }
 
     return NextResponse.json({ success: true, imageUrl, model, prompt });
   } catch (error: any) {
     console.error('Image API error:', error);
-    // 生成失败退款（精确还原扣费金额）
     if (body?.userId) {
       const refundKey = body.model === 'nano-banana-pro'
         ? (body.imageQuality === '4k' ? 'nano-banana-pro-4k' : 'nano-banana-pro-2k')
         : body.model === 'nano-banana-pro-multi'
         ? (body.imageQuality === '4k' ? 'nano-banana-pro-multi-4k' : 'nano-banana-pro-multi-2k')
+        : ['gpt-image-2', 'gpt-image-2-all'].includes(body.model)
+        ? `gpt-image-2-${body.aspectRatio || '2048x1152'}`
         : body.model;
       const price = calcImagePrice(refundKey);
       await refundBalance(body.userId, price, `图片生成失败退款 - ${body.model}`, { model: body.model });
     }
     return NextResponse.json({ error: error.message || '服务器错误' }, { status: 500 });
   }
+}
+
+function extractGptImageUrl(data: any): string {
+  if (data?.data?.[0]?.url) return data.data[0].url;
+  if (data?.data?.[0]?.b64_json) return `data:image/jpeg;base64,${data.data[0].b64_json}`;
+  const content = data?.choices?.[0]?.message?.content;
+  if (content) {
+    if (content.startsWith('data:')) return content;
+    if (content.startsWith('http')) return content;
+    if (/^[A-Za-z0-9+/=]+$/.test(content.trim())) return `data:image/jpeg;base64,${content.trim()}`;
+  }
+  return '';
 }
