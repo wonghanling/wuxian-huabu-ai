@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { calcImagePrice } from '@/lib/pricing';
 import { deductBalance, refundBalance } from '@/lib/billing';
 
+export const runtime = 'nodejs';
+export const maxDuration = 300;
+
 const YUNWU_BASE_URL = 'https://api.n1n.ai';
 const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
-
-export const maxDuration = 300;
 
 export async function POST(req: NextRequest) {
   try {
