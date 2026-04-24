@@ -50,13 +50,13 @@ const IMAGE_MODELS: Record<string, {
     supportsImage: true,
   },
   'gpt-image-2': {
-    provider: 'n1n',
-    apiType: 'gpt-image',
+    provider: 'fal',
+    falEndpoint: 'openai/gpt-image-2/edit',
     supportsImage: true,
   },
   'gpt-image-2-all': {
-    provider: 'n1n',
-    apiType: 'gpt-image',
+    provider: 'fal',
+    falEndpoint: 'openai/gpt-image-2/edit',
     supportsImage: true,
   },
   // --- fal.ai 模型 ---
@@ -104,6 +104,8 @@ export async function POST(req: NextRequest) {
       ? (imageQuality === '4k' ? 'nano-banana-pro-4k' : 'nano-banana-pro-2k')
       : model === 'nano-banana-pro-multi'
       ? (imageQuality === '4k' ? 'nano-banana-pro-multi-4k' : 'nano-banana-pro-multi-2k')
+      : ['gpt-image-2', 'gpt-image-2-all'].includes(model)
+      ? `gpt-image-2-${imageQuality || 'medium'}-${aspectRatio || '2048x1152'}`
       : model;
     const price = calcImagePrice(pricingKey);
     if (userId) {
@@ -152,6 +154,50 @@ export async function POST(req: NextRequest) {
           input.image_urls = imageUrlArray;
         }
         const submitted = await fal.queue.submit(actualEndpoint, { input });
+        const requestId = submitted.request_id;
+        if (!requestId) throw new Error('fal.ai 未返回 requestId');
+        return NextResponse.json({ success: true, requestId, model, prompt, pending: true });
+      } else if (['gpt-image-2', 'gpt-image-2-all'].includes(model)) {
+        // GPT Image 2：尺寸用 image_size，画质用 quality，图片传 URL
+        delete input.aspect_ratio;
+        delete input.num_images;
+        delete input.output_format;
+        delete input.safety_tolerance;
+
+        // 尺寸：把 "2048x1152" 转成 {width, height}
+        const sizeMap: Record<string, {width: number, height: number}> = {
+          '2048x1152': { width: 2048, height: 1152 },
+          '3840x2160': { width: 3840, height: 2160 },
+          '2160x3840': { width: 2160, height: 3840 },
+          '2048x2048': { width: 2048, height: 2048 },
+        };
+        input.image_size = sizeMap[aspectRatio] || { width: 2048, height: 1152 };
+        input.quality = imageQuality || 'high';
+        input.num_images = 1;
+        input.output_format = 'jpeg';
+
+        // 图片处理：先上传到 fal storage 拿 URL
+        const allImages: string[] = [];
+        if (imageBase64Array && Array.isArray(imageBase64Array)) {
+          for (const img of imageBase64Array) {
+            const base64Data = img.replace(/^data:image\/\w+;base64,/, '');
+            const buffer = Buffer.from(base64Data, 'base64');
+            const blob = new Blob([buffer], { type: 'image/jpeg' });
+            const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
+            const url = await fal.storage.upload(file);
+            allImages.push(url);
+          }
+        } else if (imageBase64) {
+          const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, '');
+          const buffer = Buffer.from(base64Data, 'base64');
+          const blob = new Blob([buffer], { type: 'image/jpeg' });
+          const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
+          const url = await fal.storage.upload(file);
+          allImages.push(url);
+        }
+        if (allImages.length > 0) input.image_urls = allImages;
+
+        const submitted = await fal.queue.submit('openai/gpt-image-2/edit', { input });
         const requestId = submitted.request_id;
         if (!requestId) throw new Error('fal.ai 未返回 requestId');
         return NextResponse.json({ success: true, requestId, model, prompt, pending: true });
@@ -307,7 +353,7 @@ export async function POST(req: NextRequest) {
         : body.model === 'nano-banana-pro-multi'
         ? (body.imageQuality === '4k' ? 'nano-banana-pro-multi-4k' : 'nano-banana-pro-multi-2k')
         : ['gpt-image-2', 'gpt-image-2-all'].includes(body.model)
-        ? `gpt-image-2-${body.aspectRatio || '2048x1152'}`
+        ? `gpt-image-2-${body.imageQuality || 'medium'}-${body.aspectRatio || '2048x1152'}`
         : body.model;
       const price = calcImagePrice(refundKey);
       await refundBalance(body.userId, price, `图片生成失败退款 - ${body.model}`, { model: body.model });
