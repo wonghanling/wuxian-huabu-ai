@@ -1964,16 +1964,19 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                 <label className="text-gray-400 text-xs mb-1 block">尺寸</label>
                 <div className="flex gap-1 flex-wrap">
                   {[
-                    { value: '2048x1152', label: '16:9 横屏' },
-                    { value: '3840x2160', label: '4K 横屏' },
-                    { value: '2160x3840', label: '9:16 竖屏' },
-                    { value: '2048x2048', label: '1:1 正方' },
-                  ].map(({ value, label }) => (
+                    { value: '2048x1152', label: '16:9 横屏', price: '¥0.5' },
+                    { value: '3840x2160', label: '4K 横屏', price: '¥0.8' },
+                    { value: '2160x3840', label: '9:16 竖屏', price: '¥0.7' },
+                    { value: '2048x2048', label: '1:1 正方', price: '¥0.5' },
+                  ].map(({ value, label, price }) => (
                     <button key={value}
                       onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, aspectRatio: value } }); }}
                       onPointerDown={(e) => e.stopPropagation()}
                       className={`flex-1 py-1.5 rounded-lg border text-xs font-medium transition-all ${(aspectRatio ?? '2048x1152') === value ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
-                    >{label}</button>
+                    >
+                      <div>{label}</div>
+                      <div className="text-[10px] opacity-70">{price}</div>
+                    </button>
                   ))}
                 </div>
               </div>
