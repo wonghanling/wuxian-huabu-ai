@@ -2121,8 +2121,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       );
                     })()}
                   </>
-                ) : ['nano-banana', 'nano-banana-pro'].includes(model || '') ? (
-                  /* nano-banana-pro 走 fal storage URL，nano-banana 走 base64 */
+                ) : ['nano-banana', 'nano-banana-pro', 'gpt-image-2-all'].includes(model || '') ? (
+                  /* nano-banana-pro 走 fal storage URL，nano-banana/gpt-image-2-all 走 base64 */
                   <>
                     {(() => {
                       const imgs: string[] = uploadedImages ? JSON.parse(uploadedImages) : [];
@@ -2133,7 +2133,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                             type="file"
                             accept="image/*"
                             multiple
-                            disabled={model === 'nano-banana-pro' ? urls.length >= 2 || isUploadingMulti : imgs.length >= 2}
+                            disabled={model === 'nano-banana-pro' ? urls.length >= 2 || isUploadingMulti : model === 'gpt-image-2-all' ? imgs.length >= 10 : imgs.length >= 2}
                             className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer disabled:opacity-50"
                             onClick={(e) => e.stopPropagation()}
                             onPointerDown={(e) => e.stopPropagation()}
@@ -2157,8 +2157,9 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                                 editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImageUrls: JSON.stringify(newUrls) } });
                                 setIsUploadingMulti(false);
                               } else {
-                                // nano-banana：base64
-                                const remaining = 2 - imgs.length;
+                                // nano-banana / gpt-image-2-all：base64
+                                const maxImgs = model === 'gpt-image-2-all' ? 10 : 2;
+                                const remaining = maxImgs - imgs.length;
                                 const toLoad = files.slice(0, remaining);
                                 let loaded = 0;
                                 const newImgs = [...imgs];
@@ -2201,7 +2202,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                               ))}
                             </div>
                           )}
-                          {model === 'nano-banana' && imgs.length > 0 && (
+                          {model === 'nano-banana' || model === 'gpt-image-2-all' ? imgs.length > 0 && (
                             <div className="mt-1 flex flex-col gap-2">
                               {imgs.map((img, idx) => (
                                 <div key={idx} className="relative w-full bg-black/30 rounded-xl overflow-hidden group"
@@ -2708,9 +2709,10 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
                       if (data.pending && data.requestId) {
                         // fal 异步，走轮询
+                        const shapeAtStart = editor.getShape(shape.id) as any;
                         editor.updateShape({
                           id: shape.id, type: 'custom-card' as any,
-                          props: { ...shape.props, generationProgress: 20, generationStatus: '排队中...' },
+                          props: { ...(shapeAtStart?.props || shape.props), generationProgress: 20, generationStatus: '排队中...' },
                         });
                         let pollAttempts = 0;
                         const falEndpoint = data.endpoint || 'openai/gpt-image-2/edit';
