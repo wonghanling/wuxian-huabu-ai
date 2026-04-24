@@ -10,6 +10,7 @@ import {
   Editor,
 } from 'tldraw';
 import { useState, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { fal } from '@fal-ai/client';
 import { createClient } from '@/lib/supabase/client';
 import { mirrorUrlToStorage } from '@/lib/canvas-storage';
@@ -887,8 +888,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
       >
         {showMemberModal && <MembershipModal onClose={() => setShowMemberModal(false)} onPay={() => handlePay('membership', 115)} />}
 
-        {/* 视频/图片放大弹窗 */}
-        {lightboxVideo && (
+        {/* 视频/图片放大弹窗 - 用 Portal 渲染到 body，脱离 tldraw transform 上下文避免模糊 */}
+        {lightboxVideo && typeof document !== 'undefined' && createPortal(
           <div
             className="fixed inset-0 z-[99999] bg-black/80 flex items-center justify-center"
             onClick={() => setLightboxVideo(null)}
@@ -906,7 +907,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                 onPointerDown={(e) => e.stopPropagation()}
               >✕</button>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
         {/* 图片卡片菜单按钮 - 右侧端口上方 */}
         {cardType === 'image' && !isMinimized && (

@@ -1,6 +1,7 @@
 ﻿'use client';
 import { BaseBoxShapeUtil, HTMLContainer, RecordProps, T, usePassThroughWheelEvents } from 'tldraw';
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { createClient } from '@/lib/supabase/client';
 
 // 下载文件（fetch blob，不打开新标签页）
@@ -319,8 +320,8 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
     return (
       <HTMLContainer style={{ width: w, height: h, pointerEvents: 'all', overflow: 'visible' }}>
 
-        {/* lightbox */}
-        {lightboxVideo && (
+        {/* lightbox - Portal 渲染到 body 避免 tldraw transform 导致模糊 */}
+        {lightboxVideo && typeof document !== 'undefined' && createPortal(
           <div className="fixed inset-0 z-[99999] bg-black/80 flex items-center justify-center"
             onClick={() => setLightboxVideo(null)} onPointerDown={(e) => e.stopPropagation()}>
             <div className="relative" style={{ maxWidth: '70vw', maxHeight: '70vh' }} onClick={(e) => e.stopPropagation()}>
@@ -332,7 +333,8 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
               <button className="absolute -top-3 -right-3 w-7 h-7 bg-zinc-800 hover:bg-zinc-700 border border-white/20 rounded-full text-white text-sm flex items-center justify-center"
                 onClick={() => setLightboxVideo(null)} onPointerDown={(e) => e.stopPropagation()}>✕</button>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         {/* 输出端口 - Right */}

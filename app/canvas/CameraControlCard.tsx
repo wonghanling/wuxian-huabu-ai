@@ -8,6 +8,7 @@ import {
   Rectangle2d,
 } from 'tldraw';
 import { useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { createClient } from '@/lib/supabase/client';
 import { mirrorUrlToStorage } from '@/lib/canvas-storage';
 
@@ -411,8 +412,8 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
             style={{ backgroundColor: '#27272a', border: '2px solid rgba(192,192,192,0.8)', boxShadow: '0 0 8px rgba(192,192,192,0.4)', pointerEvents: 'none' }} />
         </div>
 
-        {/* 放大查看 */}
-        {lightbox && generatedImage && (
+        {/* 放大查看 - Portal 渲染到 body 避免 tldraw transform 导致模糊 */}
+        {lightbox && generatedImage && typeof document !== 'undefined' && createPortal(
           <div
             className="fixed inset-0 z-[99999] bg-black/85 flex items-center justify-center"
             onClick={() => setLightbox(false)}
@@ -426,7 +427,8 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
                 onPointerDown={(e) => e.stopPropagation()}
               >✕</button>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
 
         <div className="w-full h-full bg-zinc-900/95 backdrop-blur-sm border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
