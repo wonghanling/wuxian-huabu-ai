@@ -2204,7 +2204,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                               ))}
                             </div>
                           )}
-                          {model === 'nano-banana' || model === 'gpt-image-2-all' ? imgs.length > 0 && (
+                          {(model === 'nano-banana' || model === 'gpt-image-2-all') && imgs.length > 0 && (
                             <div className="mt-1 flex flex-col gap-2">
                               {imgs.map((img, idx) => (
                                 <div key={idx} className="relative w-full bg-black/30 rounded-xl overflow-hidden group"
