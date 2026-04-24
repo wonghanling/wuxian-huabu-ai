@@ -28,11 +28,16 @@ const updateCustomCardShape = (editor: Editor, id: string, props: any) => {
 };
 
 // 轻度压缩：最长边限 2048px，quality 0.92
+// 如果图片已经 ≤2048px，直接返回原图，避免重复 JPEG 编码
 function softCompressImage(dataUrl: string): Promise<string> {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
       const maxSide = 2048;
+      if (img.width <= maxSide && img.height <= maxSide) {
+        resolve(dataUrl);
+        return;
+      }
       const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
       const w = Math.round(img.width * scale);
       const h = Math.round(img.height * scale);
@@ -2669,11 +2674,17 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       const imgs: string[] = uploadedImages ? JSON.parse(uploadedImages) : [];
 
                       let imagesToSend: string[] = [];
+                      // 连接图片优先
                       if (connectedGeneratedImage) {
                         const isBase64 = connectedGeneratedImage.startsWith('data:');
                         const raw = isBase64 ? connectedGeneratedImage : await fetch(connectedGeneratedImage).then(r => r.blob()).then(b => new Promise<string>(res => { const rd = new FileReader(); rd.onload = () => res(rd.result as string); rd.readAsDataURL(b); }));
                         imagesToSend.push(await softCompressImage(raw));
                       }
+                      // 手动上传单图（gpt-image-2 单图模式）
+                      if (uploadedImage && !connectedGeneratedImage) {
+                        imagesToSend.push(await softCompressImage(uploadedImage));
+                      }
+                      // 多图（gpt-image-2-all 多图融合模式）
                       if (imgs.length > 0) {
                         for (const img of imgs) {
                           imagesToSend.push(await softCompressImage(img));
@@ -2729,9 +2740,10 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           }
                         };
                         const pollResult = await poll();
+                        const latestShape = editor.getShape(shape.id) as any;
                         editor.updateShape({
                           id: shape.id, type: 'custom-card' as any,
-                          props: { ...shape.props, generatedImage: pollResult, isGenerating: false, generationProgress: 100, generationStatus: '生成完成' },
+                          props: { ...(latestShape?.props || shape.props), generatedImage: pollResult, isGenerating: false, generationProgress: 100, generationStatus: '生成完成' },
                         });
                       } else {
                         editor.updateShape({

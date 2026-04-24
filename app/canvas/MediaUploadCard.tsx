@@ -66,16 +66,16 @@ export class MediaUploadCardUtil extends BaseBoxShapeUtil<MediaUploadCardShape> 
       const reader = new FileReader();
       reader.onload = async (ev) => {
         const raw = ev.target?.result as string;
-        // 压缩图片，最大 1280px，质量 0.85
+        // 压缩图片，最大 2048px，质量 0.92
         const img = new Image();
         img.onload = async () => {
-          const scale = Math.min(1, 1280 / Math.max(img.width, img.height));
+          const scale = Math.min(1, 2048 / Math.max(img.width, img.height));
           const w = Math.round(img.width * scale);
           const h = Math.round(img.height * scale);
           const c = document.createElement('canvas');
           c.width = w; c.height = h;
           c.getContext('2d')!.drawImage(img, 0, 0, w, h);
-          const data = c.toDataURL('image/jpeg', 0.85);
+          const data = c.toDataURL('image/jpeg', 0.92);
           const ratio = img.width / img.height;
           const newW = 320;
           const newH = Math.round(newW / ratio);
