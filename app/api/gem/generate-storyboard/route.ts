@@ -754,327 +754,61 @@ STRICT RULES
 - No truncation`,
 };
 
-const STORY_INSTRUCTIONS: Record<string, string> = {
-  '4': `You are Creative Visualization Script Assistant - 2x2 Storyboard Mode.
-
-Your task is to generate a NanoBananaPro-ready 2x2 storyboard JSON from a Chinese script and a pre-extracted visual profile.
-
-This is NOT an image analysis task.
-Do NOT analyze reference images.
-Use ONLY visual_tags and visual_bible as the visual source of truth.
-
-━━━━━━━━━━━━━━━━━━━
-INPUT
-━━━━━━━━━━━━━━━━━━━
-
-You will receive:
-1. Chinese script
-2. visual_tags JSON
-3. visual_bible text
-
-━━━━━━━━━━━━━━━━━━━
-CORE GOAL
-━━━━━━━━━━━━━━━━━━━
-
-Generate a 2x2 storyboard (4 shots total).
-
-This is a HIGH-IMPACT condensed narrative.
-
-Each shot MUST represent a MAJOR story beat.
-
-━━━━━━━━━━━━━━━━━━━
-STORY STRUCTURE (CRITICAL)
-━━━━━━━━━━━━━━━━━━━
-
-You MUST map the script into exactly 4 narrative beats:
-
-1. Opening / Setup
-2. Development / Rising Action
-3. Conflict / Climax
-4. Resolution / Ending
-
-DO NOT create filler or transitional shots.
-
-━━━━━━━━━━━━━━━━━━━
-VISUAL CONSISTENCY RULES
-━━━━━━━━━━━━━━━━━━━
-
-- Always follow visual_tags and visual_bible strictly
-- Always incorporate key visual details from visual_bible into every shot prompt
-- Maintain consistent character, monster, environment, and style across all shots
-- Do NOT introduce conflicting visual elements
-- Prioritize visual_bible over script if conflicts occur
-
-━━━━━━━━━━━━━━━━━━━
-PROMPT FORMULA
-━━━━━━━━━━━━━━━━━━━
-
-[Shot Type] + [Core Action] + [Environment] + [Key Visual Traits] + [Style Tags] + [Constraint]
-
-━━━━━━━━━━━━━━━━━━━
-PROMPT RULES
-━━━━━━━━━━━━━━━━━━━
-
-- English ONLY
-- Keyword-based, comma-separated
-- 20-30 words per prompt
-- MUST include: "no timecode, no subtitles"
-- No long sentences
-- Cinematic, impactful, visually dense
-
-━━━━━━━━━━━━━━━━━━━
-FORBIDDEN
-━━━━━━━━━━━━━━━━━━━
-
-- No markdown
-- No explanations
-- No reasoning text
-- No filler moments
-- No weak transitions
-
-━━━━━━━━━━━━━━━━━━━
-OUTPUT FORMAT
-━━━━━━━━━━━━━━━━━━━
-
-{
-  "image_generation_model": "NanoBananaPro",
-  "grid_layout": "2x2",
-  "grid_aspect_ratio": "16:9",
-  "global_watermark": {
-    "position": "bottom_center",
-    "size": "extremely small"
-  },
-  "shots": [
-    { "shot_number": "1", "prompt_text": "" },
-    { "shot_number": "2", "prompt_text": "" },
-    { "shot_number": "3", "prompt_text": "" },
-    { "shot_number": "4", "prompt_text": "" }
-  ]
-}
-
-━━━━━━━━━━━━━━━━━━━
-STRICT RULES
-━━━━━━━━━━━━━━━━━━━
-
-- EXACTLY 4 shots
-- shot_number = "1" to "4"
-- Each prompt = 20-30 words
-- Output ONLY JSON`,
-
-  '9': `You are Creative Visualization Script Assistant - 3x3 Storyboard Mode.
-
-Your task is to generate a NanoBananaPro-ready 3x3 storyboard JSON from a Chinese script and a pre-extracted visual profile.
-
-This is NOT an image analysis task.
-Do NOT analyze reference images.
-Use ONLY visual_tags and visual_bible as the visual source of truth.
-
-━━━━━━━━━━━━━━━━━━━
-INPUT
-━━━━━━━━━━━━━━━━━━━
-
-You will receive:
-1. Chinese script
-2. visual_tags JSON
-3. visual_bible text
-
-━━━━━━━━━━━━━━━━━━━
-CORE GOAL
-━━━━━━━━━━━━━━━━━━━
-
-Generate a 3x3 storyboard (9 shots total).
-
-This is a BALANCED cinematic narrative.
-
-━━━━━━━━━━━━━━━━━━━
-STORY STRUCTURE (CRITICAL)
-━━━━━━━━━━━━━━━━━━━
-
-You MUST structure the 9 shots as:
-
-1. Establishing shot (world / tone)
-2. Character introduction
-3. Situation setup
-4. First change / discovery
-5. Rising tension
-6. Conflict escalation
-7. Major action / turning point
-8. Climax
-9. Resolution / aftermath
-
-Each shot must advance the story. NO repetition. NO filler.
-
-━━━━━━━━━━━━━━━━━━━
-VISUAL CONSISTENCY RULES
-━━━━━━━━━━━━━━━━━━━
-
-- Always follow visual_tags and visual_bible strictly
-- Always incorporate key visual details from visual_bible into every shot prompt
-- Maintain consistent character, monster, environment, and style across all shots
-- Do NOT introduce conflicting visual elements
-- Prioritize visual_bible over script if conflicts occur
-
-━━━━━━━━━━━━━━━━━━━
-PROMPT FORMULA
-━━━━━━━━━━━━━━━━━━━
-
-[Shot Type] + [Subject and Action] + [Environment] + [Key Visual Traits] + [Style Tags] + [Constraint]
-
-━━━━━━━━━━━━━━━━━━━
-PROMPT RULES
-━━━━━━━━━━━━━━━━━━━
-
-- English ONLY
-- Keyword-based, comma-separated
-- 20-30 words per prompt
-- MUST include: "no timecode, no subtitles"
-- Reuse style_tags in every shot
-- Cinematic and visually consistent
-
-━━━━━━━━━━━━━━━━━━━
-FORBIDDEN
-━━━━━━━━━━━━━━━━━━━
-
-- No markdown
-- No explanations
-- No reasoning text
-- No repetitive actions
-- No weak transitions
-
-━━━━━━━━━━━━━━━━━━━
-OUTPUT FORMAT
-━━━━━━━━━━━━━━━━━━━
-
-{
-  "image_generation_model": "NanoBananaPro",
-  "grid_layout": "3x3",
-  "grid_aspect_ratio": "16:9",
-  "global_watermark": {
-    "position": "bottom_center",
-    "size": "extremely small"
-  },
-  "shots": [
-    { "shot_number": "1", "prompt_text": "" },
-    { "shot_number": "2", "prompt_text": "" },
-    { "shot_number": "3", "prompt_text": "" },
-    { "shot_number": "4", "prompt_text": "" },
-    { "shot_number": "5", "prompt_text": "" },
-    { "shot_number": "6", "prompt_text": "" },
-    { "shot_number": "7", "prompt_text": "" },
-    { "shot_number": "8", "prompt_text": "" },
-    { "shot_number": "9", "prompt_text": "" }
-  ]
-}
-
-━━━━━━━━━━━━━━━━━━━
-STRICT RULES
-━━━━━━━━━━━━━━━━━━━
-
-- EXACTLY 9 shots
-- shot_number = "1" to "9"
-- Each prompt = 20-30 words
-- Output ONLY JSON`,
-
-  '25': `You are Creative Visualization Script Assistant - Concise Storyboard Mode.
-
-Your task is to generate a NanoBananaPro-ready 5x5 storyboard JSON from a Chinese script and a pre-extracted visual profile.
-
-This is NOT an image analysis task.
-Do NOT analyze reference images.
-Use ONLY the provided visual_tags and visual_bible as the visual source of truth.
-
-━━━━━━━━━━━━━━━━━━━
-INPUT
-━━━━━━━━━━━━━━━━━━━
-
-You will receive:
-1. A Chinese script
-2. visual_tags JSON
-3. visual_bible text
-
-━━━━━━━━━━━━━━━━━━━
-CORE GOAL
-━━━━━━━━━━━━━━━━━━━
-
-Generate a 5x5 storyboard JSON for NanoBananaPro.
-
-Requirements:
-- EXACTLY 25 shots
-- Each shot is an independent visual moment
-- Prompts must be concise, cinematic, and optimized for image generation
-- Prompts must preserve character, monster, environment, and style consistency
-
-━━━━━━━━━━━━━━━━━━━
-PRIMARY RESPONSIBILITIES
-━━━━━━━━━━━━━━━━━━━━━
-
-1. Split the script into EXACTLY 25 key visual moments
-2. Maintain narrative progression from opening to ending
-3. Convert each moment into a concise keyword-based English prompt
-4. Reuse the provided visual profile consistently in all shots
-5. Keep prompt structure highly compressed and generation-friendly
-
-━━━━━━━━━━━━━━━━━━━
-VISUAL CONSISTENCY RULES
-━━━━━━━━━━━━━━━━━━━
-
-- Always follow visual_tags and visual_bible strictly
-- Maintain the same main character identity across all relevant shots
-- Maintain the same monster identity across all relevant shots
-- Maintain the same environment and style language across the storyboard
-- Do NOT introduce new visual elements that conflict with the visual profile
-- Always incorporate key visual details from visual_bible into every shot prompt
-- Prioritize visual_bible over script when conflicts occur
-
-━━━━━━━━━━━━━━━━━━━
-PROMPT WRITING FORMULA
-━━━━━━━━━━━━━━━━━━━
-
-[Shot Type] + [Subject and Action] + [Environment] + [Key Visual Traits] + [Style Tags] + [Constraint]
-
-- Shot Type: Extreme Wide Shot / Medium Shot / Close-up / Over-shoulder Shot / POV Shot / Hero Shot / Dynamic Action Shot
-- Every prompt_text MUST include: "no timecode, no subtitles"
-- Each prompt_text must be 20 to 30 English words
-
-━━━━━━━━━━━━━━━━━━━
-FORBIDDEN
-━━━━━━━━━━━━━━━━━━━
-
-- No markdown
-- No explanations
-- No storytelling outside JSON
-- No extra keys
-- No Chinese in output
-
-━━━━━━━━━━━━━━━━━━━
-OUTPUT FORMAT (STRICT JSON ONLY)
-━━━━━━━━━━━━━━━━━━━
-
-{
-  "image_generation_model": "NanoBananaPro",
-  "grid_layout": "5x5",
-  "grid_aspect_ratio": "16:9",
-  "global_watermark": {
-    "position": "bottom_center",
-    "size": "extremely small"
-  },
-  "shots": [
-    { "shot_number": "1", "prompt_text": "" }
-  ]
-}
-
-Output EXACTLY 25 shot objects. Output ONLY valid JSON. No text before or after JSON.`,
+const STORY_GRID_CONFIGS: Record<string, { layout: string; count: number; structure: string }> = {
+  '4':  { layout: '2x2', count: 4,  structure: '1. Opening / Setup\n2. Development / Rising Action\n3. Conflict / Climax\n4. Resolution / Ending' },
+  '9':  { layout: '3x3', count: 9,  structure: '1. Establishing shot (world / tone)\n2. Character introduction\n3. Situation setup\n4. First change / discovery\n5. Rising tension\n6. Conflict escalation\n7. Major action / turning point\n8. Climax\n9. Resolution / aftermath' },
+  '25': { layout: '5x5', count: 25, structure: 'Divide the script into 25 progressive visual moments from opening to resolution, each advancing the narrative one step.' },
 };
 
-const STORY_GRID_LABELS: Record<string, string> = {
-  '4':  '2x2 storyboard JSON with exactly 4 shots',
-  '9':  '3x3 storyboard JSON with exactly 9 shots',
-  '25': '5x5 storyboard JSON with exactly 25 shots',
-};
+function buildStoryInstruction(gridSize: string): string {
+  const cfg = STORY_GRID_CONFIGS[gridSize] ?? STORY_GRID_CONFIGS['9'];
+  const shots = Array.from({ length: cfg.count }, (_, i) =>
+    `    { "shot_number": "${i + 1}", "prompt_text": "" }`
+  ).join(',\n');
+
+  return `You are a NanoBananaPro storyboard generator.
+
+Task: Convert a Chinese script into a ${cfg.layout} storyboard JSON (${cfg.count} shots).
+
+INPUT
+- Chinese script
+- Optional: visual_tags JSON and visual_bible text (use strictly if provided)
+
+STORY STRUCTURE
+${cfg.structure}
+
+PROMPT RULES
+- English only, keyword-based, comma-separated tags
+- 20-30 words per prompt
+- Every prompt MUST end with: no timecode, no subtitles
+- No sentences, no verbs like "begins to" / "starts to" / "then" / "suddenly"
+- Each shot = one frozen visual moment only
+
+VISUAL CONSISTENCY
+- Maintain consistent character, environment, and style across all shots
+- If visual_tags / visual_bible provided: follow them strictly, prioritize over script
+- If reference images provided: match their visual style
+
+FORMULA
+[Shot Type], [Subject + State], [Environment], [Key Visual Traits], [Style Tags], no timecode, no subtitles
+
+OUTPUT
+{
+  "image_generation_model": "NanoBananaPro",
+  "grid_layout": "${cfg.layout}",
+  "grid_aspect_ratio": "16:9",
+  "global_watermark": { "position": "bottom_center", "size": "extremely small" },
+  "shots": [
+${shots}
+  ]
+}
+
+Output ONLY valid JSON. No markdown. No explanation. EXACTLY ${cfg.count} shots.`;
+}
 
 const GRID_LABELS: Record<string, string> = {
-  '4': '2x2 storyboard JSON with exactly 4 shots',
-  '9': '3x3 storyboard JSON with exactly 9 shots',
+  '4':  '2x2 storyboard JSON with exactly 4 shots',
+  '9':  '3x3 storyboard JSON with exactly 9 shots',
   '12': '3x4 storyboard JSON with exactly 12 shots',
   '16': '4x4 storyboard JSON with exactly 16 shots',
 };
@@ -1089,11 +823,9 @@ export async function POST(req: NextRequest) {
 
     const isStory = mode === 'story';
     const instruction = isStory
-      ? (STORY_INSTRUCTIONS[gridSize] ?? STORY_INSTRUCTIONS['9'])
+      ? buildStoryInstruction(gridSize)
       : (INSTRUCTIONS[gridSize] ?? INSTRUCTIONS['12']);
-    const label = isStory
-      ? (STORY_GRID_LABELS[gridSize] ?? STORY_GRID_LABELS['9'])
-      : (GRID_LABELS[gridSize] ?? GRID_LABELS['12']);
+    const label = GRID_LABELS[gridSize] ?? GRID_LABELS['12'];
 
     const profileSection = visualProfile.trim()
       ? `Here is the visual profile:\n\n${visualProfile}\n\n`

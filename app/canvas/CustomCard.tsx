@@ -2060,6 +2060,15 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     : model === 'flux-kontext' ? '参考图片（必填）' : '参考图片（可选）'}
                 </label>
 
+                {/* 连接图片预览 */}
+                {connectedGeneratedImage && (
+                  <div className="mb-2 relative w-full bg-black/30 rounded-xl overflow-hidden border border-purple-500/30"
+                    style={{ aspectRatio: '16/9' }}>
+                    <img src={connectedGeneratedImage} className="w-full h-full object-cover" />
+                    <div className="absolute bottom-0 left-0 right-0 bg-purple-600/80 text-white text-[10px] text-center py-0.5">来自连接卡片</div>
+                  </div>
+                )}
+
                 {/* 多图融合模型：上传到 fal storage，存 URL */}
                 {model === 'nano-banana-pro-multi' ? (
                   <>
