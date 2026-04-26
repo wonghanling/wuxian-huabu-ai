@@ -1081,10 +1081,10 @@ const GRID_LABELS: Record<string, string> = {
 
 export async function POST(req: NextRequest) {
   try {
-    const { visualProfile, script, gridSize = '12', mode = 'cinematic' } = await req.json();
+    const { visualProfile = '', images = [], script, gridSize = '12', mode = 'cinematic' } = await req.json();
 
-    if (!visualProfile || !script) {
-      return NextResponse.json({ error: '缺少视觉档案或剧本' }, { status: 400 });
+    if (!script) {
+      return NextResponse.json({ error: '缺少剧本内容' }, { status: 400 });
     }
 
     const isStory = mode === 'story';
@@ -1095,15 +1095,21 @@ export async function POST(req: NextRequest) {
       ? (STORY_GRID_LABELS[gridSize] ?? STORY_GRID_LABELS['9'])
       : (GRID_LABELS[gridSize] ?? GRID_LABELS['12']);
 
-    const userMessage = `Here is the visual profile from Step 1:
+    const profileSection = visualProfile.trim()
+      ? `Here is the visual profile:\n\n${visualProfile}\n\n`
+      : '';
 
-${visualProfile}
+    const userMessage = `${profileSection}Here is the Chinese script:\n\n${script}\n\nGenerate the ${label}.`;
 
-Here is the Chinese script:
-
-${script}
-
-Generate the ${label}.`;
+    // 构建 parts：如果有图片则先放图片
+    const parts: any[] = [];
+    for (const img of images) {
+      const match = img.match(/^data:(image\/\w+);base64,(.+)$/);
+      if (match) {
+        parts.push({ inline_data: { mime_type: match[1], data: match[2] } });
+      }
+    }
+    parts.push({ text: userMessage });
 
     const text = await (async () => {
       const response = await fetch(
@@ -1116,7 +1122,7 @@ Generate the ${label}.`;
           },
           body: JSON.stringify({
             system_instruction: { parts: [{ text: instruction }] },
-            contents: [{ role: 'user', parts: [{ text: userMessage }] }],
+            contents: [{ role: 'user', parts }],
             generationConfig: { temperature: 0.7 },
           }),
         }
@@ -1130,7 +1136,6 @@ Generate the ${label}.`;
       return allParts.map((p: any) => p.text ?? '').join('').trim();
     })();
 
-    // 清理 markdown 代码块
     const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
 
     return NextResponse.json({ result: cleaned });

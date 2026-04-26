@@ -7,7 +7,7 @@ import {
   useEditor,
   Rectangle2d,
 } from 'tldraw';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
 type GridSize = '4' | '9' | '12' | '16' | '25';
 
@@ -148,17 +148,20 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
   }
 
   component(shape: GemStep2CardShape) {
-    const { w, h, visualProfile, script, gridSize = '9', mode = 'story', result, isGenerating, isMinimized } = shape.props;
+    const { w, h, script, gridSize = '9', mode = 'story', result, isGenerating, isMinimized } = shape.props;
     const editor = useEditor();
     const [copied, setCopied] = useState(false);
     const [showStyles, setShowStyles] = useState(false);
+    const [localImages, setLocalImages] = useState<string[]>([]);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const update = (props: Partial<GemStep2CardShape['props']>) => {
       editor.updateShape({ id: shape.id, type: 'gem-step2-card' as any, props: { ...shape.props, ...props } });
     };
 
-    // 实时读取连接的 Step1 的 result
-    const getConnectedVisualProfile = (): string => {
+    // 读取连接的图片（素材卡片 / 图片生成卡片）
+    const getConnectedImages = (): string[] => {
+      const imgs: string[] = [];
       const inputBindings = editor.getBindingsToShape(shape.id, 'connection');
       for (const binding of inputBindings) {
         if ((binding as any).props?.terminal !== 'end') continue;
@@ -166,14 +169,51 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
         for (const cb of connBindings) {
           if ((cb as any).props?.terminal !== 'start') continue;
           const src = editor.getShape((cb as any).toId) as any;
-          if (src?.type === 'gem-step1-card' && src.props?.result) return src.props.result;
+          // 素材上传卡片
+          if (src?.type === 'media-upload-card' && src.props?.imageData) {
+            imgs.push(src.props.imageData);
+          }
+          // 图片生成卡片
+          if (src?.type === 'custom-card' && src.props?.generatedImageUrl) {
+            imgs.push(src.props.generatedImageUrl);
+          }
         }
       }
-      return '';
+      return imgs;
     };
 
-    const connectedVisualProfile = getConnectedVisualProfile();
-    const effectiveVisualProfile = connectedVisualProfile || visualProfile;
+    const connectedImages = getConnectedImages();
+    const allImages = [...connectedImages, ...localImages];
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(e.target.files || []);
+      const remaining = 5 - localImages.length;
+      files.slice(0, remaining).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const dataUrl = ev.target?.result as string;
+          const img = new Image();
+          img.onload = () => {
+            const maxSide = 1500;
+            const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+            const cw = Math.round(img.width * scale);
+            const ch = Math.round(img.height * scale);
+            const c = document.createElement('canvas');
+            c.width = cw; c.height = ch;
+            c.getContext('2d')!.drawImage(img, 0, 0, cw, ch);
+            setLocalImages(prev => [...prev, c.toDataURL('image/jpeg', 0.85)]);
+          };
+          img.onerror = () => setLocalImages(prev => [...prev, dataUrl]);
+          img.src = dataUrl;
+        };
+        reader.readAsDataURL(file);
+      });
+      e.target.value = '';
+    };
+
+    const removeLocalImage = (idx: number) => {
+      setLocalImages(prev => prev.filter((_, i) => i !== idx));
+    };
 
     const handleOutputPortDown = (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -205,14 +245,13 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
     };
 
     const generate = async () => {
-      if (!effectiveVisualProfile.trim()) { alert('请连接 Step 1 或粘贴视觉档案 JSON'); return; }
       if (!script.trim()) { alert('请输入剧本/故事'); return; }
       update({ isGenerating: true, result: '' });
       try {
         const res = await fetch('/api/gem/generate-storyboard', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ visualProfile: effectiveVisualProfile, script, gridSize, mode }),
+          body: JSON.stringify({ images: allImages, script, gridSize, mode }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || '请求失败');
@@ -361,34 +400,64 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
                 </div>
               </div>
 
-              {/* 视觉档案 */}
+              {/* 参考图片上传 */}
               <div className="flex-shrink-0">
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-xs text-gray-400">
-                    Step 1 视觉档案 JSON
-                    {connectedVisualProfile && <span className="text-purple-400 ml-1">· 已连接</span>}
+                    参考图片
+                    {connectedImages.length > 0 && <span className="text-purple-400 ml-1">· 已连接 {connectedImages.length} 张</span>}
                   </label>
-                  {!connectedVisualProfile && (
-                    <button
-                      className="text-[10px] text-gray-500 hover:text-gray-300 transition-colors"
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        const text = await navigator.clipboard.readText();
-                        if (text) update({ visualProfile: text });
-                      }}
+                  <span className="text-[10px] text-gray-600">{allImages.length}/5</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {/* 连接的图片（只读） */}
+                  {connectedImages.map((img, idx) => (
+                    <div key={`conn-${idx}`} className="relative w-12 h-12 rounded-lg overflow-hidden border border-purple-500/40">
+                      <img src={img} className="w-full h-full object-cover" alt="" />
+                      <div className="absolute inset-0 bg-purple-900/30 flex items-center justify-center">
+                        <svg className="w-3 h-3 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" />
+                        </svg>
+                      </div>
+                    </div>
+                  ))}
+                  {/* 本地上传的图片 */}
+                  {localImages.map((img, idx) => (
+                    <div key={`local-${idx}`} className="relative w-12 h-12 rounded-lg overflow-hidden border border-white/15 group">
+                      <img src={img} className="w-full h-full object-cover" alt="" />
+                      <button
+                        className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                        onClick={(e) => { e.stopPropagation(); removeLocalImage(idx); }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                      >
+                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                  {/* 上传按钮 */}
+                  {allImages.length < 5 && (
+                    <label
+                      className="w-12 h-12 border border-dashed border-white/20 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-white/40 transition-colors"
+                      onClick={(e) => e.stopPropagation()}
                       onPointerDown={(e) => e.stopPropagation()}
-                    >粘贴</button>
+                    >
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={handleImageUpload}
+                      />
+                      <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                    </label>
                   )}
                 </div>
-                <textarea
-                  className="w-full h-20 bg-black/30 border border-white/8 rounded-lg p-2 text-gray-300 text-[10px] resize-none focus:outline-none focus:border-white/15 font-mono placeholder-gray-600"
-                  placeholder="连接 Step 1 自动读取，或手动粘贴 JSON..."
-                  value={effectiveVisualProfile}
-                  readOnly={!!connectedVisualProfile}
-                  onClick={(e) => e.stopPropagation()}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onChange={(e) => { if (!connectedVisualProfile) update({ visualProfile: e.target.value }); }}
-                />
+                <p className="text-[10px] text-gray-600 mt-1">可选，连接素材卡片或手动上传，AI 将参考图片风格生成分镜</p>
               </div>
 
               {/* 剧本输入 + 风格选择 */}
@@ -437,9 +506,9 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
               <button
                 onClick={(e) => { e.stopPropagation(); generate(); }}
                 onPointerDown={(e) => e.stopPropagation()}
-                disabled={isGenerating || !effectiveVisualProfile.trim() || !script.trim()}
+                disabled={isGenerating || !script.trim()}
                 className={`flex-shrink-0 w-full py-2 rounded-xl text-sm font-semibold transition-all ${
-                  isGenerating || !effectiveVisualProfile.trim() || !script.trim()
+                  isGenerating || !script.trim()
                     ? 'bg-white/5 text-gray-500 cursor-not-allowed'
                     : 'bg-blue-600 hover:bg-blue-500 text-white shadow-lg'
                 }`}

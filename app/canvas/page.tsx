@@ -13,7 +13,6 @@ import { TimelineShapeUtil } from './TimelineShape';
 import { ShotCardShapeUtil } from './ShotCard';
 import { PromptOptimizerCardUtil } from './PromptOptimizerCard';
 import { GemStep0CardUtil } from './GemStoryboardStep0Card';
-import { GemStep1CardUtil } from './GemStoryboardStep1Card';
 import { GemStep2CardUtil } from './GemStoryboardStep2Card';
 import { GemStep3CardUtil } from './GemStoryboardStep3Card';
 import { GemStep4CardUtil } from './GemStoryboardStep4Card';
@@ -490,20 +489,18 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
       const centerY = viewportPageBounds.center.y;
       const cardW = 400;
       const gap = 20;
-      const totalW = cardW * 5 + gap * 4;
+      const totalW = cardW * 4 + gap * 3;
       const startX = centerX - totalW / 2;
       const startY = centerY - 260;
       const id0 = createShapeId();
-      const id1 = createShapeId();
       const id2 = createShapeId();
       const id3 = createShapeId();
       const id4 = createShapeId();
 
       editor.createShape({ id: id0, type: 'gem-step0-card' as any, x: startX, y: startY, props: { w: cardW, h: 520 } });
-      editor.createShape({ id: id1, type: 'gem-step1-card' as any, x: startX + (cardW + gap), y: startY, props: { w: cardW, h: 520 } });
-      editor.createShape({ id: id2, type: 'gem-step2-card' as any, x: startX + (cardW + gap) * 2, y: startY, props: { w: cardW, h: 520 } });
-      editor.createShape({ id: id3, type: 'gem-step3-card' as any, x: startX + (cardW + gap) * 3, y: startY, props: { w: cardW, h: 520 } });
-      editor.createShape({ id: id4, type: 'gem-step4-card' as any, x: startX + (cardW + gap) * 4, y: startY, props: { w: cardW, h: 520 } });
+      editor.createShape({ id: id2, type: 'gem-step2-card' as any, x: startX + (cardW + gap), y: startY, props: { w: cardW, h: 520 } });
+      editor.createShape({ id: id3, type: 'gem-step3-card' as any, x: startX + (cardW + gap) * 2, y: startY, props: { w: cardW, h: 520 } });
+      editor.createShape({ id: id4, type: 'gem-step4-card' as any, x: startX + (cardW + gap) * 3, y: startY, props: { w: cardW, h: 520 } });
 
       editor.select(id0);
       editor.setCurrentTool('select');
@@ -517,26 +514,17 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
       const viewportPageBounds = editor.getViewportPageBounds();
       const centerX = viewportPageBounds.center.x;
       const centerY = viewportPageBounds.center.y;
-      const id1 = createShapeId();
       const id2 = createShapeId();
-
-      editor.createShape({
-        id: id1,
-        type: 'gem-step1-card' as any,
-        x: centerX - 420,
-        y: centerY - 260,
-        props: { w: 400, h: 520 },
-      });
 
       editor.createShape({
         id: id2,
         type: 'gem-step2-card' as any,
-        x: centerX + 20,
+        x: centerX - 200,
         y: centerY - 280,
         props: { w: 400, h: 560 },
       });
 
-      editor.select(id1);
+      editor.select(id2);
       editor.setCurrentTool('select');
     } catch (error) {
       console.error('创建GEM分镜卡片失败:', error);
@@ -1746,7 +1734,7 @@ function CanvasPageContent() {
   }, []);
 
   // 自定义形状工具和绑定工具
-  const customShapeUtils = [CustomCardShapeUtil, ConnectionShapeUtil, TimelineShapeUtil, ShotCardShapeUtil, PromptOptimizerCardUtil, GemStep0CardUtil, GemStep1CardUtil, GemStep2CardUtil, GemStep3CardUtil, GemStep4CardUtil, AudioCardUtil, SeedanceCardUtil, CameraControlCardUtil, MediaUploadCardUtil];
+  const customShapeUtils = [CustomCardShapeUtil, ConnectionShapeUtil, TimelineShapeUtil, ShotCardShapeUtil, PromptOptimizerCardUtil, GemStep0CardUtil, GemStep2CardUtil, GemStep3CardUtil, GemStep4CardUtil, AudioCardUtil, SeedanceCardUtil, CameraControlCardUtil, MediaUploadCardUtil];
   const customBindingUtils = [ConnectionBindingUtil];
   const customTools = [PortTool];
 
@@ -2345,13 +2333,10 @@ function CanvasPageContent() {
               if (!srcShape) return;
               const baseX = srcShape.x + (srcShape.props?.w ?? 380) + 40;
               const baseY = srcShape.y;
-              const step1Id = createShapeId();
               const step2Id = createShapeId();
-              editor.createShape({ id: step1Id, type: 'gem-step1-card' as any, x: baseX, y: baseY, props: { w: 400, h: 520 } });
-              editor.createShape({ id: step2Id, type: 'gem-step2-card' as any, x: baseX + 440, y: baseY, props: { w: 400, h: 580 } });
-              createConnection(floatingMenu.shapeId, step1Id as any);
-              createConnection(step1Id as any, step2Id as any);
-              editor.select(step1Id);
+              editor.createShape({ id: step2Id, type: 'gem-step2-card' as any, x: baseX, y: baseY, props: { w: 400, h: 580 } });
+              createConnection(floatingMenu.shapeId, step2Id as any);
+              editor.select(step2Id);
             },
           },
           {
@@ -2446,24 +2431,15 @@ function CanvasPageContent() {
             label: 'GEM 分镜设计',
             onClick: () => {
               const pos = getShapeRight(floatingMenu.shapeId);
-              const step1Id = createShapeId();
               const step2Id = createShapeId();
               editor.createShape({
-                id: step1Id,
-                type: 'gem-step1-card' as any,
+                id: step2Id,
+                type: 'gem-step2-card' as any,
                 x: pos.x,
                 y: pos.y,
                 props: { w: 400, h: 480, result: '', isGenerating: false, isMinimized: false },
               });
-              editor.createShape({
-                id: step2Id,
-                type: 'gem-step2-card' as any,
-                x: pos.x + 440,
-                y: pos.y,
-                props: { w: 400, h: 480, result: '', isGenerating: false, isMinimized: false },
-              });
-              createConnection(floatingMenu.shapeId, step1Id as any);
-              createConnection(step1Id as any, step2Id as any);
+              createConnection(floatingMenu.shapeId, step2Id as any);
               editor.select(step2Id);
             },
           },
