@@ -169,14 +169,13 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
         for (const cb of connBindings) {
           if ((cb as any).props?.terminal !== 'start') continue;
           const src = editor.getShape((cb as any).toId) as any;
-          // 素材上传卡片
           if (src?.type === 'media-upload-card' && src.props?.imageData) {
             imgs.push(src.props.imageData);
           }
-          // 图片生成卡片
-          if (src?.type === 'custom-card' && src.props?.generatedImageUrl) {
-            imgs.push(src.props.generatedImageUrl);
+          if (src?.type === 'custom-card' && src.props?.generatedImage) {
+            imgs.push(src.props.generatedImage);
           }
+          if (imgs.length >= 9) return imgs;
         }
       }
       return imgs;
@@ -187,7 +186,7 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(e.target.files || []);
-      const remaining = 5 - localImages.length;
+      const remaining = Math.max(0, 9 - allImages.length);
       files.slice(0, remaining).forEach(file => {
         const reader = new FileReader();
         reader.onload = (ev) => {
@@ -407,7 +406,7 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
                     参考图片
                     {connectedImages.length > 0 && <span className="text-purple-400 ml-1">· 已连接 {connectedImages.length} 张</span>}
                   </label>
-                  <span className="text-[10px] text-gray-600">{allImages.length}/5</span>
+                  <span className="text-[10px] text-gray-600">{allImages.length}/9</span>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
                   {/* 连接的图片（只读） */}
@@ -437,7 +436,7 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
                     </div>
                   ))}
                   {/* 上传按钮 */}
-                  {allImages.length < 5 && (
+                  {allImages.length < 9 && (
                     <label
                       className="w-12 h-12 border border-dashed border-white/20 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-white/40 transition-colors"
                       onClick={(e) => e.stopPropagation()}

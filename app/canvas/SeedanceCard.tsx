@@ -153,37 +153,45 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
     const connLastFrame = connectedInputs.imageUrls[1] || '';
 
     const handleGenerate = async () => {
-      // 读取上游连接数据，按模式自动填充
-      const connected = getConnectedInputs();      let effectiveFirstFrame = firstFrameImage;
-      let effectiveLastFrame = lastFrameImage;
-      let effectiveRefImages = parsedRefImages;
-      let effectiveRefVideoUrl = refVideoUrl;
-      let effectiveRefAudio = refAudioBase64;
+      const connected = getConnectedInputs();
 
-      if (connected.imageUrls.length > 0) {
-        if (mode === 'i2v') {
-          if (!effectiveFirstFrame) effectiveFirstFrame = connected.imageUrls[0];
-        } else if (mode === 'first-last') {
-          if (!effectiveFirstFrame) effectiveFirstFrame = connected.imageUrls[0];
-          if (!effectiveLastFrame && connected.imageUrls.length >= 2) effectiveLastFrame = connected.imageUrls[1];
-          if (connected.imageUrls.length > 2) {
-            alert(`首尾帧模式只支持2张图片，已自动取前两张（共连接了 ${connected.imageUrls.length} 张）`);
-          }
-        } else if (mode === 'multimodal') {
-          const merged = [...effectiveRefImages];
-          for (const img of connected.imageUrls) {
-            if (merged.length >= 9) break;
-            if (!merged.includes(img)) merged.push(img);
-          }
-          effectiveRefImages = merged;
+      // 按模式分别处理，避免跨模式污染
+      let effectiveFirstFrame  = firstFrameImage;
+      let effectiveLastFrame   = lastFrameImage;
+      let effectiveRefVideoUrl = connected.videoUrl    || refVideoUrl;
+      let effectiveRefAudio    = connected.audioBase64 || refAudioBase64;
+      let effectiveRefImages: string[];
+
+      if (mode === 'i2v') {
+        // 单图：只取第一张连接，连接为空才用本地
+        effectiveFirstFrame = connected.imageUrls[0] || firstFrameImage;
+        effectiveRefImages  = parsedRefImages;
+
+      } else if (mode === 'first-last') {
+        // 首尾帧：最多2张，连接[0]=首帧，连接[1]=尾帧，连接为空才用本地
+        effectiveFirstFrame = connected.imageUrls[0] || firstFrameImage;
+        effectiveLastFrame  = connected.imageUrls[1] || lastFrameImage;
+        if (connected.imageUrls.length > 2) {
+          alert(`首尾帧模式只支持2张图片，已自动取前两张（共连接了 ${connected.imageUrls.length} 张）`);
         }
-      }
-      if (connected.videoUrl && mode === 'multimodal' && !effectiveRefVideoUrl) {
-        effectiveRefVideoUrl = connected.videoUrl;
-      }
-      // 音频卡片连接：自动填充参考音频（multimodal 模式）
-      if (connected.audioBase64 && mode === 'multimodal' && !effectiveRefAudio) {
-        effectiveRefAudio = connected.audioBase64;
+        effectiveRefImages = parsedRefImages;
+
+      } else if (mode === 'multimodal') {
+        // 多模态：连接图片在前，本地上传在后，去重，上限9张
+        const merged: string[] = [];
+        for (const img of connected.imageUrls) {
+          if (merged.length >= 9) break;
+          if (!merged.includes(img)) merged.push(img);
+        }
+        for (const img of parsedRefImages) {
+          if (merged.length >= 9) break;
+          if (!merged.includes(img)) merged.push(img);
+        }
+        effectiveRefImages = merged;
+
+      } else {
+        // t2v 及其他：不读连接图片
+        effectiveRefImages = parsedRefImages;
       }
 
       if (!prompt && mode === 't2v') { alert('请输入提示词'); return; }
