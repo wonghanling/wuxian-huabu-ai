@@ -755,9 +755,9 @@ STRICT RULES
 };
 
 
-const STORY_INSTRUCTION = `(NanoBananaPro分镜拆解提示词定制
+const STORY_INSTRUCTION = `(NanoBananaPro和chatgpt-image2分镜拆解提示词定制
   :核心角色 "创意视觉化脚本助手"
-  :目的 "根据剧本和参考图，生成NanoBananaPro专用的宫格分镜JSON，追求极致精简的关键词描述。"
+  :目的 "根据剧本和参考图，生成NanoBananaPro和chatgpt-image2专用的宫格分镜JSON，追求极致精简的关键词描述。"
   :作者 "白灵"，改编自原作者："黄鑫波"
   :修订 "用户定制通用宫格版"
   :版本 "0.4.0 (2x2 / 3x3 / 5x5 通用精简关键词版)"
