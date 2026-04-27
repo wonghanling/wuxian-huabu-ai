@@ -132,6 +132,8 @@ export type CameraControlCardShape = TLBaseShape<
     isMinimized: boolean;
     model: string;
     prompt: string;
+    aspectRatio: string;
+    imageQuality: string;
   }
 >;
 
@@ -150,6 +152,8 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
     isMinimized: T.boolean,
     model: T.string,
     prompt: T.string,
+    aspectRatio: T.string,
+    imageQuality: T.string,
   };
 
   override isAspectRatioLocked = () => false;
@@ -168,6 +172,8 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
       isMinimized: false,
       model: 'nano-banana-pro',
       prompt: '',
+      aspectRatio: '16:9',
+      imageQuality: '2k',
     };
   }
 
@@ -176,7 +182,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
   }
 
   component(shape: CameraControlCardShape) {
-    const { w, h, sourceShapeId, cameraVertical, cameraHorizontal, generatedImage, isGenerating, isMinimized, model, prompt } = shape.props;
+    const { w, h, sourceShapeId, cameraVertical, cameraHorizontal, generatedImage, isGenerating, isMinimized, model, prompt, aspectRatio, imageQuality } = shape.props;
     const editor = useEditor();
     const [lightbox, setLightbox] = useState(false);
 
@@ -248,8 +254,8 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
             body: JSON.stringify({
               model: 'gpt-image-2',
               prompt: cameraPrompt,
-              aspectRatio: '2048x1152',
-              imageQuality: 'medium',
+              aspectRatio: aspectRatio || '2048x1152',
+              imageQuality: imageQuality || 'medium',
               imageBase64Array: [compressed],
               userId: user.id,
             }),
@@ -284,8 +290,8 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
           body: JSON.stringify({
             model: currentModel,
             prompt: cameraPrompt,
-            aspectRatio: '16:9',
-            imageQuality: '2k',
+            aspectRatio: aspectRatio || '16:9',
+            imageQuality: imageQuality || '2k',
             userId: user.id,
             imageBase64: imgBase64,
             imageBase64Array: imgBase64Array,
@@ -514,6 +520,40 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
                   <option value="flux-kontext">Flux Kontext — ¥0.6/次</option>
                   <option value="doubao-seedream-4-5-251128">豆包 Seedream — ¥0.3/次</option>
                 </select>
+              </div>
+
+              {/* 比例 + 清晰度 */}
+              <div className="flex gap-2 flex-shrink-0">
+                <div className="flex-1">
+                  <label className="text-gray-400 text-xs mb-1 block">比例</label>
+                  <select
+                    className="w-full bg-black/30 border border-white/8 rounded-lg px-2 py-1.5 text-white text-xs focus:outline-none focus:border-white/15 transition-all"
+                    value={aspectRatio || '16:9'}
+                    onClick={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onChange={(e) => update({ aspectRatio: e.target.value })}
+                  >
+                    <option value="16:9">16:9</option>
+                    <option value="9:16">9:16</option>
+                    <option value="1:1">1:1</option>
+                    <option value="4:3">4:3</option>
+                    <option value="3:4">3:4</option>
+                    <option value="2048x1152">2048×1152</option>
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <label className="text-gray-400 text-xs mb-1 block">清晰度</label>
+                  <div className="flex gap-1">
+                    {[['2k', '2K'], ['4k', '4K'], ['medium', '标准']].map(([value, label]) => (
+                      <button
+                        key={value}
+                        onClick={(e) => { e.stopPropagation(); update({ imageQuality: value }); }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        className={`flex-1 py-1.5 rounded text-[10px] font-semibold border transition-all ${(imageQuality || '2k') === value ? 'bg-blue-600 border-blue-500 text-white' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}`}
+                      >{label}</button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               {/* Prompt 输入 */}

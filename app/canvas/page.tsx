@@ -2299,7 +2299,7 @@ function CanvasPageContent() {
         // 图片卡片菜单选项
         const imageCardOptions = [
           {
-            label: '镜头控制',
+            label: '时空镜头延展',
             onClick: () => {
               const srcShape = editor.getShape(floatingMenu.shapeId as any) as any;
               if (!srcShape) return;
