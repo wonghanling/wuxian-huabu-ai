@@ -20,8 +20,6 @@ const STORY_GRID_OPTIONS: { value: GridSize; label: string; desc: string }[] = [
 const CINEMATIC_GRID_OPTIONS: { value: GridSize; label: string; desc: string }[] = [
   { value: '4',  label: '2×2', desc: '4格' },
   { value: '9',  label: '3×3', desc: '9格' },
-  { value: '12', label: '3×4', desc: '12格 ⭐' },
-  { value: '16', label: '4×4', desc: '16格' },
 ];
 
 const STYLE_OPTIONS: { label: string; prompt: string }[] = [
@@ -360,7 +358,7 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
                   className={`text-[10px] px-2 py-0.5 transition-all ${mode === 'story' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
                 >故事</button>
                 <button
-                  onClick={(e) => { e.stopPropagation(); update({ mode: 'cinematic', gridSize: '12' }); }}
+                  onClick={(e) => { e.stopPropagation(); update({ mode: 'cinematic', gridSize: '9' }); }}
                   className={`text-[10px] px-2 py-0.5 transition-all ${mode === 'cinematic' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
                 >时空</button>
               </div>
