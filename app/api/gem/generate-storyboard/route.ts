@@ -593,13 +593,19 @@ export async function POST(req: NextRequest) {
     const instruction = isStory
       ? buildStoryInstruction(gridSize)
       : CINEMATIC_INSTRUCTION;
-    const label = GRID_LABELS[gridSize] ?? GRID_LABELS['12'];
+
+    const gridLayoutMap: Record<string, string> = {
+      '4': '2x2', '9': '3x3', '25': '5x5', '12': '3x4', '16': '4x4',
+    };
+    const gridLayout = gridLayoutMap[gridSize] ?? '3x3';
 
     const profileSection = visualProfile.trim()
       ? `Here is the visual profile:\n\n${visualProfile}\n\n`
       : '';
 
-    const userMessage = `${profileSection}Here is the Chinese script:\n\n${script}\n\nGenerate the ${label}.`;
+    const userMessage = isStory
+      ? `${profileSection}Here is the Chinese script:\n\n${script}\n\nGenerate the ${GRID_LABELS[gridSize] ?? GRID_LABELS['9']}.`
+      : `THIS IS A START-END FRAME INBETWEEN TASK. DO NOT perform object detection. DO NOT output bounding boxes. DO NOT output box_2d, bbox, label, or coordinates.\n\nThe first image is the START frame. The second image is the END frame.\n\ngrid_layout: ${gridLayout}\nselected_image_model: NanoBananaPro\n\n${script ? `User action guide: ${script}\n\n` : ''}Generate the storyboard JSON with exactly ${gridSize === '4' ? 4 : 9} intermediate shots between the Start frame and End frame. Output ONLY valid JSON.`;
 
     // 构建 parts：如果有图片则先放图片
     const parts: any[] = [];
