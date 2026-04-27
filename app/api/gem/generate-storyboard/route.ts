@@ -603,9 +603,14 @@ export async function POST(req: NextRequest) {
       ? `Here is the visual profile:\n\n${visualProfile}\n\n`
       : '';
 
+    const shotCount = gridSize === '4' ? 4 : 9;
+    const shotExamples = Array.from({ length: shotCount }, (_, i) =>
+      `    { "shot_number": "${i + 1}", "prompt_text": "" }`
+    ).join(',\n');
+
     const userMessage = isStory
       ? `${profileSection}Here is the Chinese script:\n\n${script}\n\nGenerate the ${GRID_LABELS[gridSize] ?? GRID_LABELS['9']}.`
-      : `The first image is the START frame. The second image is the END frame.\n\ngrid_layout: ${gridLayout}\nselected_image_model: NanoBananaPro\n\n${script ? `User action guide: ${script}\n\n` : ''}Output ONLY valid JSON.`;
+      : `The first image is the START frame. The second image is the END frame.\n\ngrid_layout: ${gridLayout}\nselected_image_model: NanoBananaPro\n${script ? `\nUser action guide: ${script}\n` : ''}\nOutput ONLY this exact JSON structure with ${shotCount} shots filled in:\n{\n  "image_generation_model": "NanoBananaPro",\n  "grid_layout": "${gridLayout}",\n  "grid_aspect_ratio": "16:9",\n  "grid_generation_prompt": "",\n  "global_watermark": { "position": "bottom_center", "size": "extremely small" },\n  "shots": [\n${shotExamples}\n  ]\n}`;
 
     // 构建 parts：如果有图片则先放图片
     const parts: any[] = [];
