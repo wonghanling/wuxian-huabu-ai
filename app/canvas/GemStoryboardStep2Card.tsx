@@ -151,6 +151,7 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
     const [copied, setCopied] = useState(false);
     const [showStyles, setShowStyles] = useState(false);
     const [localImages, setLocalImages] = useState<string[]>([]);
+    const [tooltip, setTooltip] = useState<'story' | 'cinematic' | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const update = (props: Partial<GemStep2CardShape['props']>) => {
@@ -294,6 +295,25 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
 
     return (
       <HTMLContainer style={{ width: w, height: h, pointerEvents: 'all', overflow: 'visible' }}>
+        {/* 模式说明 tooltip - 渲染在卡片外层避免被 overflow-hidden 裁掉 */}
+        {tooltip && (
+          <div
+            className="absolute z-[200] w-52 bg-white border border-gray-200 rounded-lg p-3 text-[11px] text-gray-600 leading-relaxed shadow-xl pointer-events-none"
+            style={{ bottom: h + 8, left: 0 }}
+          >
+            {tooltip === 'story' ? (
+              <>
+                <div className="font-semibold text-gray-900 mb-1">故事模式</div>
+                <div>输入剧本，AI 按叙事节奏拆解为分镜。适合从剧情主线生成完整故事分镜。</div>
+              </>
+            ) : (
+              <>
+                <div className="font-semibold text-gray-900 mb-1">时空模式</div>
+                <div>上传首帧和尾帧，AI 生成两帧之间的过渡中间镜头。适合动作细节拆解。</div>
+              </>
+            )}
+          </div>
+        )}
         {/* 输出端口 - Right */}
         <div
           className="absolute top-1/2 -translate-y-1/2 cursor-crosshair group"
@@ -353,25 +373,21 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
               <span className="text-white text-sm font-semibold">GEM 分镜 · Step 2</span>
               {/* 模式切换 */}
               <div className="flex rounded-lg border border-white/10 ml-2" onPointerDown={(e) => e.stopPropagation()}>
-                <div className="relative group">
+                <div className="relative">
                   <button
                     onClick={(e) => { e.stopPropagation(); update({ mode: 'story', gridSize: '9' }); }}
-                    className={`text-xs px-3 py-1 transition-all ${mode === 'story' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                    onMouseEnter={() => setTooltip('story')}
+                    onMouseLeave={() => setTooltip(null)}
+                    className={`text-xs px-3 py-1 transition-all rounded-l-lg ${mode === 'story' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
                   >故事</button>
-                  <div className="absolute left-0 bottom-full mb-1 z-50 w-48 bg-white border border-gray-200 rounded-lg p-2.5 text-[11px] text-gray-600 leading-relaxed opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-xl">
-                    <div className="font-semibold text-gray-900 mb-1">故事模式</div>
-                    <div>输入剧本，AI 按叙事节奏拆解为分镜。适合从剧情主线生成完整故事分镜。</div>
-                  </div>
                 </div>
-                <div className="relative group">
+                <div className="relative">
                   <button
                     onClick={(e) => { e.stopPropagation(); update({ mode: 'cinematic', gridSize: '9' }); }}
-                    className={`text-xs px-3 py-1 transition-all ${mode === 'cinematic' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                    onMouseEnter={() => setTooltip('cinematic')}
+                    onMouseLeave={() => setTooltip(null)}
+                    className={`text-xs px-3 py-1 transition-all rounded-r-lg ${mode === 'cinematic' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
                   >时空</button>
-                  <div className="absolute left-0 bottom-full mb-1 z-50 w-48 bg-white border border-gray-200 rounded-lg p-2.5 text-[11px] text-gray-600 leading-relaxed opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-xl">
-                    <div className="font-semibold text-gray-900 mb-1">时空模式</div>
-                    <div>上传首帧和尾帧，AI 生成两帧之间的过渡中间镜头。适合动作细节拆解。</div>
-                  </div>
                 </div>
               </div>
             </div>
