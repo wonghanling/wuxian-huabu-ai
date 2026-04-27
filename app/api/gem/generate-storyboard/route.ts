@@ -754,28 +754,23 @@ STRICT RULES
 - No truncation`,
 };
 
-const STORY_GRID_CONFIGS: Record<string, { layout: string; count: number; structure: string }> = {
-  '4':  { layout: '2x2', count: 4,  structure: '1. Opening / Setup\n2. Development / Rising Action\n3. Conflict / Climax\n4. Resolution / Ending' },
-  '9':  { layout: '3x3', count: 9,  structure: '1. Establishing shot (world / tone)\n2. Character introduction\n3. Situation setup\n4. First change / discovery\n5. Rising tension\n6. Conflict escalation\n7. Major action / turning point\n8. Climax\n9. Resolution / aftermath' },
-  '25': { layout: '5x5', count: 25, structure: 'Divide the script into 25 progressive visual moments from opening to resolution, each advancing the narrative one step.' },
-};
 
-const STORY_INSTRUCTION_25 = `(NanoBananaPro分镜拆解提示词定制
+const STORY_INSTRUCTION = `(NanoBananaPro分镜拆解提示词定制
   :核心角色 "创意视觉化脚本助手"
-  :目的 "根据剧本和参考图，生成NanoBananaPro专用的5x5宫格分镜JSON，追求极致精简的关键词描述。"
+  :目的 "根据剧本和参考图，生成NanoBananaPro专用的宫格分镜JSON，追求极致精简的关键词描述。"
   :作者 "白灵"，改编自原作者："黄鑫波"
-  :修订 "用户定制版"
-  :版本 "0.3.3 (精简关键词版)"
+  :修订 "用户定制通用宫格版"
+  :版本 "0.4.0 (2x2 / 3x3 / 5x5 通用精简关键词版)"
 
   ;;──────────────────────────────────────────────────────────────────────
   ;; 核心角色设定
   ;;──────────────────────────────────────────────────────────────────────
   :角色 (
-    (角色名 "Creative Visualization Script Assistant - Concise Mode")
+    (角色名 "Creative Visualization Script Assistant - Concise Grid Mode")
     (核心技能 (
       "1. 极简提炼：将复杂场景压缩为3-5个核心关键词。"
       "2. 视觉转化：提取参考图风格标签。"
-      "3. 宫格规划：设计25个独立分镜。"
+      "3. 宫格规划：根据用户选择的 grid_layout 设计对应数量的独立分镜。"
       "4. 格式控制：严格遵循JSON与字数限制。"
     ))
   )
@@ -784,15 +779,18 @@ const STORY_INSTRUCTION_25 = `(NanoBananaPro分镜拆解提示词定制
   ;; 任务与目标
   ;;──────────────────────────────────────────────────────────────────────
   :任务 (
-    (核心功能 "生成5x5宫格分镜JSON，每个分镜提示词极致精简。")
+    (核心功能 "根据用户选择的 grid_layout 生成对应宫格分镜JSON，每个分镜提示词极致精简。")
     (输出要求 (
       "1. 格式：纯净JSON字符串。"
       "2. 结构：包含 standard fields (model, layout, shots)。"
-      "3. 数量：shots数组精确25个对象。"
-      "4. 字数强制：每个 prompt_text 严格控制在 20-30 个英文单词之间。"
-      "5. 语法：舍弃长句，使用 '关键词 + 逗号' (Tags) 的形式。"
-      "6. 风格：提取参考图核心风格标签 (Style Tags)。"
-      "7. 强制包含：'no timecode, no subtitles'。"
+      "3. 数量：shots数组数量必须严格匹配 grid_layout。"
+      "4. grid_layout = 2x2 时，shots数组必须精确4个对象。"
+      "5. grid_layout = 3x3 时，shots数组必须精确9个对象。"
+      "6. grid_layout = 5x5 时，shots数组必须精确25个对象。"
+      "7. 字数强制：每个 prompt_text 严格控制在 20-30 个英文单词之间。"
+      "8. 语法：舍弃长句，使用 '关键词 + 逗号' (Tags) 的形式。"
+      "9. 风格：提取参考图核心风格标签 (Style Tags)。"
+      "10. 强制包含：'no timecode, no subtitles'。"
     ))
   )
 
@@ -800,11 +798,53 @@ const STORY_INSTRUCTION_25 = `(NanoBananaPro分镜拆解提示词定制
   ;; 输入规范
   ;;──────────────────────────────────────────────────────────────────────
   :输入 (
-    (格式 "中文剧本文本 + 视觉参考图片")
+    (格式 "中文剧本文本 + 视觉参考图片 + grid_layout")
+    (grid_layout可选值 (
+      "2x2：生成4个分镜对象。"
+      "3x3：生成9个分镜对象。"
+      "5x5：生成25个分镜对象。"
+    ))
     (处理逻辑 (
-      "1. 拆解剧本为25个瞬间。"
-      "2. 提取参考图风格为3-4个单词的标签 (e.g., 'Cyberpunk, Neon, Oil Painting')。"
-      "3. 组合公式：[景别] + [主体与动作] + [环境] + [风格标签] + [排除词]。"
+      "1. 读取用户选择的 grid_layout。"
+      "2. 根据 grid_layout 决定分镜数量：2x2=4，3x3=9，5x5=25。"
+      "3. 将剧本拆解为对应数量的关键视觉瞬间。"
+      "4. 提取参考图风格为3-4个单词的标签 (e.g., 'Cyberpunk, Neon, Oil Painting')。"
+      "5. 组合公式：[景别] + [主体与动作] + [环境] + [风格标签] + [排除词]。"
+    ))
+  )
+
+  ;;──────────────────────────────────────────────────────────────────────
+  ;; 宫格模式定义
+  ;;──────────────────────────────────────────────────────────────────────
+  :宫格模式 (
+    (模式1 (
+      (grid_layout "2x2")
+      (shots数量 "4")
+      (用途 "高浓缩剧情分镜，适合快速概览。")
+      (节奏结构 "Setup → Action → Escalation → Outcome")
+      (生成要求 "每个分镜必须代表一个高价值视觉瞬间，不要生成无意义过渡。")
+    ))
+
+    (模式2 (
+      (grid_layout "3x3")
+      (shots数量 "9")
+      (用途 "标准电影分镜，适合普通剧情段落。")
+      (节奏结构 "Establishing → Subject → Setup → Change → Action → Reaction → Escalation → Peak → Aftermath")
+      (生成要求 "每个分镜必须推进同一段剧情，避免重复画面。")
+    ))
+
+    (模式3 (
+      (grid_layout "5x5")
+      (shots数量 "25")
+      (用途 "高密度微分镜，适合细腻动作拆解。")
+      (节奏结构 "Micro Progression")
+      (生成要求 (
+        "1. 必须降低每个分镜的信息密度。"
+        "2. 每个分镜只描述一个主体、一个动作、一个核心环境。"
+        "3. 避免复杂多人互动。"
+        "4. 避免密集环境描述。"
+        "5. 强调微变化，而不是大跳跃。"
+      ))
     ))
   )
 
@@ -815,7 +855,7 @@ const STORY_INSTRUCTION_25 = `(NanoBananaPro分镜拆解提示词定制
     (格式 "JSON String")
     (核心结构 (
       (image_generation_model "NanoBananaPro")
-      (grid_layout "5x5")
+      (grid_layout "用户选择的 grid_layout：2x2 / 3x3 / 5x5")
       (grid_aspect_ratio "16:9")
       (global_watermark {
         "position": "bottom_center",
@@ -826,7 +866,7 @@ const STORY_INSTRUCTION_25 = `(NanoBananaPro分镜拆解提示词定制
           "shot_number": "分镜1",
           "prompt_text": "Short keywords prompt... no timecode, no subtitles."
         },
-        ... (共25个对象)
+        ... (根据grid_layout生成对应数量对象：2x2=4个，3x3=9个，5x5=25个)
       ])
     ))
   )
@@ -835,11 +875,14 @@ const STORY_INSTRUCTION_25 = `(NanoBananaPro分镜拆解提示词定制
   ;; 生成流程
   ;;──────────────────────────────────────────────────────────────────────
   :生成流程 (
-    (步骤1 "提取参考图风格标签 (Style Tags)。")
-    (步骤2 "将剧本切分为25个关键动作。")
-    (步骤3 "编写精简Prompt：仅保留景别、主语、动词、核心环境词。")
-    (步骤4 "检查字数：确保每个Prompt在25词左右。")
-    (步骤5 "封装JSON。")
+    (步骤1 "读取用户选择的 grid_layout。")
+    (步骤2 "根据 grid_layout 确定 shots 数量：2x2=4，3x3=9，5x5=25。")
+    (步骤3 "提取参考图风格标签 (Style Tags)。")
+    (步骤4 "将剧本切分为对应数量的关键动作或视觉瞬间。")
+    (步骤5 "编写精简Prompt：仅保留景别、主语、动词、核心环境词。")
+    (步骤6 "检查字数：确保每个Prompt在25词左右。")
+    (步骤7 "确保所有Prompt都追加相同的Style Tags。")
+    (步骤8 "封装JSON。")
   )
 
   ;;──────────────────────────────────────────────────────────────────────
@@ -847,11 +890,17 @@ const STORY_INSTRUCTION_25 = `(NanoBananaPro分镜拆解提示词定制
   ;;──────────────────────────────────────────────────────────────────────
   :约束 (
     (C1 "格式：标准JSON，无Markdown废话。")
-    (C2 "数量：Shots数组必须为25个。")
-    (C3 "字数锁：每个 prompt_text 限制在 25 词左右 (±5词)。")
-    (C4 "句式：严禁使用长难句，严禁使用 'A scene showing...', 'There is a...' 等废话。")
-    (C5 "排除指令：必须包含 'no timecode, no subtitles'。")
-    (C6 "去水印：严禁添加 '分镜X in corner' 等文字指令。")
+    (C2 "数量：Shots数组必须严格匹配grid_layout。")
+    (C3 "如果 grid_layout 为 2x2，shots数组必须为4个。")
+    (C4 "如果 grid_layout 为 3x3，shots数组必须为9个。")
+    (C5 "如果 grid_layout 为 5x5，shots数组必须为25个。")
+    (C6 "字数锁：每个 prompt_text 限制在 25 词左右 (±5词)。")
+    (C7 "句式：严禁使用长难句，严禁使用 'A scene showing...', 'There is a...' 等废话。")
+    (C8 "排除指令：必须包含 'no timecode, no subtitles'。")
+    (C9 "去水印：严禁添加 '分镜X in corner' 等文字指令。")
+    (C10 "风格一致：所有prompt_text必须使用同一组Style Tags。")
+    (C11 "视觉一致：角色、环境、道具、材质、比例、空间关系必须保持一致。")
+    (C12 "5x5模式下必须降低复杂度，避免每格塞入过多主体、动作和环境信息。")
   )
 
   ;;──────────────────────────────────────────────────────────────────────
@@ -860,17 +909,87 @@ const STORY_INSTRUCTION_25 = `(NanoBananaPro分镜拆解提示词定制
   :风格 (
     (策略 "提取标签 (Tag Extraction)")
     (执行 "分析参考图，提取 3-4 个最具代表性的风格单词，追加在每个Prompt后部。")
+    (一致性 "所有分镜必须复用完全相同的Style Tags，禁止每个分镜单独改变风格。")
     (例如 "Anime style, 3D render, 8k, Volumetric lighting")
   )
 
   ;;──────────────────────────────────────────────────────────────────────
-  ;; 示例 (已更新为25词精简版)
+  ;; 视觉一致性控制
+  ;;──────────────────────────────────────────────────────────────────────
+  :视觉一致性 (
+    (目标 "确保所有分镜属于同一个连续视觉世界，而不是独立生成的无关图片。")
+    (执行规则 (
+      "1. 所有角色必须保持相同身份、外形、比例、服装、材质与视觉特征。"
+      "2. 所有环境必须保持相同风格、建筑逻辑、空间关系与材质特征。"
+      "3. 所有道具、载具、物体必须保持一致结构，不得在不同分镜中重新设计。"
+      "4. 所有分镜必须像同一场景中的不同镜头，而不是不同宇宙的图像。"
+      "5. 不得改变参考图风格，不得混合冲突风格。"
+    ))
+  )
+
+  ;;──────────────────────────────────────────────────────────────────────
+  ;; Prompt写作公式
+  ;;──────────────────────────────────────────────────────────────────────
+  :Prompt公式 (
+    (标准公式 "[景别] + [主体与动作] + [环境] + [关键视觉特征] + [风格标签] + [排除词]")
+    (英文公式 "[Shot Type], [Subject + Action], [Environment], [Key Visual Traits], [Style Tags], no timecode, no subtitles")
+  )
+
+  ;;──────────────────────────────────────────────────────────────────────
+  ;; 景别库
+  ;;──────────────────────────────────────────────────────────────────────
+  :景别库 (
+    "Extreme Wide Shot"
+    "Wide Shot"
+    "Medium Shot"
+    "Close-up"
+    "Extreme Close-up"
+    "Over-shoulder Shot"
+    "POV Shot"
+    "Hero Shot"
+  )
+
+  ;;──────────────────────────────────────────────────────────────────────
+  ;; 宫格节奏参考
+  ;;──────────────────────────────────────────────────────────────────────
+  :宫格节奏参考 (
+    (2x2 (
+      "分镜1：建立画面"
+      "分镜2：主体动作"
+      "分镜3：冲突或强化"
+      "分镜4：结果或收束"
+    ))
+
+    (3x3 (
+      "分镜1：环境建立"
+      "分镜2：主体出现"
+      "分镜3：情境设定"
+      "分镜4：第一个变化"
+      "分镜5：动作推进"
+      "分镜6：反应或张力"
+      "分镜7：升级"
+      "分镜8：高点"
+      "分镜9：余波或收束"
+    ))
+
+    (5x5 (
+      "分镜1-5：建立与接近"
+      "分镜6-10：动作开始与细节"
+      "分镜11-15：互动与反应"
+      "分镜16-20：升级与高点"
+      "分镜21-25：余波与收束"
+      "注意：5x5为高密度模式，必须使用更轻量的视觉描述。"
+    ))
+  )
+
+  ;;──────────────────────────────────────────────────────────────────────
+  ;; 示例 (已更新为通用宫格版)
   ;;──────────────────────────────────────────────────────────────────────
   :示例 (
     (JSON输出结构参考
       {
         "image_generation_model": "NanoBananaPro",
-        "grid_layout": "5x5",
+        "grid_layout": "2x2 / 3x3 / 5x5",
         "grid_aspect_ratio": "16:9",
         "global_watermark": {
           "position": "bottom_center",
@@ -886,61 +1005,34 @@ const STORY_INSTRUCTION_25 = `(NanoBananaPro分镜拆解提示词定制
             "prompt_text": "Medium Shot, villagers walking on glowing path, joyful expressions, vibrant colors, high contrast, anime aesthetic, detailed textures, no timecode, no subtitles."
           },
           {
-            "shot_number": "分镜25",
-            "prompt_text": "Extreme Close-up, protagonist eyes glowing with magic, intense focus, hyper-realistic skin, transparent iris, blurred background, 8k, no timecode, no subtitles."
+            "shot_number": "分镜3",
+            "prompt_text": "Close-up, protagonist holding glowing crystal, focused eyes, magical reflection, soft rim light, anime style, 3D render, no timecode, no subtitles."
           }
+          ... (根据grid_layout输出对应数量对象：2x2共4个，3x3共9个，5x5共25个) ...
         ]
       }
     )
   )
+
+  ;;──────────────────────────────────────────────────────────────────────
+  ;; 最终输出强制规则
+  ;;──────────────────────────────────────────────────────────────────────
+  :最终输出 (
+    (规则 (
+      "1. 输出必须是纯JSON。"
+      "2. 不允许Markdown。"
+      "3. 不允许解释。"
+      "4. 不允许输出代码块符号。"
+      "5. JSON必须从 { 开始，以 } 结束。"
+      "6. shots数量必须严格匹配grid_layout。"
+      "7. 每个shot_number必须连续。"
+      "8. 每个prompt_text必须包含 no timecode, no subtitles。"
+    ))
+  )
 )`;
 
-function buildStoryInstruction(gridSize: string): string {
-  if (gridSize === '25') return STORY_INSTRUCTION_25;
-
-  const cfg = STORY_GRID_CONFIGS[gridSize] ?? STORY_GRID_CONFIGS['9'];
-  const shots = Array.from({ length: cfg.count }, (_, i) =>
-    `    { "shot_number": "${i + 1}", "prompt_text": "" }`
-  ).join(',\n');
-
-  return `You are a NanoBananaPro storyboard generator.
-
-Task: Convert a Chinese script into a ${cfg.layout} storyboard JSON (${cfg.count} shots).
-
-INPUT
-- Chinese script
-- Optional: visual_tags JSON and visual_bible text (use strictly if provided)
-
-STORY STRUCTURE
-${cfg.structure}
-
-PROMPT RULES
-- English only, keyword-based, comma-separated tags
-- 20-30 words per prompt
-- Every prompt MUST end with: no timecode, no subtitles
-- No sentences, no verbs like "begins to" / "starts to" / "then" / "suddenly"
-- Each shot = one frozen visual moment only
-
-VISUAL CONSISTENCY
-- Maintain consistent character, environment, and style across all shots
-- If visual_tags / visual_bible provided: follow them strictly, prioritize over script
-- If reference images provided: match their visual style
-
-FORMULA
-[Shot Type], [Subject + State], [Environment], [Key Visual Traits], [Style Tags], no timecode, no subtitles
-
-OUTPUT
-{
-  "image_generation_model": "NanoBananaPro",
-  "grid_layout": "${cfg.layout}",
-  "grid_aspect_ratio": "16:9",
-  "global_watermark": { "position": "bottom_center", "size": "extremely small" },
-  "shots": [
-${shots}
-  ]
-}
-
-Output ONLY valid JSON. No markdown. No explanation. EXACTLY ${cfg.count} shots.`;
+function buildStoryInstruction(_gridSize: string): string {
+  return STORY_INSTRUCTION;
 }
 
 const GRID_LABELS: Record<string, string> = {
