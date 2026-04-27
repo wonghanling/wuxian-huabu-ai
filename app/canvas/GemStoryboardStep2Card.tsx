@@ -298,18 +298,18 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
         {/* 模式说明 tooltip - 渲染在卡片外层避免被 overflow-hidden 裁掉 */}
         {tooltip && (
           <div
-            className="absolute z-[200] w-52 bg-white border border-gray-200 rounded-lg p-3 text-[11px] text-gray-600 leading-relaxed shadow-xl pointer-events-none"
+            className="absolute z-[200] w-56 bg-white border border-gray-300 rounded-xl p-3 shadow-xl pointer-events-none"
             style={{ bottom: h + 8, left: 0 }}
           >
             {tooltip === 'story' ? (
               <>
-                <div className="font-semibold text-gray-900 mb-1">故事模式</div>
-                <div>输入剧本，AI 按叙事节奏拆解为分镜。适合从剧情主线生成完整故事分镜。</div>
+                <div className="font-bold text-gray-900 text-sm mb-1">故事模式</div>
+                <div className="text-gray-800 text-xs leading-relaxed">输入剧本，AI 按叙事节奏拆解为分镜。适合从剧情主线生成完整故事分镜。</div>
               </>
             ) : (
               <>
-                <div className="font-semibold text-gray-900 mb-1">时空模式</div>
-                <div>上传首帧和尾帧，AI 生成两帧之间的过渡中间镜头。适合动作细节拆解。</div>
+                <div className="font-bold text-gray-900 text-sm mb-1">时空模式</div>
+                <div className="text-gray-800 text-xs leading-relaxed">上传首帧和尾帧，AI 生成两帧之间的过渡中间镜头。适合动作细节拆解。</div>
               </>
             )}
           </div>
