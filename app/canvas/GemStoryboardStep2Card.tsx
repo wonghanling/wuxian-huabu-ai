@@ -298,20 +298,20 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
         {/* 模式说明 tooltip - 渲染在卡片外层避免被 overflow-hidden 裁掉 */}
         {tooltip && (
           <div
-            className="absolute z-[200] w-56 bg-white border border-gray-300 rounded-xl p-3 shadow-xl pointer-events-none"
-            style={{ bottom: h + 8, left: 0 }}
+            className="absolute z-[200] w-56 bg-white rounded-xl shadow-2xl pointer-events-none overflow-hidden"
+            style={{ bottom: h + 10, left: 0, border: '1.5px solid #e5e7eb' }}
           >
-            {tooltip === 'story' ? (
-              <>
-                <div className="font-bold text-gray-900 text-sm mb-1">故事模式</div>
-                <div className="text-gray-800 text-xs leading-relaxed">输入剧本，AI 按叙事节奏拆解为分镜。适合从剧情主线生成完整故事分镜。</div>
-              </>
-            ) : (
-              <>
-                <div className="font-bold text-gray-900 text-sm mb-1">时空模式</div>
-                <div className="text-gray-800 text-xs leading-relaxed">上传首帧和尾帧，AI 生成两帧之间的过渡中间镜头。适合动作细节拆解。</div>
-              </>
-            )}
+            <div className={`h-1 w-full ${tooltip === 'story' ? 'bg-blue-500' : 'bg-purple-500'}`} />
+            <div className="p-3">
+              <div className="font-black text-gray-950 text-sm mb-1.5 tracking-tight">
+                {tooltip === 'story' ? '📖 故事模式' : '🎬 时空模式'}
+              </div>
+              <div className="font-medium text-gray-900 text-[12px] leading-5">
+                {tooltip === 'story'
+                  ? '输入剧本，AI 按叙事节奏拆解为分镜。适合从剧情主线生成完整故事分镜。'
+                  : '上传首帧和尾帧，AI 生成两帧之间的过渡中间镜头。适合动作细节拆解。'}
+              </div>
+            </div>
           </div>
         )}
         {/* 输出端口 - Right */}
