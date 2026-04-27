@@ -287,7 +287,7 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
 
     const toggleMinimize = (e: React.MouseEvent) => {
       e.stopPropagation();
-      update({ isMinimized: !isMinimized, w: isMinimized ? 400 : 160, h: isMinimized ? 580 : 60 });
+      update({ isMinimized: !isMinimized, w: isMinimized ? 400 : 160, h: isMinimized ? 580 : 48 });
     };
 
     const gridOptions = mode === 'story' ? STORY_GRID_OPTIONS : CINEMATIC_GRID_OPTIONS;
@@ -367,29 +367,31 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
 
         <div className="w-full h-full bg-zinc-900/95 backdrop-blur-sm border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
           {/* 标题栏 */}
-          <div className={`flex items-center justify-between px-4 py-3 flex-shrink-0 ${!isMinimized ? 'border-b border-white/8' : ''}`}>
+          <div className={`flex items-center justify-between px-4 flex-shrink-0 ${!isMinimized ? 'py-3 border-b border-white/8' : 'py-2'}`}>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-blue-400"></div>
               <span className="text-white text-sm font-semibold">GEM 分镜 · Step 2</span>
-              {/* 模式切换 */}
-              <div className="flex rounded-lg border border-white/10 ml-2" onPointerDown={(e) => e.stopPropagation()}>
-                <div className="relative">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); update({ mode: 'story', gridSize: '9' }); }}
-                    onMouseEnter={() => setTooltip('story')}
-                    onMouseLeave={() => setTooltip(null)}
-                    className={`text-xs px-3 py-1 transition-all rounded-l-lg ${mode === 'story' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
-                  >故事</button>
+              {/* 模式切换 - 缩小时隐藏 */}
+              {!isMinimized && (
+                <div className="flex rounded-lg border border-white/10 ml-2" onPointerDown={(e) => e.stopPropagation()}>
+                  <div className="relative">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); update({ mode: 'story', gridSize: '9' }); }}
+                      onMouseEnter={() => setTooltip('story')}
+                      onMouseLeave={() => setTooltip(null)}
+                      className={`text-xs px-3 py-1 transition-all rounded-l-lg ${mode === 'story' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                    >故事</button>
+                  </div>
+                  <div className="relative">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); update({ mode: 'cinematic', gridSize: '9' }); }}
+                      onMouseEnter={() => setTooltip('cinematic')}
+                      onMouseLeave={() => setTooltip(null)}
+                      className={`text-xs px-3 py-1 transition-all rounded-r-lg ${mode === 'cinematic' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                    >时空</button>
+                  </div>
                 </div>
-                <div className="relative">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); update({ mode: 'cinematic', gridSize: '9' }); }}
-                    onMouseEnter={() => setTooltip('cinematic')}
-                    onMouseLeave={() => setTooltip(null)}
-                    className={`text-xs px-3 py-1 transition-all rounded-r-lg ${mode === 'cinematic' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
-                  >时空</button>
-                </div>
-              </div>
+              )}
             </div>
             <button
               onClick={toggleMinimize}
