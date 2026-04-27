@@ -304,7 +304,7 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
             <div className={`h-1 w-full ${tooltip === 'story' ? 'bg-blue-500' : 'bg-purple-500'}`} />
             <div className="p-3">
               <div className="font-black text-gray-950 text-sm mb-1.5 tracking-tight">
-                {tooltip === 'story' ? '📖 故事模式' : '🎬 时空模式'}
+                {tooltip === 'story' ? '故事模式' : '时空模式'}
               </div>
               <div className="font-medium text-gray-900 text-[12px] leading-5">
                 {tooltip === 'story'
