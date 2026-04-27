@@ -605,7 +605,7 @@ export async function POST(req: NextRequest) {
 
     const userMessage = isStory
       ? `${profileSection}Here is the Chinese script:\n\n${script}\n\nGenerate the ${GRID_LABELS[gridSize] ?? GRID_LABELS['9']}.`
-      : `THIS IS A START-END FRAME INBETWEEN TASK. DO NOT perform object detection. DO NOT output bounding boxes. DO NOT output box_2d, bbox, label, or coordinates.\n\nThe first image is the START frame. The second image is the END frame.\n\ngrid_layout: ${gridLayout}\nselected_image_model: NanoBananaPro\n\n${script ? `User action guide: ${script}\n\n` : ''}Generate the storyboard JSON with exactly ${gridSize === '4' ? 4 : 9} intermediate shots between the Start frame and End frame. Output ONLY valid JSON.`;
+      : `The first image is the START frame. The second image is the END frame.\n\ngrid_layout: ${gridLayout}\nselected_image_model: NanoBananaPro\n\n${script ? `User action guide: ${script}\n\n` : ''}Output ONLY valid JSON.`;
 
     // 构建 parts：如果有图片则先放图片
     const parts: any[] = [];
