@@ -358,8 +358,8 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
                     onClick={(e) => { e.stopPropagation(); update({ mode: 'story', gridSize: '9' }); }}
                     className={`text-xs px-3 py-1 transition-all ${mode === 'story' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
                   >故事</button>
-                  <div className="absolute left-0 top-full mt-1 z-50 w-48 bg-zinc-800 border border-white/15 rounded-lg p-2.5 text-[11px] text-gray-300 leading-relaxed opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-xl">
-                    <div className="font-semibold text-white mb-1">故事模式</div>
+                  <div className="absolute left-0 bottom-full mb-1 z-50 w-48 bg-white border border-gray-200 rounded-lg p-2.5 text-[11px] text-gray-600 leading-relaxed opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-xl">
+                    <div className="font-semibold text-gray-900 mb-1">故事模式</div>
                     <div>输入剧本，AI 按叙事节奏拆解为分镜。适合从剧情主线生成完整故事分镜。</div>
                   </div>
                 </div>
@@ -368,8 +368,8 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
                     onClick={(e) => { e.stopPropagation(); update({ mode: 'cinematic', gridSize: '9' }); }}
                     className={`text-xs px-3 py-1 transition-all ${mode === 'cinematic' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
                   >时空</button>
-                  <div className="absolute left-0 top-full mt-1 z-50 w-48 bg-zinc-800 border border-white/15 rounded-lg p-2.5 text-[11px] text-gray-300 leading-relaxed opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-xl">
-                    <div className="font-semibold text-white mb-1">时空模式</div>
+                  <div className="absolute left-0 bottom-full mb-1 z-50 w-48 bg-white border border-gray-200 rounded-lg p-2.5 text-[11px] text-gray-600 leading-relaxed opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity shadow-xl">
+                    <div className="font-semibold text-gray-900 mb-1">时空模式</div>
                     <div>上传首帧和尾帧，AI 生成两帧之间的过渡中间镜头。适合动作细节拆解。</div>
                   </div>
                 </div>
