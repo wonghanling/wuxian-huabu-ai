@@ -1784,6 +1784,7 @@ function CanvasPageContent() {
 
     // ── 加载用户画布 ──────────────────────────────────────────────
     (async () => {
+      isRestoringRef.current = true; // 加载开始就锁住，防止期间任何操作触发保存
       try {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
@@ -1812,14 +1813,14 @@ function CanvasPageContent() {
 
         const snapshot = await loadCanvasSnapshot(canvasId);
         if (snapshot) {
-          isRestoringRef.current = true;
           loadSnapshot(editor.store, snapshot);
-          // 等一个 tick 让 store 批量写入完成再解锁
-          setTimeout(() => { isRestoringRef.current = false; }, 500);
           console.log('画布已恢复');
         }
+        // 加载完成后延迟解锁，让 store 批量写入完成
+        setTimeout(() => { isRestoringRef.current = false; }, 500);
       } catch (err) {
         console.error('加载画布失败:', err);
+        isRestoringRef.current = false; // 出错也要解锁
       }
     })();
 
