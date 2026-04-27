@@ -352,7 +352,7 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
               <div className="w-2 h-2 rounded-full bg-blue-400"></div>
               <span className="text-white text-sm font-semibold">GEM 分镜 · Step 2</span>
               {/* 模式切换 */}
-              <div className="flex rounded-lg overflow-hidden border border-white/10 ml-2" onPointerDown={(e) => e.stopPropagation()}>
+              <div className="flex rounded-lg border border-white/10 ml-2" onPointerDown={(e) => e.stopPropagation()}>
                 <div className="relative group">
                   <button
                     onClick={(e) => { e.stopPropagation(); update({ mode: 'story', gridSize: '9' }); }}
