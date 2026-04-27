@@ -1714,7 +1714,10 @@ function CanvasPageContent() {
     const doSaveAsync = () => {
       if (!canvasIdRef.current || !editorRef.current) return;
       if (!hasUnsavedRef.current) return;
+      if (isRestoringRef.current) return;
       const snapshot = getSnapshot(editorRef.current.store);
+      const shapeCount = Object.keys(snapshot?.document?.store ?? {}).filter(k => k.startsWith('shape:')).length;
+      if (shapeCount === 0) return;
       saveSnapshot(canvasIdRef.current, snapshot).catch(e => console.error('退出保存失败:', e));
     };
 
@@ -1809,7 +1812,10 @@ function CanvasPageContent() {
 
         const snapshot = await loadCanvasSnapshot(canvasId);
         if (snapshot) {
+          isRestoringRef.current = true;
           loadSnapshot(editor.store, snapshot);
+          // 等一个 tick 让 store 批量写入完成再解锁
+          setTimeout(() => { isRestoringRef.current = false; }, 500);
           console.log('画布已恢复');
         }
       } catch (err) {
@@ -1820,6 +1826,7 @@ function CanvasPageContent() {
     // ── 监听变化标记未保存（只监听用户操作，忽略 loadSnapshot 的批量写入）──
     const unsubscribeUnsaved = editor.store.listen(() => {
       if (!canvasIdRef.current) return;
+      if (isRestoringRef.current) return; // 恢复期间忽略
       hasUnsavedRef.current = true;
       setSaveStatus('unsaved');
     }, { source: 'user', scope: 'document' });
@@ -1827,9 +1834,16 @@ function CanvasPageContent() {
     // ── 自动保存：进入后30/60/90分钟各保存一次 ──────────────────
     const doAutoSave = async () => {
       if (!canvasIdRef.current || !hasUnsavedRef.current) return;
+      if (isRestoringRef.current) return; // 恢复期间不保存
       try {
-        setSaveStatus('saving');
         const snapshot = getSnapshot(editor.store);
+        // 空画布保护：shapes 数量为0时拒绝保存，避免覆盖历史数据
+        const shapeCount = Object.keys(snapshot?.document?.store ?? {}).filter(k => k.startsWith('shape:')).length;
+        if (shapeCount === 0) {
+          console.warn('自动保存跳过：画布为空，可能是加载未完成');
+          return;
+        }
+        setSaveStatus('saving');
         await saveSnapshot(canvasIdRef.current!, snapshot);
         hasUnsavedRef.current = false;
         setSaveStatus('saved');
