@@ -522,39 +522,84 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
                 </select>
               </div>
 
-              {/* 比例 + 清晰度 */}
-              <div className="flex gap-2 flex-shrink-0">
-                <div className="flex-1">
+              {/* 比例 + 清晰度 - 按模型区分 */}
+              {(model || 'nano-banana-pro') === 'nano-banana-pro' && (
+                <div className="flex gap-2 flex-shrink-0">
+                  <div className="flex-1">
+                    <label className="text-gray-400 text-xs mb-1 block">清晰度</label>
+                    <div className="flex gap-1">
+                      {[{ value: '2k', label: '2K ¥1.2' }, { value: '4k', label: '4K ¥1.5' }].map(({ value, label }) => (
+                        <button key={value}
+                          onClick={(e) => { e.stopPropagation(); update({ imageQuality: value }); }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          className={`flex-1 py-1 rounded text-[10px] font-semibold border transition-all ${(imageQuality || '2k') === value ? 'bg-blue-600 border-blue-500 text-white' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}`}
+                        >{label}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <label className="text-gray-400 text-xs mb-1 block">比例</label>
+                    <select
+                      className="w-full bg-black/30 border border-white/8 rounded p-1 text-white text-[10px] focus:outline-none"
+                      value={aspectRatio || '16:9'}
+                      onClick={(e) => e.stopPropagation()}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onChange={(e) => update({ aspectRatio: e.target.value })}
+                    >
+                      {['1:1','16:9','9:16','4:3','3:4','3:2','2:3'].map(r => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {(model || 'nano-banana-pro') === 'gpt-image-2' && (
+                <div className="flex flex-col gap-2 flex-shrink-0">
+                  <div>
+                    <label className="text-gray-400 text-xs mb-1 block">尺寸</label>
+                    <div className="flex gap-1 flex-wrap">
+                      {[
+                        { value: '2048x1152', label: '16:9 2K' },
+                        { value: '3840x2160', label: '16:9 4K' },
+                        { value: '2160x3840', label: '9:16 4K' },
+                        { value: '2048x2048', label: '1:1 2K' },
+                      ].map(({ value, label }) => (
+                        <button key={value}
+                          onClick={(e) => { e.stopPropagation(); update({ aspectRatio: value }); }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          className={`flex-1 py-1.5 rounded-lg border text-[10px] font-medium transition-all ${(aspectRatio || '2048x1152') === value ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
+                        >{label}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-gray-400 text-xs mb-1 block">画质</label>
+                    <div className="flex gap-1">
+                      {[{ value: 'medium', label: 'Medium' }, { value: 'high', label: 'High' }].map(({ value, label }) => (
+                        <button key={value}
+                          onClick={(e) => { e.stopPropagation(); update({ imageQuality: value }); }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          className={`flex-1 py-1.5 rounded-lg border text-[10px] font-medium transition-all ${(imageQuality || 'medium') === value ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
+                        >{label}</button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {!['nano-banana-pro', 'gpt-image-2'].includes(model || 'nano-banana-pro') && (
+                <div className="flex-shrink-0">
                   <label className="text-gray-400 text-xs mb-1 block">比例</label>
                   <select
-                    className="w-full bg-black/30 border border-white/8 rounded-lg px-2 py-1.5 text-white text-xs focus:outline-none focus:border-white/15 transition-all"
+                    className="w-full bg-black/30 border border-white/8 rounded p-1 text-white text-[10px] focus:outline-none"
                     value={aspectRatio || '16:9'}
                     onClick={(e) => e.stopPropagation()}
                     onPointerDown={(e) => e.stopPropagation()}
                     onChange={(e) => update({ aspectRatio: e.target.value })}
                   >
-                    <option value="16:9">16:9</option>
-                    <option value="9:16">9:16</option>
-                    <option value="1:1">1:1</option>
-                    <option value="4:3">4:3</option>
-                    <option value="3:4">3:4</option>
-                    <option value="2048x1152">2048×1152</option>
+                    {['1:1','16:9','9:16','4:3','3:4','3:2','2:3'].map(r => <option key={r} value={r}>{r}</option>)}
                   </select>
                 </div>
-                <div className="flex-1">
-                  <label className="text-gray-400 text-xs mb-1 block">清晰度</label>
-                  <div className="flex gap-1">
-                    {[['2k', '2K'], ['4k', '4K'], ['medium', '标准']].map(([value, label]) => (
-                      <button
-                        key={value}
-                        onClick={(e) => { e.stopPropagation(); update({ imageQuality: value }); }}
-                        onPointerDown={(e) => e.stopPropagation()}
-                        className={`flex-1 py-1.5 rounded text-[10px] font-semibold border transition-all ${(imageQuality || '2k') === value ? 'bg-blue-600 border-blue-500 text-white' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}`}
-                      >{label}</button>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              )}
 
               {/* Prompt 输入 */}
               <div className="flex-shrink-0">

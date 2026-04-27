@@ -1575,6 +1575,57 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         </div>
                       )}
 
+                      {/* GPT Image 2 尺寸 + 画质 */}
+                      {(characterImageModel || 'nano-banana-pro') === 'gpt-image-2' && (
+                        <div className="flex flex-col gap-2">
+                          <div>
+                            <label className="text-gray-400 text-xs mb-1 block">尺寸</label>
+                            <div className="flex gap-1 flex-wrap">
+                              {[
+                                { value: '2048x1152', label: '16:9 2K' },
+                                { value: '3840x2160', label: '16:9 4K' },
+                                { value: '2160x3840', label: '9:16 4K' },
+                                { value: '2048x2048', label: '1:1 2K' },
+                              ].map(({ value, label }) => (
+                                <button key={value}
+                                  onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, aspectRatio: value } }); }}
+                                  onPointerDown={(e) => e.stopPropagation()}
+                                  className={`flex-1 py-1.5 rounded-lg border text-[10px] font-medium transition-all ${(aspectRatio ?? '2048x1152') === value ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
+                                >{label}</button>
+                              ))}
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-gray-400 text-xs mb-1 block">画质</label>
+                            <div className="flex gap-1">
+                              {[{ value: 'medium', label: 'Medium' }, { value: 'high', label: 'High' }].map(({ value, label }) => (
+                                <button key={value}
+                                  onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, imageQuality: value } }); }}
+                                  onPointerDown={(e) => e.stopPropagation()}
+                                  className={`flex-1 py-1.5 rounded-lg border text-[10px] font-medium transition-all ${(imageQuality ?? 'medium') === value ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
+                                >{label}</button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 其他模型比例选择 */}
+                      {!['nano-banana-pro', 'gpt-image-2'].includes(characterImageModel || 'nano-banana-pro') && (
+                        <div>
+                          <label className="text-gray-400 text-xs mb-1 block">比例</label>
+                          <select
+                            className="w-full bg-black/30 border border-white/8 rounded p-1 text-white text-[10px] focus:outline-none"
+                            value={aspectRatio || '16:9'}
+                            onClick={(e) => e.stopPropagation()}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onChange={(e) => { editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, aspectRatio: e.target.value } }); }}
+                          >
+                            {['1:1','16:9','9:16','4:3','3:4','3:2','2:3'].map(r => <option key={r} value={r}>{r}</option>)}
+                          </select>
+                        </div>
+                      )}
+
                       {/* 选择图片生成模型 */}
                       <div>
                         <label className="text-gray-400 text-xs mb-1 block">选择图片生成模型</label>
@@ -1648,8 +1699,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                                   body: JSON.stringify({
                                     model: 'gpt-image-2',
                                     prompt: charPrompt,
-                                    aspectRatio: '2048x1152',
-                                    imageQuality: 'medium',
+                                    aspectRatio: aspectRatio || '2048x1152',
+                                    imageQuality: imageQuality || 'medium',
                                     imageBase64Array: imgToSend ? [imgToSend] : undefined,
                                     userId: userId || undefined,
                                   }),
