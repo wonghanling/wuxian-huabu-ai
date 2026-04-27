@@ -367,7 +367,7 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
 
         <div className="w-full h-full bg-zinc-900/95 backdrop-blur-sm border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
           {/* 标题栏 */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-white/8 flex-shrink-0">
+          <div className={`flex items-center justify-between px-4 py-3 flex-shrink-0 ${!isMinimized ? 'border-b border-white/8' : ''}`}>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-blue-400"></div>
               <span className="text-white text-sm font-semibold">GEM 分镜 · Step 2</span>

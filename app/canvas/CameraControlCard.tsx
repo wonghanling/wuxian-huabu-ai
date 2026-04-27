@@ -442,7 +442,6 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-blue-400"></div>
               <span className="text-white text-sm font-semibold">时空镜头延展</span>
-              <span className="text-gray-500 text-xs">Time-Space Extension</span>
             </div>
             <button
               onClick={toggleMinimize}
