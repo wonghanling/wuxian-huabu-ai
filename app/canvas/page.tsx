@@ -2312,9 +2312,10 @@ function CanvasPageContent() {
         };
 
         // 图片卡片菜单选项
-        const imageCardOptions = [
+        const imageCardOptions: { label: string; desc?: string; onClick: () => void }[] = [
           {
             label: '时空镜头延展',
+            desc: '时空后退 −5s：生成画面前5秒的场景\n时空前进 +5s：生成画面后5秒的场景',
             onClick: () => {
               const srcShape = editor.getShape(floatingMenu.shapeId as any) as any;
               if (!srcShape) return;
@@ -2409,9 +2410,10 @@ function CanvasPageContent() {
         ];
 
         // 素材上传卡片菜单选项（只读取上传的图片，不读视频）
-        const mediaUploadCardOptions = [
+        const mediaUploadCardOptions: { label: string; desc?: string; onClick: () => void }[] = [
           {
             label: '时空镜头延展',
+            desc: '时空后退 −5s：生成画面前5秒的场景\n时空前进 +5s：生成画面后5秒的场景',
             onClick: () => {
               const pos = getShapeRight(floatingMenu.shapeId);
               const newId = createShapeId();
@@ -2470,13 +2472,25 @@ function CanvasPageContent() {
             onClick={(e) => e.stopPropagation()}
           >
             {options.map((opt, idx) => (
-              <button
-                key={idx}
-                onClick={() => { opt.onClick(); setFloatingMenu(null); }}
-                className="flex items-center px-3 py-2 rounded-lg hover:bg-white/8 transition-all text-left"
-              >
-                <span className="text-white text-xs font-medium">{opt.label}</span>
-              </button>
+              <div key={idx} className="relative group">
+                <button
+                  onClick={() => { opt.onClick(); setFloatingMenu(null); }}
+                  className="w-full flex items-center px-3 py-2 rounded-lg hover:bg-white/8 transition-all text-left"
+                >
+                  <span className="text-white text-xs font-medium">{opt.label}</span>
+                </button>
+                {opt.desc && (
+                  <div className="absolute right-full top-0 mr-2 z-[100001] w-52 bg-white rounded-xl shadow-2xl overflow-hidden pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="h-1 w-full bg-blue-500" />
+                    <div className="p-3">
+                      <div className="font-black text-gray-950 text-sm mb-1.5 tracking-tight">{opt.label}</div>
+                      <div className="font-medium text-gray-900 text-[12px] leading-5">
+                        {opt.desc.split('\n').map((line, i) => <div key={i}>• {line}</div>)}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         );
