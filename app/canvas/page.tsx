@@ -1776,7 +1776,7 @@ function CanvasPageContent() {
 
     // 立即设置初始缩放为 60%
     setTimeout(() => {
-      editor.setCamera({ x: 0, y: 0, z: 0.6 });
+      editor.setCamera({ x: 0, y: 0, z: 0.7 });
     }, 0);
 
     // 3秒后隐藏介绍动画

@@ -521,7 +521,7 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
 
                 <textarea
                   className="w-full h-20 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs resize-none focus:outline-none focus:border-white/15 placeholder-gray-600"
-                  placeholder="选择风格后提示词会出现在这里，后面接着写剧本内容..."
+                  placeholder="有参考图无需选择风格，选择风格后提示词会出现在这里，后面接着写剧本内容..."
                   value={script}
                   onClick={(e) => e.stopPropagation()}
                   onPointerDown={(e) => e.stopPropagation()}
