@@ -442,20 +442,6 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-blue-400"></div>
               <span className="text-white text-sm font-semibold">时空镜头延展</span>
-              {/* ? 说明按钮 */}
-              <div className="relative group">
-                <div className="w-4 h-4 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-[10px] text-gray-400 cursor-default hover:bg-white/20 transition-all">?</div>
-                <div className="absolute left-0 bottom-full mb-2 z-[200] w-56 bg-white rounded-xl shadow-2xl overflow-hidden pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="h-1 w-full bg-blue-500" />
-                  <div className="p-3">
-                    <div className="font-black text-gray-950 text-sm mb-1.5 tracking-tight">时空镜头延展</div>
-                    <div className="font-medium text-gray-900 text-[12px] leading-5 space-y-1">
-                      <div>• 时空后退 −5s：生成画面前5秒的场景</div>
-                      <div>• 时空前进 +5s：生成画面后5秒的场景</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
             <button
               onClick={toggleMinimize}
@@ -468,6 +454,14 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
 
           {!isMinimized && (
             <div className="flex-1 flex flex-col overflow-y-auto p-3 gap-2" onPointerDown={(e) => e.stopPropagation()} onWheelCapture={(e) => e.stopPropagation()}>
+
+              {/* 说明 */}
+              <div className="flex-shrink-0 p-2">
+                <div className="text-[10px] text-green-400 leading-relaxed space-y-0.5">
+                  <div>• 时空后退 —5s：生成画面前5秒的场景</div>
+                  <div>• 时空前进 +5s：生成画面后5秒的场景</div>
+                </div>
+              </div>
 
               {/* 源图片小预览 */}
               {sourceImage && (

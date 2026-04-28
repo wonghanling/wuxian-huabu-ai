@@ -2344,6 +2344,7 @@ function CanvasPageContent() {
           },
           {
             label: 'GEM 分镜设计',
+            desc: '故事模式：输入剧本，AI 按叙事节奏拆解为分镜\n时空模式：上传首帧和尾帧，AI 生成两帧之间的过渡中间镜头',
             onClick: () => {
               const srcShape = editor.getShape(floatingMenu.shapeId as any) as any;
               if (!srcShape) return;
@@ -2446,6 +2447,7 @@ function CanvasPageContent() {
           },
           {
             label: 'GEM 分镜设计',
+            desc: '故事模式：输入剧本，AI 按叙事节奏拆解为分镜\n时空模式：上传首帧和尾帧，AI 生成两帧之间的过渡中间镜头',
             onClick: () => {
               const pos = getShapeRight(floatingMenu.shapeId);
               const step2Id = createShapeId();
