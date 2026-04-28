@@ -2382,7 +2382,7 @@ function CanvasPageContent() {
         ];
 
         // Step2 菜单选项
-        const step2CardOptions = [
+        const step2CardOptions: { label: string; desc?: string; onClick: () => void }[] = [
           {
             label: '图片生成卡片',
             onClick: () => {
