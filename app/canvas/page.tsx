@@ -553,45 +553,29 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
 
   return (
     <div
-      className="fixed bottom-32 left-6 transition-all duration-300"
+      className="fixed bottom-32 left-4 transition-all duration-300"
       style={{ zIndex: 9998 }}
       data-tutorial="toolbar"
     >
       <div
-        className="relative flex flex-col gap-2"
+        className="relative flex flex-row items-stretch gap-0"
         onMouseLeave={() => setShowShotTypePanel(false)}
       >
-        {/* 展开/收起按钮 */}
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="w-12 h-12 bg-zinc-900/90 backdrop-blur-md border border-white/10 rounded-full flex items-center justify-center hover:bg-zinc-800/90 transition-all shadow-xl"
-          title={isExpanded ? '收起工具栏' : '展开工具栏'}
-        >
-          <svg
-            className={`w-5 h-5 text-white transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-
         {/* 工具栏内容 - 可折叠 */}
         <div
-          className={`flex flex-col gap-2 bg-zinc-900/90 backdrop-blur-md border border-white/10 rounded-2xl p-2 shadow-xl transition-all duration-300 origin-bottom ${
-            isExpanded ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'
+          className={`flex flex-col gap-1 bg-zinc-900/90 backdrop-blur-md border border-white/10 rounded-l-2xl p-1.5 shadow-xl transition-all duration-300 origin-left ${
+            isExpanded ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none w-0 overflow-hidden p-0 border-0'
           }`}
         >
         {/* 文本生成按钮 */}
         <button
           onClick={createTextCard}
-          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
+          className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-all group"
           title="Text Generation"
           data-tutorial="text-button"
         >
-          <div className="w-8 h-8 rounded-lg bg-gray-500/20 flex items-center justify-center group-hover:bg-gray-500/30 transition-all flex-shrink-0">
-            <span className="text-gray-300 text-base font-bold">T</span>
+          <div className="w-7 h-7 rounded-lg bg-gray-500/20 flex items-center justify-center group-hover:bg-gray-500/30 transition-all flex-shrink-0">
+            <span className="text-gray-300 text-sm font-bold">T</span>
           </div>
           <div className="flex flex-col items-start">
             <span className="text-sm text-gray-300 whitespace-nowrap">Text</span>
@@ -602,11 +586,11 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
         {/* 图片生成按钮 */}
         <button
           onClick={createImageCard}
-          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
+          className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-all group"
           title="Image Generation"
           data-tutorial="image-button"
         >
-          <div className="w-8 h-8 rounded-lg bg-gray-600/20 flex items-center justify-center group-hover:bg-gray-600/30 transition-all flex-shrink-0">
+          <div className="w-7 h-7 rounded-lg bg-gray-600/20 flex items-center justify-center group-hover:bg-gray-600/30 transition-all flex-shrink-0">
             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
@@ -621,10 +605,10 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
         <div className="relative">
           <button
             onClick={() => setShowVideoMenu(!showVideoMenu)}
-            className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group w-full"
+            className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-all group w-full"
             title="Video Generation"
           >
-            <div className="w-8 h-8 rounded-lg bg-gray-700/20 flex items-center justify-center group-hover:bg-gray-700/30 transition-all flex-shrink-0">
+            <div className="w-7 h-7 rounded-lg bg-gray-700/20 flex items-center justify-center group-hover:bg-gray-700/30 transition-all flex-shrink-0">
               <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
@@ -664,10 +648,10 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
         {/* 角色设计按钮 */}
         <button
           onClick={createCharacterCard}
-          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
+          className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-all group"
           title="Character Design"
         >
-          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
+          <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
@@ -681,10 +665,10 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
         {/* 资产库按钮 */}
         <button
           onClick={createAssetCard}
-          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
+          className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-all group"
           title="Assets"
         >
-          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
+          <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
@@ -698,11 +682,11 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
         {/* 导演流程按钮 */}
         <button
           onClick={createDirectorTimeline}
-          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
+          className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-all group"
           title="Director Timeline"
           data-tutorial="director-button"
         >
-          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
+          <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
@@ -716,11 +700,11 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
         {/* 电影控制器按钮 */}
         <button
           onMouseEnter={() => setShowShotTypePanel(true)}
-          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
+          className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-all group"
           title="Film Controller"
           data-tutorial="film-controller-button"
         >
-          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
+          <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
             </svg>
@@ -734,10 +718,10 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
         {/* Prompt按钮 */}
         <button
           onClick={createPromptOptimizerCard}
-          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
+          className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-all group"
           title="Prompt"
         >
-          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
+          <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
@@ -751,10 +735,10 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
         {/* GEM分镜设计按钮 */}
         <button
           onClick={createGemStoryboardCards}
-          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
+          className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-all group"
           title="GEM分镜设计"
         >
-          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
+          <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
             </svg>
@@ -768,10 +752,10 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
         {/* 导演引擎按钮 */}
         <button
           onClick={createGemDirectorCard}
-          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
+          className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-all group"
           title="导演引擎"
         >
-          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
+          <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
             </svg>
@@ -785,10 +769,10 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
         {/* 语音合成按钮 */}
         <button
           onClick={createAudioCard}
-          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
+          className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-all group"
           title="语音合成"
         >
-          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
+          <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
             </svg>
@@ -802,10 +786,10 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
         {/* 图片切割按钮 */}
         <button
           onClick={onOpenImageSplit}
-          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
+          className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-all group"
           title="Image Split"
         >
-          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
+          <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 4v16M12 4v16M18 4v16" />
@@ -822,17 +806,33 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
 
         {/* 更多按钮 */}
         <button
-          className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-white/5 transition-all group"
+          className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-all group"
           title="More Options"
         >
-          <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
+          <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
             </svg>
           </div>
           <span className="text-sm text-gray-400 whitespace-nowrap">More</span>
         </button>
-      </div>
+        </div>
+
+        {/* 收起按钮 - 工具栏右侧中间 */}
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className={`self-center w-5 h-10 bg-zinc-900/90 backdrop-blur-md border border-white/10 flex items-center justify-center hover:bg-zinc-800/90 transition-all shadow-xl ${
+            isExpanded ? 'rounded-r-xl border-l-0' : 'rounded-xl ml-0'
+          }`}
+          title={isExpanded ? '收起工具栏' : '展开工具栏'}
+        >
+          <svg
+            className={`w-3 h-3 text-white transition-transform duration-300 ${isExpanded ? 'rotate-0' : 'rotate-180'}`}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
 
       {/* 景别类型选择面板 */}
       {showShotTypePanel && (
