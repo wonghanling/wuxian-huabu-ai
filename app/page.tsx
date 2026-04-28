@@ -77,8 +77,8 @@ export default function Home() {
       <nav className="fixed top-0 w-full z-50 border-b border-white/5 bg-zinc-950/50 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <img src="/logo-transparent.png" alt="BOLUO.1971" className="w-8 h-8" />
-            <span className="font-semibold text-lg tracking-tight">BOLUO.1971</span>
+            <img src="/logo-transparent.png" alt="Boluolab" className="w-8 h-8" />
+            <span className="font-semibold text-lg tracking-tight">Boluolab</span>
           </div>
 
           <div className="hidden md:flex space-x-8 text-sm text-zinc-400 font-medium">
@@ -552,10 +552,10 @@ export default function Home() {
                   准备开始创作了吗？
                 </p>
                 <p className="text-lg text-zinc-400 mb-10 max-w-2xl mx-auto">
-                  Join thousands of creators using BOLUO.1971 to bring their ideas to life with AI-powered workflows.
+                  Join thousands of creators using Boluolab to bring their ideas to life with AI-powered workflows.
                 </p>
                 <p className="text-sm text-zinc-200 mb-10 max-w-2xl mx-auto">
-                  加入数千名创作者，使用 BOLUO.1971 通过 AI 驱动的工作流将创意变为现实。
+                  加入数千名创作者，使用 Boluolab 通过 AI 驱动的工作流将创意变为现实。
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                   <Link href="/canvas">
@@ -682,8 +682,8 @@ export default function Home() {
             {/* Brand */}
             <div className="md:col-span-1">
               <div className="flex items-center space-x-2 mb-4">
-                <img src="/logo-transparent.png" alt="BOLUO.1971" className="w-8 h-8" />
-                <span className="font-semibold text-lg">BOLUO.1971</span>
+                <img src="/logo-transparent.png" alt="Boluolab" className="w-8 h-8" />
+                <span className="font-semibold text-lg">Boluolab</span>
               </div>
               <p className="text-sm text-zinc-500 leading-relaxed">
                 The infinite canvas for AI-powered creative workflows.
@@ -730,7 +730,7 @@ export default function Home() {
           {/* Bottom Bar */}
           <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-zinc-500">
-              © 2026 BOLUO.1971. All rights reserved. <span className="text-xs text-zinc-600">保留所有权利</span>
+              © 2026 Boluolab. All rights reserved. <span className="text-xs text-zinc-600">保留所有权利</span>
             </p>
             <div className="flex items-center space-x-6 text-sm text-zinc-500">
               <a href="#" className="hover:text-white transition-colors">Privacy <span className="text-xs text-zinc-600">隐私</span></a>
