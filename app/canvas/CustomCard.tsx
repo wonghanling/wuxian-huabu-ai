@@ -3673,9 +3673,11 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           const supabase = createClient();
                           const { data: { user } } = await supabase.auth.getUser();
                           if (!user) throw new Error('请先登录');
-                          const ext = file.name.split('.').pop() || 'mp3';
-                          const filename = `audios/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-                          const { error } = await supabase.storage.from('assets').upload(filename, file, { contentType: file.type || 'audio/mpeg', upsert: false });
+                          const ext = file.name.split('.').pop()?.toLowerCase() || 'mp3';
+                          const mimeMap: Record<string, string> = { mp3: 'audio/mpeg', wav: 'audio/mpeg', m4a: 'audio/mp4', ogg: 'audio/ogg' };
+                          const contentType = mimeMap[ext] || 'audio/mpeg';
+                          const filename = `audios/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.mp3`;
+                          const { error } = await supabase.storage.from('assets').upload(filename, file, { contentType, upsert: false });
                           if (error) throw new Error(`上传失败: ${error.message}`);
                           const { data: urlData } = supabase.storage.from('assets').getPublicUrl(filename);
                           editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: {
