@@ -3711,6 +3711,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       e.stopPropagation();
                       if (!(connectedGeneratedVideo || klingVideoUrl)) { alert('请上传或连接视频'); return; }
                       if (!klingLipSyncAudio) { alert('请上传音频'); return; }
+                      if (klingLipSyncAudio.startsWith('data:')) { alert('音频格式已更新，请重新上传音频文件'); return; }
                       const effectiveVideoUrl = connectedGeneratedVideo || klingVideoUrl;
                       editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, isGenerating: true, generationStatus: '识别人脸中...', generationProgress: 5 } });
                       try {

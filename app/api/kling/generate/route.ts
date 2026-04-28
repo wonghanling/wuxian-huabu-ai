@@ -315,6 +315,9 @@ export async function POST(req: NextRequest) {
 
     if (!res.ok) {
       const err = await res.text();
+      if (res.status === 429) {
+        throw new Error('服务繁忙，请稍后重试');
+      }
       throw new Error(`Kling 提交失败 (${res.status}): ${err}`);
     }
 
