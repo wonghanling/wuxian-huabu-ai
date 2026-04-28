@@ -3720,12 +3720,13 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         // 第一步：人脸识别
                         const faceRes = await fetch('/api/kling/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'identify-face', video_url: effectiveVideoUrl }) });
                         const faceData = await faceRes.json();
-                        if (!faceRes.ok) throw new Error(faceData?.error || '人脸识别失败');
+                        console.log('identify-face 响应:', faceRes.status, JSON.stringify(faceData));
+                        if (!faceRes.ok) throw new Error(`人脸识别失败(${faceRes.status}): ${faceData?.error || JSON.stringify(faceData)}`);
                         const sessionId = faceData.sessionId;
                         const faceId = faceData.faceId || '-1';
                         editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, isGenerating: true, klingLipSyncSessionId: sessionId, klingLipSyncFaceId: faceId, generationStatus: '提交生成中...', generationProgress: 20 } });
                         // 第二步：生成对口型
-                        const res = await fetch('/api/kling/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+                        const lipSyncBody = {
                           mode: 'advanced-lip-sync',
                           session_id: sessionId,
                           face_id: faceId,
@@ -3735,9 +3736,12 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           sound_insert_time: klingLipSyncSoundInsert ?? 0,
                           sound_volume: klingLipSyncSoundVolume ?? 1,
                           original_audio_volume: klingLipSyncOriginalVolume ?? 1,
-                        }) });
+                        };
+                        console.log('advanced-lip-sync 请求:', JSON.stringify({ ...lipSyncBody, sound_file: lipSyncBody.sound_file?.slice(0, 80) }));
+                        const res = await fetch('/api/kling/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(lipSyncBody) });
                         const data = await res.json();
-                        if (!res.ok) throw new Error(data?.error || '生成失败');
+                        console.log('advanced-lip-sync 响应:', res.status, JSON.stringify(data));
+                        if (!res.ok) throw new Error(`生成失败(${res.status}): ${data?.error || JSON.stringify(data)}`);
                         const taskId = data.taskId;
                         let attempts = 0;
                         const poll = async () => {
