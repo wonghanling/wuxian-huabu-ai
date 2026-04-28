@@ -3658,11 +3658,36 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     <input type="file" accept="audio/*"
                       className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-blue-600/70 file:text-white hover:file:bg-blue-600 file:cursor-pointer"
                       onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                      onChange={(e) => {
+                      onChange={async (e) => {
                         const file = e.target.files?.[0]; if (!file) return;
-                        const reader = new FileReader();
-                        reader.onload = (ev) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingLipSyncAudio: ev.target?.result as string, klingLipSyncAudioName: file.name } });
-                        reader.readAsDataURL(file); e.target.value = '';
+                        e.target.value = '';
+                        editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingLipSyncAudioName: '上传中...' } });
+                        try {
+                          // 读取音频时长
+                          const audioDurationMs = await new Promise<number>((resolve) => {
+                            const url = URL.createObjectURL(file);
+                            const audio = new Audio(url);
+                            audio.onloadedmetadata = () => { URL.revokeObjectURL(url); resolve(Math.round(audio.duration * 1000)); };
+                            audio.onerror = () => { URL.revokeObjectURL(url); resolve(0); };
+                          });
+                          const supabase = createClient();
+                          const { data: { user } } = await supabase.auth.getUser();
+                          if (!user) throw new Error('请先登录');
+                          const ext = file.name.split('.').pop() || 'mp3';
+                          const filename = `audios/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+                          const { error } = await supabase.storage.from('assets').upload(filename, file, { contentType: file.type || 'audio/mpeg', upsert: false });
+                          if (error) throw new Error(`上传失败: ${error.message}`);
+                          const { data: urlData } = supabase.storage.from('assets').getPublicUrl(filename);
+                          editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: {
+                            ...shape.props,
+                            klingLipSyncAudio: urlData.publicUrl,
+                            klingLipSyncAudioName: file.name,
+                            ...(audioDurationMs > 0 ? { klingLipSyncSoundEnd: audioDurationMs } : {}),
+                          }});
+                        } catch (err: any) {
+                          alert(err?.message || '音频上传失败');
+                          editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingLipSyncAudioName: '' } });
+                        }
                       }}
                     />
                     {klingLipSyncAudio && (

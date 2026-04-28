@@ -243,9 +243,9 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'audio_id 和 sound_file 需要二选一' }, { status: 400 });
       }
 
-      // 去掉 data URL 前缀，Kling 只接受纯 base64
+      // sound_file 可以是 URL 或 base64，如果是 data URL 则去掉前缀
       const cleanSoundFile = sound_file
-        ? sound_file.includes(',') ? sound_file.split(',')[1] : sound_file
+        ? (sound_file.startsWith('data:') ? sound_file.split(',')[1] : sound_file)
         : undefined;
 
       endpoint = '/kling/v1/videos/advanced-lip-sync';
