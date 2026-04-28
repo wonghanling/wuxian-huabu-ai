@@ -243,6 +243,11 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'audio_id 和 sound_file 需要二选一' }, { status: 400 });
       }
 
+      // 去掉 data URL 前缀，Kling 只接受纯 base64
+      const cleanSoundFile = sound_file
+        ? sound_file.includes(',') ? sound_file.split(',')[1] : sound_file
+        : undefined;
+
       endpoint = '/kling/v1/videos/advanced-lip-sync';
       requestBody = {
         session_id,
@@ -250,7 +255,7 @@ export async function POST(req: NextRequest) {
           {
             face_id,
             ...(audio_id ? { audio_id } : {}),
-            ...(sound_file ? { sound_file } : {}),
+            ...(cleanSoundFile ? { sound_file: cleanSoundFile } : {}),
             sound_start_time: Number(sound_start_time ?? 0),
             sound_end_time: Number(sound_end_time ?? 5000),
             sound_insert_time: Number(sound_insert_time ?? 0),
