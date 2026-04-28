@@ -327,9 +327,11 @@ export async function POST(req: NextRequest) {
 
     if (mode === 'identify-face') {
       const responseData = data.data || {};
+      console.log('identify-face 完整响应:', JSON.stringify(data));
       const faces = extractFaceCandidates(responseData);
       const sessionId = String(
-        responseData.session_id || responseData.sessionId || responseData.session?.id || ''
+        responseData.session_id || responseData.sessionId || responseData.session?.id ||
+        responseData.task_id || responseData.taskId || ''
       );
 
       if (!sessionId) {
