@@ -196,7 +196,7 @@ export default function AuthPage() {
       <nav className="fixed top-0 w-full z-50 border-b border-white/5 bg-zinc-950/50 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-2">
-            <img src="/logo-transparent.png" alt="Boluolab" className="w-8 h-8" />
+            <img src="/Boluolab_logo.svg" alt="Boluolab" className="w-8 h-8" />
             <span className="font-semibold text-lg tracking-tight">Boluolab</span>
           </Link>
         </div>
