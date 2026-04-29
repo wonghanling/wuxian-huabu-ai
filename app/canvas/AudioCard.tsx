@@ -54,7 +54,7 @@ export class AudioCardUtil extends BaseBoxShapeUtil<AudioCardShape> {
 
   override isAspectRatioLocked = () => false;
   override canResize = () => true;
-  override canBind = () => false;
+  override canBind = () => true;
 
   getDefaultProps(): AudioCardShape['props'] {
     return {

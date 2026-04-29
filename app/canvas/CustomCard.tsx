@@ -723,12 +723,15 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
     const getConnectedAudio = (): string => {
       const inputBindings = editor.getBindingsToShape(shape.id, 'connection');
+      console.log('Kling audio bindings:', JSON.stringify(inputBindings.map((b: any) => ({ fromId: b.fromId, toId: b.toId, props: b.props }))));
       for (const binding of inputBindings) {
         if ((binding as any).props?.terminal !== 'end') continue;
         const connBindings = editor.getBindingsFromShape(binding.fromId, 'connection');
+        console.log('conn bindings from line:', JSON.stringify(connBindings.map((b: any) => ({ fromId: b.fromId, toId: b.toId, props: b.props }))));
         for (const cb of connBindings) {
           if ((cb as any).props?.terminal !== 'start') continue;
           const src = editor.getShape((cb as any).toId) as any;
+          console.log('src shape:', src?.type, src?.props?.audioUrl);
           if (!src) continue;
           if (src.type === 'audio-card' && src.props?.audioUrl) return src.props.audioUrl;
         }
