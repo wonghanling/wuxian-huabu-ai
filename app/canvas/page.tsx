@@ -633,7 +633,7 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
                 onClick={() => { createKlingCard(); setShowVideoMenu(false); }}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all text-left"
               >
-                <span className="text-xs text-gray-300 whitespace-nowrap">Kling</span>
+                <span className="text-xs text-gray-300 whitespace-nowrap">Kling 视频配音</span>
               </button>
               <button
                 onClick={() => { createSeedanceCard(); setShowVideoMenu(false); }}
@@ -766,11 +766,11 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
           </div>
         </button>
 
-        {/* 语音合成按钮 */}
+        {/* 语音生成按钮 */}
         <button
           onClick={createAudioCard}
           className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-all group"
-          title="语音合成"
+          title="语音生成"
         >
           <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -778,7 +778,7 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
             </svg>
           </div>
           <div className="flex flex-col items-start">
-            <span className="text-sm text-gray-300 whitespace-nowrap">语音合成</span>
+            <span className="text-sm text-gray-300 whitespace-nowrap">语音生成</span>
             <span className="text-xs text-gray-500 whitespace-nowrap">MiniMax TTS</span>
           </div>
         </button>

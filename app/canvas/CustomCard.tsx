@@ -522,6 +522,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
     // 本地 state 做显示层，防抖写 tldraw store，避免输入法冲突
     const [localPrompt, setLocalPrompt] = useState(shape.props.prompt ?? '');
+    const [showImageStyles, setShowImageStyles] = useState(false);
     const [localCharacterAnchorJson, setLocalCharacterAnchorJson] = useState(shape.props.characterAnchorJson ?? '');
     const [localCharacterThreeViewJson, setLocalCharacterThreeViewJson] = useState(shape.props.characterThreeViewJson ?? '');
     const [localKlingVideoUrl, setLocalKlingVideoUrl] = useState(shape.props.klingVideoUrl ?? '');
@@ -1094,12 +1095,56 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                 <>
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-gray-400 text-xs">Prompt</label>
-                    <button
-                      className="text-[10px] text-gray-400 hover:text-gray-300 transition-colors"
-                      onClick={async (e) => { e.stopPropagation(); try { const text = await navigator.clipboard.readText(); if (text) { const newPrompt = (localPrompt ? localPrompt + '\n' : '') + text; setLocalPrompt(newPrompt); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, prompt: newPrompt } }); } } catch {} }}
-                      onPointerDown={(e) => e.stopPropagation()}
-                    >粘贴</button>
+                    <div className="flex items-center gap-2">
+                      {cardType === 'image' && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setShowImageStyles(v => !v); }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          className="text-[10px] px-2 py-0.5 rounded bg-blue-600/30 border border-blue-500/40 text-blue-300 hover:bg-blue-600/50 transition-colors"
+                        >选风格</button>
+                      )}
+                      <button
+                        className="text-[10px] text-gray-400 hover:text-gray-300 transition-colors"
+                        onClick={async (e) => { e.stopPropagation(); try { const text = await navigator.clipboard.readText(); if (text) { const newPrompt = (localPrompt ? localPrompt + '\n' : '') + text; setLocalPrompt(newPrompt); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, prompt: newPrompt } }); } } catch {} }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                      >粘贴</button>
+                    </div>
                   </div>
+                  {cardType === 'image' && showImageStyles && (
+                    <div className="mb-1.5 flex flex-wrap gap-1" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+                      {[
+                        { label: '电影写实3D', prompt: '3D animation style, game cinematic, Unreal Engine lighting, realistic shadows, high detail, consistent character,' },
+                        { label: '超写实电影', prompt: 'cinematic film still, photorealistic, natural skin texture, global illumination, volumetric lighting, depth of field,' },
+                        { label: '游戏CG', prompt: 'AAA game cinematic, Unreal Engine 5 render, real-time rendering, cinematic lighting, epic atmosphere,' },
+                        { label: '动漫3D', prompt: 'anime 3D style, stylized character, clean face shading, soft lighting, anime cinematic,' },
+                        { label: '宫崎骏', prompt: 'Studio Ghibli style, hand-painted background, soft warm lighting, anime film look,' },
+                        { label: '新海诚', prompt: 'Makoto Shinkai style, ultra detailed sky, light bloom, emotional atmosphere,' },
+                        { label: '黑暗电影', prompt: 'dark cinematic, moody lighting, low key lighting, dramatic shadows, foggy atmosphere,' },
+                        { label: '武侠电影', prompt: 'ancient Chinese wuxia style, dusty atmosphere, wind movement, cinematic composition, epic tone,' },
+                        { label: '赛博朋克', prompt: 'cyberpunk, futuristic city, neon lights, holographic displays, 3D render, Unreal Engine 5, cinematic lighting,' },
+                        { label: '迪士尼3D', prompt: 'Disney Pixar style, smooth skin, cartoon proportions, bright lighting,' },
+                        { label: '梦工厂', prompt: 'DreamWorks style, expressive face, stylized realism,' },
+                        { label: '油画风', prompt: 'oil painting, brush strokes, classical art,' },
+                        { label: '水墨风', prompt: 'ink wash painting, Chinese ink style, minimalist composition,' },
+                        { label: '电影胶片', prompt: 'film grain, analog film, vintage cinematic,' },
+                      ].map(s => (
+                        <button
+                          key={s.label}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // 替换已有风格前缀，或直接加在开头
+                            const stylePattern = /^[a-zA-Z0-9 ,.\-()]+,\s*\n?/;
+                            const clean = stylePattern.test(localPrompt) ? localPrompt.replace(stylePattern, '') : localPrompt;
+                            const newPrompt = s.prompt + (clean ? '\n' + clean : '');
+                            setLocalPrompt(newPrompt);
+                            editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, prompt: newPrompt } });
+                          }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          className="text-[10px] px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-gray-300 hover:bg-blue-600/40 hover:border-blue-500/50 hover:text-white transition-all"
+                        >{s.label}</button>
+                      ))}
+                    </div>
+                  )}
                   <textarea
                     className="w-full h-20 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs resize-none focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all placeholder-gray-500"
                     placeholder={

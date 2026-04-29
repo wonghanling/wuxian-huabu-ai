@@ -289,7 +289,7 @@ export class AudioCardUtil extends BaseBoxShapeUtil<AudioCardShape> {
                   {/* Voice ID */}
                   <div className="flex-shrink-0">
                     <div className="flex items-center justify-between mb-1">
-                      <label className="text-[10px] text-gray-400">Voice ID</label>
+                      <label className="text-[10px] text-gray-400">Voice ID <span className="text-gray-600">· 在 MiniMax 官网复制获得</span></label>
                       {clonedVoicesList.length > 0 && (
                         <select
                           className="text-[9px] bg-black/50 border border-white/10 rounded px-1 py-0.5 text-gray-300"
