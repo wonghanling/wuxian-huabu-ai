@@ -3462,156 +3462,15 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
             {/* Kling 卡片内容 */}
             {cardType === 'kling' && (
               <div className="flex flex-col gap-2 flex-1">
-                {/* 模式切换 */}
-                <div className="flex gap-1 bg-black/20 rounded-lg p-1">
-                  {(['motion-control', 'lip-sync'] as const).map((m) => (
-                    <button key={m}
-                      className={`flex-1 py-1 rounded-md text-xs font-medium transition-all ${(klingMode || 'motion-control') === m ? 'bg-gray-600/80 text-white' : 'text-gray-400 hover:text-gray-300'}`}
-                      onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingMode: m, klingVideoUrl: '', klingVideoName: '', klingLipSyncSessionId: '', klingLipSyncFaceId: '' } }); }}
-                      onPointerDown={(e) => e.stopPropagation()}
-                    >{m === 'motion-control' ? '运动控制' : '对口型'}</button>
-                  ))}
+                {/* 对口型标题+价格 */}
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-300 text-xs font-medium">对口型</span>
+                  <span className="text-gray-500 text-[10px]">会员¥1.085/次 · 普通¥1.285/次</span>
                 </div>
 
                 {/* 运动控制模式 */}
-                {(klingMode || 'motion-control') === 'motion-control' && (<>
-                  <div>
-                    <label className="text-gray-400 text-xs mb-1 block">提示词（可选）</label>
-                    <textarea className="w-full h-14 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs resize-none focus:outline-none focus:border-white/15 transition-all placeholder-gray-500"
-                      placeholder="让图片的人像视频一样..."
-                      value={localPrompt}
-                      onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                      onCompositionStart={() => { isComposing.current = true; }}
-                      onCompositionEnd={(e) => {
-                        isComposing.current = false;
-                        const v = (e.target as HTMLTextAreaElement).value;
-                        setLocalPrompt(v);
-                        updateShapeDebounced({ prompt: v });
-                      }}
-                      onChange={(e) => {
-                        setLocalPrompt(e.target.value);
-                        if (!isComposing.current) updateShapeDebounced({ prompt: e.target.value });
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-gray-400 text-xs mb-1 block">
-                      参考图（必填）{connectedGeneratedImage && <span className="text-blue-400 ml-1">·来自连接</span>}
-                    </label>
-                    {!connectedGeneratedImage && (
-                      <input type="file" accept="image/*"
-                        className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-blue-600/70 file:text-white hover:file:bg-blue-600 file:cursor-pointer"
-                        onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                        onChange={(e) => {
-                          const file = e.target.files?.[0]; if (!file) return;
-                          const r = new FileReader();
-                          r.onload = (ev) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingImage: ev.target?.result as string } });
-                          r.readAsDataURL(file); e.target.value = '';
-                        }}
-                      />
-                    )}
-                    {(connectedGeneratedImage || klingImage) && (
-                      <div className="mt-1 relative w-full bg-black/30 rounded-lg overflow-hidden group" style={{ aspectRatio: '16/9' }}>
-                        <img src={connectedGeneratedImage || klingImage} className="w-full h-full object-cover" />
-                        {!connectedGeneratedImage && (
-                          <button className="absolute top-1 right-1 w-5 h-5 bg-black/60 hover:bg-red-500/80 rounded text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingImage: '' } }); }}
-                            onPointerDown={(e) => e.stopPropagation()}>✕</button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <label className="text-gray-400 text-xs mb-1 block">
-                      动作视频（必填）{connectedGeneratedVideo && <span className="text-blue-400 ml-1">·来自连接</span>}
-                    </label>
-                    {connectedGeneratedVideo ? (
-                      <div className="bg-black/20 border border-blue-500/30 rounded-lg p-2">
-                        <span className="text-blue-300 text-xs break-all line-clamp-2">{connectedGeneratedVideo}</span>
-                      </div>
-                    ) : (
-                      <>
-                        <input type="file" accept="video/mp4,video/quicktime"
-                          className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-blue-600/70 file:text-white hover:file:bg-blue-600 file:cursor-pointer"
-                          onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                          onChange={async (e) => {
-                            const file = e.target.files?.[0]; if (!file) return;
-                            await handleKlingVideoUpload(file); e.target.value = '';
-                          }}
-                        />
-                        {klingVideoName && (
-                          <div className="mt-1 flex items-center gap-2 bg-black/20 border border-white/10 rounded p-1">
-                            <span className="text-gray-300 text-xs truncate flex-1">{klingVideoName}</span>
-                            <button className="text-gray-500 hover:text-red-400 text-xs"
-                              onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingVideoUrl: '', klingVideoName: '' } }); }}
-                              onPointerDown={(e) => e.stopPropagation()}>✕</button>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                  <button
-                    className="w-full py-2 mt-1 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg bg-gradient-to-r from-blue-500/80 to-blue-600/80 hover:from-blue-500 hover:to-blue-600"
-                    onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingShowSettingsPanel: !klingShowSettingsPanel } }); }}
-                    onPointerDown={(e) => e.stopPropagation()}
-                  >{klingShowSettingsPanel ? '收起参数设置 ▲' : '展开参数设置 ▼'}</button>
-                  <button
-                    className={`w-full py-2 rounded-lg font-semibold text-white text-xs transition-all ${isGenerating ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500 hover:scale-[1.02] active:scale-[0.98]'}`}
-                    disabled={isGenerating}
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      if (!(connectedGeneratedImage || klingImage)) { alert('请上传或连接参考图'); return; }
-                      if (!(connectedGeneratedVideo || klingVideoUrl)) { alert('请上传或连接动作视频'); return; }
-                      editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, isGenerating: true, generationStatus: '提交中...', generationProgress: 0 } });
-                      try {
-                        const res = await fetch('/api/kling/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
-                          mode: 'motion-control', prompt: prompt || '',
-                          image_url: connectedGeneratedImage || klingImage, video_url: connectedGeneratedVideo || klingVideoUrl,
-                          keep_original_sound: klingKeepSound || 'no',
-                          character_orientation: klingCharacterOrientation || 'image',
-                          videoMode: klingVideoMode || 'std',
-                          model_name: model || 'kling-v2-master',
-                        }) });
-                        const data = await res.json();
-                        if (!res.ok) throw new Error(data?.error || '生成失败');
-                        const taskId = data.taskId;
-                        let attempts = 0;
-                        const poll = async () => {
-                          attempts++;
-                          try {
-                            const qRes = await fetch(`/api/kling/query?taskId=${taskId}&mode=motion-control`);
-                            const qData = await qRes.json();
-                            const ls = editor.getShape(shape.id); const lp = ls ? (ls as any).props : shape.props;
-                            if (qData.status === 'completed' && qData.videoUrl) {
-                              editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...lp, isGenerating: false, klingGeneratedVideo: qData.videoUrl, generationProgress: 100, generationStatus: '完成' } });
-                            } else if (qData.status === 'failed') {
-                              editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...lp, isGenerating: false, generationStatus: '生成失败' } });
-                            } else if (attempts < 60) {
-                              editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...lp, generationStatus: '生成中...', generationProgress: Math.min(90, attempts * 2) } });
-                              setTimeout(poll, 5000);
-                            } else {
-                              editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...lp, isGenerating: false, generationStatus: '超时' } });
-                            }
-                          } catch (e) {
-                            if (attempts < 60) {
-                              const ls = editor.getShape(shape.id); const lp = ls ? (ls as any).props : shape.props;
-                              editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...lp, generationStatus: '网络重试中...' } });
-                              setTimeout(poll, 8000);
-                            }
-                          }
-                        };
-                        setTimeout(poll, 5000);
-                      } catch (err: any) {
-                        const ls = editor.getShape(shape.id); const lp = ls ? (ls as any).props : shape.props;
-                        editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...lp, isGenerating: false, generationStatus: err?.message || '失败' } });
-                      }
-                    }}
-                    onPointerDown={(e) => e.stopPropagation()}
-                  >{isGenerating ? (generationStatus || '生成中...') : 'Generate'}</button>
-                </>)}
-
                 {/* 对口型模式 */}
-                {klingMode === 'lip-sync' && (<>
+                <>
                   <div>
                     <label className="text-gray-400 text-xs mb-1 block">
                       源视频 URL{connectedGeneratedVideo && <span className="text-blue-400 ml-1">·来自连接</span>}
@@ -3776,7 +3635,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     }}
                     onPointerDown={(e) => e.stopPropagation()}
                   >{isGenerating ? (generationStatus || '生成中...') : 'Generate'}</button>
-                </>)}
+                </>
 
                 {/* 进度条 */}
                 {isGenerating && (
@@ -3856,50 +3715,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
             {/* Kling 展开参数面板 */}
             {cardType === 'kling' && klingShowSettingsPanel && (
           <div className="mt-2 p-3 bg-black/40 border border-white/10 rounded-lg space-y-3">
-            {(klingMode || 'motion-control') === 'motion-control' && (<>
-              <div className="flex gap-2">
-                <div className="flex-1">
-                  <label className="text-gray-400 text-xs mb-1 block">版本</label>
-                  <select className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none transition-all"
-                    value={model || 'kling-v2-master'}
-                    onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                    onChange={(e) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, model: e.target.value } })}>
-                    <option value="kling-v2-master">V2.6 (720p std 0.9/秒，1080p pro 1.5/秒)</option>
-                    <option value="kling-v3-master">V3.0 (720p std 1.6/秒，1080p pro 2.1/秒)</option>
-                  </select>
-                </div>
-                <div className="flex-1">
-                  <label className="text-gray-400 text-xs mb-1 block">质量</label>
-                  <select className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none transition-all"
-                    value={klingVideoMode || 'std'}
-                    onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                    onChange={(e) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingVideoMode: e.target.value } })}>
-                    <option value="std">Std (720p)</option>
-                    <option value="pro">Pro (1080p)</option>
-                  </select>
-                </div>
-              </div>
-              <div className="flex gap-2 items-center">
-                <div className="flex-1">
-                  <label className="text-gray-400 text-xs mb-1 block">人物朝向</label>
-                  <select className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none transition-all"
-                    value={klingCharacterOrientation || 'image'}
-                    onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                    onChange={(e) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingCharacterOrientation: e.target.value } })}>
-                    <option value="image">与图片一致</option>
-                    <option value="video">与视频一致</option>
-                  </select>
-                </div>
-                <div className="flex items-center gap-2 mt-4">
-                  <input type="checkbox" id="kling-keep-sound" className="w-3 h-3"
-                    checked={(klingKeepSound || 'no') === 'yes'}
-                    onChange={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingKeepSound: e.target.checked ? 'yes' : 'no' } }); }}
-                    onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()} />
-                  <label htmlFor="kling-keep-sound" className="text-gray-400 text-xs cursor-pointer" onClick={(e) => e.stopPropagation()}>保留原声</label>
-                </div>
-              </div>
-            </>)}
-            {klingMode === 'lip-sync' && (<>
+            <>
               <div>
                 <label className="text-gray-400 text-xs mb-1 block">Face ID（自动填充，可手动改）</label>
                 <input className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none transition-all"
@@ -3947,7 +3763,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
                   onChange={(e) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingLipSyncOriginalVolume: parseFloat(e.target.value) } })} />
               </div>
-            </>)}
+            </>
           </div>
         )}
             {/* 文本输出区域 */}
