@@ -721,6 +721,23 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
     const connectedGeneratedVideo = getConnectedGeneratedVideo();
 
+    const getConnectedAudio = (): string => {
+      const inputBindings = editor.getBindingsToShape(shape.id, 'connection');
+      for (const binding of inputBindings) {
+        if ((binding as any).props?.terminal !== 'end') continue;
+        const connBindings = editor.getBindingsFromShape(binding.fromId, 'connection');
+        for (const cb of connBindings) {
+          if ((cb as any).props?.terminal !== 'start') continue;
+          const src = editor.getShape((cb as any).toId) as any;
+          if (!src) continue;
+          if (src.type === 'audio-card' && src.props?.audioUrl) return src.props.audioUrl;
+        }
+      }
+      return '';
+    };
+
+    const connectedAudio = getConnectedAudio();
+
     // 读取连接的上游图片卡片（最多 maxCount 张）
     const getConnectedImages = (maxCount: number): string[] => {
       const imgs: string[] = [];
@@ -3464,8 +3481,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
               <div className="flex flex-col gap-2 flex-1">
                 {/* 对口型标题+价格 */}
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-300 text-xs font-medium">对口型</span>
-                  <span className="text-gray-500 text-[10px]">会员¥1.085/次 · 普通¥1.285/次</span>
+                  <span className="text-gray-200 text-sm font-semibold">对口型</span>
+                  <span className="text-gray-400 text-xs">会员¥1.085 · 普通¥1.285</span>
                 </div>
 
                 {/* 运动控制模式 */}
@@ -3513,51 +3530,63 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     </div>
                   )}
                   <div>
-                    <label className="text-gray-400 text-xs mb-1 block">音频（mp3/wav/m4a 2-60秒）</label>
-                    <input type="file" accept="audio/*"
-                      className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-blue-600/70 file:text-white hover:file:bg-blue-600 file:cursor-pointer"
-                      onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0]; if (!file) return;
-                        e.target.value = '';
-                        editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingLipSyncAudioName: '上传中...' } });
-                        try {
-                          // 读取音频时长
-                          const audioDurationMs = await new Promise<number>((resolve) => {
-                            const url = URL.createObjectURL(file);
-                            const audio = new Audio(url);
-                            audio.onloadedmetadata = () => { URL.revokeObjectURL(url); resolve(Math.round(audio.duration * 1000)); };
-                            audio.onerror = () => { URL.revokeObjectURL(url); resolve(0); };
-                          });
-                          const supabase = createClient();
-                          const { data: { user } } = await supabase.auth.getUser();
-                          if (!user) throw new Error('请先登录');
-                          const ext = file.name.split('.').pop()?.toLowerCase() || 'mp3';
-                          const mimeMap: Record<string, string> = { mp3: 'audio/mpeg', wav: 'audio/mpeg', m4a: 'audio/mp4', ogg: 'audio/ogg' };
-                          const contentType = mimeMap[ext] || 'audio/mpeg';
-                          const filename = `audios/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.mp3`;
-                          const { error } = await supabase.storage.from('assets').upload(filename, file, { contentType, upsert: false });
-                          if (error) throw new Error(`上传失败: ${error.message}`);
-                          const { data: urlData } = supabase.storage.from('assets').getPublicUrl(filename);
-                          editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: {
-                            ...shape.props,
-                            klingLipSyncAudio: urlData.publicUrl,
-                            klingLipSyncAudioName: file.name,
-                            ...(audioDurationMs > 0 ? { klingLipSyncSoundEnd: audioDurationMs } : {}),
-                          }});
-                        } catch (err: any) {
-                          alert(err?.message || '音频上传失败');
-                          editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingLipSyncAudioName: '' } });
-                        }
-                      }}
-                    />
-                    {klingLipSyncAudio && (
-                      <div className="mt-1 flex items-center gap-2 bg-black/20 border border-white/10 rounded p-1">
-                        <span className="text-gray-300 text-xs truncate flex-1">{klingLipSyncAudioName || '已上传'}</span>
-                        <button className="text-gray-500 hover:text-red-400 text-xs"
-                          onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingLipSyncAudio: '', klingLipSyncAudioName: '' } }); }}
-                          onPointerDown={(e) => e.stopPropagation()}>x</button>
+                    <label className="text-gray-400 text-xs mb-1 block">
+                      音频（mp3/wav/m4a 2-60秒）{connectedAudio && <span className="text-blue-400 ml-1">·来自连接</span>}
+                    </label>
+                    {connectedAudio ? (
+                      <div className="bg-black/20 border border-blue-500/30 rounded-lg p-2 flex items-center gap-2">
+                        <svg className="w-3 h-3 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                        </svg>
+                        <span className="text-blue-300 text-xs truncate flex-1">已连接语音合成音频</span>
                       </div>
+                    ) : (
+                      <>
+                        <input type="file" accept="audio/*"
+                          className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-blue-600/70 file:text-white hover:file:bg-blue-600 file:cursor-pointer"
+                          onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0]; if (!file) return;
+                            e.target.value = '';
+                            editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingLipSyncAudioName: '上传中...' } });
+                            try {
+                              const audioDurationMs = await new Promise<number>((resolve) => {
+                                const url = URL.createObjectURL(file);
+                                const audio = new Audio(url);
+                                audio.onloadedmetadata = () => { URL.revokeObjectURL(url); resolve(Math.round(audio.duration * 1000)); };
+                                audio.onerror = () => { URL.revokeObjectURL(url); resolve(0); };
+                              });
+                              const supabase = createClient();
+                              const { data: { user } } = await supabase.auth.getUser();
+                              if (!user) throw new Error('请先登录');
+                              const ext = file.name.split('.').pop()?.toLowerCase() || 'mp3';
+                              const mimeMap: Record<string, string> = { mp3: 'audio/mpeg', wav: 'audio/mpeg', m4a: 'audio/mp4', ogg: 'audio/ogg' };
+                              const contentType = mimeMap[ext] || 'audio/mpeg';
+                              const filename = `audios/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.mp3`;
+                              const { error } = await supabase.storage.from('assets').upload(filename, file, { contentType, upsert: false });
+                              if (error) throw new Error(`上传失败: ${error.message}`);
+                              const { data: urlData } = supabase.storage.from('assets').getPublicUrl(filename);
+                              editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: {
+                                ...shape.props,
+                                klingLipSyncAudio: urlData.publicUrl,
+                                klingLipSyncAudioName: file.name,
+                                ...(audioDurationMs > 0 ? { klingLipSyncSoundEnd: audioDurationMs } : {}),
+                              }});
+                            } catch (err: any) {
+                              alert(err?.message || '音频上传失败');
+                              editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingLipSyncAudioName: '' } });
+                            }
+                          }}
+                        />
+                        {klingLipSyncAudio && (
+                          <div className="mt-1 flex items-center gap-2 bg-black/20 border border-white/10 rounded p-1">
+                            <span className="text-gray-300 text-xs truncate flex-1">{klingLipSyncAudioName || '已上传'}</span>
+                            <button className="text-gray-500 hover:text-red-400 text-xs"
+                              onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, klingLipSyncAudio: '', klingLipSyncAudioName: '' } }); }}
+                              onPointerDown={(e) => e.stopPropagation()}>x</button>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                   <button
@@ -3571,8 +3600,9 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     onClick={async (e) => {
                       e.stopPropagation();
                       if (!(connectedGeneratedVideo || klingVideoUrl)) { alert('请上传或连接视频'); return; }
-                      if (!klingLipSyncAudio) { alert('请上传音频'); return; }
-                      if (klingLipSyncAudio.startsWith('data:')) { alert('音频格式已更新，请重新上传音频文件'); return; }
+                      const effectiveAudio = connectedAudio || klingLipSyncAudio;
+                      if (!effectiveAudio) { alert('请上传音频或连接语音合成卡片'); return; }
+                      if (effectiveAudio.startsWith('data:')) { alert('音频格式已更新，请重新上传音频文件'); return; }
                       const effectiveVideoUrl = connectedGeneratedVideo || klingVideoUrl;
                       editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, isGenerating: true, generationStatus: '识别人脸中...', generationProgress: 5 } });
                       try {
@@ -3589,7 +3619,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           mode: 'advanced-lip-sync',
                           session_id: sessionId,
                           face_id: faceId,
-                          sound_file: klingLipSyncAudio,
+                          sound_file: effectiveAudio,
                           sound_start_time: klingLipSyncSoundStart ?? 0,
                           sound_end_time: klingLipSyncSoundEnd ?? 5000,
                           sound_insert_time: klingLipSyncSoundInsert ?? 0,
