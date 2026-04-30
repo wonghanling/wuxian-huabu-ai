@@ -1006,7 +1006,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
         </div>
 
         <div
-          className="w-full h-full backdrop-blur-xl rounded-2xl shadow-2xl transition-all duration-300"
+          className="relative w-full h-full backdrop-blur-xl rounded-2xl shadow-2xl transition-all duration-300"
           style={{
             background: color.gradient,
             border: `1px solid ${color.border}`,
@@ -2600,9 +2600,17 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
             )}
 
 
-            {/* 视频模式面板 - 只含时长/清晰度/音频参数 */}
+            {/* 视频模式面板 - absolute 浮在右边 */}
             {cardType === 'video' && showVideoModePanel && (
-              <div className="mt-2 p-3 bg-black/40 border border-white/10 rounded-lg space-y-3">
+              <div className="absolute top-0 p-3 backdrop-blur-xl rounded-2xl shadow-2xl space-y-3"
+                style={{
+                  left: '100%', marginLeft: '8px', width: '260px', zIndex: 200,
+                  background: 'linear-gradient(135deg,rgba(192,192,192,0.15) 0%,rgba(169,169,169,0.12) 50%,rgba(128,128,128,0.08) 100%)',
+                  border: '1px solid rgba(192,192,192,0.3)',
+                  boxShadow: '0 0 40px rgba(192,192,192,0.15)',
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+              >
                 {currentVideoModel && currentVideoModel.durations.length > 0 && (
                   <div>
                     <label className="text-gray-400 text-xs mb-1 block">时长</label>
@@ -3323,7 +3331,17 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
             {/* 视频输出面板 */}
             {cardType === 'video' && showVideoOutput && generatedVideo && (
-              <div className="mt-2 bg-black/40 border border-white/10 rounded-lg overflow-visible">
+              <div className="absolute backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden"
+                style={{
+                  left: '100%', marginLeft: '8px',
+                  top: showVideoModePanel ? '200px' : '0px',
+                  width: '320px', zIndex: 200,
+                  background: 'linear-gradient(135deg,rgba(192,192,192,0.15) 0%,rgba(169,169,169,0.12) 50%,rgba(128,128,128,0.08) 100%)',
+                  border: '1px solid rgba(192,192,192,0.3)',
+                  boxShadow: '0 0 40px rgba(192,192,192,0.15)',
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+              >
                 <div className="relative group" style={{ minHeight: '200px' }}>
                   {/* 生成的视频播放器 */}
                   <video
@@ -3699,9 +3717,19 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   </div>
                 )}
 
-                {/* 视频输出面板 - 卡片内部，overflow-visible 溢出显示 */}
+                {/* 视频输出面板 - absolute 浮在右边 */}
                 {klingGeneratedVideo && (
-                  <div className="mt-2 bg-black/40 border border-white/10 rounded-lg overflow-visible">
+                  <div className="absolute backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden"
+                    style={{
+                      left: '100%', marginLeft: '8px',
+                      top: klingShowSettingsPanel ? '320px' : '0px',
+                      width: '320px', zIndex: 200,
+                      background: 'linear-gradient(135deg,rgba(192,192,192,0.15) 0%,rgba(169,169,169,0.12) 50%,rgba(128,128,128,0.08) 100%)',
+                      border: '1px solid rgba(192,192,192,0.3)',
+                      boxShadow: '0 0 40px rgba(192,192,192,0.15)',
+                    }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                  >
                     <div className="relative group" style={{ minHeight: '180px' }}>
                       <video
                         ref={videoRef}
@@ -3769,7 +3797,15 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
             {/* Kling 展开参数面板 */}
             {cardType === 'kling' && klingShowSettingsPanel && (
-          <div className="mt-2 p-3 bg-black/40 border border-white/10 rounded-lg space-y-3">
+          <div className="absolute top-0 p-3 backdrop-blur-xl rounded-2xl shadow-2xl space-y-3"
+            style={{
+              left: '100%', marginLeft: '8px', width: '260px', zIndex: 200,
+              background: 'linear-gradient(135deg,rgba(192,192,192,0.15) 0%,rgba(169,169,169,0.12) 50%,rgba(128,128,128,0.08) 100%)',
+              border: '1px solid rgba(192,192,192,0.3)',
+              boxShadow: '0 0 40px rgba(192,192,192,0.15)',
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
             <>
               <div>
                 <label className="text-gray-400 text-xs mb-1 block">Face ID（自动填充，可手动改）</label>
