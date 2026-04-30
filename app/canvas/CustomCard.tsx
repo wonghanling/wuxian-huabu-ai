@@ -1146,7 +1146,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     </div>
                   )}
                   <textarea
-                    className="w-full h-20 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs resize-none focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all placeholder-gray-500"
+                    className="w-full h-16 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs resize-none focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all placeholder-gray-500"
                     placeholder={
                       cardType === 'text'
                         ? 'Enter your text prompt...'
@@ -2157,7 +2157,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                 {/* 连接图片预览 */}
                 {connectedGeneratedImage && (
                   <div className="mb-2 relative w-full bg-black/30 rounded-xl overflow-hidden border border-purple-500/30"
-                    style={{ aspectRatio: '16/9' }}>
+                    style={{ aspectRatio: '16/9', maxHeight: '96px' }}>
                     <img src={connectedGeneratedImage} className="w-full h-full object-cover" />
                     <div className="absolute bottom-0 left-0 right-0 bg-purple-600/80 text-white text-[10px] text-center py-0.5">来自连接卡片</div>
                   </div>
@@ -2405,8 +2405,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         ) : (
                           <div
                             className="w-full flex flex-col items-center justify-center gap-1.5 border border-dashed border-white/15 rounded-xl cursor-pointer hover:border-white/30 hover:bg-white/3 transition-all"
-                            style={{ aspectRatio: '16/9' }}
-                            onClick={(e) => { e.stopPropagation(); singleImgInputRef.current?.click(); }}
+                            style={{ aspectRatio: '16/9', maxHeight: '96px' }}
                             onPointerDown={(e) => e.stopPropagation()}
                           >
                             <svg className="w-6 h-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2441,65 +2440,43 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
 
             {/* 图片上传 - 视频卡片，i2v 模型直接显示在外面 */}
             {cardType === 'video' && currentVideoModel?.mode === 'i2v' && (
-              <div className="mb-2 space-y-2">
-                {/* 首帧 */}
-                <div>
-                  <label className="text-gray-400 text-xs mb-1 block">
-                    首帧图片（必填）{connFirstFrame && <span className="text-blue-400 ml-1">·来自连接</span>}
-                  </label>
-                  {!connFirstFrame && (
-                    <input type="file" accept="image/*"
-                      className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
-                      onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) { const r = new FileReader(); r.onload = (ev) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, firstFrameImage: ev.target?.result as string } }); r.readAsDataURL(file); }
-                        e.target.value = '';
-                      }}
-                    />
-                  )}
-                  {(connFirstFrame || firstFrameImage) && (
-                    <div className="mt-1 relative w-full bg-black/30 rounded-lg overflow-hidden group" style={{ aspectRatio: '16/9' }}>
-                      <img src={connFirstFrame || firstFrameImage} className="w-full h-full object-cover" />
-                      {!connFirstFrame && (
-                        <button className="absolute top-1 right-1 w-5 h-5 bg-black/60 hover:bg-red-500/80 rounded text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, firstFrameImage: '' } }); }}
-                          onPointerDown={(e) => e.stopPropagation()}
-                        >✕</button>
+              <div className="mb-2">
+                <div className="flex gap-2">
+                  {/* 首帧 */}
+                  <div className="flex-1">
+                    <label className="text-gray-400 text-xs mb-1 block">首帧{connFirstFrame && <span className="text-blue-400 ml-1">·连接</span>}</label>
+                    {!connFirstFrame && !firstFrameImage ? (
+                      <label className="flex flex-col items-center justify-center w-full h-16 bg-black/30 border border-white/8 border-dashed rounded-lg cursor-pointer hover:border-white/20 transition-all" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+                        <svg className="w-4 h-4 text-gray-500 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" /></svg>
+                        <span className="text-[10px] text-gray-500">上传</span>
+                        <input type="file" accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) { const r = new FileReader(); r.onload = (ev) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, firstFrameImage: ev.target?.result as string } }); r.readAsDataURL(file); } e.target.value = ''; }} />
+                      </label>
+                    ) : (
+                      <div className="relative w-full h-16 bg-black/30 rounded-lg overflow-hidden group">
+                        <img src={connFirstFrame || firstFrameImage} className="w-full h-full object-cover" />
+                        {!connFirstFrame && <button className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/60 hover:bg-red-500/80 rounded text-white text-[9px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, firstFrameImage: '' } }); }} onPointerDown={(e) => e.stopPropagation()}>✕</button>}
+                      </div>
+                    )}
+                  </div>
+                  {/* 尾帧 - 仅 supportsEndFrame 模型显示 */}
+                  {currentVideoModel.supportsEndFrame && (
+                    <div className="flex-1">
+                      <label className="text-gray-400 text-xs mb-1 block">尾帧{connLastFrame && <span className="text-blue-400 ml-1">·连接</span>}</label>
+                      {!connLastFrame && !lastFrameImage ? (
+                        <label className="flex flex-col items-center justify-center w-full h-16 bg-black/30 border border-white/8 border-dashed rounded-lg cursor-pointer hover:border-white/20 transition-all" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+                          <svg className="w-4 h-4 text-gray-500 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" /></svg>
+                          <span className="text-[10px] text-gray-500">上传</span>
+                          <input type="file" accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) { const r = new FileReader(); r.onload = (ev) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, lastFrameImage: ev.target?.result as string } }); r.readAsDataURL(file); } e.target.value = ''; }} />
+                        </label>
+                      ) : (
+                        <div className="relative w-full h-16 bg-black/30 rounded-lg overflow-hidden group">
+                          <img src={connLastFrame || lastFrameImage} className="w-full h-full object-cover" />
+                          {!connLastFrame && <button className="absolute top-0.5 right-0.5 w-4 h-4 bg-black/60 hover:bg-red-500/80 rounded text-white text-[9px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, lastFrameImage: '' } }); }} onPointerDown={(e) => e.stopPropagation()}>✕</button>}
+                        </div>
                       )}
                     </div>
                   )}
                 </div>
-                {/* 尾帧 - 仅 supportsEndFrame 模型显示 */}
-                {currentVideoModel.supportsEndFrame && (
-                  <div>
-                    <label className="text-gray-400 text-xs mb-1 block">
-                      尾帧图片（可选）{connLastFrame && <span className="text-blue-400 ml-1">·来自连接</span>}
-                    </label>
-                    {!connLastFrame && (
-                      <input type="file" accept="image/*"
-                        className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
-                        onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) { const r = new FileReader(); r.onload = (ev) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, lastFrameImage: ev.target?.result as string } }); r.readAsDataURL(file); }
-                          e.target.value = '';
-                        }}
-                      />
-                    )}
-                    {(connLastFrame || lastFrameImage) && (
-                      <div className="mt-1 relative w-full bg-black/30 rounded-lg overflow-hidden group" style={{ aspectRatio: '16/9' }}>
-                        <img src={connLastFrame || lastFrameImage} className="w-full h-full object-cover" />
-                        {!connLastFrame && (
-                          <button className="absolute top-1 right-1 w-5 h-5 bg-black/60 hover:bg-red-500/80 rounded text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, lastFrameImage: '' } }); }}
-                            onPointerDown={(e) => e.stopPropagation()}
-                          >✕</button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             )}
 

@@ -52,7 +52,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
 
   getDefaultProps() {
     return {
-      w: 420, h: 560,
+      w: 280, h: 420,
       mode: 't2v', model: 'doubao-seedance-2-0-260128',
       prompt: '', ratio: '16:9', duration: '5',
       resolution: '720p', generateAudio: true,
@@ -75,10 +75,10 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
     const up = (props: any) => editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...shape.props, ...props } });
     const parsedRefImages: string[] = (() => { try { return JSON.parse(refImages || '[]'); } catch { return []; } })();
     // scale 只在展开状态下生效，缩小时固定为1
-    const scale = isMinimized ? 1 : Math.min(w / 420, h / 560);
+    const scale = isMinimized ? 1 : Math.min(w / 280, h / 420);
+    const showRight = showSettings || !!generatedVideo;
     const videoRef = useRef<HTMLVideoElement>(null);
     const [lightboxVideo, setLightboxVideo] = useState<string | null>(null);
-    const [showVideoOutput, setShowVideoOutput] = useState(true);
     const [userId, setUserId] = useState<string | null>(null);
 
     useEffect(() => {
@@ -258,7 +258,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
             const ls = editor.getShape(shape.id);
             const lp = ls ? (ls as any).props : shape.props;
             if (qData.status === 'completed' && qData.videoUrl) {
-              editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...lp, isGenerating: false, generatedVideo: qData.videoUrl, generationProgress: 100, generationStatus: '完成' } });
+              editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...lp, isGenerating: false, generatedVideo: qData.videoUrl, generationProgress: 100, generationStatus: '完成', w: 580 } });
             } else if (qData.status === 'failed') {
               editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...lp, isGenerating: false, generationStatus: '失败: ' + (qData.error || '') } });
             } else if (attempts < 120) {
@@ -390,7 +390,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
             onClick={(e) => {
               e.stopPropagation();
               const newMinimized = !isMinimized;
-              editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...shape.props, isMinimized: newMinimized, w: newMinimized ? 150 : 420, h: newMinimized ? 80 : 560 } });
+              editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...shape.props, isMinimized: newMinimized, w: newMinimized ? 150 : (showRight ? 580 : 280), h: newMinimized ? 80 : 420 } });
             }}
             onPointerDown={(e) => e.stopPropagation()}
             className="absolute top-2 right-2 w-7 h-7 bg-zinc-800/90 hover:bg-zinc-700/90 border border-white/20 rounded flex items-center justify-center text-white text-lg z-10"
@@ -406,7 +406,10 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
               </div>
             </div>
           ) : (
-            <div ref={scrollContainerRef} className="p-4 flex-1 min-h-0 flex flex-col overflow-y-auto">
+            <div className="flex flex-row h-full min-h-0">
+
+              {/* 左侧主控区 - 固定 280px */}
+              <div ref={scrollContainerRef} className="p-4 flex flex-col overflow-y-auto" style={{ width: '280px', flexShrink: 0, borderRight: showRight ? '1px solid rgba(255,255,255,0.08)' : 'none' }}>
 
               {/* 标题 */}
               <div className="flex items-center gap-2 mb-3">
@@ -613,57 +616,27 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
                 </div>
               </div>
 
-              {/* 参数设置折叠 */}
-              <button
-                className="w-full py-1.5 mt-1 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg bg-gradient-to-r from-blue-500/80 to-blue-600/80 hover:from-blue-500 hover:to-blue-600"
-                onClick={(e) => { e.stopPropagation(); up({ showSettings: !showSettings }); }}
-                onPointerDown={(e) => e.stopPropagation()}
-              >{showSettings ? '收起参数设置 ▲' : '展开参数设置 ▼'}</button>
-
-              {showSettings && (
-                <div className="mt-2 p-3 bg-black/40 border border-white/10 rounded-lg space-y-3">
-                  <div>
-                    <label className="text-gray-400 text-xs mb-1 block">时长（秒）</label>
-                    <div className="flex gap-1 flex-wrap">
-                      {['4', '5', '6', '8', '10', '12', '15', '-1'].map((d) => (
-                        <button key={d}
-                          className={`px-2 py-1 rounded-lg border text-[10px] font-medium transition-all ${(duration || '5') === d ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
-                          onClick={(e) => { e.stopPropagation(); up({ duration: d }); }} onPointerDown={(e) => e.stopPropagation()}
-                        >{d === '-1' ? '智能' : d + 's'}</button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-gray-400 text-xs mb-1 block">分辨率</label>
-                    <div className="flex gap-1">
-                      {(model === 'doubao-seedance-2-0-260128' ? ['480p', '720p', '1080p'] : ['480p', '720p']).map((r) => (
-                        <button key={r}
-                          className={`px-3 py-1 rounded-lg border text-[10px] font-medium transition-all ${(resolution || '720p') === r ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
-                          onClick={(e) => { e.stopPropagation(); up({ resolution: r }); }} onPointerDown={(e) => e.stopPropagation()}
-                        >{r.toUpperCase()}</button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <label className="text-gray-400 text-xs">有声视频</label>
-                    <button
-                      className={`relative w-10 h-5 rounded-full transition-colors ${generateAudio ? 'bg-blue-500' : 'bg-white/10'}`}
-                      onClick={(e) => { e.stopPropagation(); up({ generateAudio: !generateAudio }); }}
-                      onPointerDown={(e) => e.stopPropagation()}
-                    >
-                      <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform ${generateAudio ? 'translate-x-5' : 'translate-x-0'}`} />
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Generate */}
-              <button
-                className={`w-full py-2 mt-2 rounded-lg font-semibold text-white text-xs transition-all shadow-lg ${isGenerating ? 'bg-blue-400 cursor-not-allowed' : 'bg-gradient-to-r from-blue-500/80 to-blue-600/80 hover:from-blue-500 hover:to-blue-600 hover:scale-[1.02] active:scale-[0.98]'}`}
-                disabled={isGenerating}
-                onClick={(e) => { e.stopPropagation(); handleGenerate(); }}
-                onPointerDown={(e) => e.stopPropagation()}
-              >{isGenerating ? (generationStatus || '生成中...') : 'Generate'}</button>
+              {/* 参数 + Generate 行 */}
+              <div className="flex gap-1 mt-auto pt-2">
+                <button
+                  className="flex-1 py-1.5 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg bg-gradient-to-r from-gray-600/80 to-gray-700/80 hover:from-gray-600 hover:to-gray-700"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const newShowSettings = !showSettings;
+                    const newShowRight = newShowSettings || !!generatedVideo;
+                    const ls = editor.getShape(shape.id);
+                    const lp = ls ? (ls as any).props : shape.props;
+                    editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...lp, showSettings: newShowSettings, w: newShowRight ? 580 : 280 } });
+                  }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >{showSettings ? '参数 ◀' : '参数 ▶'}</button>
+                <button
+                  className={`flex-[2] py-1.5 rounded-lg font-semibold text-white text-xs transition-all shadow-lg ${isGenerating ? 'bg-blue-400 cursor-not-allowed' : 'bg-gradient-to-r from-blue-500/80 to-blue-600/80 hover:from-blue-500 hover:to-blue-600 hover:scale-[1.02] active:scale-[0.98]'}`}
+                  disabled={isGenerating}
+                  onClick={(e) => { e.stopPropagation(); handleGenerate(); }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >{isGenerating ? (generationStatus || '生成中...') : 'Generate'}</button>
+              </div>
 
               {isGenerating && (
                 <div className="w-full bg-gray-700 rounded-full h-1 mt-2">
@@ -671,81 +644,118 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
                 </div>
               )}
 
-              {generatedVideo && (
-                  <button
-                    className="w-full py-2 mt-2 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg bg-gradient-to-r from-yellow-400/80 to-yellow-500/80 hover:from-yellow-400 hover:to-yellow-500"
-                    onClick={(e) => { e.stopPropagation(); setShowVideoOutput(!showVideoOutput); }}
-                    onPointerDown={(e) => e.stopPropagation()}
-                  >{showVideoOutput ? '隐藏视频' : '查看生成视频'}</button>
-              )}
-
             </div>
-          )}
 
-          {/* 视频输出面板 - 滚动容器外、卡片主体内，overflow-visible 溢出 */}
-          {generatedVideo && showVideoOutput && !isMinimized && (
-            <div className="mx-4 mb-2 bg-black/40 border border-white/10 rounded-lg overflow-visible">
-              <div className="relative group" style={{ minHeight: '180px' }}>
-                <video
-                  ref={videoRef}
-                  src={generatedVideo}
-                  controls
-                  crossOrigin="anonymous"
-                  className="w-full bg-black"
-                  style={{ minHeight: '180px', maxHeight: '250px' }}
-                  onClick={(e) => e.stopPropagation()}
-                  onPointerDown={(e) => e.stopPropagation()}
-                />
-                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button className="p-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white transition-all" title="保存当前帧"
-                    onClick={(e) => { e.stopPropagation(); captureCurrentFrame(); }} onPointerDown={(e) => e.stopPropagation()}>
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </button>
-                  <button className="p-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white transition-all" title="放大播放"
-                    onClick={(e) => { e.stopPropagation(); setLightboxVideo(generatedVideo); }} onPointerDown={(e) => e.stopPropagation()}>
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                    </svg>
-                  </button>
-                  <button className="p-2 bg-green-500/90 hover:bg-green-600 rounded-lg text-white transition-all" title="下载视频"
-                    onClick={(e) => { e.stopPropagation(); downloadFile(generatedVideo, 'seedance-video.mp4'); }} onPointerDown={(e) => e.stopPropagation()}>
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                  </button>
-                  <button className="p-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white transition-all" title="删除视频"
-                    onClick={(e) => { e.stopPropagation(); up({ generatedVideo: '' }); }} onPointerDown={(e) => e.stopPropagation()}>
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                </div>
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 pointer-events-none">
-                  <p className="text-white text-[10px] truncate">生成成功 · Seedance 视频</p>
-                </div>
-              </div>
-              {capturedFrame && (
-                <div className="mt-2 bg-black/40 border border-purple-500/30 rounded-lg overflow-hidden">
-                  <div className="p-2 bg-purple-500/10 border-b border-purple-500/20">
-                    <p className="text-purple-400 text-[10px] font-semibold">捕获的视频帧</p>
-                  </div>
-                  <div className="relative group">
-                    <img src={capturedFrame} alt="Captured Frame" className="w-full h-auto max-h-[200px] object-contain bg-black/20" onClick={(e) => e.stopPropagation()} />
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <button className="px-3 py-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white text-xs font-semibold transition-all"
-                        onClick={(e) => { e.stopPropagation(); setLightboxVideo(capturedFrame); }} onPointerDown={(e) => e.stopPropagation()}>查看</button>
-                      <button className="px-3 py-2 bg-green-500/90 hover:bg-green-600 rounded-lg text-white text-xs font-semibold transition-all"
-                        onClick={(e) => { e.stopPropagation(); downloadFile(capturedFrame, `seedance-frame-${Date.now()}.png`); }} onPointerDown={(e) => e.stopPropagation()}>下载</button>
-                      <button className="px-3 py-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white text-xs font-semibold transition-all"
-                        onClick={(e) => { e.stopPropagation(); up({ capturedFrame: '' }); }} onPointerDown={(e) => e.stopPropagation()}>删除</button>
+            {/* 右侧面板 - 参数设置 + 视频输出 */}
+            {showRight && (
+              <div className="flex flex-col overflow-y-auto p-4" style={{ width: '300px', flexShrink: 0 }}>
+
+                {/* 参数设置 */}
+                {showSettings && (
+                  <div className="space-y-3 mb-3">
+                    <div className="text-gray-400 text-xs font-semibold mb-1">参数设置</div>
+                    <div>
+                      <label className="text-gray-400 text-xs mb-1 block">时长（秒）</label>
+                      <div className="flex gap-1 flex-wrap">
+                        {['4', '5', '6', '8', '10', '12', '15', '-1'].map((d) => (
+                          <button key={d}
+                            className={`px-2 py-1 rounded-lg border text-[10px] font-medium transition-all ${(duration || '5') === d ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
+                            onClick={(e) => { e.stopPropagation(); up({ duration: d }); }} onPointerDown={(e) => e.stopPropagation()}
+                          >{d === '-1' ? '智能' : d + 's'}</button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-gray-400 text-xs mb-1 block">分辨率</label>
+                      <div className="flex gap-1">
+                        {(model === 'doubao-seedance-2-0-260128' ? ['480p', '720p', '1080p'] : ['480p', '720p']).map((r) => (
+                          <button key={r}
+                            className={`px-3 py-1 rounded-lg border text-[10px] font-medium transition-all ${(resolution || '720p') === r ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
+                            onClick={(e) => { e.stopPropagation(); up({ resolution: r }); }} onPointerDown={(e) => e.stopPropagation()}
+                          >{r.toUpperCase()}</button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <label className="text-gray-400 text-xs">有声视频</label>
+                      <button
+                        className={`relative w-10 h-5 rounded-full transition-colors ${generateAudio ? 'bg-blue-500' : 'bg-white/10'}`}
+                        onClick={(e) => { e.stopPropagation(); up({ generateAudio: !generateAudio }); }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                      >
+                        <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform ${generateAudio ? 'translate-x-5' : 'translate-x-0'}`} />
+                      </button>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+
+                {/* 视频输出 */}
+                {generatedVideo && (
+                  <div className="bg-black/40 border border-white/10 rounded-lg overflow-hidden">
+                    <div className="relative group">
+                      <video
+                        ref={videoRef}
+                        src={generatedVideo}
+                        controls
+                        crossOrigin="anonymous"
+                        className="w-full bg-black"
+                        style={{ maxHeight: '220px' }}
+                        onClick={(e) => e.stopPropagation()}
+                        onPointerDown={(e) => e.stopPropagation()}
+                      />
+                      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button className="p-1.5 bg-blue-500/90 hover:bg-blue-600 rounded text-white transition-all" title="保存当前帧"
+                          onClick={(e) => { e.stopPropagation(); captureCurrentFrame(); }} onPointerDown={(e) => e.stopPropagation()}>
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                        </button>
+                        <button className="p-1.5 bg-blue-500/90 hover:bg-blue-600 rounded text-white transition-all" title="放大播放"
+                          onClick={(e) => { e.stopPropagation(); setLightboxVideo(generatedVideo); }} onPointerDown={(e) => e.stopPropagation()}>
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                          </svg>
+                        </button>
+                        <button className="p-1.5 bg-green-500/90 hover:bg-green-600 rounded text-white transition-all" title="下载视频"
+                          onClick={(e) => { e.stopPropagation(); downloadFile(generatedVideo, 'seedance-video.mp4'); }} onPointerDown={(e) => e.stopPropagation()}>
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                          </svg>
+                        </button>
+                        <button className="p-1.5 bg-red-500/90 hover:bg-red-600 rounded text-white transition-all" title="删除视频"
+                          onClick={(e) => { e.stopPropagation(); up({ generatedVideo: '' }); }} onPointerDown={(e) => e.stopPropagation()}>
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                    {capturedFrame && (
+                      <div className="mt-1 border-t border-white/10">
+                        <div className="p-1.5 bg-purple-500/10">
+                          <p className="text-purple-400 text-[10px] font-semibold">捕获的帧</p>
+                        </div>
+                        <div className="relative group">
+                          <img src={capturedFrame} alt="Captured Frame" className="w-full h-auto max-h-[120px] object-contain bg-black/20" onClick={(e) => e.stopPropagation()} />
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1">
+                            <button className="px-2 py-1 bg-blue-500/90 hover:bg-blue-600 rounded text-white text-[10px] font-semibold transition-all"
+                              onClick={(e) => { e.stopPropagation(); setLightboxVideo(capturedFrame); }} onPointerDown={(e) => e.stopPropagation()}>查看</button>
+                            <button className="px-2 py-1 bg-green-500/90 hover:bg-green-600 rounded text-white text-[10px] font-semibold transition-all"
+                              onClick={(e) => { e.stopPropagation(); downloadFile(capturedFrame, `seedance-frame-${Date.now()}.png`); }} onPointerDown={(e) => e.stopPropagation()}>下载</button>
+                            <button className="px-2 py-1 bg-red-500/90 hover:bg-red-600 rounded text-white text-[10px] font-semibold transition-all"
+                              onClick={(e) => { e.stopPropagation(); up({ capturedFrame: '' }); }} onPointerDown={(e) => e.stopPropagation()}>删除</button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+              </div>
+            )}
+
+          </div>
           )}
         </div>
 
