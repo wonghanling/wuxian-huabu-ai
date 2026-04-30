@@ -374,7 +374,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
 
         {/* 卡片主体 */}
         <div
-          className="w-full h-full backdrop-blur-xl rounded-2xl shadow-2xl"
+          className="relative w-full h-full backdrop-blur-xl rounded-2xl shadow-2xl"
           style={{
             background: 'linear-gradient(135deg,rgba(192,192,192,0.15) 0%,rgba(169,169,169,0.12) 50%,rgba(128,128,128,0.08) 100%)',
             border: '1px solid rgba(192,192,192,0.3)',
@@ -620,42 +620,6 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
                 onPointerDown={(e) => e.stopPropagation()}
               >{showSettings ? '收起参数设置 ▲' : '展开参数设置 ▼'}</button>
 
-              {showSettings && (
-                <div className="mt-2 p-3 bg-black/40 border border-white/10 rounded-lg space-y-3">
-                  <div>
-                    <label className="text-gray-400 text-xs mb-1 block">时长（秒）</label>
-                    <div className="flex gap-1 flex-wrap">
-                      {['4', '5', '6', '8', '10', '12', '15', '-1'].map((d) => (
-                        <button key={d}
-                          className={`px-2 py-1 rounded-lg border text-[10px] font-medium transition-all ${(duration || '5') === d ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
-                          onClick={(e) => { e.stopPropagation(); up({ duration: d }); }} onPointerDown={(e) => e.stopPropagation()}
-                        >{d === '-1' ? '智能' : d + 's'}</button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-gray-400 text-xs mb-1 block">分辨率</label>
-                    <div className="flex gap-1">
-                      {(model === 'doubao-seedance-2-0-260128' ? ['480p', '720p', '1080p'] : ['480p', '720p']).map((r) => (
-                        <button key={r}
-                          className={`px-3 py-1 rounded-lg border text-[10px] font-medium transition-all ${(resolution || '720p') === r ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
-                          onClick={(e) => { e.stopPropagation(); up({ resolution: r }); }} onPointerDown={(e) => e.stopPropagation()}
-                        >{r.toUpperCase()}</button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <label className="text-gray-400 text-xs">有声视频</label>
-                    <button
-                      className={`relative w-10 h-5 rounded-full transition-colors ${generateAudio ? 'bg-blue-500' : 'bg-white/10'}`}
-                      onClick={(e) => { e.stopPropagation(); up({ generateAudio: !generateAudio }); }}
-                      onPointerDown={(e) => e.stopPropagation()}
-                    >
-                      <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform ${generateAudio ? 'translate-x-5' : 'translate-x-0'}`} />
-                    </button>
-                  </div>
-                </div>
-              )}
 
               {/* Generate */}
               <button
@@ -682,9 +646,66 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
             </div>
           )}
 
-          {/* 视频输出面板 - 滚动容器外、卡片主体内，overflow-visible 溢出 */}
+          {/* 参数设置面板 - absolute 浮在右边 */}
+          {showSettings && !isMinimized && (
+            <div className="absolute top-0 p-3 backdrop-blur-xl rounded-2xl shadow-2xl space-y-3"
+              style={{
+                left: '100%', marginLeft: '8px', width: '260px', zIndex: 200,
+                background: 'linear-gradient(135deg,rgba(192,192,192,0.15) 0%,rgba(169,169,169,0.12) 50%,rgba(128,128,128,0.08) 100%)',
+                border: '1px solid rgba(192,192,192,0.3)',
+                boxShadow: '0 0 40px rgba(192,192,192,0.15)',
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <div className="text-gray-300 text-xs font-semibold">参数设置</div>
+              <div>
+                <label className="text-gray-400 text-xs mb-1 block">时长（秒）</label>
+                <div className="flex gap-1 flex-wrap">
+                  {['4', '5', '6', '8', '10', '12', '15', '-1'].map((d) => (
+                    <button key={d}
+                      className={`px-2 py-1 rounded-lg border text-[10px] font-medium transition-all ${(duration || '5') === d ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
+                      onClick={(e) => { e.stopPropagation(); up({ duration: d }); }} onPointerDown={(e) => e.stopPropagation()}
+                    >{d === '-1' ? '智能' : d + 's'}</button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-gray-400 text-xs mb-1 block">分辨率</label>
+                <div className="flex gap-1">
+                  {(model === 'doubao-seedance-2-0-260128' ? ['480p', '720p', '1080p'] : ['480p', '720p']).map((r) => (
+                    <button key={r}
+                      className={`px-3 py-1 rounded-lg border text-[10px] font-medium transition-all ${(resolution || '720p') === r ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
+                      onClick={(e) => { e.stopPropagation(); up({ resolution: r }); }} onPointerDown={(e) => e.stopPropagation()}
+                    >{r.toUpperCase()}</button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <label className="text-gray-400 text-xs">有声视频</label>
+                <button
+                  className={`relative w-10 h-5 rounded-full transition-colors ${generateAudio ? 'bg-blue-500' : 'bg-white/10'}`}
+                  onClick={(e) => { e.stopPropagation(); up({ generateAudio: !generateAudio }); }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >
+                  <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform ${generateAudio ? 'translate-x-5' : 'translate-x-0'}`} />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* 视频输出面板 - absolute 浮在右边，参数面板下方 */}
           {generatedVideo && showVideoOutput && !isMinimized && (
-            <div className="mx-4 mb-2 bg-black/40 border border-white/10 rounded-lg overflow-visible">
+            <div className="absolute backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden"
+              style={{
+                left: '100%', marginLeft: '8px',
+                top: showSettings ? '200px' : '0px',
+                width: '320px', zIndex: 200,
+                background: 'linear-gradient(135deg,rgba(192,192,192,0.15) 0%,rgba(169,169,169,0.12) 50%,rgba(128,128,128,0.08) 100%)',
+                border: '1px solid rgba(192,192,192,0.3)',
+                boxShadow: '0 0 40px rgba(192,192,192,0.15)',
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
               <div className="relative group" style={{ minHeight: '180px' }}>
                 <video
                   ref={videoRef}
