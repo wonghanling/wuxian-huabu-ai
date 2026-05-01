@@ -7,44 +7,7 @@ const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
 
 const SYSTEM_INSTRUCTION = `You are a cinematic video prompt generator.
 
-The user has explicitly selected the input type. You MUST follow it strictly.
-
-Input types:
-- "single": one image
-- "2x2": four-frame storyboard
-- "3x3": nine-frame storyboard
-
----
-
-RULES:
-
-If input_type = "single":
-- Treat the image as one scene
-- Generate natural cinematic motion
-- Add subtle progression
-
-If input_type = "2x2":
-- Treat the image as four consecutive key moments
-- Reconstruct a continuous motion between them
-- Do NOT describe four separate shots
-
-If input_type = "3x3":
-- Treat the image as a detailed sequence of keyframes
-- Reconstruct a full continuous action
-- Preserve subject and scene consistency
-
----
-
-CRITICAL CONSTRAINTS:
-
-- Do NOT mention grid, panels, borders, collage, or layout
-- Do NOT output numbers or frame indexes
-- Do NOT describe "first frame", "second frame"
-- Generate ONE continuous cinematic video prompt
-
----
-
-OUTPUT FORMAT (STRICT):
+The output format must ALWAYS follow:
 
 [Camera]
 [Subject Motion]
@@ -54,18 +17,51 @@ OUTPUT FORMAT (STRICT):
 
 ---
 
-STYLE:
+The input is an image. It may represent:
+- a single scene
+- or a sequence of moments (storyboard)
 
-- Cinematic
-- Smooth motion
-- Physically plausible
-- Strong subject consistency
+You must infer how much motion is already defined in the image.
 
 ---
 
-The user input is only a direction. The image is the main source of truth.`;
+CORE LOGIC:
 
-async function callGemini(image: string, characterHint: string, actionSuggestion: string, inputType: string): Promise<string> {
+If the image contains a clear sequence of actions:
+- Treat it as a motion sequence
+- Reconstruct the action exactly as shown
+- Follow the visual progression strictly
+- Do NOT invent new story events
+
+If the image is a single scene:
+- Generate natural motion based on the subject
+- Add subtle cinematic progression
+
+---
+
+CRITICAL RULE:
+
+Follow visible continuity.
+Do NOT invent unseen story elements.
+
+- If scene change exists → follow it
+- If no scene change → do NOT add one
+
+---
+
+FORBIDDEN:
+
+- mentioning grid, panels, storyboard
+- describing frame numbers
+- splitting into multiple shots
+
+---
+
+OUTPUT:
+
+ONE continuous cinematic video prompt.`;
+
+async function callGemini(image: string, characterHint: string, actionSuggestion: string): Promise<string> {
   const parts: any[] = [];
 
   const match = image.match(/^data:image\/(jpeg|jpg|png|webp);base64,(.+)$/);
@@ -76,17 +72,9 @@ async function callGemini(image: string, characterHint: string, actionSuggestion
   const hintLine = characterHint?.trim() ? `\nCharacter Hint: ${characterHint}` : '';
   const actionLine = actionSuggestion?.trim() ? `\nUser Direction (soft hint): ${actionSuggestion}` : '';
 
-  const inputTypeInstruction = inputType === '2x2'
-    ? 'This image is a 2x2 four-frame storyboard showing four consecutive key moments. Treat them as one continuous motion sequence, NOT four separate shots.'
-    : inputType === '3x3'
-    ? 'This image is a 3x3 nine-frame storyboard showing a detailed sequence of keyframes. Reconstruct the full continuous action across all nine frames as ONE single video prompt.'
-    : 'This is a single image. Generate natural cinematic motion from it.';
+  parts.push({ text: `Analyze the image and output ONE continuous cinematic video prompt.${hintLine}${actionLine}
 
-  parts.push({ text: `input_type: "${inputType}"
-
-${inputTypeInstruction}${hintLine}${actionLine}
-
-Output ONE continuous cinematic video prompt only. Do NOT describe separate frames or shots. Nothing else.` });
+Output the prompt only. Nothing else.` });
 
   const res = await fetch(
     `${YUNWU_BASE_URL}/v1beta/models/gemini-3-flash-preview:generateContent`,
@@ -110,13 +98,13 @@ Output ONE continuous cinematic video prompt only. Do NOT describe separate fram
 
 export async function POST(req: NextRequest) {
   try {
-    const { image, characterHint = '', actionSuggestion = '', inputType = 'single' } = await req.json();
+    const { image, characterHint = '', actionSuggestion = '' } = await req.json();
 
     if (!image) {
       return NextResponse.json({ error: '缺少 image 参数' }, { status: 400 });
     }
 
-    const prompt = await callGemini(image, characterHint, actionSuggestion, inputType);
+    const prompt = await callGemini(image, characterHint, actionSuggestion);
 
     // 确保单行输出
     const cleaned = prompt.replace(/\n+/g, ' ').trim();
