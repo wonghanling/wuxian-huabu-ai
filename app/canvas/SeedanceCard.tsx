@@ -461,7 +461,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
                     {connectedInputs.textPrompt && <span className="text-emerald-400 ml-1">·来自连接</span>}
                   </label>
                   <button className="text-[10px] text-gray-400 hover:text-gray-300"
-                    onClick={async (e) => { e.stopPropagation(); try { const t = await navigator.clipboard.readText(); if (t) up({ prompt: (prompt ? prompt + '\n' : '') + t }); } catch  }}
+                    onClick={async (e) => { e.stopPropagation(); try { const t = await navigator.clipboard.readText(); if (t) up({ prompt: (prompt ? prompt + '\n' : '') + t }); } catch {} }}
                     onPointerDown={(e) => e.stopPropagation()}>粘贴</button>
                 </div>
                 <textarea
