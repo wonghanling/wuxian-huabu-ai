@@ -466,10 +466,16 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
                 </div>
                 <textarea
                   className="w-full h-16 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs resize-none focus:outline-none focus:border-white/15 transition-all placeholder-gray-500"
-                  placeholder={connectedInputs.textPrompt ? connectedInputs.textPrompt : '描述视频内容...'}
-                  value={prompt || ''}
-                  onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                  onChange={(e) => up({ prompt: e.target.value })}
+                  placeholder="描述视频内容..."
+                  value={connectedInputs.textPrompt ? `${connectedInputs.textPrompt}${prompt ? '\n' + prompt : ''}` : prompt || ''}
+                  onClick={(e) => e.stopPropagation()}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onChange={(e) => {
+                    const full = e.target.value;
+                    const prefix = connectedInputs.textPrompt ? connectedInputs.textPrompt + '\n' : '';
+                    const userInput = prefix && full.startsWith(prefix) ? full.slice(prefix.length) : (connectedInputs.textPrompt && full.startsWith(connectedInputs.textPrompt) ? full.slice(connectedInputs.textPrompt.length) : full);
+                    up({ prompt: userInput });
+                  }}
                 />
               </div>
 
