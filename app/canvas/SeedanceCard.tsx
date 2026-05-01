@@ -460,9 +460,20 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
                     提示词{mode === 't2v' ? '（必填）' : '（可选）'}
                     {connectedInputs.textPrompt && <span className="text-emerald-400 ml-1">·来自连接</span>}
                   </label>
-                  <button className="text-[10px] text-gray-400 hover:text-gray-300"
-                    onClick={async (e) => { e.stopPropagation(); try { const t = await navigator.clipboard.readText(); if (t) up({ prompt: (prompt ? prompt + '\n' : '') + t }); } catch {} }}
-                    onPointerDown={(e) => e.stopPropagation()}>粘贴</button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      className="text-[10px] px-1.5 py-0.5 rounded bg-white/8 text-gray-400 hover:bg-white/15 hover:text-white transition-all"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const stableInstruction = 'Follow visible continuity. Do NOT invent unseen story elements. If scene change exists follow it. If no scene change do NOT add one. Do not mention grid, panels, storyboard. Do not describe frame numbers. Do not split into multiple shots. Output ONE continuous cinematic video prompt.';
+                        up({ prompt: (prompt ? prompt + '\n' : '') + stableInstruction });
+                      }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >稳定生成</button>
+                    <button className="text-[10px] text-gray-400 hover:text-gray-300"
+                      onClick={async (e) => { e.stopPropagation(); try { const t = await navigator.clipboard.readText(); if (t) up({ prompt: (prompt ? prompt + '\n' : '') + t }); } catch {} }}
+                      onPointerDown={(e) => e.stopPropagation()}>粘贴</button>
+                  </div>
                 </div>
                 <textarea
                   className="w-full h-16 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs resize-none focus:outline-none focus:border-white/15 transition-all placeholder-gray-500"
