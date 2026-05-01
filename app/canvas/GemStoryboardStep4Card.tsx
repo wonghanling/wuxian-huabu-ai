@@ -52,12 +52,19 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
     result: T.string,
     isGenerating: T.boolean,
     isMinimized: T.boolean,
-    inputType: T.string.optional(),
+    inputType: T.string,
   };
 
   override isAspectRatioLocked = () => false;
   override canResize = () => true;
   override canBind = () => true;
+
+  override validateRecord(record: any) {
+    if (!record.props.inputType) {
+      record = { ...record, props: { ...record.props, inputType: 'single' } };
+    }
+    return super.validateRecord(record);
+  }
 
   getDefaultProps(): GemStep4CardShape['props'] {
     return {
