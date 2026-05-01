@@ -52,7 +52,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
     result: T.string,
     isGenerating: T.boolean,
     isMinimized: T.boolean,
-    inputType: T.string,
+    inputType: T.string.optional(),
   };
 
   override isAspectRatioLocked = () => false;
@@ -77,7 +77,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
   }
 
   component(shape: GemStep4CardShape) {
-    const { w, h, characterHint, actionSuggestion, result, isGenerating, isMinimized, inputType } = shape.props;
+    const { w, h, characterHint, actionSuggestion, result, isGenerating, isMinimized, inputType = 'single' } = shape.props;
     const editor = useEditor();
     const [image, setImage] = useState<string>('');
     const [copied, setCopied] = useState(false);
