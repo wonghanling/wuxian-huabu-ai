@@ -108,6 +108,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
       const imageUrls: string[] = [];
       let audioBase64: string | null = null;
       let videoUrl: string | null = null;
+      let textPrompt: string | null = null;
 
       for (const binding of allBindings) {
         if (binding.props.terminal !== 'end') continue;
@@ -122,29 +123,32 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
           const srcType = (src as any).type;
 
           if (srcType === 'custom-card') {
-            // 图片卡片：取生成的图片
             if (sp.generatedImage) imageUrls.push(sp.generatedImage);
-            // 视频卡片：取生成的视频
             if (sp.generatedVideo && !sp.generatedImage) videoUrl = sp.generatedVideo;
-            // Kling 视频卡片
             if (sp.klingGeneratedVideo) videoUrl = sp.klingGeneratedVideo;
+            // 文本卡片输出
+            if (sp.cardType === 'text' && sp.textOutput) textPrompt = sp.textOutput;
           } else if (srcType === 'seedance-card') {
-            // Seedance 输出的视频
             if (sp.generatedVideo) videoUrl = sp.generatedVideo;
-            // Seedance 保存的帧图片
             if (sp.capturedFrame) imageUrls.push(sp.capturedFrame);
           } else if (srcType === 'media-upload-card') {
-            // 上传卡片
             if (sp.mediaType === 'image' && sp.imageData) imageUrls.push(sp.imageData);
             if (sp.mediaType === 'video' && sp.videoUrl) videoUrl = sp.videoUrl;
           } else if (srcType === 'audio-card') {
-            // 音频卡片：取生成的音频 URL
             if (sp.audioUrl && !audioBase64) audioBase64 = sp.audioUrl;
+          } else if (srcType === 'gem-step2-card' && sp.result) {
+            textPrompt = sp.result;
+          } else if (srcType === 'gem-step3-card' && sp.result) {
+            textPrompt = sp.result;
+          } else if (srcType === 'gem-step4-card' && sp.result) {
+            textPrompt = sp.result;
+          } else if (srcType === 'prompt-optimizer-card' && sp.optimizedPrompt) {
+            textPrompt = sp.optimizedPrompt;
           }
         }
       }
 
-      return { imageUrls, audioBase64, videoUrl };
+      return { imageUrls, audioBase64, videoUrl, textPrompt };
     };
 
     // 实时读取连接的图片用于 UI 显示
@@ -154,6 +158,9 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
 
     const handleGenerate = async () => {
       const connected = getConnectedInputs();
+
+      // 连接的文字 prompt 优先填入
+      const effectivePrompt = connected.textPrompt || prompt;
 
       // 按模式分别处理，避免跨模式污染
       let effectiveFirstFrame  = firstFrameImage;
@@ -235,7 +242,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            mode, model, prompt, ratio,
+            mode, model, prompt: effectivePrompt, ratio,
             duration: duration === '-1' ? -1 : parseInt(duration || '5'),
             resolution, generateAudio,
             firstFrameImage: compFirst || undefined,
@@ -449,14 +456,18 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
               {/* 提示词 */}
               <div className="mb-2">
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-gray-400 text-xs">提示词{mode === 't2v' ? '（必填）' : '（可选）'}</label>
+                  <label className="text-gray-400 text-xs">
+                    提示词{mode === 't2v' ? '（必填）' : '（可选）'}
+                    {connectedInputs.textPrompt && <span className="text-emerald-400 ml-1">·来自连接</span>}
+                  </label>
                   <button className="text-[10px] text-gray-400 hover:text-gray-300"
-                    onClick={async (e) => { e.stopPropagation(); try { const t = await navigator.clipboard.readText(); if (t) up({ prompt: (prompt ? prompt + '\n' : '') + t }); } catch {} }}
+                    onClick={async (e) => { e.stopPropagation(); try { const t = await navigator.clipboard.readText(); if (t) up({ prompt: (prompt ? prompt + '\n' : '') + t }); } catch  }}
                     onPointerDown={(e) => e.stopPropagation()}>粘贴</button>
                 </div>
                 <textarea
                   className="w-full h-16 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs resize-none focus:outline-none focus:border-white/15 transition-all placeholder-gray-500"
-                  placeholder="描述视频内容..." value={prompt || ''}
+                  placeholder={connectedInputs.textPrompt ? connectedInputs.textPrompt : '描述视频内容...'}
+                  value={prompt || ''}
                   onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
                   onChange={(e) => up({ prompt: e.target.value })}
                 />
