@@ -76,9 +76,17 @@ async function callGemini(image: string, characterHint: string, actionSuggestion
   const hintLine = characterHint?.trim() ? `\nCharacter Hint: ${characterHint}` : '';
   const actionLine = actionSuggestion?.trim() ? `\nUser Direction (soft hint): ${actionSuggestion}` : '';
 
-  parts.push({ text: `input_type: "${inputType}"${hintLine}${actionLine}
+  const inputTypeInstruction = inputType === '2x2'
+    ? 'This image is a 2x2 four-frame storyboard showing four consecutive key moments. Treat them as one continuous motion sequence, NOT four separate shots.'
+    : inputType === '3x3'
+    ? 'This image is a 3x3 nine-frame storyboard showing a detailed sequence of keyframes. Reconstruct the full continuous action across all nine frames as ONE single video prompt.'
+    : 'This is a single image. Generate natural cinematic motion from it.';
 
-Output the video prompt only. Nothing else.` });
+  parts.push({ text: `input_type: "${inputType}"
+
+${inputTypeInstruction}${hintLine}${actionLine}
+
+Output ONE continuous cinematic video prompt only. Do NOT describe separate frames or shots. Nothing else.` });
 
   const res = await fetch(
     `${YUNWU_BASE_URL}/v1beta/models/gemini-3-flash-preview:generateContent`,
