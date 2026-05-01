@@ -92,12 +92,15 @@ async function callGPT(image: string, characterHint: string, actionSuggestion: s
             ...imageContent,
             {
               type: 'text',
-              text: `Analyze the image and output ONE continuous cinematic video prompt.
+              text: `Analyze the image carefully. Output a cinematic video prompt using EXACTLY this structure — each field on its own line, labeled:
 
-Your response MUST follow this exact format on a single line:
-[Camera], [Subject Motion], [Timing], [Narrative/Emotion], [Constraints]
+[Camera] <camera movement>
+[Subject Motion] <what the subject does>
+[Timing] <pace and rhythm>
+[Narrative/Emotion] <mood and emotional tone>
+[Constraints] maintain character consistency, no new objects, no distortion, smooth cinematic motion
 
-No explanations. No line breaks. No extra text.${hintLine}${actionLine}`
+Base everything on what you actually see in the image. Do not invent story elements not visible in the image.${hintLine}${actionLine}`
             }
           ]
         }
