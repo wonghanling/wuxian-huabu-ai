@@ -57,6 +57,14 @@ FORBIDDEN:
 
 ---
 
+CONSTRAINTS FIELD (FIXED — copy exactly):
+
+maintain character consistency, no new objects, no distortion, smooth cinematic motion
+
+You MUST use this exact text for the [Constraints] field. Do not paraphrase or replace it.
+
+---
+
 OUTPUT:
 
 ONE continuous cinematic video prompt.`;
