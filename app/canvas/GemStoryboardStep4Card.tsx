@@ -36,6 +36,7 @@ export type GemStep4CardShape = TLBaseShape<
     result: string;
     isGenerating: boolean;
     isMinimized: boolean;
+    inputType: string;
   }
 >;
 
@@ -51,6 +52,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
     result: T.string,
     isGenerating: T.boolean,
     isMinimized: T.boolean,
+    inputType: T.string,
   };
 
   override isAspectRatioLocked = () => false;
@@ -66,6 +68,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
       result: '',
       isGenerating: false,
       isMinimized: false,
+      inputType: 'single',
     };
   }
 
@@ -74,7 +77,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
   }
 
   component(shape: GemStep4CardShape) {
-    const { w, h, characterHint, actionSuggestion, result, isGenerating, isMinimized } = shape.props;
+    const { w, h, characterHint, actionSuggestion, result, isGenerating, isMinimized, inputType } = shape.props;
     const editor = useEditor();
     const [image, setImage] = useState<string>('');
     const [copied, setCopied] = useState(false);
@@ -162,7 +165,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
         const res = await fetch('/api/gem/generate-solo-motion', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: displayImage, characterHint, actionSuggestion }),
+          body: JSON.stringify({ image: displayImage, characterHint, actionSuggestion, inputType }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || '请求失败');
@@ -228,6 +231,24 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
 
           {!isMinimized && (
             <div className="flex-1 flex flex-col overflow-hidden p-3 gap-2">
+
+              {/* 输入类型选择 */}
+              <div className="flex gap-1 flex-shrink-0">
+                {([['single', '单图'], ['2x2', '4宫格'], ['3x3', '9宫格']] as const).map(([val, label]) => (
+                  <button
+                    key={val}
+                    onClick={(e) => { e.stopPropagation(); update({ inputType: val }); }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    className={`flex-1 py-1 rounded-lg text-[10px] font-medium transition-all ${
+                      inputType === val
+                        ? 'bg-sky-600 text-white'
+                        : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
 
               {/* 图片上传区 */}
               <div className="flex-shrink-0">
