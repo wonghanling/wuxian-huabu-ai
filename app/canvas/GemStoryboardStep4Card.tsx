@@ -36,7 +36,6 @@ export type GemStep4CardShape = TLBaseShape<
     result: string;
     isGenerating: boolean;
     isMinimized: boolean;
-    inputType: string;
   }
 >;
 
@@ -52,19 +51,11 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
     result: T.string,
     isGenerating: T.boolean,
     isMinimized: T.boolean,
-    inputType: T.string,
   };
 
   override isAspectRatioLocked = () => false;
   override canResize = () => true;
   override canBind = () => true;
-
-  validateRecord(record: any) {
-    if (!record.props.inputType) {
-      record = { ...record, props: { ...record.props, inputType: 'single' } };
-    }
-    return super.validateRecord(record);
-  }
 
   getDefaultProps(): GemStep4CardShape['props'] {
     return {
@@ -75,7 +66,6 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
       result: '',
       isGenerating: false,
       isMinimized: false,
-      inputType: 'single',
     };
   }
 
@@ -84,10 +74,11 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
   }
 
   component(shape: GemStep4CardShape) {
-    const { w, h, characterHint, actionSuggestion, result, isGenerating, isMinimized, inputType = 'single' } = shape.props;
+    const { w, h, characterHint, actionSuggestion, result, isGenerating, isMinimized } = shape.props;
     const editor = useEditor();
     const [image, setImage] = useState<string>('');
     const [copied, setCopied] = useState(false);
+    const [inputType, setInputType] = useState<string>('single');
 
     const update = (props: Partial<GemStep4CardShape['props']>) => {
       editor.updateShape({ id: shape.id, type: 'gem-step4-card' as any, props: { ...shape.props, ...props } });
@@ -244,7 +235,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
                 {([['single', '单图'], ['2x2', '4宫格'], ['3x3', '9宫格']] as const).map(([val, label]) => (
                   <button
                     key={val}
-                    onClick={(e) => { e.stopPropagation(); update({ inputType: val }); }}
+                    onClick={(e) => { e.stopPropagation(); setInputType(val); }}
                     onPointerDown={(e) => e.stopPropagation()}
                     className={`flex-1 py-1 rounded-lg text-[10px] font-medium transition-all ${
                       inputType === val
