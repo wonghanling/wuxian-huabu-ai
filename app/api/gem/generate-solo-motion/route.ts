@@ -72,9 +72,12 @@ async function callGemini(image: string, characterHint: string, actionSuggestion
   const hintLine = characterHint?.trim() ? `\nCharacter Hint: ${characterHint}` : '';
   const actionLine = actionSuggestion?.trim() ? `\nUser Direction (soft hint): ${actionSuggestion}` : '';
 
-  parts.push({ text: `Analyze the image and output ONE continuous cinematic video prompt.${hintLine}${actionLine}
+  parts.push({ text: `Analyze the image and output ONE continuous cinematic video prompt.
 
-Output the prompt only. Nothing else.` });
+Your response MUST follow this exact format on a single line:
+[Camera], [Subject Motion], [Timing], [Narrative/Emotion], [Constraints]
+
+No explanations. No line breaks. No extra text.${hintLine}${actionLine}` });
 
   const res = await fetch(
     `${YUNWU_BASE_URL}/v1beta/models/gemini-3-flash-preview:generateContent`,
