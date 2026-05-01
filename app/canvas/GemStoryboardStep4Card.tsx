@@ -59,7 +59,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
   override canResize = () => true;
   override canBind = () => true;
 
-  override validateRecord(record: any) {
+  validateRecord(record: any) {
     if (!record.props.inputType) {
       record = { ...record, props: { ...record.props, inputType: 'single' } };
     }
