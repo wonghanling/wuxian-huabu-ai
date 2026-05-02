@@ -104,8 +104,11 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
     const connectedImage = getConnectedImage();
     const displayImage = connectedImage || image;
 
+    const APPEND_SUFFIX = '\nAvoid sudden state changes without intermediate motion. Always describe transitional movement between states.\nno grid, no panels, no borders, no collage layout, maintain scene continuity, follow visible continuity, if scene change exists follow it, if no scene change do not add one, do not describe frame numbers.\nAvoid sudden state changes without intermediate motion. Always describe transitional movement between states.';
+
     // 生成完后推送 result 到连接的下游视频卡片
     const pushResultToDownstream = (resultText: string) => {
+      const textWithSuffix = resultText + APPEND_SUFFIX;
       const outBindings = editor.getBindingsFromShape(shape.id, 'connection');
       for (const binding of outBindings) {
         if ((binding as any).props?.terminal !== 'start') continue;
@@ -115,10 +118,10 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
           const target = editor.getShape((ob as any).toId) as any;
           if (!target) continue;
           if (target.type === 'custom-card' && target.props?.cardType === 'video') {
-            editor.updateShape({ id: (ob as any).toId, type: 'custom-card' as any, props: { ...target.props, prompt: resultText } });
+            editor.updateShape({ id: (ob as any).toId, type: 'custom-card' as any, props: { ...target.props, prompt: textWithSuffix } });
           }
           if (target.type === 'seedance-card') {
-            editor.updateShape({ id: (ob as any).toId, type: 'seedance-card' as any, props: { ...target.props, prompt: resultText } });
+            editor.updateShape({ id: (ob as any).toId, type: 'seedance-card' as any, props: { ...target.props, prompt: textWithSuffix } });
           }
         }
       }
@@ -334,7 +337,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigator.clipboard.writeText(result + '\nAvoid sudden state changes without intermediate motion. Always describe transitional movement between states.');
+                          navigator.clipboard.writeText(result + APPEND_SUFFIX);
                           setCopied(true);
                           setTimeout(() => setCopied(false), 2000);
                         }}
