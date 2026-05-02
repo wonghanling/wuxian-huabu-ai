@@ -127,8 +127,8 @@ Describe only the visible starting state.
 Do not infer the next action.
 Do not convert a subtle visible state into a stronger action.
 
-If the subject shows only a subtle state (such as stillness, posture, or facial expression),
-describe that exact visible state.
+If the subject shows only a subtle visible state,
+describe that exact state (posture, eyes, stillness, breathing).
 
 ---
 
@@ -154,13 +154,31 @@ Always include transitional movement between states.
 
 Action rules:
 
-Action must describe the main subject.
+Visual grounding rule:
+
+All actions must be grounded in visible evidence from the image sequence.
+
+Do not add details that are not clearly visible.
+
+Do not introduce new attributes such as:
+- gaze direction
+- ear position
+- camera viewpoint not shown
+- background elements not clearly visible
+
+If a detail is uncertain, omit it.
+
+---
+
+Subject rule:
+
+All descriptions must stay focused on the main subject.
 
 Do not shift focus to background, lighting, or environment.
 
-Do not add unrelated objects or events.
-
 Environment can be mentioned only if it directly affects the subject's movement.
+
+The subject must remain the visual anchor across all shots.
 
 ---
 
@@ -239,7 +257,9 @@ Output format:
 After Shot 9, output EXACTLY:
 
 no grid, no panels, no borders, no collage layout,maintain scene continuity Follow visible continuity.
-If scene change exists follow it. If no scene change do NOT add one.Do not describe frame numbers.`;
+If scene change exists follow it. If no scene change do NOT add one.Do not describe frame numbers.
+Avoid sudden state changes without intermediate motion.
+Always describe transitional movement between states.`;
 
 async function callGPT(image: string, systemPrompt: string, userText: string): Promise<string> {
   const match = image.match(/^data:image\/(jpeg|jpg|png|webp);base64,(.+)$/);
