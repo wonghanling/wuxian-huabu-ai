@@ -105,94 +105,7 @@ After Shot 4, output this EXACT text:
 no grid, no panels, no borders, no collage layout,maintain scene continuity Follow visible continuity.
 If scene change exists follow it. If no scene change do NOT add one.Do not describe frame numbers.`;
 
-const SYSTEM_3X3 = `You are a strict structured video prompt generator.
-
-Return plain text ONLY.
-Do not return JSON.
-Do not output markdown.
-Do not explain.
-
-The uploaded image is a 3x3 storyboard containing exactly 9 visual moments.
-
-Generate exactly 9 shots in visual order from left to right, top to bottom.
-
-The image is the PRIMARY source of truth.
-
-For Shot 1:
-Describe only the visible starting state.
-Do not infer the next action.
-Do not convert a subtle visible state into a stronger action.
-If the subject shows only a subtle state (such as stillness, posture, or facial expression), describe that exact visible state.
-
-For Shot 2 to Shot 9:
-Reconstruct the action progression based on the visible sequence.
-Actions must form a continuous progression: beginning, development, continuation, completion.
-Do not repeat the same action across consecutive shots.
-If an action continues, describe how it progresses instead of repeating it.
-Avoid sudden state changes without intermediate motion.
-Always include transitional movement between states.
-
-Action rules:
-Action must describe the main subject.
-Do not shift focus to background, lighting, or environment.
-Do not add unrelated objects or events.
-Environment can be mentioned only if it directly affects the subject's movement.
-
-Camera rules:
-Use simple camera descriptions: static / tracking / follow / slight push-in
-Camera should remain consistent unless subject movement requires change.
-When the subject moves, camera should follow the subject.
-Avoid complex cinematic language.
-
-Output format:
-[Shot 1]
-[Camera]
-...
-[Action]
-...
-[Shot 2]
-[Camera]
-...
-[Action]
-...
-[Shot 3]
-[Camera]
-...
-[Action]
-...
-[Shot 4]
-[Camera]
-...
-[Action]
-...
-[Shot 5]
-[Camera]
-...
-[Action]
-...
-[Shot 6]
-[Camera]
-...
-[Action]
-...
-[Shot 7]
-[Camera]
-...
-[Action]
-...
-[Shot 8]
-[Camera]
-...
-[Action]
-...
-[Shot 9]
-[Camera]
-...
-[Action]
-...
-
-After Shot 9, output EXACTLY:
-no grid, no panels, no borders, no collage layout, maintain scene continuity, follow visible continuity, if scene change exists follow it, if no scene change do not add one, do not describe frame numbers.`;
+const SYSTEM_3X3 = ``;
 
 async function callGPT(image: string, systemPrompt: string, userText: string): Promise<string> {
   const match = image.match(/^data:image\/(jpeg|jpg|png|webp);base64,(.+)$/);
@@ -239,30 +152,12 @@ export async function POST(req: NextRequest) {
 
     if (inputType === '2x2') {
       systemPrompt = SYSTEM_2X2;
-      userText = `user_direction: ${directionLine || 'none'}
-
-Analyze the 2x2 storyboard image. Output plain text ONLY following the exact format specified.
-
-No JSON. No markdown. No explanation.`;
+      const extraHints = [characterHint, actionSuggestion].filter(Boolean).join('，');
+      userText = `你来根据4宫格从左往右从上往下的参考图写一个视频生成词输出的生成词得有每个分镜的号码结构清晰${extraHints ? `\n参考信息：${extraHints}` : ''}`;
     } else if (inputType === '3x3') {
       systemPrompt = SYSTEM_3X3;
-      userText = `user_direction: ${directionLine || 'none'}
-
-Analyze the 3x3 storyboard image. Output plain text ONLY following this exact structure:
-
-[Shot 1]
-[Camera]
-...
-[Action]
-...
-[Shot 2]
-[Camera]
-...
-[Action]
-...
-Continue until [Shot 9]. After [Shot 9], output the constraint text exactly as specified.
-
-No JSON. No markdown. No explanation.`;
+      const extraHints = [characterHint, actionSuggestion].filter(Boolean).join('，');
+      userText = `你来根据9宫格从左往右从上往下的参考图写一个视频生成词输出的生成词得有每个分镜的号码结构清晰${extraHints ? `\n参考信息：${extraHints}` : ''}`;
     } else {
       systemPrompt = SYSTEM_SINGLE;
       userText = `user_direction: ${directionLine || 'none'}
