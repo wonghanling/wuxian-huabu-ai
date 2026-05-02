@@ -177,7 +177,7 @@ async function callGPT(image: string, systemPrompt: string, userText: string): P
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${YUNWU_API_KEY}` },
     body: JSON.stringify({
-      model: 'gpt-5.3-chat-latest',
+      model: 'gpt-5.5',
       messages: [
         { role: 'system', content: systemPrompt },
         {
