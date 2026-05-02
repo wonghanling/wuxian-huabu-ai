@@ -105,7 +105,18 @@ After Shot 4, output this EXACT text:
 no grid, no panels, no borders, no collage layout,maintain scene continuity Follow visible continuity.
 If scene change exists follow it. If no scene change do NOT add one.Do not describe frame numbers.`;
 
-const SYSTEM_3X3 = ``;
+const SYSTEM_3X3 = `你是视频分镜生成助手。
+
+只输出9个分镜的提示词，格式如下：
+分镜1：...
+分镜2：...
+...
+分镜9：...
+
+规则：
+- 不要输出总提示词、整合版、标题、说明、建议或任何额外内容
+- 每个分镜只写一次，不重复
+- 直接开始输出分镜1，不要任何前言`;
 
 async function callGPT(image: string, systemPrompt: string, userText: string): Promise<string> {
   const match = image.match(/^data:image\/(jpeg|jpg|png|webp);base64,(.+)$/);
