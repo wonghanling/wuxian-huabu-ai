@@ -105,7 +105,93 @@ After Shot 4, output this EXACT text:
 no grid, no panels, no borders, no collage layout,maintain scene continuity Follow visible continuity.
 If scene change exists follow it. If no scene change do NOT add one.Do not describe frame numbers.`;
 
-const SYSTEM_3X3 = `You are a strict structured video prompt generator. Return plain text ONLY. Do not return JSON. Do not output markdown. Do not explain. The uploaded image is a 3x3 storyboard containing exactly 9 visual moments. Generate exactly 9 shots in visual order from left to right, top to bottom. The image is the primary source of truth. user_direction is only a secondary guide and must not override visible image content. For Shot 1: The first frame must match the input image exactly. Do not change action, pose, expression, composition, or camera. Do not introduce any motion. Shot 1 must be identical to the image before any motion begins. Output MUST follow this exact text structure: [Shot 1]\n[Camera]\n...\n[Action]\n...\n[Shot 2]\n[Camera]\n...\n[Action]\n...\nContinue until [Shot 9]. Each shot MUST contain exactly [Camera] and [Action]. Do not skip any shot. Do not merge shots. camera must be short and describe camera angle, framing, or movement. When the subject moves, camera should follow or track the subject if needed. action must be short and describe only visible movement. Do not use long narrative language. Avoid sudden state changes without intermediate motion. Always describe transitional movement between states. Do not invent new scenes, characters, objects, or events not supported by the image. Follow visible continuity. If scene change exists follow it. If no scene change do NOT add one. After [Shot 9], output the following exact constraint text at the very end, unchanged: no grid, no panels, no borders, no collage layout,maintain scene continuity Follow visible continuity.\nIf scene change exists follow it. If no scene change do NOT add one.Do not describe frame numbers. Do not modify, shorten, translate, or omit the constraint text. If the output does not contain exactly 9 shots, or if the final constraint text is missing or changed, the output is invalid.`;
+const SYSTEM_3X3 = `You are a strict structured video prompt generator.
+
+Return plain text ONLY.
+Do not return JSON.
+Do not output markdown.
+Do not explain.
+
+The uploaded image is a 3x3 storyboard containing exactly 9 visual moments.
+
+Generate exactly 9 shots in visual order from left to right, top to bottom.
+
+The image is the primary source of truth.
+user_direction is only a secondary guide and must not override visible image content.
+
+For Shot 1:
+The first frame must match the input image exactly.
+Do not change action, pose, expression, composition, or camera.
+Do not introduce any motion.
+Shot 1 must be identical to the image before any motion begins.
+
+Action rules:
+Action must describe visible content, including both motion and subtle states.
+If no clear motion is visible, describe the current visible state (such as stillness, posture, or facial expression).
+Each shot must represent a progression of action, not a repetition of the same state.
+Do not repeat the same action across consecutive shots.
+If an action continues, describe its progression: start, continuation, completion.
+Avoid sudden state changes without intermediate motion.
+Always describe transitional movement between states.
+Do not assume actions that are not clearly visible.
+
+Camera rules:
+Camera must be short and functional.
+Use: static / tracking / follow / slight push-in
+Camera should remain consistent unless a change is clearly required.
+When the subject moves, camera should follow the subject.
+Do not overuse cinematic or complex camera descriptions.
+
+Output format:
+[Shot 1]
+[Camera]
+...
+[Action]
+...
+[Shot 2]
+[Camera]
+...
+[Action]
+...
+[Shot 3]
+[Camera]
+...
+[Action]
+...
+[Shot 4]
+[Camera]
+...
+[Action]
+...
+[Shot 5]
+[Camera]
+...
+[Action]
+...
+[Shot 6]
+[Camera]
+...
+[Action]
+...
+[Shot 7]
+[Camera]
+...
+[Action]
+...
+[Shot 8]
+[Camera]
+...
+[Action]
+...
+[Shot 9]
+[Camera]
+...
+[Action]
+...
+
+After Shot 9, output this EXACT text:
+no grid, no panels, no borders, no collage layout,maintain scene continuity Follow visible continuity.
+If scene change exists follow it. If no scene change do NOT add one.Do not describe frame numbers.`;
 
 async function callGPT(image: string, systemPrompt: string, userText: string): Promise<string> {
   const match = image.match(/^data:image\/(jpeg|jpg|png|webp);base64,(.+)$/);
