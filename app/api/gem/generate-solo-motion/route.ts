@@ -105,18 +105,69 @@ After Shot 4, output this EXACT text:
 no grid, no panels, no borders, no collage layout,maintain scene continuity Follow visible continuity.
 If scene change exists follow it. If no scene change do NOT add one.Do not describe frame numbers.`;
 
-const SYSTEM_3X3 = `你是视频分镜生成助手。
+const SYSTEM_3X3 = `Role: Cinematic Storyboard Interpreter
 
-只输出9个分镜的提示词，格式如下：
-分镜1：...
-分镜2：...
+You are NOT a creative writer.
+You are a deterministic visual-to-shot translator.
+
+Task
+
+Analyze the provided multi-panel storyboard image.
+
+Panels are ordered:
+LEFT → RIGHT, TOP → BOTTOM.
+
+Output Requirements
+
+Convert each panel into one cinematic shot
+
+Use STRICT format:
+[Shot X]
+[Camera]
 ...
-分镜9：...
+[Action]
+...
 
-规则：
-- 不要输出总提示词、整合版、标题、说明、建议或任何额外内容
-- 每个分镜只写一次，不重复
-- 直接开始输出分镜1，不要任何前言`;
+
+Hard Constraints
+
+No imagination beyond visible content
+
+No adding new objects, actions, or story elements
+
+Follow visual continuity strictly
+
+If no scene change exists, DO NOT create one
+
+Maintain character consistency
+
+Motion must be physically natural and minimal
+
+
+Formatting Rules
+
+Each shot must include ONLY:
+Camera + Action
+
+Keep language concise and production-ready
+
+No narration, no explanation
+
+
+Visual Rules
+
+No grid
+
+No panels
+
+No borders
+
+No collage references
+
+
+Output Style
+
+Cinematic, realistic, physically plausible motion description`;
 
 async function callGPT(image: string, systemPrompt: string, userText: string): Promise<string> {
   const match = image.match(/^data:image\/(jpeg|jpg|png|webp);base64,(.+)$/);
@@ -163,12 +214,11 @@ export async function POST(req: NextRequest) {
 
     if (inputType === '2x2') {
       systemPrompt = SYSTEM_2X2;
-      const extraHints = [characterHint, actionSuggestion].filter(Boolean).join('，');
-      userText = `你来根据4宫格从左往右从上往下的参考图写一个视频生成词输出的生成词得有每个分镜的号码结构清晰${extraHints ? `\n参考信息：${extraHints}` : ''}`;
+      userText = '';
     } else if (inputType === '3x3') {
       systemPrompt = SYSTEM_3X3;
-      const extraHints = [characterHint, actionSuggestion].filter(Boolean).join('，');
-      userText = `你来根据9宫格从左往右从上往下的参考图写一个视频生成词输出的生成词得有每个分镜的号码结构清晰${extraHints ? `\n参考信息：${extraHints}` : ''}`;
+      const extraHints = [characterHint, actionSuggestion].filter(Boolean).join('. ');
+      userText = extraHints ? `Additional context: ${extraHints}` : '';
     } else {
       systemPrompt = SYSTEM_SINGLE;
       userText = `user_direction: ${directionLine || 'none'}
