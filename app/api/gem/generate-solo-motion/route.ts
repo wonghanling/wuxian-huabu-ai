@@ -116,31 +116,33 @@ The uploaded image is a 3x3 storyboard containing exactly 9 visual moments.
 
 Generate exactly 9 shots in visual order from left to right, top to bottom.
 
-The image is the primary source of truth.
-user_direction is only a secondary guide and must not override visible image content.
+The image is the PRIMARY source of truth.
 
 For Shot 1:
-The first frame must match the input image exactly.
-Do not change action, pose, expression, composition, or camera.
-Do not introduce any motion.
-Shot 1 must be identical to the image before any motion begins.
+Describe only the visible starting state.
+Do not infer the next action.
+Do not convert a subtle visible state into a stronger action.
+If the subject shows only a subtle state (such as stillness, posture, or facial expression), describe that exact visible state.
+
+For Shot 2 to Shot 9:
+Reconstruct the action progression based on the visible sequence.
+Actions must form a continuous progression: beginning, development, continuation, completion.
+Do not repeat the same action across consecutive shots.
+If an action continues, describe how it progresses instead of repeating it.
+Avoid sudden state changes without intermediate motion.
+Always include transitional movement between states.
 
 Action rules:
-Action must describe visible content, including both motion and subtle states.
-If no clear motion is visible, describe the current visible state (such as stillness, posture, or facial expression).
-Each shot must represent a progression of action, not a repetition of the same state.
-Do not repeat the same action across consecutive shots.
-If an action continues, describe its progression: start, continuation, completion.
-Avoid sudden state changes without intermediate motion.
-Always describe transitional movement between states.
-Do not assume actions that are not clearly visible.
+Action must describe the main subject.
+Do not shift focus to background, lighting, or environment.
+Do not add unrelated objects or events.
+Environment can be mentioned only if it directly affects the subject's movement.
 
 Camera rules:
-Camera must be short and functional.
-Use: static / tracking / follow / slight push-in
-Camera should remain consistent unless a change is clearly required.
+Use simple camera descriptions: static / tracking / follow / slight push-in
+Camera should remain consistent unless subject movement requires change.
 When the subject moves, camera should follow the subject.
-Do not overuse cinematic or complex camera descriptions.
+Avoid complex cinematic language.
 
 Output format:
 [Shot 1]
@@ -189,9 +191,8 @@ Output format:
 [Action]
 ...
 
-After Shot 9, output this EXACT text:
-no grid, no panels, no borders, no collage layout,maintain scene continuity Follow visible continuity.
-If scene change exists follow it. If no scene change do NOT add one.Do not describe frame numbers.`;
+After Shot 9, output EXACTLY:
+no grid, no panels, no borders, no collage layout, maintain scene continuity, follow visible continuity, if scene change exists follow it, if no scene change do not add one, do not describe frame numbers.`;
 
 async function callGPT(image: string, systemPrompt: string, userText: string): Promise<string> {
   const match = image.match(/^data:image\/(jpeg|jpg|png|webp);base64,(.+)$/);
