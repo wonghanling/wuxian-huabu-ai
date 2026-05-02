@@ -334,7 +334,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigator.clipboard.writeText(result);
+                          navigator.clipboard.writeText(result + '\nAvoid sudden state changes without intermediate motion. Always describe transitional movement between states.');
                           setCopied(true);
                           setTimeout(() => setCopied(false), 2000);
                         }}
