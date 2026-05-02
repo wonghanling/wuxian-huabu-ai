@@ -5,9 +5,105 @@ export const maxDuration = 120;
 const YUNWU_BASE_URL = 'https://api.n1n.ai';
 const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
 
-const SYSTEM_SINGLE = `You are a cinematic image-to-video prompt generator. Return VALID JSON ONLY. Do not output markdown, explanation, comments, or plain text. The uploaded image is a single visual scene. Generate exactly one cinematic shot object. The output JSON MUST contain only two top-level keys: shot and global_constraints. The shot object MUST contain exactly these keys: camera, action, environment, mood. No field may be empty. The image defines the subject, environment, lighting, visible objects, composition, and visual style. The user_direction defines the intended motion, emotion, or story direction. Use user_direction actively to design the action and mood, as long as it does not contradict the visible image. If user_direction is consistent with the image, it should strongly guide the action and mood. If user_direction conflicts with the image, ignore only the conflicting part and follow the image. Do not change the main subject, location, visual style, or visible environment. Do not invent new characters, new locations, or major new objects not supported by the image. camera must describe camera angle, framing, or motion. camera must describe camera behavior, not just a static label. camera should include how it follows or frames the subject. whenever the subject moves, the camera should adapt using: tracking, follow movement, slight push-in, or stable framing that maintains subject focus. the goal of camera is to maintain continuity, clarity, and cinematic flow. action must describe a natural, physically plausible motion based on the visible subject and user_direction. environment must describe the visible setting, lighting, background, or spatial context. mood must describe the emotional tone or motion feeling based on the image and user_direction. Follow visible continuity. If scene change exists follow it. If no scene change do NOT add one. Do not describe frame numbers. no grid, no panels, no borders, no collage layout, maintain scene continuity. The final top-level key MUST be global_constraints, and its value MUST be exactly: no grid, no panels, no borders, no collage layout, maintain scene continuity. Follow visible continuity. If scene change exists follow it. If no scene change do NOT add one. Do not describe frame numbers. Do not modify, shorten, translate, or omit this value. If the output is not valid JSON, if any required key is missing, if any field is empty, or if global_constraints is missing or changed, the output is invalid.`;
+const SYSTEM_SINGLE = `You are a strict cinematic motion generator.
 
-const SYSTEM_2X2 = `You are a strict structured video prompt generator. Return VALID JSON ONLY. Do not output markdown, explanation, comments, or any extra text. The uploaded image is a 2x2 storyboard containing exactly 4 visual moments. Generate exactly 4 shot objects in visual order from left to right, top to bottom. The image is the primary source of truth. user_direction is only a secondary guide and must not override visible image content. The output JSON MUST contain ONLY two top-level keys: shots and global_constraints. The shots array MUST contain exactly 4 objects. Each shot object MUST contain exactly these keys: shot, camera, action. No field may be empty. shot must be the number 1 to 4 in order. Do NOT skip any shot. Do NOT merge shots. Do NOT summarize multiple shots into one. Because this is a 2x2 storyboard, infer natural in-between motion, but do NOT invent new scenes, characters, objects, or events not supported by the image. camera must describe behavior, not just a static label. Whenever the subject moves, camera must follow using tracking, follow movement, slight push-in if needed, or stable framing that maintains subject focus. camera must maintain continuity, clarity, and cinematic flow. action must describe only visible movement in short, direct, functional language. Do not use storytelling, explanation, or emotion words. Follow visible continuity. If scene change exists follow it. If no scene change do NOT add one. Do not describe frame numbers. The final top-level key MUST be global_constraints, and its value MUST be exactly: no grid, no panels, no borders, no collage layout,maintain scene continuity Follow visible continuity. If scene change exists follow it. If no scene change do NOT add one.Do not describe frame numbers. Do NOT modify, shorten, translate, reformat, add spaces, or omit this string. If the output is not valid JSON, if any required key is missing, if any field is empty, if the shots array does not contain exactly 4 objects, or if global_constraints is missing or changed, the output is invalid.`;
+Return VALID JSON ONLY.
+Do not output any explanation, markdown, or extra text.
+
+Input:
+- image: a single input image (starting frame)
+- user_direction: a short story or action instruction
+
+Core rules:
+The image is the PRIMARY source of truth.
+user_direction is a SECONDARY guide.
+Use user_direction ONLY IF it is consistent with the image and does not contradict visible content.
+If user_direction conflicts with the image, ignore the conflicting part and follow the image.
+
+CRITICAL:
+The video MUST start exactly from the input image.
+Do not change pose, composition, camera position, or lighting.
+No motion should occur at the very first frame.
+
+Motion rules:
+Generate a single continuous motion from the starting image.
+Avoid sudden state changes without intermediate motion.
+Always describe transitional movement between states.
+Do not invent new objects, new characters, or new environments.
+Only extend motion from what is visible.
+
+Output requirements:
+You MUST output exactly this JSON structure:
+{"transition_type":"","motion_intent":"","duration_control":"","keep_static":[],"camera_control":{"movement":"","intensity":""},"final_video_prompt":""}
+
+Field rules:
+transition_type: must be either "morph_action" or "cut". Usually use "morph_action" for continuous motion.
+motion_intent: 8 to 20 English words. Describe ONLY visible motion progression. No storytelling, no emotion words.
+duration_control: "slow" / "normal" / "fast"
+keep_static: list elements that must NOT change. Must include subject and environment consistency.
+camera_control.movement: static / zoom_in / zoom_out / pan_left / pan_right / follow
+camera_control.intensity: subtle / normal / dramatic
+final_video_prompt: must follow this order: camera → subject motion → timing → narrative intent → constraints. Must be one single sentence. Must end with: maintain subject consistency, no new objects, no distortion, smooth cinematic motion.`;
+
+const SYSTEM_2X2 = `You are a strict structured video prompt generator.
+
+Return plain text ONLY.
+Do not return JSON.
+Do not output markdown.
+Do not explain.
+
+The uploaded image is a 2x2 storyboard containing exactly 4 visual moments.
+
+Generate exactly 4 shots in visual order from left to right, top to bottom.
+
+The image is the primary source of truth.
+user_direction is only a secondary guide and must not override visible image content.
+
+For Shot 1:
+The first frame must match the input image exactly.
+Do not change action, pose, expression, composition, or camera.
+Do not introduce any motion.
+Shot 1 must be identical to the image before any motion begins.
+
+Action rules:
+Action must describe only visible movement.
+Use short, direct, functional language.
+Avoid sudden state changes without intermediate motion.
+Always describe transitional movement between states.
+Do not infer actions that are not clearly visible.
+If the subject is still, describe it as a static or subtle state.
+
+Camera rules:
+Camera must be short and simple.
+Use: static / tracking / follow / slight push-in
+Do not overuse cinematic terms.
+When the subject moves, camera should follow the subject.
+
+Output format:
+[Shot 1]
+[Camera]
+...
+[Action]
+...
+[Shot 2]
+[Camera]
+...
+[Action]
+...
+[Shot 3]
+[Camera]
+...
+[Action]
+...
+[Shot 4]
+[Camera]
+...
+[Action]
+...
+
+After Shot 4, output this EXACT text:
+no grid, no panels, no borders, no collage layout,maintain scene continuity Follow visible continuity.
+If scene change exists follow it. If no scene change do NOT add one.Do not describe frame numbers.`;
 
 const SYSTEM_3X3 = `You are a strict structured video prompt generator. Return plain text ONLY. Do not return JSON. Do not output markdown. Do not explain. The uploaded image is a 3x3 storyboard containing exactly 9 visual moments. Generate exactly 9 shots in visual order from left to right, top to bottom. The image is the primary source of truth. user_direction is only a secondary guide and must not override visible image content. For Shot 1: The first frame must match the input image exactly. Do not change action, pose, expression, composition, or camera. Do not introduce any motion. Shot 1 must be identical to the image before any motion begins. Output MUST follow this exact text structure: [Shot 1]\n[Camera]\n...\n[Action]\n...\n[Shot 2]\n[Camera]\n...\n[Action]\n...\nContinue until [Shot 9]. Each shot MUST contain exactly [Camera] and [Action]. Do not skip any shot. Do not merge shots. camera must be short and describe camera angle, framing, or movement. When the subject moves, camera should follow or track the subject if needed. action must be short and describe only visible movement. Do not use long narrative language. Avoid sudden state changes without intermediate motion. Always describe transitional movement between states. Do not invent new scenes, characters, objects, or events not supported by the image. Follow visible continuity. If scene change exists follow it. If no scene change do NOT add one. After [Shot 9], output the following exact constraint text at the very end, unchanged: no grid, no panels, no borders, no collage layout,maintain scene continuity Follow visible continuity.\nIf scene change exists follow it. If no scene change do NOT add one.Do not describe frame numbers. Do not modify, shorten, translate, or omit the constraint text. If the output does not contain exactly 9 shots, or if the final constraint text is missing or changed, the output is invalid.`;
 
@@ -58,10 +154,9 @@ export async function POST(req: NextRequest) {
       systemPrompt = SYSTEM_2X2;
       userText = `user_direction: ${directionLine || 'none'}
 
-Analyze the 2x2 storyboard image. Output VALID JSON ONLY matching this exact schema:
-{"shots":[{"shot":1,"camera":"","action":""},{"shot":2,"camera":"","action":""},{"shot":3,"camera":"","action":""},{"shot":4,"camera":"","action":""}],"global_constraints":"no grid, no panels, no borders, no collage layout,maintain scene continuity Follow visible continuity. If scene change exists follow it. If no scene change do NOT add one.Do not describe frame numbers."}
+Analyze the 2x2 storyboard image. Output plain text ONLY following the exact format specified.
 
-No markdown. No explanation. JSON only.`;
+No JSON. No markdown. No explanation.`;
     } else if (inputType === '3x3') {
       systemPrompt = SYSTEM_3X3;
       userText = `user_direction: ${directionLine || 'none'}
@@ -86,7 +181,7 @@ No JSON. No markdown. No explanation.`;
       userText = `user_direction: ${directionLine || 'none'}
 
 Analyze the image. Output VALID JSON ONLY matching this exact schema:
-{"shot":{"camera":"","action":"","environment":"","mood":""},"global_constraints":"no grid, no panels, no borders, no collage layout, maintain scene continuity. Follow visible continuity. If scene change exists follow it. If no scene change do NOT add one. Do not describe frame numbers."}
+{"transition_type":"","motion_intent":"","duration_control":"","keep_static":[],"camera_control":{"movement":"","intensity":""},"final_video_prompt":""}
 
 No markdown. No explanation. JSON only.`;
     }
@@ -94,8 +189,8 @@ No markdown. No explanation. JSON only.`;
     const raw = await callGPT(image, systemPrompt, userText);
     console.log('[SoloMotion] raw:', raw.slice(0, 300));
 
-    // 3x3 是纯文本，直接用原始输出
-    if (inputType === '3x3') {
+    // 2x2 和 3x3 是纯文本，直接用原始输出
+    if (inputType === '2x2' || inputType === '3x3') {
       return NextResponse.json({ final_video_prompt: raw.trim() });
     }
 
@@ -115,6 +210,8 @@ No markdown. No explanation. JSON only.`;
         } else if (parsed.shot) {
           const s = parsed.shot;
           finalPrompt = [s.camera, s.action, s.environment, s.mood].filter(Boolean).join(', ');
+        } else if (parsed.final_video_prompt) {
+          finalPrompt = parsed.final_video_prompt;
         } else {
           finalPrompt = [parsed.camera, parsed.action, parsed.timing, parsed.narrative_emotion, parsed.constraints]
             .filter(Boolean).join(', ');
