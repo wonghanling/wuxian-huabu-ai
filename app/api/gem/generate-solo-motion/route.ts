@@ -9,7 +9,7 @@ const SYSTEM_SINGLE = `You are a cinematic image-to-video prompt generator. Retu
 
 const SYSTEM_2X2 = `You are a strict structured video prompt generator. Return VALID JSON ONLY. Do not output markdown, explanation, comments, or any extra text. The uploaded image is a 2x2 storyboard containing exactly 4 visual moments. Generate exactly 4 shot objects in visual order from left to right, top to bottom. The image is the primary source of truth. user_direction is only a secondary guide and must not override visible image content. The output JSON MUST contain ONLY two top-level keys: shots and global_constraints. The shots array MUST contain exactly 4 objects. Each shot object MUST contain exactly these keys: shot, camera, action. No field may be empty. shot must be the number 1 to 4 in order. Do NOT skip any shot. Do NOT merge shots. Do NOT summarize multiple shots into one. Because this is a 2x2 storyboard, infer natural in-between motion, but do NOT invent new scenes, characters, objects, or events not supported by the image. camera must describe behavior, not just a static label. Whenever the subject moves, camera must follow using tracking, follow movement, slight push-in if needed, or stable framing that maintains subject focus. camera must maintain continuity, clarity, and cinematic flow. action must describe only visible movement in short, direct, functional language. Do not use storytelling, explanation, or emotion words. Follow visible continuity. If scene change exists follow it. If no scene change do NOT add one. Do not describe frame numbers. The final top-level key MUST be global_constraints, and its value MUST be exactly: no grid, no panels, no borders, no collage layout,maintain scene continuity Follow visible continuity. If scene change exists follow it. If no scene change do NOT add one.Do not describe frame numbers. Do NOT modify, shorten, translate, reformat, add spaces, or omit this string. If the output is not valid JSON, if any required key is missing, if any field is empty, if the shots array does not contain exactly 4 objects, or if global_constraints is missing or changed, the output is invalid.`;
 
-const SYSTEM_3X3 = `You are a strict structured video prompt generator. Return VALID JSON ONLY. Do not output markdown, explanation, comments, or any extra text. The uploaded image is a 3x3 storyboard containing exactly 9 visual moments. Generate exactly 9 shot objects in visual order from left to right, top to bottom. The image is the primary source of truth. user_direction is only a secondary guide and must not override visible image content. The output JSON MUST contain ONLY two top-level keys: shots and global_constraints. The shots array MUST contain exactly 9 objects. Each shot object MUST contain exactly these keys: shot, camera, action. No field may be empty. shot must be the number 1 to 9 in order. Do NOT skip any shot. Do NOT merge shots. Do NOT summarize multiple shots into one. camera must describe behavior, not just a static label. Whenever the subject moves, camera must follow using tracking, follow movement, slight push-in if needed, or stable framing that maintains subject focus. camera must maintain continuity, clarity, and cinematic flow. action must describe only visible movement in short, direct, functional language. Do not use storytelling, explanation, or emotion words. Do not invent new scenes, characters, objects, or events not supported by the image. Follow visible continuity. If scene change exists follow it. If no scene change do NOT add one. Do not describe frame numbers. The final top-level key MUST be global_constraints, and its value MUST be exactly: no grid, no panels, no borders, no collage layout,maintain scene continuity Follow visible continuity. If scene change exists follow it. If no scene change do NOT add one.Do not describe frame numbers. Do NOT modify, shorten, translate, reformat, add spaces, or omit this string. If the output is not valid JSON, if any required key is missing, if any field is empty, if the shots array does not contain exactly 9 objects, or if global_constraints is missing or changed, the output is invalid.`;
+const SYSTEM_3X3 = `You are a strict structured video prompt generator. Return plain text ONLY. Do not return JSON. Do not output markdown. Do not explain. The uploaded image is a 3x3 storyboard containing exactly 9 visual moments. Generate exactly 9 shots in visual order from left to right, top to bottom. The image is the primary source of truth. user_direction is only a secondary guide and must not override visible image content. Output MUST follow this exact text structure: [Shot 1]\n[Camera]\n...\n[Action]\n...\n[Shot 2]\n[Camera]\n...\n[Action]\n...\nContinue until [Shot 9]. Each shot MUST contain exactly [Camera] and [Action]. Do not skip any shot. Do not merge shots. camera must be short and describe camera angle, framing, or movement. When the subject moves, camera should follow or track the subject if needed. action must be short and describe only visible movement. Do not use long narrative language. Do not invent new scenes, characters, objects, or events not supported by the image. Follow visible continuity. If scene change exists follow it. If no scene change do NOT add one. After [Shot 9], output the following exact constraint text at the very end, unchanged: no grid, no panels, no borders, no collage layout,maintain scene continuity Follow visible continuity.\nIf scene change exists follow it. If no scene change do NOT add one.Do not describe frame numbers. Do not modify, shorten, translate, or omit the constraint text. If the output does not contain exactly 9 shots, or if the final constraint text is missing or changed, the output is invalid.`;
 
 async function callGPT(image: string, systemPrompt: string, userText: string): Promise<string> {
   const match = image.match(/^data:image\/(jpeg|jpg|png|webp);base64,(.+)$/);
@@ -66,10 +66,21 @@ No markdown. No explanation. JSON only.`;
       systemPrompt = SYSTEM_3X3;
       userText = `user_direction: ${directionLine || 'none'}
 
-Analyze the 3x3 storyboard image. Output VALID JSON ONLY matching this exact schema:
-{"shots":[{"shot":1,"camera":"","action":""},{"shot":2,"camera":"","action":""},{"shot":3,"camera":"","action":""},{"shot":4,"camera":"","action":""},{"shot":5,"camera":"","action":""},{"shot":6,"camera":"","action":""},{"shot":7,"camera":"","action":""},{"shot":8,"camera":"","action":""},{"shot":9,"camera":"","action":""}],"global_constraints":"no grid, no panels, no borders, no collage layout,maintain scene continuity Follow visible continuity. If scene change exists follow it. If no scene change do NOT add one.Do not describe frame numbers."}
+Analyze the 3x3 storyboard image. Output plain text ONLY following this exact structure:
 
-No markdown. No explanation. JSON only.`;
+[Shot 1]
+[Camera]
+...
+[Action]
+...
+[Shot 2]
+[Camera]
+...
+[Action]
+...
+Continue until [Shot 9]. After [Shot 9], output the constraint text exactly as specified.
+
+No JSON. No markdown. No explanation.`;
     } else {
       systemPrompt = SYSTEM_SINGLE;
       userText = `user_direction: ${directionLine || 'none'}
@@ -82,6 +93,11 @@ No markdown. No explanation. JSON only.`;
 
     const raw = await callGPT(image, systemPrompt, userText);
     console.log('[SoloMotion] raw:', raw.slice(0, 300));
+
+    // 3x3 是纯文本，直接用原始输出
+    if (inputType === '3x3') {
+      return NextResponse.json({ final_video_prompt: raw.trim() });
+    }
 
     // 解析 JSON 输出，拼成可读 prompt
     let finalPrompt = raw;
