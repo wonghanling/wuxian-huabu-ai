@@ -104,7 +104,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
     const connectedImage = getConnectedImage();
     const displayImage = connectedImage || image;
 
-    const APPEND_SUFFIX = '\nAvoid sudden state changes without intermediate motion. Always describe transitional movement between states.\nno grid, no panels, no borders, no collage layout, maintain scene continuity, follow visible continuity, if scene change exists follow it, if no scene change do not add one, do not describe frame numbers.\nAvoid sudden state changes without intermediate motion. Always describe transitional movement between states.';
+    const APPEND_SUFFIX = '\nAvoid sudden state changes without intermediate motion. Always describe transitional movement between states.\nno grid, no panels, no borders, no collage layout, maintain scene continuity, follow visible continuity, if scene change exists follow it, if no scene change do not add one, do not describe frame numbers.';
 
     // 生成完后推送 result 到连接的下游视频卡片
     const pushResultToDownstream = (resultText: string) => {
