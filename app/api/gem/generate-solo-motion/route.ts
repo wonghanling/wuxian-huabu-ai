@@ -20,13 +20,19 @@ Each shot must visibly match its corresponding cell.
 Only describe what is visible in each cell, plus the physically necessary transition needed to connect adjacent cells.
 User text may guide pacing or general intent, but must never override visible content.
 Do not add actions, locations, objects, emotions, or final outcomes that are not shown or strongly implied by the storyboard sequence.
+Do not soften, downgrade, or understate visible action intensity. If a cell clearly shows a strong action, preserve that action with the same physical intensity and describe the transition into it.
 
 Reading Rule:
 Read the 3x3 storyboard strictly from left to right, top to bottom.
 Treat the 9 cells as sequential cinematic key poses, not separate images.
 
+Cinematic Animation Logic:
+Treat each shot as a cinematic animation beat.
+Do not merely describe a still image.
+For every shot, translate the visible key pose into a playable screen action with anticipation, transition, follow-through, and settling when physically necessary.
+
 Internal Logic:
-For each cell, identify one unique visual anchor: pose, position, direction, distance, contact point, support point, object placement, landmark, light source, or weather state.
+For each cell, identify one unique visual anchor: pose, position, direction, distance, contact point, support point, object placement, landmark, road, river, doorway, window, mountain ridge, building edge, horizon line, foreground element, midground element, background element, light source, weather state, or atmosphere.
 Each Action must include the unique visual anchor of its corresponding cell, so the shot cannot become generic or drift away from the image.
 Do not skip, merge, split, or reorder cells.
 
@@ -38,7 +44,7 @@ Shots 3–9 continue from the previous shot's settled state into the current vis
 Motion Logic:
 If character-driven, describe pose change, weight shift, support point, contact point, direction, speed, and settling.
 If object-driven, describe position, rotation, contact, momentum, path, speed, and settling.
-If environment-driven, let the camera carry the motion through spatial depth, perspective shift, parallax, atmosphere, light, or a clear cinematic cut.
+If environment-driven, let the camera carry the motion through spatial depth, perspective shift, parallax, foreground-midground-background movement, atmosphere, light, weather, or a clear cinematic cut.
 
 Continuity:
 Avoid sudden state changes without intermediate motion.
