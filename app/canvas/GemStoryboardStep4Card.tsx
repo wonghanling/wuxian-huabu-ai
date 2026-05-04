@@ -230,7 +230,9 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
                 const ls = editor.getShape(shape.id) as any;
                 if (ls) editor.updateShape({ id: shape.id, type: 'gem-step4-card' as any, props: { ...ls.props, generationProgress: progress } });
                 const qRes = await fetch(`/api/image/fal-query?requestId=${encodeURIComponent(data.requestId)}&endpoint=${encodeURIComponent(falEndpoint)}`);
-                const qData = await qRes.json();
+                const qText = await qRes.text();
+                console.log('[Step4 poll]', qRes.status, qText);
+                const qData = JSON.parse(qText);
                 if (qData.success && qData.imageUrl) {
                   clearInterval(progressTimer);
                   const ls2 = editor.getShape(shape.id) as any;
