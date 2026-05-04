@@ -51,12 +51,12 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
     h: T.number,
     actionSuggestion: T.string,
     result: T.string,
-    generatedImage: T.string,
+    generatedImage: T.string.optional() as any,
     isGenerating: T.boolean,
     isMinimized: T.boolean,
-    duration: T.string,
-    scriptMode: T.string as any,
-    ratio: T.string as any,
+    duration: T.string.optional() as any,
+    scriptMode: T.string.optional() as any,
+    ratio: T.string.optional() as any,
   };
 
   override isAspectRatioLocked = () => false;
