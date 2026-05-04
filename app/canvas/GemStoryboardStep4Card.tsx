@@ -49,6 +49,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
   static override props: RecordProps<GemStep4CardShape> = {
     w: T.number,
     h: T.number,
+    characterHint: T.string.optional() as any,
     actionSuggestion: T.string,
     result: T.string,
     generatedImage: T.string.optional() as any,
