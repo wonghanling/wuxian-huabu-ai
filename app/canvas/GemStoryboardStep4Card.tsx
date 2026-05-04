@@ -177,7 +177,8 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
       try {
         if (inputType === '2x2' || inputType === '3x3') {
           // 生成时临时 fetch 模板图转 base64
-          const templateBlob = await fetch('/fenjingmuban3X3.jpg').then(r => r.blob());
+          const templateFile = inputType === '2x2' ? '/fenjingmuban2x2.jpg' : '/fenjingmuban3X3.jpg';
+          const templateBlob = await fetch(templateFile).then(r => r.blob());
           const templateB64 = await new Promise<string>((resolve) => {
             const reader = new FileReader();
             reader.onload = (e) => resolve(e.target?.result as string);
