@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
       const blob = new Blob([buffer], { type: 'image/jpeg' });
       const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
       const url = await fal.storage.upload(file);
+      console.log('[StoryboardImage] fal url:', url);
       allImages.push(url);
     }
 
