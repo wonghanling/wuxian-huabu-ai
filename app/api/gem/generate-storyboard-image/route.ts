@@ -39,7 +39,17 @@ export async function POST(req: NextRequest) {
       output_format: 'jpeg',
     };
 
-    const result = await fal.subscribe('openai/gpt-image-2/edit', { input }) as any;
+    const result = await fal.subscribe('openai/gpt-image-2/edit', {
+      input: {
+        prompt,
+        image_urls: allImages,
+        image_size: sizeMap[aspectRatio] || 'landscape_16_9',
+        quality: 'high',
+        num_images: 1,
+        output_format: 'jpeg',
+      },
+      logs: false,
+    }) as any;
     console.log('[StoryboardImage] result keys:', Object.keys(result?.data || result || {}));
     const images = result?.data?.images || result?.images;
     const imageUrl = images?.[0]?.url;
