@@ -31,14 +31,15 @@ export type GemStep4CardShape = TLBaseShape<
   {
     w: number;
     h: number;
+    characterHint?: string;
     actionSuggestion: string;
     result: string;
-    generatedImage: string;
+    generatedImage?: string;
     isGenerating: boolean;
     isMinimized: boolean;
-    duration: string;
-    scriptMode: 'normal' | 'detail';
-    ratio: '16:9' | '9:16' | '1:1';
+    duration?: string;
+    scriptMode?: 'normal' | 'detail';
+    ratio?: '16:9' | '9:16' | '1:1';
   }
 >;
 
