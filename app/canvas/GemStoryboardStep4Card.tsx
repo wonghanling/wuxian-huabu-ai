@@ -7,7 +7,7 @@ import {
   useEditor,
   Rectangle2d,
 } from 'tldraw';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 function compressImage(dataUrl: string, maxSize = 1280, quality = 0.85): Promise<string> {
   return new Promise((resolve) => {
@@ -93,6 +93,23 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
     const [copied, setCopied] = useState(false);
     const [inputType, setInputType] = useState<'single' | '2x2' | '3x3'>('single');
     const [lightbox, setLightbox] = useState(false);
+    const [templateBase64, setTemplateBase64] = useState<string>('');
+    const templateLoaded = useRef(false);
+
+    // 预加载模板图
+    useEffect(() => {
+      if (templateLoaded.current) return;
+      templateLoaded.current = true;
+      fetch('/fenjingmuban3X3.jpg')
+        .then(r => r.blob())
+        .then(blob => new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.readAsDataURL(blob);
+        }))
+        .then(b64 => setTemplateBase64(b64))
+        .catch(() => {});
+    }, []);
 
     const update = (props: Partial<GemStep4CardShape['props']>) => {
       editor.updateShape({ id: shape.id, type: 'gem-step4-card' as any, props: { ...shape.props, ...props } });
@@ -165,9 +182,9 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
 
     const generate = async () => {
       if (!displayImage) { alert('请上传或连接图片'); return; }
+      if ((inputType === '2x2' || inputType === '3x3') && !templateBase64) { alert('模板图加载中，请稍后再试'); return; }
       update({ isGenerating: true, result: '', generatedImage: '', generationProgress: 5 });
 
-      // 假进度条
       let progress = 5;
       const progressTimer = setInterval(() => {
         progress = Math.min(progress + 3, 90);
@@ -177,15 +194,34 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
 
       try {
         if (inputType === '2x2' || inputType === '3x3') {
-          const res = await fetch('/api/gem/generate-storyboard-image', {
+          const isCellMode = scriptMode === 'detail';
+          const shotCount = inputType === '2x2' ? 4 : 9;
+          const gridLabel = shotCount === 9 ? '9宫格' : '4宫格';
+          const prompt = isCellMode
+            ? `把${gridLabel}分镜图的画面嵌入分镜脚本模板的空白画面框里，同时只在模板原本说明栏填写镜头号、时间轴、景别、运镜、动作说明、音效。不覆盖分镜画面。写一个${duration}s电影级细化动作分镜脚本，这${shotCount}个宫格是细化动作分解，整体为一个${duration}s镜头，可以跳过重复帧，时间轴按实际动作节奏分配。${actionSuggestion}`
+            : `把${gridLabel}分镜图的画面嵌入分镜脚本模板的空白画面框里，同时只在模板原本说明栏填写镜头号、时间轴、景别、运镜、动作说明、音效。不覆盖分镜画面。写一个${duration}s电影级分镜脚本。${actionSuggestion}`;
+
+          const sizeMap: Record<string, string> = {
+            '16:9': '1536x1024',
+            '9:16': '1024x1536',
+            '1:1': '1024x1024',
+          };
+
+          const res = await fetch('/api/image/gpt-image', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image: displayImage, inputType, duration, scriptMode, ratio, storyPrompt: actionSuggestion }),
+            body: JSON.stringify({
+              prompt,
+              model: 'gpt-image-2',
+              size: sizeMap[ratio || '16:9'] || '1536x1024',
+              quality: 'high',
+              images: [displayImage, templateBase64],
+            }),
           });
           const data = await res.json();
           clearInterval(progressTimer);
           if (!res.ok) throw new Error(data.error || '请求失败');
-          update({ generatedImage: data.imageData, isGenerating: false, generationProgress: 100 });
+          update({ generatedImage: data.imageUrl, isGenerating: false, generationProgress: 100 });
         } else {
           const res = await fetch('/api/gem/generate-solo-motion', {
             method: 'POST',
@@ -193,8 +229,9 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
             body: JSON.stringify({ image: displayImage, actionSuggestion, inputType }),
           });
           const data = await res.json();
+          clearInterval(progressTimer);
           if (!res.ok) throw new Error(data.error || '请求失败');
-          update({ result: data.final_video_prompt, isGenerating: false });
+          update({ result: data.final_video_prompt, isGenerating: false, generationProgress: 0 });
           pushResultToDownstream(data.final_video_prompt);
         }
       } catch (err: any) {
