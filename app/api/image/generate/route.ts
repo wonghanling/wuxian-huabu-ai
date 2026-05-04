@@ -197,6 +197,7 @@ export async function POST(req: NextRequest) {
         }
         const gptEndpoint = allImages.length > 0 ? 'openai/gpt-image-2/edit' : 'openai/gpt-image-2';
         if (allImages.length > 0) input.image_urls = allImages;
+        console.log('[gpt-image-2] input:', JSON.stringify(input));
 
         const submitted = await fal.queue.submit(gptEndpoint, { input });
         const requestId = submitted.request_id;
