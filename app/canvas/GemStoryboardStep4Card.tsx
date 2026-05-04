@@ -40,6 +40,7 @@ export type GemStep4CardShape = TLBaseShape<
     duration?: string;
     scriptMode?: 'normal' | 'detail';
     ratio?: '16:9' | '9:16' | '1:1';
+    generationProgress?: number;
   }
 >;
 
@@ -59,6 +60,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
     duration: T.string.optional() as any,
     scriptMode: T.string.optional() as any,
     ratio: T.string.optional() as any,
+    generationProgress: T.number.optional() as any,
   };
 
   override isAspectRatioLocked = () => false;
@@ -85,7 +87,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
   }
 
   component(shape: GemStep4CardShape) {
-    const { w, h, actionSuggestion, result, generatedImage, isGenerating, isMinimized, duration, scriptMode, ratio } = shape.props;
+    const { w, h, actionSuggestion, result, generatedImage, isGenerating, isMinimized, duration, scriptMode, ratio, generationProgress } = shape.props;
     const editor = useEditor();
     const [image, setImage] = useState<string>('');
     const [copied, setCopied] = useState(false);
@@ -163,9 +165,17 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
 
     const generate = async () => {
       if (!displayImage) { alert('请上传或连接图片'); return; }
-      update({ isGenerating: true, result: '', generatedImage: '' });
+      update({ isGenerating: true, result: '', generatedImage: '', generationProgress: 5 });
+
+      // 假进度条
+      let progress = 5;
+      const progressTimer = setInterval(() => {
+        progress = Math.min(progress + 3, 90);
+        const ls = editor.getShape(shape.id) as any;
+        if (ls) editor.updateShape({ id: shape.id, type: 'gem-step4-card' as any, props: { ...ls.props, generationProgress: progress } });
+      }, 3000);
+
       try {
-        // 4宫格/9宫格 → 图片生成
         if (inputType === '2x2' || inputType === '3x3') {
           const res = await fetch('/api/gem/generate-storyboard-image', {
             method: 'POST',
@@ -173,10 +183,10 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
             body: JSON.stringify({ image: displayImage, inputType, duration, scriptMode, ratio, storyPrompt: actionSuggestion }),
           });
           const data = await res.json();
+          clearInterval(progressTimer);
           if (!res.ok) throw new Error(data.error || '请求失败');
-          update({ generatedImage: data.imageData, isGenerating: false });
+          update({ generatedImage: data.imageData, isGenerating: false, generationProgress: 100 });
         } else {
-          // 单图 → 文字输出
           const res = await fetch('/api/gem/generate-solo-motion', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -188,8 +198,9 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
           pushResultToDownstream(data.final_video_prompt);
         }
       } catch (err: any) {
+        clearInterval(progressTimer);
         alert('生成失败: ' + err.message);
-        update({ isGenerating: false });
+        update({ isGenerating: false, generationProgress: 0 });
       }
     };
 
@@ -371,6 +382,20 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
                 }`}>
                 {isGenerating ? (inputType === 'single' ? '分析中...' : '生成中...') : (inputType === 'single' ? '生成运动指令' : '生成分镜脚本')}
               </button>
+
+              {/* 进度条 */}
+              {isGenerating && (inputType === '2x2' || inputType === '3x3') && (
+                <div className="flex-shrink-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] text-gray-400">生成中...</span>
+                    <span className="text-[10px] text-gray-300">{generationProgress || 0}%</span>
+                  </div>
+                  <div className="w-full bg-white/10 rounded-full h-1 overflow-hidden">
+                    <div className="bg-sky-400 h-1 rounded-full transition-all duration-1000"
+                      style={{ width: `${generationProgress || 0}%` }} />
+                  </div>
+                </div>
+              )}
 
               {/* 单图文字结果 */}
               {inputType === 'single' && result && (
