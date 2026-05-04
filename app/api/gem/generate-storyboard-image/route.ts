@@ -46,6 +46,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ imageData: imageUrl });
   } catch (error: any) {
     console.error('StoryboardImage 错误:', error);
-    return NextResponse.json({ error: error.message || '服务器错误' }, { status: 500 });
+    console.error('StoryboardImage error body:', JSON.stringify(error?.body));
+    return NextResponse.json({ error: error.message || '服务器错误', body: error?.body }, { status: 500 });
   }
 }
