@@ -140,8 +140,9 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
             textPrompt = sp.result;
           } else if (srcType === 'gem-step3-card' && sp.result) {
             textPrompt = sp.result;
-          } else if (srcType === 'gem-step4-card' && sp.result) {
-            textPrompt = sp.result + '\nAvoid sudden state changes without intermediate motion. Always describe transitional movement between states.\nno grid, no panels, no borders, no collage layout, maintain scene continuity, follow visible continuity, if scene change exists follow it, if no scene change do not add one, do not describe frame numbers.\nAvoid sudden state changes without intermediate motion. Always describe transitional movement between states.';
+          } else if (srcType === 'gem-step4-card') {
+            if (sp.generatedImage) imageUrls.push(sp.generatedImage);
+            if (sp.result) textPrompt = sp.result + '\nAvoid sudden state changes without intermediate motion. Always describe transitional movement between states.\nno grid, no panels, no borders, no collage layout, maintain scene continuity, follow visible continuity, if scene change exists follow it, if no scene change do not add one, do not describe frame numbers.';
           } else if (srcType === 'prompt-optimizer-card' && sp.optimizedPrompt) {
             textPrompt = sp.optimizedPrompt;
           }
