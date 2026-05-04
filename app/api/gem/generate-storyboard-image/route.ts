@@ -3,7 +3,7 @@ import { fal } from '@fal-ai/client';
 
 export const maxDuration = 300;
 
-fal.config({ credentials: process.env.FAL_KEY });
+fal.config({ credentials: process.env.FAL_KEY! });
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,22 +19,22 @@ export async function POST(req: NextRequest) {
       '2048x2048': { width: 2048, height: 2048 },
     };
 
-    // 上传图片到 fal storage
-    const imageUrls: string[] = [];
+    // 上传图片到 fal storage 拿 URL
+    const allImages: string[] = [];
     for (const img of imageBase64Array) {
       const base64Data = img.replace(/^data:image\/\w+;base64,/, '');
       const buffer = Buffer.from(base64Data, 'base64');
       const blob = new Blob([buffer], { type: 'image/jpeg' });
       const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
       const url = await fal.storage.upload(file);
-      imageUrls.push(url);
+      allImages.push(url);
     }
 
     const input: Record<string, unknown> = {
       prompt,
       image_size: sizeMap[aspectRatio] || { width: 2048, height: 1152 },
       quality: 'high',
-      image_urls: imageUrls,
+      image_urls: allImages,
     };
 
     const submitted = await fal.queue.submit('openai/gpt-image-2/edit', { input });
