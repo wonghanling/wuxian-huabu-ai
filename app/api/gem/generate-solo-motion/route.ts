@@ -5,7 +5,76 @@ export const maxDuration = 120;
 const YUNWU_BASE_URL = 'https://api.n1n.ai';
 const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
 
-const SYSTEM_SINGLE = ``;
+const SYSTEM_SINGLE = `You are a cinematic image-to-video prompt engineer.
+
+Task:
+Analyze the uploaded single reference image and convert it into one precise video generation prompt.
+
+Input Priority:
+The image defines the visual anchor: subject identity, appearance, pose, environment, lighting, composition, and style.
+Character Hint defines additional character identity, personality, movement style, expression tone, and continuity details.
+User Direction defines the main action, story movement, emotion, pacing, or cinematic intent.
+Follow User Direction as the main motion plan, as long as it remains visually compatible with the image.
+
+Image Fidelity Rule:
+The reference image is the visual source of truth.
+The video must begin from the exact visible pose, position, environment, lighting, and style of the image.
+Preserve the visible subject, character design, clothing, colors, proportions, environment, lighting, and overall style.
+Do not replace the subject, change the location, add unrelated objects, or invent a different scene unless the user explicitly requests it.
+Do not contradict clearly visible image details.
+
+Character Hint Rule:
+Use Character Hint to guide character identity, personality, movement style, expression tone, and continuity.
+Character Hint may clarify details that are not obvious in the image.
+Character Hint must not override clearly visible image details.
+
+User Direction Rule:
+Use User Direction as the main action and story plan.
+If the User Direction is specific and visually compatible with the image, follow it closely.
+If the User Direction is vague, extend the image with the most natural cinematic motion implied by the pose, environment, and Character Hint.
+If the User Direction conflicts with the image, preserve the image and only use the compatible parts of the direction.
+
+Motion Design:
+Transform the still image into a playable cinematic action.
+Start from the exact visible pose in the image.
+Describe how the motion begins, develops, and settles.
+Use anticipation, transition, follow-through, and settling when physically necessary.
+Avoid sudden state changes without intermediate motion.
+
+Motion Logic:
+If character-driven, describe pose change, weight shift, support point, contact point, direction, speed, expression, and settling.
+If object-driven, describe position, rotation, contact, momentum, path, speed, and settling.
+If environment-driven, let the camera or atmosphere carry the motion through spatial depth, perspective shift, parallax, foreground-midground-background movement, light, weather, or a clear cinematic cut.
+
+Action Intensity Rule:
+Do not soften, downgrade, or understate the action requested by the user if it is visually compatible with the image.
+If the user requests strong motion, preserve the same physical intensity and describe the transition into it.
+If the image pose is calm but the user requests strong action, include a clear buildup from the original pose before the strong action happens.
+
+Camera:
+Use simple, stable, cinematic camera language.
+The camera should support the action, not fake it.
+Use slow push-in, gentle tracking, static framing, close-up, medium shot, low angle, or slight handheld only when appropriate.
+For environment-driven shots, camera movement may lead, but must remain spatially clear and motivated.
+
+Continuity:
+Maintain subject, scene, lighting, and style continuity unless the user explicitly asks for a change.
+Always describe transitional movement between the starting image state and the requested action.
+Do not introduce unrelated characters, locations, objects, or story events.
+
+Final Output Rules:
+Output one complete video generation prompt.
+Use only:
+[Camera]
+...
+[Action]
+...
+[Constraints]
+...
+
+Do not mention reference image, uploaded image, analysis, grid, panels, cells, or frames.
+Do not include explanations.
+Write in concise, production-ready cinematic language.`;
 
 const SYSTEM_2X2 = `You are a cinematic animation storyboard interpreter and video prompt engineer.
 
@@ -177,51 +246,15 @@ export async function POST(req: NextRequest) {
       userText = extraHints ? `Additional context: ${extraHints}` : '';
     } else {
       systemPrompt = SYSTEM_SINGLE;
-      userText = `user_direction: ${directionLine || 'none'}
-
-Analyze the image. Output VALID JSON ONLY matching this exact schema:
-{"transition_type":"","motion_intent":"","duration_control":"","keep_static":[],"camera_control":{"movement":"","intensity":""},"final_video_prompt":""}
-
-No markdown. No explanation. JSON only.`;
+      const hints = [characterHint && `Character Hint: ${characterHint}`, actionSuggestion && `User Direction: ${actionSuggestion}`].filter(Boolean).join('\n');
+      userText = hints || 'User Direction: none';
     }
 
     const raw = await callGPT(image, systemPrompt, userText);
     console.log('[SoloMotion] raw:', raw.slice(0, 300));
 
-    // 2x2 和 3x3 是纯文本，直接用原始输出
-    if (inputType === '2x2' || inputType === '3x3') {
-      return NextResponse.json({ final_video_prompt: raw.trim() });
-    }
-
-    // 解析 JSON 输出，拼成可读 prompt
-    let finalPrompt = raw;
-    try {
-      const jsonMatch = raw.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        if (parsed.shots) {
-          finalPrompt = parsed.shots
-            .map((s: any) => {
-              const parts = [s.camera, s.action, s.environment, s.mood].filter(Boolean).join(', ');
-              return `Shot ${s.shot}: ${parts}`;
-            })
-            .join('\n');
-        } else if (parsed.shot) {
-          const s = parsed.shot;
-          finalPrompt = [s.camera, s.action, s.environment, s.mood].filter(Boolean).join(', ');
-        } else if (parsed.final_video_prompt) {
-          finalPrompt = parsed.final_video_prompt;
-        } else {
-          finalPrompt = [parsed.camera, parsed.action, parsed.timing, parsed.narrative_emotion, parsed.constraints]
-            .filter(Boolean).join(', ');
-        }
-      }
-    } catch {
-      // JSON 解析失败就直接用原始输出
-    }
-
-    const cleaned = finalPrompt.trim();
-    return NextResponse.json({ final_video_prompt: cleaned });
+    // 所有模式直接返回原始输出
+    return NextResponse.json({ final_video_prompt: raw.trim() });
   } catch (error: any) {
     console.error('SoloMotion 错误:', error);
     return NextResponse.json({ error: error.message || '服务器错误' }, { status: 500 });

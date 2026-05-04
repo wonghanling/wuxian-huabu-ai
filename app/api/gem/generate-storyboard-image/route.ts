@@ -12,10 +12,10 @@ export async function POST(req: NextRequest) {
     if (!prompt) return NextResponse.json({ error: '缺少 prompt' }, { status: 400 });
     if (!imageBase64Array || imageBase64Array.length === 0) return NextResponse.json({ error: '缺少图片' }, { status: 400 });
 
-    const sizeMap: Record<string, string> = {
-      '2048x1152': 'landscape_16_9',
-      '2160x3840': 'portrait_16_9',
-      '2048x2048': 'square_hd',
+    const sizeMap: Record<string, { width: number; height: number }> = {
+      '2048x1152': { width: 2048, height: 1152 },
+      '2160x3840': { width: 2160, height: 3840 },
+      '2048x2048': { width: 2048, height: 2048 },
     };
 
     // 上传图片到 fal storage 拿 URL
@@ -30,20 +30,11 @@ export async function POST(req: NextRequest) {
       allImages.push(url);
     }
 
-    const input = {
-      prompt,
-      image_urls: allImages,
-      image_size: sizeMap[aspectRatio] || 'landscape_16_9',
-      quality: 'high',
-      num_images: 1,
-      output_format: 'jpeg',
-    };
-
     const submitted = await fal.queue.submit('openai/gpt-image-2/edit', {
       input: {
         prompt,
         image_urls: allImages,
-        image_size: sizeMap[aspectRatio] || 'landscape_16_9',
+        image_size: sizeMap[aspectRatio] || { width: 2048, height: 1152 },
         quality: 'high',
         num_images: 1,
         output_format: 'jpeg',
