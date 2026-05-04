@@ -207,14 +207,12 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
             '1:1': '2048x2048',
           };
 
-          const res = await fetch('/api/image/generate', {
+          const res = await fetch('/api/gem/generate-storyboard-image', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              model: 'gpt-image-2-all',
               prompt,
               aspectRatio: sizeMap[ratio || '16:9'] || '2048x1152',
-              imageQuality: 'high',
               imageBase64Array: [displayImage, templateBase64],
             }),
           });
