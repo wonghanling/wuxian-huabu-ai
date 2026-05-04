@@ -202,9 +202,9 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
             : `把${gridLabel}分镜图的画面嵌入分镜脚本模板的空白画面框里，同时只在模板原本说明栏填写镜头号、时间轴、景别、运镜、动作说明、音效。不覆盖分镜画面。写一个${duration}s电影级分镜脚本。${actionSuggestion}`;
 
           const sizeMap: Record<string, string> = {
-            '16:9': '1536x1024',
-            '9:16': '1024x1536',
-            '1:1': '1024x1024',
+            '16:9': '2048x1152',
+            '9:16': '2160x3840',
+            '1:1': '2048x2048',
           };
 
           const res = await fetch('/api/image/generate', {
@@ -213,7 +213,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
             body: JSON.stringify({
               prompt,
               model: 'gpt-image-2',
-              aspectRatio: sizeMap[ratio || '16:9'] || '1536x1024',
+              aspectRatio: sizeMap[ratio || '16:9'] || '2048x1152',
               imageQuality: 'high',
               imageBase64Array: [displayImage, templateBase64],
             }),
