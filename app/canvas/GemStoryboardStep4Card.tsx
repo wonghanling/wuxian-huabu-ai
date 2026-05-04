@@ -107,6 +107,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
           reader.onload = (e) => resolve(e.target?.result as string);
           reader.readAsDataURL(blob);
         }))
+        .then(b64 => compressImage(b64, 2048, 0.92))
         .then(b64 => setTemplateBase64(b64))
         .catch(() => {});
     }, []);
