@@ -31,11 +31,14 @@ export type GemStep4CardShape = TLBaseShape<
   {
     w: number;
     h: number;
-    characterHint: string;
     actionSuggestion: string;
     result: string;
+    generatedImage: string;
     isGenerating: boolean;
     isMinimized: boolean;
+    duration: string;
+    scriptMode: 'normal' | 'detail';
+    ratio: '16:9' | '9:16' | '1:1';
   }
 >;
 
@@ -46,11 +49,14 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
   static override props: RecordProps<GemStep4CardShape> = {
     w: T.number,
     h: T.number,
-    characterHint: T.string,
     actionSuggestion: T.string,
     result: T.string,
+    generatedImage: T.string,
     isGenerating: T.boolean,
     isMinimized: T.boolean,
+    duration: T.string,
+    scriptMode: T.string as any,
+    ratio: T.string as any,
   };
 
   override isAspectRatioLocked = () => false;
@@ -60,12 +66,15 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
   getDefaultProps(): GemStep4CardShape['props'] {
     return {
       w: 380,
-      h: 480,
-      characterHint: '',
+      h: 520,
       actionSuggestion: '',
       result: '',
+      generatedImage: '',
       isGenerating: false,
       isMinimized: false,
+      duration: '5',
+      scriptMode: 'normal',
+      ratio: '16:9',
     };
   }
 
@@ -74,17 +83,17 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
   }
 
   component(shape: GemStep4CardShape) {
-    const { w, h, characterHint, actionSuggestion, result, isGenerating, isMinimized } = shape.props;
+    const { w, h, actionSuggestion, result, generatedImage, isGenerating, isMinimized, duration, scriptMode, ratio } = shape.props;
     const editor = useEditor();
     const [image, setImage] = useState<string>('');
     const [copied, setCopied] = useState(false);
     const [inputType, setInputType] = useState<'single' | '2x2' | '3x3'>('single');
+    const [lightbox, setLightbox] = useState(false);
 
     const update = (props: Partial<GemStep4CardShape['props']>) => {
       editor.updateShape({ id: shape.id, type: 'gem-step4-card' as any, props: { ...shape.props, ...props } });
     };
 
-    // 实时读取连接的上游图片卡片（1张）
     const getConnectedImage = (): string => {
       const inputBindings = editor.getBindingsToShape(shape.id, 'connection');
       for (const binding of inputBindings) {
@@ -106,7 +115,6 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
 
     const APPEND_SUFFIX = '\nAvoid sudden state changes without intermediate motion. Always describe transitional movement between states.\nno grid, no panels, no borders, no collage layout, maintain scene continuity, follow visible continuity, if scene change exists follow it, if no scene change do not add one, do not describe frame numbers.';
 
-    // 生成完后推送 result 到连接的下游视频卡片
     const pushResultToDownstream = (resultText: string) => {
       const textWithSuffix = resultText + APPEND_SUFFIX;
       const outBindings = editor.getBindingsFromShape(shape.id, 'connection');
@@ -130,21 +138,13 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
     const handleOutputPortDown = (e: React.MouseEvent) => {
       e.stopPropagation();
       e.preventDefault();
-      editor.setCurrentTool('port', {
-        shapeId: shape.id,
-        portId: 'output',
-        terminal: 'start',
-      });
+      editor.setCurrentTool('port', { shapeId: shape.id, portId: 'output', terminal: 'start' });
     };
 
     const handleInputPortDown = (e: React.MouseEvent) => {
       e.stopPropagation();
       e.preventDefault();
-      editor.setCurrentTool('port', {
-        shapeId: shape.id,
-        portId: 'input',
-        terminal: 'end',
-      });
+      editor.setCurrentTool('port', { shapeId: shape.id, portId: 'input', terminal: 'end' });
     };
 
     const loadImage = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -161,17 +161,30 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
 
     const generate = async () => {
       if (!displayImage) { alert('请上传或连接图片'); return; }
-      update({ isGenerating: true, result: '' });
+      update({ isGenerating: true, result: '', generatedImage: '' });
       try {
-        const res = await fetch('/api/gem/generate-solo-motion', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image: displayImage, characterHint, actionSuggestion, inputType }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || '请求失败');
-        update({ result: data.final_video_prompt, isGenerating: false });
-        pushResultToDownstream(data.final_video_prompt);
+        // 4宫格/9宫格 → 图片生成
+        if (inputType === '2x2' || inputType === '3x3') {
+          const res = await fetch('/api/gem/generate-storyboard-image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: displayImage, inputType, duration, scriptMode, ratio, storyPrompt: actionSuggestion }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || '请求失败');
+          update({ generatedImage: data.imageData, isGenerating: false });
+        } else {
+          // 单图 → 文字输出
+          const res = await fetch('/api/gem/generate-solo-motion', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: displayImage, actionSuggestion, inputType }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || '请求失败');
+          update({ result: data.final_video_prompt, isGenerating: false });
+          pushResultToDownstream(data.final_video_prompt);
+        }
       } catch (err: any) {
         alert('生成失败: ' + err.message);
         update({ isGenerating: false });
@@ -180,35 +193,45 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
 
     const toggleMinimize = (e: React.MouseEvent) => {
       e.stopPropagation();
-      update({ isMinimized: !isMinimized, w: isMinimized ? 380 : 160, h: isMinimized ? 480 : 60 });
+      update({ isMinimized: !isMinimized, w: isMinimized ? 380 : 160, h: isMinimized ? 520 : 60 });
+    };
+
+    const downloadImage = () => {
+      if (!generatedImage) return;
+      const link = document.createElement('a');
+      link.href = generatedImage;
+      link.download = `storyboard-${Date.now()}.png`;
+      link.click();
     };
 
     return (
       <HTMLContainer style={{ width: w, height: h, pointerEvents: 'all', overflow: 'visible' }}>
+        {/* lightbox */}
+        {lightbox && generatedImage && (
+          <div className="fixed inset-0 z-[99999] bg-black/80 flex items-center justify-center"
+            onClick={() => setLightbox(false)} onPointerDown={(e) => e.stopPropagation()}>
+            <div className="relative" style={{ maxWidth: '85vw', maxHeight: '85vh' }} onClick={(e) => e.stopPropagation()}>
+              <img src={generatedImage} alt="分镜脚本" className="rounded-xl object-contain" style={{ maxWidth: '85vw', maxHeight: '85vh' }} />
+              <button className="absolute -top-3 -right-3 w-7 h-7 bg-zinc-800 hover:bg-zinc-700 border border-white/20 rounded-full text-white text-sm flex items-center justify-center"
+                onClick={() => setLightbox(false)} onPointerDown={(e) => e.stopPropagation()}>✕</button>
+            </div>
+          </div>
+        )}
+
         {/* 输出端口 - Right */}
-        <div
-          className="absolute top-1/2 -translate-y-1/2 cursor-crosshair group"
+        <div className="absolute top-1/2 -translate-y-1/2 cursor-crosshair group"
           style={{ right: '-6px', zIndex: 101, pointerEvents: 'all' }}
-          data-port-type="output"
-          data-node-id={shape.id}
-          onMouseDown={handleOutputPortDown}
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-        >
+          data-port-type="output" data-node-id={shape.id}
+          onMouseDown={handleOutputPortDown} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
           <div className="w-3 h-3 rounded-full transition-all group-hover:scale-150"
             style={{ backgroundColor: '#27272a', border: '2px solid rgba(192,192,192,0.8)', boxShadow: '0 0 8px rgba(192,192,192,0.4)', pointerEvents: 'none' }} />
         </div>
 
         {/* 输入端口 - Left */}
-        <div
-          className="absolute top-1/2 -translate-y-1/2 cursor-crosshair group"
+        <div className="absolute top-1/2 -translate-y-1/2 cursor-crosshair group"
           style={{ left: '-6px', zIndex: 101, pointerEvents: 'all' }}
-          data-port-type="input"
-          data-node-id={shape.id}
-          onMouseDown={handleInputPortDown}
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-        >
+          data-port-type="input" data-node-id={shape.id}
+          onMouseDown={handleInputPortDown} onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
           <div className="w-3 h-3 rounded-full transition-all group-hover:scale-150"
             style={{ backgroundColor: '#27272a', border: '2px solid rgba(192,192,192,0.8)', boxShadow: '0 0 8px rgba(192,192,192,0.4)', pointerEvents: 'none' }} />
         </div>
@@ -218,38 +241,81 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/8 flex-shrink-0">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-sky-400"></div>
-              <span className="text-white text-sm font-semibold">GEM 导演引擎 · Step 3-Solo</span>
-              <span className="text-gray-500 text-xs">单图运动</span>
+              <span className="text-white text-sm font-semibold">GEM 导演引擎 · Step 4</span>
+              <span className="text-gray-500 text-xs">分镜脚本</span>
             </div>
-            <button
-              onClick={toggleMinimize}
-              onPointerDown={(e) => e.stopPropagation()}
-              className="w-6 h-6 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all text-sm"
-            >
+            <button onClick={toggleMinimize} onPointerDown={(e) => e.stopPropagation()}
+              className="w-6 h-6 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all text-sm">
               {isMinimized ? '+' : '−'}
             </button>
           </div>
 
           {!isMinimized && (
-            <div className="flex-1 flex flex-col overflow-hidden p-3 gap-2">
+            <div className="flex-1 flex flex-col overflow-y-auto p-3 gap-2">
 
-              {/* 输入类型选择 */}
+              {/* 模式选择 */}
               <div className="flex gap-1 flex-shrink-0">
                 {([['single', '单图'], ['2x2', '4宫格'], ['3x3', '9宫格']] as const).map(([val, label]) => (
-                  <button
-                    key={val}
+                  <button key={val}
                     onClick={(e) => { e.stopPropagation(); setInputType(val); }}
                     onPointerDown={(e) => e.stopPropagation()}
-                    className={`flex-1 py-1 rounded-lg text-[10px] font-medium transition-all ${
-                      inputType === val
-                        ? 'bg-sky-600 text-white'
-                        : 'bg-white/5 text-gray-400 hover:bg-white/10'
-                    }`}
-                  >
+                    className={`flex-1 py-1 rounded-lg text-[10px] font-medium transition-all ${inputType === val ? 'bg-sky-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
                     {label}
                   </button>
                 ))}
               </div>
+
+              {/* 4宫格/9宫格专属设置 */}
+              {(inputType === '2x2' || inputType === '3x3') && (
+                <>
+                  {/* 脚本模式 */}
+                  <div className="flex gap-1 flex-shrink-0">
+                    {([['normal', '普通分镜脚本'], ['detail', '细化动作脚本']] as const).map(([val, label]) => (
+                      <button key={val}
+                        onClick={(e) => { e.stopPropagation(); update({ scriptMode: val }); }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        className={`flex-1 py-1 rounded-lg text-[10px] font-medium transition-all ${scriptMode === val ? 'bg-violet-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* 秒数 */}
+                  <div className="flex-shrink-0">
+                    <label className="text-[10px] text-gray-400 mb-1 block">时长</label>
+                    <div className="flex gap-1 flex-wrap">
+                      {['4', '5', '6', '8', '10', '12', '15'].map((d) => (
+                        <button key={d}
+                          onClick={(e) => { e.stopPropagation(); update({ duration: d }); }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          className={`px-2 py-1 rounded-lg text-[10px] font-medium transition-all ${duration === d ? 'bg-sky-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
+                          {d}s
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 比例+清晰度 */}
+                  <div className="flex-shrink-0">
+                    <label className="text-[10px] text-gray-400 mb-1 block">输出比例</label>
+                    <div className="flex gap-1">
+                      {([
+                        ['16:9', '16:9', '1536×1024'],
+                        ['9:16', '9:16', '1024×1536'],
+                        ['1:1', '1:1', '1024×1024'],
+                      ] as const).map(([val, label, res]) => (
+                        <button key={val}
+                          onClick={(e) => { e.stopPropagation(); update({ ratio: val }); }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          className={`flex-1 py-1 rounded-lg text-[10px] font-medium transition-all flex flex-col items-center ${ratio === val ? 'bg-sky-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
+                          <span>{label}</span>
+                          <span className={`text-[8px] ${ratio === val ? 'text-sky-200' : 'text-gray-600'}`}>{res}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* 图片上传区 */}
               <div className="flex-shrink-0">
@@ -259,8 +325,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
                 <label
                   className="relative flex items-center justify-center w-full rounded-lg overflow-hidden border border-dashed cursor-pointer transition-all bg-black/20"
                   style={{ aspectRatio: '16/9', borderColor: connectedImage ? 'rgba(56,189,248,0.4)' : 'rgba(255,255,255,0.15)' }}
-                  onPointerDown={(e) => e.stopPropagation()}
-                >
+                  onPointerDown={(e) => e.stopPropagation()}>
                   {displayImage ? (
                     <>
                       <img src={displayImage} alt="input" className="w-full h-full object-cover" />
@@ -277,36 +342,14 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
                 </label>
               </div>
 
-              {/* Character Hint */}
+              {/* 剧情引导 */}
               <div className="flex-shrink-0">
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-[10px] text-gray-400">Character Hint（可选）</label>
-                  <button
-                    className="text-[10px] text-gray-500 hover:text-gray-300 transition-colors"
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      const text = await navigator.clipboard.readText();
-                      if (text) update({ characterHint: text });
-                    }}
-                    onPointerDown={(e) => e.stopPropagation()}
-                  >粘贴</button>
-                </div>
+                <label className="text-[10px] text-gray-400 mb-1 block">
+                  {inputType === 'single' ? '剧情引导（可选）' : '剧情说明（可选）'}
+                </label>
                 <input
                   className="w-full bg-black/30 border border-white/8 rounded-lg px-2 py-1.5 text-gray-300 text-[10px] focus:outline-none focus:border-white/15 placeholder-gray-600"
-                  placeholder="Character reference: silver-white hair, mechanical right arm..."
-                  value={characterHint}
-                  onClick={(e) => e.stopPropagation()}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onChange={(e) => update({ characterHint: e.target.value })}
-                />
-              </div>
-
-              {/* Action Suggestion */}
-              <div className="flex-shrink-0">
-                <label className="text-[10px] text-gray-400 mb-1 block">剧情引导（可选）</label>
-                <input
-                  className="w-full bg-black/30 border border-white/8 rounded-lg px-2 py-1.5 text-gray-300 text-[10px] focus:outline-none focus:border-white/15 placeholder-gray-600"
-                  placeholder="例如：他很害怕然后逃跑、慢慢转身离开..."
+                  placeholder={inputType === 'single' ? '例如：他很害怕然后逃跑...' : '例如：一个武士在雨中决斗...'}
                   value={actionSuggestion}
                   onClick={(e) => e.stopPropagation()}
                   onPointerDown={(e) => e.stopPropagation()}
@@ -323,13 +366,12 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
                   isGenerating || !displayImage
                     ? 'bg-white/5 text-gray-500 cursor-not-allowed'
                     : 'bg-emerald-700 hover:bg-emerald-600 text-white shadow-lg'
-                }`}
-              >
-                {isGenerating ? '分析中...' : '生成运动指令'}
+                }`}>
+                {isGenerating ? (inputType === 'single' ? '分析中...' : '生成中...') : (inputType === 'single' ? '生成运动指令' : '生成分镜脚本')}
               </button>
 
-              {/* 结果输出 */}
-              {result && (
+              {/* 单图文字结果 */}
+              {inputType === 'single' && result && (
                 <div className="flex-1 flex flex-col min-h-0">
                   <div className="flex-1 bg-black/40 border border-sky-500/20 rounded-xl p-2 flex flex-col min-h-0">
                     <div className="flex items-center justify-between mb-1.5 flex-shrink-0">
@@ -342,8 +384,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
                           setTimeout(() => setCopied(false), 2000);
                         }}
                         onPointerDown={(e) => e.stopPropagation()}
-                        className="text-[10px] text-sky-400 hover:text-sky-300 transition-colors"
-                      >
+                        className="text-[10px] text-sky-400 hover:text-sky-300 transition-colors">
                         {copied ? '已复制 ✓' : '复制'}
                       </button>
                     </div>
@@ -351,6 +392,31 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
                   </div>
                 </div>
               )}
+
+              {/* 4宫格/9宫格图片结果 */}
+              {(inputType === '2x2' || inputType === '3x3') && generatedImage && (
+                <div className="flex-shrink-0">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10px] text-sky-400 font-semibold">分镜脚本图</span>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setLightbox(true); }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        className="text-[10px] text-sky-400 hover:text-sky-300 transition-colors">放大</button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); downloadImage(); }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        className="text-[10px] text-emerald-400 hover:text-emerald-300 transition-colors">下载</button>
+                    </div>
+                  </div>
+                  <div className="relative w-full rounded-xl overflow-hidden border border-sky-500/20 cursor-pointer"
+                    onClick={(e) => { e.stopPropagation(); setLightbox(true); }}
+                    onPointerDown={(e) => e.stopPropagation()}>
+                    <img src={generatedImage} alt="分镜脚本" className="w-full h-auto" />
+                  </div>
+                </div>
+              )}
+
             </div>
           )}
         </div>
