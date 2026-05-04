@@ -211,8 +211,8 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+              model: 'gpt-image-2-all',
               prompt,
-              model: 'gpt-image-2',
               aspectRatio: sizeMap[ratio || '16:9'] || '2048x1152',
               imageQuality: 'high',
               imageBase64Array: [displayImage, templateBase64],
@@ -222,34 +222,39 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
           if (!res.ok) throw new Error(data.error || '请求失败');
 
           if (data.pending && data.requestId) {
-            const falEndpoint = 'openai/gpt-image-2/edit';
+            const falEndpoint = data.endpoint || 'openai/gpt-image-2/edit';
             let attempts = 0;
             const poll = async (): Promise<void> => {
               attempts++;
+              await new Promise(r => setTimeout(r, 3000));
               try {
+                const progress = Math.min(20 + attempts * 5, 90);
+                const ls = editor.getShape(shape.id) as any;
+                if (ls) editor.updateShape({ id: shape.id, type: 'gem-step4-card' as any, props: { ...ls.props, generationProgress: progress } });
                 const qRes = await fetch(`/api/image/fal-query?requestId=${encodeURIComponent(data.requestId)}&endpoint=${encodeURIComponent(falEndpoint)}`);
                 const qData = await qRes.json();
-                const ls = editor.getShape(shape.id) as any;
-                const lp = ls ? ls.props : shape.props;
                 if (qData.success && qData.imageUrl) {
                   clearInterval(progressTimer);
-                  editor.updateShape({ id: shape.id, type: 'gem-step4-card' as any, props: { ...lp, generatedImage: qData.imageUrl, isGenerating: false, generationProgress: 100 } });
+                  const ls2 = editor.getShape(shape.id) as any;
+                  editor.updateShape({ id: shape.id, type: 'gem-step4-card' as any, props: { ...ls2.props, generatedImage: qData.imageUrl, isGenerating: false, generationProgress: 100 } });
                 } else if (qData.error) {
                   clearInterval(progressTimer);
-                  editor.updateShape({ id: shape.id, type: 'gem-step4-card' as any, props: { ...lp, isGenerating: false, generationProgress: 0 } });
+                  const ls2 = editor.getShape(shape.id) as any;
+                  editor.updateShape({ id: shape.id, type: 'gem-step4-card' as any, props: { ...ls2.props, isGenerating: false, generationProgress: 0 } });
                   alert('生成失败: ' + qData.error);
                 } else if (attempts < 60) {
-                  setTimeout(poll, 5000);
+                  poll();
                 } else {
                   clearInterval(progressTimer);
-                  editor.updateShape({ id: shape.id, type: 'gem-step4-card' as any, props: { ...lp, isGenerating: false, generationProgress: 0 } });
+                  const ls2 = editor.getShape(shape.id) as any;
+                  editor.updateShape({ id: shape.id, type: 'gem-step4-card' as any, props: { ...ls2.props, isGenerating: false, generationProgress: 0 } });
                   alert('生成超时，请重试');
                 }
               } catch {
-                if (attempts < 60) setTimeout(poll, 5000);
+                if (attempts < 60) poll();
               }
             };
-            setTimeout(poll, 5000);
+            poll();
           } else if (data.imageUrl) {
             clearInterval(progressTimer);
             update({ generatedImage: data.imageUrl, isGenerating: false, generationProgress: 100 });
