@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
       output_format: 'jpeg',
     };
 
-    const result = await fal.subscribe('openai/gpt-image-2/edit', {
+    const submitted = await fal.queue.submit('openai/gpt-image-2/edit', {
       input: {
         prompt,
         image_urls: allImages,
@@ -48,14 +48,11 @@ export async function POST(req: NextRequest) {
         num_images: 1,
         output_format: 'jpeg',
       },
-      logs: false,
-    }) as any;
-    console.log('[StoryboardImage] result keys:', Object.keys(result?.data || result || {}));
-    const images = result?.data?.images || result?.images;
-    const imageUrl = images?.[0]?.url;
-    if (!imageUrl) throw new Error('未返回图片: ' + JSON.stringify(result).slice(0, 200));
+    });
+    const requestId = submitted.request_id;
+    if (!requestId) throw new Error('fal.ai 未返回 requestId');
 
-    return NextResponse.json({ imageData: imageUrl });
+    return NextResponse.json({ success: true, requestId, endpoint: 'openai/gpt-image-2/edit', pending: true });
   } catch (error: any) {
     console.error('StoryboardImage 错误:', error);
     console.error('StoryboardImage error body:', JSON.stringify(error?.body));
