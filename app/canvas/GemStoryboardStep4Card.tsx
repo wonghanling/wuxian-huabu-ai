@@ -7,7 +7,7 @@ import {
   useEditor,
   Rectangle2d,
 } from 'tldraw';
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 
 function compressImage(dataUrl: string, maxSize = 1280, quality = 0.85): Promise<string> {
   return new Promise((resolve) => {
@@ -93,24 +93,6 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
     const [copied, setCopied] = useState(false);
     const [inputType, setInputType] = useState<'single' | '2x2' | '3x3'>('single');
     const [lightbox, setLightbox] = useState(false);
-    const [templateBase64, setTemplateBase64] = useState<string>('');
-    const templateLoaded = useRef(false);
-
-    // 预加载模板图
-    useEffect(() => {
-      if (templateLoaded.current) return;
-      templateLoaded.current = true;
-      fetch('/fenjingmuban3X3.jpg')
-        .then(r => r.blob())
-        .then(blob => new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onload = (e) => resolve(e.target?.result as string);
-          reader.readAsDataURL(blob);
-        }))
-        .then(b64 => compressImage(b64, 2048, 0.92))
-        .then(b64 => setTemplateBase64(b64))
-        .catch(() => {});
-    }, []);
 
     const update = (props: Partial<GemStep4CardShape['props']>) => {
       editor.updateShape({ id: shape.id, type: 'gem-step4-card' as any, props: { ...shape.props, ...props } });
@@ -183,7 +165,6 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
 
     const generate = async () => {
       if (!displayImage) { alert('请上传或连接图片'); return; }
-      if ((inputType === '2x2' || inputType === '3x3') && !templateBase64) { alert('模板图加载中，请稍后再试'); return; }
       update({ isGenerating: true, result: '', generatedImage: '', generationProgress: 5 });
 
       let progress = 5;
@@ -195,6 +176,13 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
 
       try {
         if (inputType === '2x2' || inputType === '3x3') {
+          // 生成时临时 fetch 模板图转 base64
+          const templateBlob = await fetch('/fenjingmuban3X3.jpg').then(r => r.blob());
+          const templateB64 = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target?.result as string);
+            reader.readAsDataURL(templateBlob);
+          });
           const isCellMode = scriptMode === 'detail';
           const shotCount = inputType === '2x2' ? 4 : 9;
           const gridLabel = shotCount === 9 ? '9宫格' : '4宫格';
@@ -214,7 +202,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
             body: JSON.stringify({
               prompt,
               aspectRatio: sizeMap[ratio || '16:9'] || '2048x1152',
-              imageBase64Array: [displayImage, templateBase64],
+              imageBase64Array: [displayImage, templateB64],
             }),
           });
           const data = await res.json();
