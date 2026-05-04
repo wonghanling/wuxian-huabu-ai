@@ -37,11 +37,13 @@ export async function POST(req: NextRequest) {
       image_urls: allImages,
     };
 
-    const submitted = await fal.queue.submit('openai/gpt-image-2/edit', { input });
-    const requestId = submitted.request_id;
-    if (!requestId) throw new Error('fal.ai 未返回 requestId');
+    const result = await fal.subscribe('openai/gpt-image-2/edit', { input }) as any;
+    console.log('[StoryboardImage] result keys:', Object.keys(result?.data || result || {}));
+    const images = result?.data?.images || result?.images;
+    const imageUrl = images?.[0]?.url;
+    if (!imageUrl) throw new Error('未返回图片: ' + JSON.stringify(result).slice(0, 200));
 
-    return NextResponse.json({ success: true, requestId, endpoint: 'openai/gpt-image-2/edit', pending: true });
+    return NextResponse.json({ imageData: imageUrl });
   } catch (error: any) {
     console.error('StoryboardImage 错误:', error);
     return NextResponse.json({ error: error.message || '服务器错误' }, { status: 500 });
