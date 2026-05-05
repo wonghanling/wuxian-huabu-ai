@@ -175,89 +175,85 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
       }, 3000);
 
       try {
-        if (inputType === '2x2' || inputType === '3x3') {
-          // 生成时临时 fetch 模板图转 base64
-          const templateFile = inputType === '2x2' ? '/fenjingmuban2x2.jpg' : '/fenjingmuban3X3.jpg';
-          const templateBlob = await fetch(templateFile).then(r => r.blob());
-          const templateB64 = await new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onload = (e) => resolve(e.target?.result as string);
-            reader.readAsDataURL(templateBlob);
-          });
+        const templateFileMap: Record<string, string> = {
+          'single': '/fenjingmuban1.jpg',
+          '2x2': '/fenjingmuban2x2.jpg',
+          '3x3': '/fenjingmuban3X3.jpg',
+        };
+        const templateBlob = await fetch(templateFileMap[inputType]).then(r => r.blob());
+        const templateB64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.readAsDataURL(templateBlob);
+        });
+
+        const sizeMap: Record<string, string> = {
+          '16:9': '2048x1152',
+          '9:16': '2160x3840',
+          '1:1': '2048x2048',
+        };
+
+        let prompt = '';
+        if (inputType === 'single') {
+          prompt = `把单图画面嵌入分镜脚本模板的空白画面框里，同时只在模板原本说明栏填写镜头号、时间轴、景别、运镜、动作说明、音效。不覆盖分镜画面。写一个${duration}s电影级分镜脚本。${actionSuggestion}`;
+        } else {
           const isCellMode = scriptMode === 'detail';
           const shotCount = inputType === '2x2' ? 4 : 9;
           const gridLabel = shotCount === 9 ? '9宫格' : '4宫格';
-          const prompt = isCellMode
+          prompt = isCellMode
             ? `把${gridLabel}分镜图的画面嵌入分镜脚本模板的空白画面框里，同时只在模板原本说明栏填写镜头号、时间轴、景别、运镜、动作说明、音效。不覆盖分镜画面。写一个${duration}s电影级细化动作分镜脚本，这${shotCount}个宫格是细化动作分解，整体为一个${duration}s镜头，可以跳过重复帧，时间轴按实际动作节奏分配。${actionSuggestion}`
             : `把${gridLabel}分镜图的画面嵌入分镜脚本模板的空白画面框里，同时只在模板原本说明栏填写镜头号、时间轴、景别、运镜、动作说明、音效。不覆盖分镜画面。写一个${duration}s电影级分镜脚本。${actionSuggestion}`;
+        }
 
-          const sizeMap: Record<string, string> = {
-            '16:9': '2048x1152',
-            '9:16': '2160x3840',
-            '1:1': '2048x2048',
-          };
+        const res = await fetch('/api/gem/generate-storyboard-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt,
+            aspectRatio: sizeMap[ratio || '16:9'] || '2048x1152',
+            imageBase64Array: [displayImage, templateB64],
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || '请求失败');
 
-          const res = await fetch('/api/gem/generate-storyboard-image', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              prompt,
-              aspectRatio: sizeMap[ratio || '16:9'] || '2048x1152',
-              imageBase64Array: [displayImage, templateB64],
-            }),
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || '请求失败');
-
-          if (data.pending && data.requestId) {
-            const falEndpoint = data.endpoint || 'openai/gpt-image-2/edit';
-            let attempts = 0;
-            const poll = async (): Promise<void> => {
-              attempts++;
-              await new Promise(r => setTimeout(r, 3000));
-              try {
-                const progress = Math.min(20 + attempts * 5, 90);
-                const ls = editor.getShape(shape.id) as any;
-                if (ls) editor.updateShape({ id: shape.id, type: 'gem-step4-card' as any, props: { ...ls.props, generationProgress: progress } });
-                const qRes = await fetch(`/api/image/fal-query?requestId=${encodeURIComponent(data.requestId)}&endpoint=${encodeURIComponent(falEndpoint)}`);
-                const qData = await qRes.json();
-                if (qData.success && qData.imageUrl) {
-                  clearInterval(progressTimer);
-                  const ls2 = editor.getShape(shape.id) as any;
-                  editor.updateShape({ id: shape.id, type: 'gem-step4-card' as any, props: { ...ls2.props, generatedImage: qData.imageUrl, isGenerating: false, generationProgress: 100 } });
-                } else if (qData.error) {
-                  clearInterval(progressTimer);
-                  const ls2 = editor.getShape(shape.id) as any;
-                  editor.updateShape({ id: shape.id, type: 'gem-step4-card' as any, props: { ...ls2.props, isGenerating: false, generationProgress: 0 } });
-                  alert('生成失败: ' + qData.error);
-                } else if (attempts < 60) {
-                  poll();
-                } else {
-                  clearInterval(progressTimer);
-                  const ls2 = editor.getShape(shape.id) as any;
-                  editor.updateShape({ id: shape.id, type: 'gem-step4-card' as any, props: { ...ls2.props, isGenerating: false, generationProgress: 0 } });
-                  alert('生成超时，请重试');
-                }
-              } catch {
-                if (attempts < 60) poll();
+        if (data.pending && data.requestId) {
+          const falEndpoint = data.endpoint || 'openai/gpt-image-2/edit';
+          let attempts = 0;
+          const poll = async (): Promise<void> => {
+            attempts++;
+            await new Promise(r => setTimeout(r, 3000));
+            try {
+              const prog = Math.min(20 + attempts * 5, 90);
+              const ls = editor.getShape(shape.id) as any;
+              if (ls) editor.updateShape({ id: shape.id, type: 'gem-step4-card' as any, props: { ...ls.props, generationProgress: prog } });
+              const qRes = await fetch(`/api/image/fal-query?requestId=${encodeURIComponent(data.requestId)}&endpoint=${encodeURIComponent(falEndpoint)}`);
+              const qData = await qRes.json();
+              if (qData.success && qData.imageUrl) {
+                clearInterval(progressTimer);
+                const ls2 = editor.getShape(shape.id) as any;
+                editor.updateShape({ id: shape.id, type: 'gem-step4-card' as any, props: { ...ls2.props, generatedImage: qData.imageUrl, isGenerating: false, generationProgress: 100 } });
+              } else if (qData.error) {
+                clearInterval(progressTimer);
+                const ls2 = editor.getShape(shape.id) as any;
+                editor.updateShape({ id: shape.id, type: 'gem-step4-card' as any, props: { ...ls2.props, isGenerating: false, generationProgress: 0 } });
+                alert('生成失败: ' + qData.error);
+              } else if (attempts < 60) {
+                poll();
+              } else {
+                clearInterval(progressTimer);
+                const ls2 = editor.getShape(shape.id) as any;
+                editor.updateShape({ id: shape.id, type: 'gem-step4-card' as any, props: { ...ls2.props, isGenerating: false, generationProgress: 0 } });
+                alert('生成超时，请重试');
               }
-            };
-            poll();
-          } else if (data.imageData) {
-            clearInterval(progressTimer);
-            update({ generatedImage: data.imageData, isGenerating: false, generationProgress: 100 });
-          }
-        } else {
-          const res = await fetch('/api/gem/generate-solo-motion', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image: displayImage, actionSuggestion, inputType }),
-          });
-          const data = await res.json();
+            } catch {
+              if (attempts < 60) poll();
+            }
+          };
+          poll();
+        } else if (data.imageData) {
           clearInterval(progressTimer);
-          if (!res.ok) throw new Error(data.error || '请求失败');
-          update({ result: data.final_video_prompt, isGenerating: false, generationProgress: 0 });
-          pushResultToDownstream(data.final_video_prompt);
+          update({ generatedImage: data.imageData, isGenerating: false, generationProgress: 100 });
         }
       } catch (err: any) {
         clearInterval(progressTimer);
@@ -340,57 +336,54 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
                 ))}
               </div>
 
-              {/* 4宫格/9宫格专属设置 */}
+              {/* 4宫格/9宫格专属：脚本模式 */}
               {(inputType === '2x2' || inputType === '3x3') && (
-                <>
-                  {/* 脚本模式 */}
-                  <div className="flex gap-1 flex-shrink-0">
-                    {([['normal', '普通分镜脚本'], ['detail', '细化动作脚本']] as const).map(([val, label]) => (
-                      <button key={val}
-                        onClick={(e) => { e.stopPropagation(); update({ scriptMode: val }); }}
-                        onPointerDown={(e) => e.stopPropagation()}
-                        className={`flex-1 py-1 rounded-lg text-[10px] font-medium transition-all ${scriptMode === val ? 'bg-violet-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* 秒数 */}
-                  <div className="flex-shrink-0">
-                    <label className="text-[10px] text-gray-400 mb-1 block">时长</label>
-                    <div className="flex gap-1 flex-wrap">
-                      {['4', '5', '6', '8', '10', '12', '15'].map((d) => (
-                        <button key={d}
-                          onClick={(e) => { e.stopPropagation(); update({ duration: d }); }}
-                          onPointerDown={(e) => e.stopPropagation()}
-                          className={`px-2 py-1 rounded-lg text-[10px] font-medium transition-all ${duration === d ? 'bg-sky-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
-                          {d}s
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* 比例+清晰度 */}
-                  <div className="flex-shrink-0">
-                    <label className="text-[10px] text-gray-400 mb-1 block">输出比例</label>
-                    <div className="flex gap-1">
-                      {([
-                        ['16:9', '16:9', '1536×1024'],
-                        ['9:16', '9:16', '1024×1536'],
-                        ['1:1', '1:1', '1024×1024'],
-                      ] as const).map(([val, label, res]) => (
-                        <button key={val}
-                          onClick={(e) => { e.stopPropagation(); update({ ratio: val }); }}
-                          onPointerDown={(e) => e.stopPropagation()}
-                          className={`flex-1 py-1 rounded-lg text-[10px] font-medium transition-all flex flex-col items-center ${ratio === val ? 'bg-sky-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
-                          <span>{label}</span>
-                          <span className={`text-[8px] ${ratio === val ? 'text-sky-200' : 'text-gray-600'}`}>{res}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </>
+                <div className="flex gap-1 flex-shrink-0">
+                  {([['normal', '普通分镜脚本'], ['detail', '细化动作脚本']] as const).map(([val, label]) => (
+                    <button key={val}
+                      onClick={(e) => { e.stopPropagation(); update({ scriptMode: val }); }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      className={`flex-1 py-1 rounded-lg text-[10px] font-medium transition-all ${scriptMode === val ? 'bg-violet-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
               )}
+
+              {/* 所有模式共用：秒数 */}
+              <div className="flex-shrink-0">
+                <label className="text-[10px] text-gray-400 mb-1 block">时长</label>
+                <div className="flex gap-1 flex-wrap">
+                  {['4', '5', '6', '8', '10', '12', '15'].map((d) => (
+                    <button key={d}
+                      onClick={(e) => { e.stopPropagation(); update({ duration: d }); }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      className={`px-2 py-1 rounded-lg text-[10px] font-medium transition-all ${duration === d ? 'bg-sky-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
+                      {d}s
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 所有模式共用：比例 */}
+              <div className="flex-shrink-0">
+                <label className="text-[10px] text-gray-400 mb-1 block">输出比例</label>
+                <div className="flex gap-1">
+                  {([
+                    ['16:9', '16:9', '1536×1024'],
+                    ['9:16', '9:16', '1024×1536'],
+                    ['1:1', '1:1', '1024×1024'],
+                  ] as const).map(([val, label, res]) => (
+                    <button key={val}
+                      onClick={(e) => { e.stopPropagation(); update({ ratio: val }); }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      className={`flex-1 py-1 rounded-lg text-[10px] font-medium transition-all flex flex-col items-center ${ratio === val ? 'bg-sky-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
+                      <span>{label}</span>
+                      <span className={`text-[8px] ${ratio === val ? 'text-sky-200' : 'text-gray-600'}`}>{res}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               {/* 图片上传区 */}
               <div className="flex-shrink-0">
@@ -442,11 +435,11 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
                     ? 'bg-white/5 text-gray-500 cursor-not-allowed'
                     : 'bg-emerald-700 hover:bg-emerald-600 text-white shadow-lg'
                 }`}>
-                {isGenerating ? (inputType === 'single' ? '分析中...' : '生成中...') : (inputType === 'single' ? '生成运动指令' : '生成分镜脚本')}
+                {isGenerating ? '生成中...' : '生成分镜脚本'}
               </button>
 
-              {/* 进度条 */}
-              {isGenerating && (inputType === '2x2' || inputType === '3x3') && (
+              {/* 进度条（所有模式） */}
+              {isGenerating && (
                 <div className="flex-shrink-0">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[10px] text-gray-400">生成中...</span>
@@ -459,31 +452,8 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
                 </div>
               )}
 
-              {/* 单图文字结果 */}
-              {inputType === 'single' && result && (
-                <div className="flex-1 flex flex-col min-h-0">
-                  <div className="flex-1 bg-black/40 border border-sky-500/20 rounded-xl p-2 flex flex-col min-h-0">
-                    <div className="flex items-center justify-between mb-1.5 flex-shrink-0">
-                      <span className="text-[10px] text-sky-400 font-semibold">Final Video Prompt</span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigator.clipboard.writeText(result + APPEND_SUFFIX);
-                          setCopied(true);
-                          setTimeout(() => setCopied(false), 2000);
-                        }}
-                        onPointerDown={(e) => e.stopPropagation()}
-                        className="text-[10px] text-sky-400 hover:text-sky-300 transition-colors">
-                        {copied ? '已复制 ✓' : '复制'}
-                      </button>
-                    </div>
-                    <p className="text-gray-300 text-[10px] leading-relaxed whitespace-pre-wrap overflow-y-auto">{result}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* 4宫格/9宫格图片结果 */}
-              {(inputType === '2x2' || inputType === '3x3') && generatedImage && (
+              {/* 图片结果（所有模式） */}
+              {generatedImage && (
                 <div className="flex-shrink-0">
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-[10px] text-sky-400 font-semibold">分镜脚本图</span>
