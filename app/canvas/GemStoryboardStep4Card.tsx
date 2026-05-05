@@ -185,11 +185,12 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
           '3x3': '/fenjingmuban3X3.jpg',
         };
         const templateBlob = await fetch(templateFileMap[inputType]).then(r => r.blob());
-        const templateB64 = await new Promise<string>((resolve) => {
+        const templateRaw = await new Promise<string>((resolve) => {
           const reader = new FileReader();
           reader.onload = (e) => resolve(e.target?.result as string);
           reader.readAsDataURL(templateBlob);
         });
+        const templateB64 = await compressImage(templateRaw, 1280, 0.9);
 
         const sizeMap: Record<string, string> = {
           '16:9': '2048x1152',
