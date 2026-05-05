@@ -300,132 +300,127 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
           </div>
         )}
 
-        {/* 右侧参数设置浮层 */}
-        {showSettingsPanel && !isMinimized && (
+        {/* 右侧浮层容器 - 参数设置 + 图片输出紧靠在一起 */}
+        {(showSettingsPanel || (showImageOutput && generatedImage)) && !isMinimized && (
           <div
-            className="absolute rounded-2xl shadow-2xl backdrop-blur-xl"
-            style={{
-              left: '100%',
-              marginLeft: '8px',
-              top: 0,
-              width: 260,
-              zIndex: 200,
-              background: 'linear-gradient(135deg, rgba(192,192,192,0.15) 0%, rgba(100,100,100,0.1) 100%)',
-              border: '1px solid rgba(192,192,192,0.3)',
-              pointerEvents: 'all',
-            }}
+            className="absolute flex flex-col gap-2"
+            style={{ left: '100%', marginLeft: '8px', top: 0, width: 280, zIndex: 200, pointerEvents: 'all' }}
             onPointerDown={(e) => e.stopPropagation()}
           >
-            <div className="p-3 flex flex-col gap-2">
-              <span className="text-[10px] text-gray-400 font-semibold">参数设置</span>
+            {/* 参数设置 */}
+            {showSettingsPanel && (
+              <div
+                className="rounded-2xl shadow-2xl backdrop-blur-xl"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(192,192,192,0.15) 0%, rgba(100,100,100,0.1) 100%)',
+                  border: '1px solid rgba(192,192,192,0.3)',
+                }}
+              >
+                <div className="p-3 flex flex-col gap-2">
+                  <span className="text-[10px] text-gray-400 font-semibold">参数设置</span>
 
-              {(inputType === '2x2' || inputType === '3x3') && (
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] text-gray-400">脚本模式</label>
-                  <div className="flex gap-1">
-                    {([['normal', '普通分镜脚本'], ['detail', '细化动作脚本']] as const).map(([val, label]) => (
-                      <button key={val}
-                        onClick={(e) => { e.stopPropagation(); update({ scriptMode: val }); }}
-                        onPointerDown={(e) => e.stopPropagation()}
-                        className={`flex-1 py-1 rounded-lg text-[10px] font-medium transition-all ${scriptMode === val ? 'bg-violet-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
-                        {label}
-                      </button>
-                    ))}
+                  {(inputType === '2x2' || inputType === '3x3') && (
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[10px] text-gray-400">脚本模式</label>
+                      <div className="flex gap-1">
+                        {([['normal', '普通分镜脚本'], ['detail', '细化动作脚本']] as const).map(([val, label]) => (
+                          <button key={val}
+                            onClick={(e) => { e.stopPropagation(); update({ scriptMode: val }); }}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            className={`flex-1 py-1 rounded-lg text-[10px] font-medium transition-all ${scriptMode === val ? 'bg-violet-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-gray-400">时长</label>
+                    <div className="flex gap-1 flex-wrap">
+                      {['4', '5', '6', '8', '10', '12', '15'].map((d) => (
+                        <button key={d}
+                          onClick={(e) => { e.stopPropagation(); update({ duration: d }); }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          className={`px-2 py-1 rounded-lg text-[10px] font-medium transition-all ${duration === d ? 'bg-sky-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
+                          {d}s
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-gray-400">输出比例</label>
+                    <div className="flex gap-1">
+                      {([['16:9', '16:9', '1536×1024'], ['9:16', '9:16', '1024×1536'], ['1:1', '1:1', '1024×1024']] as const).map(([val, label, res]) => (
+                        <button key={val}
+                          onClick={(e) => { e.stopPropagation(); update({ ratio: val }); }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          className={`flex-1 py-1 rounded-lg text-[10px] font-medium transition-all flex flex-col items-center ${ratio === val ? 'bg-sky-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
+                          <span>{label}</span>
+                          <span className={`text-[8px] ${ratio === val ? 'text-sky-200' : 'text-gray-600'}`}>{res}</span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              )}
+              </div>
+            )}
 
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] text-gray-400">时长</label>
-                <div className="flex gap-1 flex-wrap">
-                  {['4', '5', '6', '8', '10', '12', '15'].map((d) => (
-                    <button key={d}
-                      onClick={(e) => { e.stopPropagation(); update({ duration: d }); }}
+            {/* 图片输出 */}
+            {showImageOutput && generatedImage && (
+              <div
+                className="rounded-2xl shadow-2xl backdrop-blur-xl overflow-hidden"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(192,192,192,0.15) 0%, rgba(100,100,100,0.1) 100%)',
+                  border: '1px solid rgba(192,192,192,0.3)',
+                }}
+              >
+                <div className="relative group">
+                  <img
+                    src={generatedImage}
+                    alt="分镜脚本"
+                    className="w-full h-auto max-h-[400px] object-contain bg-black/20"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <button
+                      className="px-3 py-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
+                      onClick={(e) => { e.stopPropagation(); setLightbox(true); }}
                       onPointerDown={(e) => e.stopPropagation()}
-                      className={`px-2 py-1 rounded-lg text-[10px] font-medium transition-all ${duration === d ? 'bg-sky-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
-                      {d}s
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                      </svg>
+                      查看
                     </button>
-                  ))}
+                    <button
+                      className="px-3 py-2 bg-green-500/90 hover:bg-green-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
+                      onClick={(e) => { e.stopPropagation(); downloadImage(); }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      下载
+                    </button>
+                    <button
+                      className="px-3 py-2 bg-red-500/90 hover:bg-red-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
+                      onClick={(e) => { e.stopPropagation(); update({ generatedImage: '', showImageOutput: false }); }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      删除
+                    </button>
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 pointer-events-none">
+                    <p className="text-white text-[10px] truncate">生成成功</p>
+                  </div>
                 </div>
               </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-[10px] text-gray-400">输出比例</label>
-                <div className="flex gap-1">
-                  {([['16:9', '16:9', '1536×1024'], ['9:16', '9:16', '1024×1536'], ['1:1', '1:1', '1024×1024']] as const).map(([val, label, res]) => (
-                    <button key={val}
-                      onClick={(e) => { e.stopPropagation(); update({ ratio: val }); }}
-                      onPointerDown={(e) => e.stopPropagation()}
-                      className={`flex-1 py-1 rounded-lg text-[10px] font-medium transition-all flex flex-col items-center ${ratio === val ? 'bg-sky-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
-                      <span>{label}</span>
-                      <span className={`text-[8px] ${ratio === val ? 'text-sky-200' : 'text-gray-600'}`}>{res}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 右侧图片输出浮层 */}
-        {showImageOutput && generatedImage && !isMinimized && (
-          <div
-            className="absolute rounded-2xl shadow-2xl backdrop-blur-xl"
-            style={{
-              left: '100%',
-              marginLeft: '8px',
-              top: showSettingsPanel ? '200px' : '0px',
-              width: 320,
-              zIndex: 200,
-              background: 'linear-gradient(135deg, rgba(192,192,192,0.15) 0%, rgba(100,100,100,0.1) 100%)',
-              border: '1px solid rgba(192,192,192,0.3)',
-              pointerEvents: 'all',
-            }}
-            onPointerDown={(e) => e.stopPropagation()}
-          >
-            <div className="relative group">
-              <img
-                src={generatedImage}
-                alt="分镜脚本"
-                className="w-full h-auto max-h-[400px] object-contain bg-black/20 rounded-2xl"
-                onClick={(e) => e.stopPropagation()}
-              />
-              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 rounded-2xl">
-                <button
-                  className="px-3 py-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
-                  onClick={(e) => { e.stopPropagation(); setLightbox(true); }}
-                  onPointerDown={(e) => e.stopPropagation()}
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                  </svg>
-                  查看
-                </button>
-                <button
-                  className="px-3 py-2 bg-green-500/90 hover:bg-green-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
-                  onClick={(e) => { e.stopPropagation(); downloadImage(); }}
-                  onPointerDown={(e) => e.stopPropagation()}
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  下载
-                </button>
-                <button
-                  className="px-3 py-2 bg-red-500/90 hover:bg-red-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
-                  onClick={(e) => { e.stopPropagation(); update({ generatedImage: '', showImageOutput: false }); }}
-                  onPointerDown={(e) => e.stopPropagation()}
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                  删除
-                </button>
-              </div>
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 pointer-events-none rounded-b-2xl">
-                <p className="text-white text-[10px] truncate">生成成功</p>
-              </div>
-            </div>
+            )}
           </div>
         )}
 

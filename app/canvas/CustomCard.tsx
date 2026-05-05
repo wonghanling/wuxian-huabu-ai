@@ -958,202 +958,189 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
           </div>
         )}
 
-        {/* 图片卡片 - 右侧参数设置浮层 */}
-        {cardType === 'image' && showImageSettingsPanel && !isMinimized && (
+        {/* 图片卡片 - 右侧浮层容器（参数设置 + 图片输出紧靠在一起） */}
+        {cardType === 'image' && !isMinimized && (showImageSettingsPanel || (showImageOutput && generatedImage)) && (
           <div
-            className="absolute rounded-2xl shadow-2xl backdrop-blur-xl"
-            style={{
-              left: '100%',
-              marginLeft: '8px',
-              top: 0,
-              width: 260,
-              zIndex: 200,
-              background: 'linear-gradient(135deg, rgba(192,192,192,0.15) 0%, rgba(100,100,100,0.1) 100%)',
-              border: '1px solid rgba(192,192,192,0.3)',
-              pointerEvents: 'all',
-            }}
+            className="absolute flex flex-col gap-2"
+            style={{ left: '100%', marginLeft: '8px', top: 0, width: 280, zIndex: 200, pointerEvents: 'all' }}
             onPointerDown={(e) => e.stopPropagation()}
           >
-            <div className="p-3 flex flex-col gap-2">
-              <span className="text-[10px] text-gray-400 font-semibold">参数设置</span>
+            {/* 参数设置 */}
+            {showImageSettingsPanel && (
+              <div
+                className="rounded-2xl shadow-2xl backdrop-blur-xl"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(192,192,192,0.15) 0%, rgba(100,100,100,0.1) 100%)',
+                  border: '1px solid rgba(192,192,192,0.3)',
+                }}
+              >
+                <div className="p-3 flex flex-col gap-2">
+                  <span className="text-[10px] text-gray-400 font-semibold">参数设置</span>
 
-              {/* 模型选择 */}
-              <div>
-                <label className="text-gray-400 text-xs mb-1 block">Model</label>
-                <select
-                  className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all"
-                  value={model || 'nano-banana-pro'}
-                  onClick={(e) => e.stopPropagation()}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onChange={(e) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, model: e.target.value } })}
-                >
-                  <optgroup label="Gemini">
-                    <option value="nano-banana-pro">Nano Banana 2（2K ¥1.2 / 4K ¥1.5）</option>
-                    <option value="nano-banana">Nano Banana — ¥0.5/次</option>
-                    <option value="nano-banana-pro-multi">多图融合 Nano Banana Pro（2K ¥1.5 / 4K ¥2.5）</option>
-                  </optgroup>
-                  <optgroup label="GPT Image">
-                    <option value="gpt-image-2">GPT Image 2 — ¥0.5~0.8/次</option>
-                    <option value="gpt-image-2-all">GPT Image 2 多图融合 — ¥0.5~0.8/次</option>
-                  </optgroup>
-                  <optgroup label="Flux">
-                    <option value="flux-kontext">Flux Kontext — ¥0.6/次</option>
-                    <option value="flux-kontext-max">Flux Kontext Max — ¥1.0/次</option>
-                  </optgroup>
-                  <optgroup label="其他">
-                    <option value="mj_imagine">Midjourney — ¥0.6/次</option>
-                    <option value="doubao-seedream-4-5-251128">豆包 Seedream — ¥0.3/次</option>
-                  </optgroup>
-                </select>
-              </div>
+                  <div>
+                    <label className="text-gray-400 text-xs mb-1 block">Model</label>
+                    <select
+                      className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all"
+                      value={model || 'nano-banana-pro'}
+                      onClick={(e) => e.stopPropagation()}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onChange={(e) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, model: e.target.value } })}
+                    >
+                      <optgroup label="Gemini">
+                        <option value="nano-banana-pro">Nano Banana 2（2K ¥1.2 / 4K ¥1.5）</option>
+                        <option value="nano-banana">Nano Banana — ¥0.5/次</option>
+                        <option value="nano-banana-pro-multi">多图融合 Nano Banana Pro（2K ¥1.5 / 4K ¥2.5）</option>
+                      </optgroup>
+                      <optgroup label="GPT Image">
+                        <option value="gpt-image-2">GPT Image 2 — ¥0.5~0.8/次</option>
+                        <option value="gpt-image-2-all">GPT Image 2 多图融合 — ¥0.5~0.8/次</option>
+                      </optgroup>
+                      <optgroup label="Flux">
+                        <option value="flux-kontext">Flux Kontext — ¥0.6/次</option>
+                        <option value="flux-kontext-max">Flux Kontext Max — ¥1.0/次</option>
+                      </optgroup>
+                      <optgroup label="其他">
+                        <option value="mj_imagine">Midjourney — ¥0.6/次</option>
+                        <option value="doubao-seedream-4-5-251128">豆包 Seedream — ¥0.3/次</option>
+                      </optgroup>
+                    </select>
+                  </div>
 
-              {/* 比例 - 非GPT Image 2 */}
-              {!['gpt-image-2', 'gpt-image-2-all'].includes(model || '') && (
-                <div>
-                  <label className="text-gray-400 text-xs mb-1 block">比例</label>
-                  <select
-                    className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all"
-                    value={aspectRatio || '1:1'}
-                    onClick={(e) => e.stopPropagation()}
-                    onPointerDown={(e) => e.stopPropagation()}
-                    onChange={(e) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, aspectRatio: e.target.value } })}
-                  >
-                    <option value="1:1">1:1 正方形</option>
-                    <option value="4:3">4:3 横图</option>
-                    <option value="3:4">3:4 竖图</option>
-                    <option value="16:9">16:9 宽屏</option>
-                    <option value="9:16">9:16 竖屏</option>
-                    <option value="3:2">3:2 横图</option>
-                    <option value="2:3">2:3 竖图</option>
-                    <option value="21:9">21:9 超宽</option>
-                  </select>
-                </div>
-              )}
-
-              {/* GPT Image 2 尺寸 */}
-              {['gpt-image-2', 'gpt-image-2-all'].includes(model || '') && (
-                <div>
-                  <label className="text-gray-400 text-xs mb-1 block">尺寸</label>
-                  <div className="flex gap-1 flex-wrap">
-                    {[
-                      { value: '2048x1152', label: '16:9 2K', priceMedium: '¥0.7', priceHigh: '¥0.7' },
-                      { value: '3840x2160', label: '16:9 4K', priceMedium: '¥1.5', priceHigh: '¥2.0' },
-                      { value: '2160x3840', label: '9:16 4K', priceMedium: '¥1.5', priceHigh: '¥2.0' },
-                      { value: '2048x2048', label: '1:1 2K', priceMedium: '¥0.7', priceHigh: '¥1.0' },
-                    ].map(({ value, label, priceMedium, priceHigh }) => (
-                      <button key={value}
-                        onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, aspectRatio: value } }); }}
+                  {!['gpt-image-2', 'gpt-image-2-all'].includes(model || '') && (
+                    <div>
+                      <label className="text-gray-400 text-xs mb-1 block">比例</label>
+                      <select
+                        className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all"
+                        value={aspectRatio || '1:1'}
+                        onClick={(e) => e.stopPropagation()}
                         onPointerDown={(e) => e.stopPropagation()}
-                        className={`flex-1 py-1.5 rounded-lg border text-xs font-medium transition-all ${(aspectRatio ?? '2048x1152') === value ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
+                        onChange={(e) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, aspectRatio: e.target.value } })}
                       >
-                        <div>{label}</div>
-                        <div className="text-[10px] opacity-70">{(imageQuality ?? 'medium') === 'high' ? priceHigh : priceMedium}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+                        <option value="1:1">1:1 正方形</option>
+                        <option value="4:3">4:3 横图</option>
+                        <option value="3:4">3:4 竖图</option>
+                        <option value="16:9">16:9 宽屏</option>
+                        <option value="9:16">9:16 竖屏</option>
+                        <option value="3:2">3:2 横图</option>
+                        <option value="2:3">2:3 竖图</option>
+                        <option value="21:9">21:9 超宽</option>
+                      </select>
+                    </div>
+                  )}
 
-              {/* GPT Image 2 画质 */}
-              {['gpt-image-2', 'gpt-image-2-all'].includes(model || '') && (
-                <div>
-                  <label className="text-gray-400 text-xs mb-1 block">画质</label>
-                  <div className="flex gap-1">
-                    {[{ value: 'medium', label: 'Medium' }, { value: 'high', label: 'High' }].map(({ value, label }) => (
-                      <button key={value}
-                        onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, imageQuality: value } }); }}
-                        onPointerDown={(e) => e.stopPropagation()}
-                        className={`flex-1 py-1.5 rounded-lg border text-xs font-medium transition-all ${(imageQuality ?? 'medium') === value ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
-                      >{label}</button>
-                    ))}
-                  </div>
-                </div>
-              )}
+                  {['gpt-image-2', 'gpt-image-2-all'].includes(model || '') && (
+                    <div>
+                      <label className="text-gray-400 text-xs mb-1 block">尺寸</label>
+                      <div className="flex gap-1 flex-wrap">
+                        {[
+                          { value: '2048x1152', label: '16:9 2K', priceMedium: '¥0.7', priceHigh: '¥0.7' },
+                          { value: '3840x2160', label: '16:9 4K', priceMedium: '¥1.5', priceHigh: '¥2.0' },
+                          { value: '2160x3840', label: '9:16 4K', priceMedium: '¥1.5', priceHigh: '¥2.0' },
+                          { value: '2048x2048', label: '1:1 2K', priceMedium: '¥0.7', priceHigh: '¥1.0' },
+                        ].map(({ value, label, priceMedium, priceHigh }) => (
+                          <button key={value}
+                            onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, aspectRatio: value } }); }}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            className={`flex-1 py-1.5 rounded-lg border text-xs font-medium transition-all ${(aspectRatio ?? '2048x1152') === value ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
+                          >
+                            <div>{label}</div>
+                            <div className="text-[10px] opacity-70">{(imageQuality ?? 'medium') === 'high' ? priceHigh : priceMedium}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-              {/* 清晰度 - nano-banana-pro */}
-              {['nano-banana-pro', 'nano-banana-pro-multi'].includes(model || '') && (
-                <div>
-                  <label className="text-gray-400 text-xs mb-1 block">清晰度</label>
-                  <div className="flex gap-1">
-                    {[
-                      { value: '2k', label: model === 'nano-banana-pro-multi' ? '2K — ¥1.5/次' : '2K — ¥1.2/次' },
-                      { value: '4k', label: model === 'nano-banana-pro-multi' ? '4K — ¥2.5/次' : '4K — ¥1.5/次' },
-                    ].map(({ value, label }) => (
-                      <button key={value}
-                        onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, imageQuality: value } }); }}
-                        onPointerDown={(e) => e.stopPropagation()}
-                        className={`flex-1 py-1.5 rounded-lg border text-xs font-medium transition-all ${(imageQuality ?? '2k') === value ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
-                      >{label}</button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+                  {['gpt-image-2', 'gpt-image-2-all'].includes(model || '') && (
+                    <div>
+                      <label className="text-gray-400 text-xs mb-1 block">画质</label>
+                      <div className="flex gap-1">
+                        {[{ value: 'medium', label: 'Medium' }, { value: 'high', label: 'High' }].map(({ value, label }) => (
+                          <button key={value}
+                            onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, imageQuality: value } }); }}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            className={`flex-1 py-1.5 rounded-lg border text-xs font-medium transition-all ${(imageQuality ?? 'medium') === value ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
+                          >{label}</button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-        {/* 图片卡片 - 右侧图片输出浮层 */}
-        {cardType === 'image' && showImageOutput && generatedImage && !isMinimized && (
-          <div
-            className="absolute rounded-2xl shadow-2xl backdrop-blur-xl"
-            style={{
-              left: '100%',
-              marginLeft: '8px',
-              top: showImageSettingsPanel ? (
-                ['gpt-image-2', 'gpt-image-2-all'].includes(model || '') ? '280px' :
-                ['nano-banana-pro', 'nano-banana-pro-multi'].includes(model || '') ? '220px' : '180px'
-              ) : '0px',
-              width: 320,
-              zIndex: 200,
-              background: 'linear-gradient(135deg, rgba(192,192,192,0.15) 0%, rgba(100,100,100,0.1) 100%)',
-              border: '1px solid rgba(192,192,192,0.3)',
-              pointerEvents: 'all',
-            }}
-            onPointerDown={(e) => e.stopPropagation()}
-          >
-            <div className="relative group">
-              <img
-                src={generatedImage}
-                alt="Generated"
-                className="w-full h-auto max-h-[400px] object-contain bg-black/20 rounded-2xl"
-                onClick={(e) => e.stopPropagation()}
-              />
-              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 rounded-2xl">
-                <button
-                  className="px-3 py-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
-                  onClick={(e) => { e.stopPropagation(); setLightboxVideo(generatedImage); }}
-                  onPointerDown={(e) => e.stopPropagation()}
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                  </svg>
-                  查看
-                </button>
-                <button
-                  className="px-3 py-2 bg-green-500/90 hover:bg-green-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
-                  onClick={(e) => { e.stopPropagation(); downloadFile(generatedImage, `generated-${Date.now()}.png`); }}
-                  onPointerDown={(e) => e.stopPropagation()}
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                  下载
-                </button>
-                <button
-                  className="px-3 py-2 bg-red-500/90 hover:bg-red-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
-                  onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, generatedImage: '', showImageOutput: false } }); }}
-                  onPointerDown={(e) => e.stopPropagation()}
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                  删除
-                </button>
+                  {['nano-banana-pro', 'nano-banana-pro-multi'].includes(model || '') && (
+                    <div>
+                      <label className="text-gray-400 text-xs mb-1 block">清晰度</label>
+                      <div className="flex gap-1">
+                        {[
+                          { value: '2k', label: model === 'nano-banana-pro-multi' ? '2K — ¥1.5/次' : '2K — ¥1.2/次' },
+                          { value: '4k', label: model === 'nano-banana-pro-multi' ? '4K — ¥2.5/次' : '4K — ¥1.5/次' },
+                        ].map(({ value, label }) => (
+                          <button key={value}
+                            onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, imageQuality: value } }); }}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            className={`flex-1 py-1.5 rounded-lg border text-xs font-medium transition-all ${(imageQuality ?? '2k') === value ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
+                          >{label}</button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 pointer-events-none rounded-b-2xl">
-                <p className="text-white text-[10px] truncate">生成成功</p>
+            )}
+
+            {/* 图片输出 */}
+            {showImageOutput && generatedImage && (
+              <div
+                className="rounded-2xl shadow-2xl backdrop-blur-xl overflow-hidden"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(192,192,192,0.15) 0%, rgba(100,100,100,0.1) 100%)',
+                  border: '1px solid rgba(192,192,192,0.3)',
+                }}
+              >
+                <div className="relative group">
+                  <img
+                    src={generatedImage}
+                    alt="Generated"
+                    className="w-full h-auto max-h-[400px] object-contain bg-black/20"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <button
+                      className="px-3 py-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
+                      onClick={(e) => { e.stopPropagation(); setLightboxVideo(generatedImage); }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                      </svg>
+                      查看
+                    </button>
+                    <button
+                      className="px-3 py-2 bg-green-500/90 hover:bg-green-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
+                      onClick={(e) => { e.stopPropagation(); downloadFile(generatedImage, `generated-${Date.now()}.png`); }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      下载
+                    </button>
+                    <button
+                      className="px-3 py-2 bg-red-500/90 hover:bg-red-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
+                      onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, generatedImage: '', showImageOutput: false } }); }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      删除
+                    </button>
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 pointer-events-none">
+                    <p className="text-white text-[10px] truncate">生成成功</p>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
