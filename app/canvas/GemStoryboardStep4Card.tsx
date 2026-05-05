@@ -243,7 +243,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
               if (qData.success && qData.imageUrl) {
                 clearInterval(progressTimer);
                 const ls2 = editor.getShape(shape.id) as any;
-                editor.updateShape({ id: shape.id, type: 'gem-step4-card' as any, props: { ...ls2.props, generatedImage: qData.imageUrl, isGenerating: false, generationProgress: 100, showImageOutput: true } });
+                editor.updateShape({ id: shape.id, type: 'gem-step4-card' as any, props: { ...ls2.props, generatedImage: qData.imageUrl, isGenerating: false, generationProgress: 100 } });
               } else if (qData.error) {
                 clearInterval(progressTimer);
                 const ls2 = editor.getShape(shape.id) as any;
