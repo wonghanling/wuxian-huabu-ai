@@ -90,6 +90,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
     const { w, h, actionSuggestion, result, generatedImage, isGenerating, isMinimized, duration, scriptMode, ratio, generationProgress } = shape.props;
     const editor = useEditor();
     const [image, setImage] = useState<string>('');
+    const [image2, setImage2] = useState<string>('');
     const [copied, setCopied] = useState(false);
     const [inputType, setInputType] = useState<'single' | '2x2' | '3x3'>('single');
     const [lightbox, setLightbox] = useState(false);
@@ -151,13 +152,14 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
       editor.setCurrentTool('port', { shapeId: shape.id, portId: 'input', terminal: 'end' });
     };
 
-    const loadImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const loadImage = (e: React.ChangeEvent<HTMLInputElement>, slot: 1 | 2 = 1) => {
       const file = e.target.files?.[0];
       if (!file) return;
       const reader = new FileReader();
       reader.onload = async (ev) => {
         const compressed = await compressImage(ev.target?.result as string);
-        setImage(compressed);
+        if (slot === 2) setImage2(compressed);
+        else setImage(compressed);
       };
       reader.readAsDataURL(file);
       e.target.value = '';
@@ -165,6 +167,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
 
     const generate = async () => {
       if (!displayImage) { alert('请上传或连接图片'); return; }
+      if (inputType === 'single' && !image2) { alert('单图模式需要上传两张图片（人物三视角 + 剧情首帧）'); return; }
       update({ isGenerating: true, result: '', generatedImage: '', generationProgress: 5 });
 
       let progress = 5;
@@ -176,7 +179,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
 
       try {
         const templateFileMap: Record<string, string> = {
-          'single': '/fenjingmuban1.jpg',
+          'single': '/fenjingmuban2x2.jpg',
           '2x2': '/fenjingmuban2x2.jpg',
           '3x3': '/fenjingmuban3X3.jpg',
         };
@@ -195,7 +198,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
 
         let prompt = '';
         if (inputType === 'single') {
-          prompt = `把单图画面嵌入分镜脚本模板的空白画面框里，同时只在模板原本说明栏填写镜头号、时间轴、景别、运镜、动作说明、音效。不覆盖分镜画面。写一个${duration}s电影级分镜脚本。${actionSuggestion}`;
+          prompt = `图1是人物三视角参考图，用于保持角色外观、服装、比例的一致性。图2是剧情首帧，定义起始场景、构图、光线和氛围。根据这两张参考图，设计4个连续分镜画面：第1格严格还原首帧构图，第2-4格按剧情发展推进动作。把4个画面嵌入分镜脚本模板的4个空白画面框里，同时只在模板说明栏填写镜头号、时间轴、景别、运镜、动作说明、音效，不覆盖画面框。整体为一个${duration}s镜头，时间轴按动作节奏分配。${actionSuggestion}`;
         } else {
           const isCellMode = scriptMode === 'detail';
           const shotCount = inputType === '2x2' ? 4 : 9;
@@ -211,7 +214,9 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
           body: JSON.stringify({
             prompt,
             aspectRatio: sizeMap[ratio || '16:9'] || '2048x1152',
-            imageBase64Array: [displayImage, templateB64],
+            imageBase64Array: inputType === 'single'
+              ? [displayImage, image2, templateB64]
+              : [displayImage, templateB64],
           }),
         });
         const data = await res.json();
@@ -386,29 +391,74 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
               </div>
 
               {/* 图片上传区 */}
-              <div className="flex-shrink-0">
-                <span className="text-[10px] text-gray-400 mb-1 block">
-                  Image{connectedImage && <span className="text-sky-400 ml-1">·来自连接</span>}
-                </span>
-                <label
-                  className="relative flex items-center justify-center w-full rounded-lg overflow-hidden border border-dashed cursor-pointer transition-all bg-black/20"
-                  style={{ aspectRatio: '16/9', borderColor: connectedImage ? 'rgba(56,189,248,0.4)' : 'rgba(255,255,255,0.15)' }}
-                  onPointerDown={(e) => e.stopPropagation()}>
-                  {displayImage ? (
-                    <>
-                      <img src={displayImage} alt="input" className="w-full h-full object-cover" />
-                      {!connectedImage && (
-                        <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 flex items-center justify-center transition-all">
-                          <span className="text-white text-[10px]">更换</span>
-                        </div>
+              {inputType === 'single' ? (
+                <div className="flex-shrink-0 flex gap-1.5">
+                  {/* 图1：人物三视角 */}
+                  <div className="flex-1 flex flex-col">
+                    <span className="text-[10px] text-gray-400 mb-1 block">人物三视角</span>
+                    <label
+                      className="relative flex items-center justify-center w-full rounded-lg overflow-hidden border border-dashed cursor-pointer transition-all bg-black/20"
+                      style={{ aspectRatio: '1/1', borderColor: 'rgba(255,255,255,0.15)' }}
+                      onPointerDown={(e) => e.stopPropagation()}>
+                      {displayImage ? (
+                        <>
+                          <img src={displayImage} alt="人物三视角" className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 flex items-center justify-center transition-all">
+                            <span className="text-white text-[10px]">更换</span>
+                          </div>
+                        </>
+                      ) : (
+                        <span className="text-gray-600 text-[9px] text-center px-1">上传人物三视角</span>
                       )}
-                    </>
-                  ) : (
-                    <span className="text-gray-600 text-[10px]">上传图片或连接图片卡片</span>
-                  )}
-                  {!connectedImage && <input type="file" accept="image/*" className="hidden" onChange={loadImage} onClick={(e) => e.stopPropagation()} />}
-                </label>
-              </div>
+                      <input type="file" accept="image/*" className="hidden" onChange={(e) => loadImage(e, 1)} onClick={(e) => e.stopPropagation()} />
+                    </label>
+                  </div>
+                  {/* 图2：剧情首帧 */}
+                  <div className="flex-1 flex flex-col">
+                    <span className="text-[10px] text-gray-400 mb-1 block">剧情首帧</span>
+                    <label
+                      className="relative flex items-center justify-center w-full rounded-lg overflow-hidden border border-dashed cursor-pointer transition-all bg-black/20"
+                      style={{ aspectRatio: '1/1', borderColor: image2 ? 'rgba(56,189,248,0.4)' : 'rgba(255,255,255,0.15)' }}
+                      onPointerDown={(e) => e.stopPropagation()}>
+                      {image2 ? (
+                        <>
+                          <img src={image2} alt="剧情首帧" className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 flex items-center justify-center transition-all">
+                            <span className="text-white text-[10px]">更换</span>
+                          </div>
+                        </>
+                      ) : (
+                        <span className="text-gray-600 text-[9px] text-center px-1">上传剧情首帧</span>
+                      )}
+                      <input type="file" accept="image/*" className="hidden" onChange={(e) => loadImage(e, 2)} onClick={(e) => e.stopPropagation()} />
+                    </label>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-shrink-0">
+                  <span className="text-[10px] text-gray-400 mb-1 block">
+                    分镜图{connectedImage && <span className="text-sky-400 ml-1">·来自连接</span>}
+                  </span>
+                  <label
+                    className="relative flex items-center justify-center w-full rounded-lg overflow-hidden border border-dashed cursor-pointer transition-all bg-black/20"
+                    style={{ aspectRatio: '16/9', borderColor: connectedImage ? 'rgba(56,189,248,0.4)' : 'rgba(255,255,255,0.15)' }}
+                    onPointerDown={(e) => e.stopPropagation()}>
+                    {displayImage ? (
+                      <>
+                        <img src={displayImage} alt="input" className="w-full h-full object-cover" />
+                        {!connectedImage && (
+                          <div className="absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 flex items-center justify-center transition-all">
+                            <span className="text-white text-[10px]">更换</span>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-gray-600 text-[10px]">上传分镜图或连接图片卡片</span>
+                    )}
+                    {!connectedImage && <input type="file" accept="image/*" className="hidden" onChange={(e) => loadImage(e, 1)} onClick={(e) => e.stopPropagation()} />}
+                  </label>
+                </div>
+              )}
 
               {/* 剧情引导 */}
               <div className="flex-shrink-0">
@@ -429,7 +479,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
               <button
                 onClick={(e) => { e.stopPropagation(); generate(); }}
                 onPointerDown={(e) => e.stopPropagation()}
-                disabled={isGenerating || !displayImage}
+                disabled={isGenerating || !displayImage || (inputType === 'single' && !image2)}
                 className={`flex-shrink-0 w-full py-2 rounded-xl text-sm font-semibold transition-all ${
                   isGenerating || !displayImage
                     ? 'bg-white/5 text-gray-500 cursor-not-allowed'
