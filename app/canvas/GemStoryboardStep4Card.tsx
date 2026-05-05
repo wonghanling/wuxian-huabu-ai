@@ -241,7 +241,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
               if (qData.success && qData.imageUrl) {
                 clearInterval(progressTimer);
                 const ls2 = editor.getShape(shape.id) as any;
-                editor.updateShape({ id: shape.id, type: 'gem-step4-card' as any, props: { ...ls2.props, generatedImage: qData.imageUrl, isGenerating: false, generationProgress: 100 } });
+                editor.updateShape({ id: shape.id, type: 'gem-step4-card' as any, props: { ...ls2.props, generatedImage: qData.imageUrl, isGenerating: false, generationProgress: 100, showImageOutput: true } });
               } else if (qData.error) {
                 clearInterval(progressTimer);
                 const ls2 = editor.getShape(shape.id) as any;
@@ -294,6 +294,68 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
               <img src={generatedImage} alt="分镜脚本" className="rounded-xl object-contain" style={{ maxWidth: '85vw', maxHeight: '85vh' }} />
               <button className="absolute -top-3 -right-3 w-7 h-7 bg-zinc-800 hover:bg-zinc-700 border border-white/20 rounded-full text-white text-sm flex items-center justify-center"
                 onClick={() => setLightbox(false)} onPointerDown={(e) => e.stopPropagation()}>✕</button>
+            </div>
+          </div>
+        )}
+
+        {/* 右侧图片输出浮层 */}
+        {showImageOutput && generatedImage && (
+          <div
+            className="absolute rounded-2xl shadow-2xl backdrop-blur-xl"
+            style={{
+              left: '100%',
+              marginLeft: '8px',
+              top: 0,
+              width: 320,
+              zIndex: 200,
+              background: 'linear-gradient(135deg, rgba(192,192,192,0.15) 0%, rgba(100,100,100,0.1) 100%)',
+              border: '1px solid rgba(192,192,192,0.3)',
+              pointerEvents: 'all',
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <div className="relative group">
+              <img
+                src={generatedImage}
+                alt="分镜脚本"
+                className="w-full h-auto max-h-[400px] object-contain bg-black/20 rounded-2xl"
+                onClick={(e) => e.stopPropagation()}
+              />
+              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 rounded-2xl">
+                <button
+                  className="px-3 py-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
+                  onClick={(e) => { e.stopPropagation(); setLightbox(true); }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                  </svg>
+                  查看
+                </button>
+                <button
+                  className="px-3 py-2 bg-green-500/90 hover:bg-green-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
+                  onClick={(e) => { e.stopPropagation(); downloadImage(); }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  下载
+                </button>
+                <button
+                  className="px-3 py-2 bg-red-500/90 hover:bg-red-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
+                  onClick={(e) => { e.stopPropagation(); update({ generatedImage: '', showImageOutput: false }); }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  删除
+                </button>
+              </div>
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 pointer-events-none rounded-b-2xl">
+                <p className="text-white text-[10px] truncate">生成成功</p>
+              </div>
             </div>
           </div>
         )}
@@ -510,66 +572,11 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
               {generatedImage && (
                 <button
                   className="flex-shrink-0 w-full py-2 mt-1 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-green-500/80 to-green-600/80 hover:from-green-500 hover:to-green-600"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    update({ showImageOutput: !showImageOutput });
-                  }}
+                  onClick={(e) => { e.stopPropagation(); update({ showImageOutput: !showImageOutput }); }}
                   onPointerDown={(e) => e.stopPropagation()}
                 >
                   {showImageOutput ? '隐藏图片' : '查看生成图片'}
                 </button>
-              )}
-
-              {/* 图片输出面板 */}
-              {showImageOutput && generatedImage && (
-                <div className="flex-shrink-0 mt-1 bg-black/40 border border-white/10 rounded-lg overflow-visible">
-                  <div className="relative group">
-                    <img
-                      src={generatedImage}
-                      alt="分镜脚本"
-                      className="w-full h-auto max-h-[250px] object-contain bg-black/20"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                      <button
-                        className="px-3 py-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
-                        onClick={(e) => { e.stopPropagation(); setLightbox(true); }}
-                        onPointerDown={(e) => e.stopPropagation()}
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                        </svg>
-                        查看
-                      </button>
-                      <button
-                        className="px-3 py-2 bg-green-500/90 hover:bg-green-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
-                        onClick={(e) => { e.stopPropagation(); downloadImage(); }}
-                        onPointerDown={(e) => e.stopPropagation()}
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                        下载
-                      </button>
-                      <button
-                        className="px-3 py-2 bg-red-500/90 hover:bg-red-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          update({ generatedImage: '', showImageOutput: false });
-                        }}
-                        onPointerDown={(e) => e.stopPropagation()}
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                        删除
-                      </button>
-                    </div>
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 pointer-events-none">
-                      <p className="text-white text-[10px] truncate">生成成功</p>
-                    </div>
-                  </div>
-                </div>
               )}
 
             </div>
