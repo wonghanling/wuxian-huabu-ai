@@ -42,6 +42,7 @@ export type GemStep4CardShape = TLBaseShape<
     ratio?: '16:9' | '9:16' | '1:1';
     generationProgress?: number;
     showImageOutput?: boolean;
+    showSettingsPanel?: boolean;
   }
 >;
 
@@ -63,6 +64,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
     ratio: T.string.optional() as any,
     generationProgress: T.number.optional() as any,
     showImageOutput: T.boolean.optional() as any,
+    showSettingsPanel: T.boolean.optional() as any,
   };
 
   override isAspectRatioLocked = () => false;
@@ -89,7 +91,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
   }
 
   component(shape: GemStep4CardShape) {
-    const { w, h, actionSuggestion, result, generatedImage, isGenerating, isMinimized, duration, scriptMode, ratio, generationProgress, showImageOutput } = shape.props;
+    const { w, h, actionSuggestion, result, generatedImage, isGenerating, isMinimized, duration, scriptMode, ratio, generationProgress, showImageOutput, showSettingsPanel } = shape.props;
     const editor = useEditor();
     const [image, setImage] = useState<string>('');
     const [image2, setImage2] = useState<string>('');
@@ -298,6 +300,73 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
           </div>
         )}
 
+        {/* 右侧参数设置浮层 */}
+        {showSettingsPanel && !isMinimized && (
+          <div
+            className="absolute rounded-2xl shadow-2xl backdrop-blur-xl"
+            style={{
+              left: '100%',
+              marginLeft: '8px',
+              top: 0,
+              width: 260,
+              zIndex: 200,
+              background: 'linear-gradient(135deg, rgba(192,192,192,0.15) 0%, rgba(100,100,100,0.1) 100%)',
+              border: '1px solid rgba(192,192,192,0.3)',
+              pointerEvents: 'all',
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <div className="p-3 flex flex-col gap-2">
+              <span className="text-[10px] text-gray-400 font-semibold">参数设置</span>
+
+              {(inputType === '2x2' || inputType === '3x3') && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] text-gray-400">脚本模式</label>
+                  <div className="flex gap-1">
+                    {([['normal', '普通分镜脚本'], ['detail', '细化动作脚本']] as const).map(([val, label]) => (
+                      <button key={val}
+                        onClick={(e) => { e.stopPropagation(); update({ scriptMode: val }); }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        className={`flex-1 py-1 rounded-lg text-[10px] font-medium transition-all ${scriptMode === val ? 'bg-violet-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] text-gray-400">时长</label>
+                <div className="flex gap-1 flex-wrap">
+                  {['4', '5', '6', '8', '10', '12', '15'].map((d) => (
+                    <button key={d}
+                      onClick={(e) => { e.stopPropagation(); update({ duration: d }); }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      className={`px-2 py-1 rounded-lg text-[10px] font-medium transition-all ${duration === d ? 'bg-sky-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
+                      {d}s
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] text-gray-400">输出比例</label>
+                <div className="flex gap-1">
+                  {([['16:9', '16:9', '1536×1024'], ['9:16', '9:16', '1024×1536'], ['1:1', '1:1', '1024×1024']] as const).map(([val, label, res]) => (
+                    <button key={val}
+                      onClick={(e) => { e.stopPropagation(); update({ ratio: val }); }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      className={`flex-1 py-1 rounded-lg text-[10px] font-medium transition-all flex flex-col items-center ${ratio === val ? 'bg-sky-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
+                      <span>{label}</span>
+                      <span className={`text-[8px] ${ratio === val ? 'text-sky-200' : 'text-gray-600'}`}>{res}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* 右侧图片输出浮层 */}
         {showImageOutput && generatedImage && (
           <div
@@ -305,7 +374,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
             style={{
               left: '100%',
               marginLeft: '8px',
-              top: 0,
+              top: showSettingsPanel ? '280px' : '0px',
               width: 320,
               zIndex: 200,
               background: 'linear-gradient(135deg, rgba(192,192,192,0.15) 0%, rgba(100,100,100,0.1) 100%)',
@@ -378,7 +447,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
             style={{ backgroundColor: '#27272a', border: '2px solid rgba(192,192,192,0.8)', boxShadow: '0 0 8px rgba(192,192,192,0.4)', pointerEvents: 'none' }} />
         </div>
 
-        <div className="w-full h-full bg-zinc-900/95 backdrop-blur-sm border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+        <div className="w-full h-full bg-zinc-900/95 backdrop-blur-sm border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-visible">
           {/* 标题栏 */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/8 flex-shrink-0">
             <div className="flex items-center gap-2">
@@ -393,7 +462,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
           </div>
 
           {!isMinimized && (
-            <div className="flex-1 flex flex-col overflow-y-hidden p-3 gap-2">
+            <div className="flex-1 flex flex-col overflow-visible p-3 gap-2">
 
               {/* 模式选择 */}
               <div className="flex gap-1 flex-shrink-0">
@@ -407,54 +476,14 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
                 ))}
               </div>
 
-              {/* 4宫格/9宫格专属：脚本模式 */}
-              {(inputType === '2x2' || inputType === '3x3') && (
-                <div className="flex gap-1 flex-shrink-0">
-                  {([['normal', '普通分镜脚本'], ['detail', '细化动作脚本']] as const).map(([val, label]) => (
-                    <button key={val}
-                      onClick={(e) => { e.stopPropagation(); update({ scriptMode: val }); }}
-                      onPointerDown={(e) => e.stopPropagation()}
-                      className={`flex-1 py-1 rounded-lg text-[10px] font-medium transition-all ${scriptMode === val ? 'bg-violet-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {/* 所有模式共用：秒数 */}
-              <div className="flex-shrink-0">
-                <label className="text-[10px] text-gray-400 mb-1 block">时长</label>
-                <div className="flex gap-1 flex-wrap">
-                  {['4', '5', '6', '8', '10', '12', '15'].map((d) => (
-                    <button key={d}
-                      onClick={(e) => { e.stopPropagation(); update({ duration: d }); }}
-                      onPointerDown={(e) => e.stopPropagation()}
-                      className={`px-2 py-1 rounded-lg text-[10px] font-medium transition-all ${duration === d ? 'bg-sky-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
-                      {d}s
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* 所有模式共用：比例 */}
-              <div className="flex-shrink-0">
-                <label className="text-[10px] text-gray-400 mb-1 block">输出比例</label>
-                <div className="flex gap-1">
-                  {([
-                    ['16:9', '16:9', '1536×1024'],
-                    ['9:16', '9:16', '1024×1536'],
-                    ['1:1', '1:1', '1024×1024'],
-                  ] as const).map(([val, label, res]) => (
-                    <button key={val}
-                      onClick={(e) => { e.stopPropagation(); update({ ratio: val }); }}
-                      onPointerDown={(e) => e.stopPropagation()}
-                      className={`flex-1 py-1 rounded-lg text-[10px] font-medium transition-all flex flex-col items-center ${ratio === val ? 'bg-sky-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
-                      <span>{label}</span>
-                      <span className={`text-[8px] ${ratio === val ? 'text-sky-200' : 'text-gray-600'}`}>{res}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              {/* 展开参数设置按钮 */}
+              <button
+                className="flex-shrink-0 w-full py-1.5 rounded-lg text-[10px] font-medium transition-all bg-white/5 text-gray-400 hover:bg-white/10 hover:text-gray-300"
+                onClick={(e) => { e.stopPropagation(); update({ showSettingsPanel: !showSettingsPanel }); }}
+                onPointerDown={(e) => e.stopPropagation()}
+              >
+                {showSettingsPanel ? '收起参数设置 ▲' : `展开参数设置 ▼  ${duration}s · ${ratio || '16:9'}`}
+              </button>
 
               {/* 图片上传区 */}
               {inputType === 'single' ? (
