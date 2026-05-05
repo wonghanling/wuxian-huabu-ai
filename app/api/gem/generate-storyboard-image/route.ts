@@ -18,16 +18,21 @@ export async function POST(req: NextRequest) {
       '2048x2048': { width: 2048, height: 2048 },
     };
 
-    // 上传图片到 fal storage 拿 URL
+    // 上传图片到 fal storage 拿 URL（base64 需上传，URL 直接用）
     const allImages: string[] = [];
     for (const img of imageBase64Array) {
-      const base64Data = img.replace(/^data:image\/\w+;base64,/, '');
-      const buffer = Buffer.from(base64Data, 'base64');
-      const blob = new Blob([buffer], { type: 'image/jpeg' });
-      const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
-      const url = await fal.storage.upload(file);
-      console.log('[StoryboardImage] fal url:', url);
-      allImages.push(url);
+      if (img.startsWith('http')) {
+        allImages.push(img);
+        console.log('[StoryboardImage] direct url:', img.slice(0, 80));
+      } else {
+        const base64Data = img.replace(/^data:image\/\w+;base64,/, '');
+        const buffer = Buffer.from(base64Data, 'base64');
+        const blob = new Blob([buffer], { type: 'image/jpeg' });
+        const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
+        const url = await fal.storage.upload(file);
+        console.log('[StoryboardImage] fal url:', url);
+        allImages.push(url);
+      }
     }
 
     const submitted = await fal.queue.submit('openai/gpt-image-2/edit', {

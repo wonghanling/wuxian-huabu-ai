@@ -109,6 +109,8 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
           const src = editor.getShape((cb as any).toId) as any;
           if (!src) continue;
           if (src.type === 'custom-card' && src.props?.cardType === 'character' && src.props?.characterGeneratedImage) return src.props.characterGeneratedImage;
+          // 单图模式只接受角色设计卡片连接，其他连接忽略
+          if (inputType === 'single') continue;
           if (src.type === 'custom-card' && src.props?.generatedImage) return src.props.generatedImage;
           if (src.type === 'media-upload-card' && src.props?.mediaType === 'image' && src.props?.imageData) return src.props.imageData;
         }
@@ -199,7 +201,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
 
         let prompt = '';
         if (inputType === 'single') {
-          prompt = `图1是人物三视角参考图，用于保持角色外观、服装、比例的一致性。图2是剧情首帧，定义起始场景、构图、光线和氛围。根据这两张参考图，设计4个连续分镜画面：第1格严格还原首帧构图，第2-4格按剧情发展推进动作。把4个画面嵌入分镜脚本模板的4个空白画面框里，同时只在模板说明栏填写镜头号、时间轴、景别、运镜、动作说明、音效，不覆盖画面框。整体为一个${duration}s镜头，时间轴按动作节奏分配。${actionSuggestion}`;
+          prompt = `图1是人物三视角参考图，用于保持角色外观、服装、比例的一致性。图2是剧情首帧，定义起始场景、构图、光线和氛围。根据这两张参考图，设计4个连续电影级分镜画面：第1格严格还原首帧构图，第2-4格按剧情发展推进动作。把4个画面嵌入分镜脚本模板的4个空白画面框里，同时只在模板说明栏填写镜头号、时间轴、景别、运镜、动作说明、音效，不覆盖画面框。整体为一个${duration}s电影级镜头，时间轴按动作节奏分配。${actionSuggestion}`;
         } else {
           const isCellMode = scriptMode === 'detail';
           const shotCount = inputType === '2x2' ? 4 : 9;
