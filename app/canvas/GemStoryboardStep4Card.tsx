@@ -374,7 +374,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
             style={{
               left: '100%',
               marginLeft: '8px',
-              top: showSettingsPanel ? '280px' : '0px',
+              top: showSettingsPanel ? '200px' : '0px',
               width: 320,
               zIndex: 200,
               background: 'linear-gradient(135deg, rgba(192,192,192,0.15) 0%, rgba(100,100,100,0.1) 100%)',

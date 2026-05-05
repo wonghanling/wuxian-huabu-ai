@@ -1099,7 +1099,10 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
             style={{
               left: '100%',
               marginLeft: '8px',
-              top: showImageSettingsPanel ? '320px' : '0px',
+              top: showImageSettingsPanel ? (
+                ['gpt-image-2', 'gpt-image-2-all'].includes(model || '') ? '280px' :
+                ['nano-banana-pro', 'nano-banana-pro-multi'].includes(model || '') ? '220px' : '180px'
+              ) : '0px',
               width: 320,
               zIndex: 200,
               background: 'linear-gradient(135deg, rgba(192,192,192,0.15) 0%, rgba(100,100,100,0.1) 100%)',
