@@ -41,6 +41,7 @@ export type GemStep4CardShape = TLBaseShape<
     scriptMode?: 'normal' | 'detail';
     ratio?: '16:9' | '9:16' | '1:1';
     generationProgress?: number;
+    showImageOutput?: boolean;
   }
 >;
 
@@ -61,6 +62,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
     scriptMode: T.string.optional() as any,
     ratio: T.string.optional() as any,
     generationProgress: T.number.optional() as any,
+    showImageOutput: T.boolean.optional() as any,
   };
 
   override isAspectRatioLocked = () => false;
@@ -87,7 +89,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
   }
 
   component(shape: GemStep4CardShape) {
-    const { w, h, actionSuggestion, result, generatedImage, isGenerating, isMinimized, duration, scriptMode, ratio, generationProgress } = shape.props;
+    const { w, h, actionSuggestion, result, generatedImage, isGenerating, isMinimized, duration, scriptMode, ratio, generationProgress, showImageOutput } = shape.props;
     const editor = useEditor();
     const [image, setImage] = useState<string>('');
     const [image2, setImage2] = useState<string>('');
@@ -504,26 +506,68 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
                 </div>
               )}
 
-              {/* 图片结果（所有模式） */}
+              {/* 图片输出按钮 */}
               {generatedImage && (
-                <div className="flex-shrink-0">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[10px] text-sky-400 font-semibold">分镜脚本图</span>
-                    <div className="flex gap-2">
+                <button
+                  className="flex-shrink-0 w-full py-2 mt-1 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-green-500/80 to-green-600/80 hover:from-green-500 hover:to-green-600"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    update({ showImageOutput: !showImageOutput });
+                  }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >
+                  {showImageOutput ? '隐藏图片' : '查看生成图片'}
+                </button>
+              )}
+
+              {/* 图片输出面板 */}
+              {showImageOutput && generatedImage && (
+                <div className="flex-shrink-0 mt-1 bg-black/40 border border-white/10 rounded-lg overflow-visible">
+                  <div className="relative group">
+                    <img
+                      src={generatedImage}
+                      alt="分镜脚本"
+                      className="w-full h-auto max-h-[250px] object-contain bg-black/20"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                       <button
+                        className="px-3 py-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
                         onClick={(e) => { e.stopPropagation(); setLightbox(true); }}
                         onPointerDown={(e) => e.stopPropagation()}
-                        className="text-[10px] text-sky-400 hover:text-sky-300 transition-colors">放大</button>
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                        </svg>
+                        查看
+                      </button>
                       <button
+                        className="px-3 py-2 bg-green-500/90 hover:bg-green-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
                         onClick={(e) => { e.stopPropagation(); downloadImage(); }}
                         onPointerDown={(e) => e.stopPropagation()}
-                        className="text-[10px] text-emerald-400 hover:text-emerald-300 transition-colors">下载</button>
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        下载
+                      </button>
+                      <button
+                        className="px-3 py-2 bg-red-500/90 hover:bg-red-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          update({ generatedImage: '', showImageOutput: false });
+                        }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        删除
+                      </button>
                     </div>
-                  </div>
-                  <div className="relative w-full rounded-xl overflow-hidden border border-sky-500/20 cursor-pointer"
-                    onClick={(e) => { e.stopPropagation(); setLightbox(true); }}
-                    onPointerDown={(e) => e.stopPropagation()}>
-                    <img src={generatedImage} alt="分镜脚本" className="w-full h-auto" />
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 pointer-events-none">
+                      <p className="text-white text-[10px] truncate">生成成功</p>
+                    </div>
                   </div>
                 </div>
               )}
