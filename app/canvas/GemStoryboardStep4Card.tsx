@@ -100,6 +100,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
     };
 
     const getConnectedImage = (): string => {
+      if (inputType === 'single') return '';
       const inputBindings = editor.getBindingsToShape(shape.id, 'connection');
       for (const binding of inputBindings) {
         if ((binding as any).props?.terminal !== 'end') continue;
@@ -109,8 +110,6 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
           const src = editor.getShape((cb as any).toId) as any;
           if (!src) continue;
           if (src.type === 'custom-card' && src.props?.cardType === 'character' && src.props?.characterGeneratedImage) return src.props.characterGeneratedImage;
-          // 单图模式只接受角色设计卡片连接，其他连接忽略
-          if (inputType === 'single') continue;
           if (src.type === 'custom-card' && src.props?.generatedImage) return src.props.generatedImage;
           if (src.type === 'media-upload-card' && src.props?.mediaType === 'image' && src.props?.imageData) return src.props.imageData;
         }
