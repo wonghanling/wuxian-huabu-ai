@@ -368,7 +368,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
         )}
 
         {/* 右侧图片输出浮层 */}
-        {showImageOutput && generatedImage && (
+        {showImageOutput && generatedImage && !isMinimized && (
           <div
             className="absolute rounded-2xl shadow-2xl backdrop-blur-xl"
             style={{
@@ -450,10 +450,10 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
         <div className="w-full h-full bg-zinc-900/95 backdrop-blur-sm border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-visible">
           {/* 标题栏 */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/8 flex-shrink-0">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-sky-400"></div>
-              <span className="text-white text-sm font-semibold">GEM 导演引擎 · Step 3-Solo</span>
-              <span className="text-gray-500 text-xs">单图运动</span>
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-2 h-2 rounded-full bg-sky-400 flex-shrink-0"></div>
+              <span className="text-white text-sm font-semibold truncate">GEM 导演引擎 · Step 3-Solo</span>
+              {!isMinimized && <span className="text-gray-500 text-xs flex-shrink-0">单图运动</span>}
             </div>
             <button onClick={toggleMinimize} onPointerDown={(e) => e.stopPropagation()}
               className="w-6 h-6 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all text-sm">
