@@ -331,7 +331,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
           </div>
 
           {!isMinimized && (
-            <div className="flex-1 flex flex-col overflow-y-auto p-3 gap-2">
+            <div className="flex-1 flex flex-col overflow-y-hidden p-3 gap-2">
 
               {/* 模式选择 */}
               <div className="flex gap-1 flex-shrink-0">
