@@ -374,6 +374,9 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Workflow Templates Gallery */}
+      <TemplateGallery />
+
       {/* Card Types Section */}
       <section className="py-32 border-t border-white/5 relative z-10 bg-zinc-950/50">
         <div className="max-w-7xl mx-auto px-6">
@@ -586,9 +589,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* Workflow Templates Gallery */}
-      <TemplateGallery />
 
       {/* Pricing Section */}
       <section id="pricing" className="py-32 border-t border-white/5 relative z-10">
