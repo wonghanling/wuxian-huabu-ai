@@ -6,6 +6,29 @@ import { createClient } from '@/lib/supabase/client';
 
 const CATEGORIES = ['通用', '视频', '图像', '音频', '创作'];
 
+async function compressImage(file: File, maxSize = 1280, quality = 0.85): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      img.src = reader.result as string;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export function SaveTemplateModal({ editor, onClose }: { editor: Editor; onClose: () => void }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -13,36 +36,24 @@ export function SaveTemplateModal({ editor, onClose }: { editor: Editor; onClose
   const [tagsInput, setTagsInput] = useState('');
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoPreviewUrl, setVideoPreviewUrl] = useState<string>('');
-  const [coverPreview, setCoverPreview] = useState<string>('');
+  const [coverBase64, setCoverBase64] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<'form' | 'generating' | 'done'>('form');
 
-  // 卡片挂载时自动生成封面预览
-  const generateCover = async () => {
-    try {
-      const shapeIds = editor.getCurrentPageShapeIds();
-      if (shapeIds.size === 0) {
-        alert('画布为空，请先添加节点');
-        return null;
-      }
-      const result = await editor.toImage([...shapeIds], {
-        format: 'jpeg',
-        scale: 0.5,
-        background: true,
-        padding: 32,
-        darkMode: true,
-      });
-      const coverBase64 = await new Promise<string>((res) => {
-        const r = new FileReader();
-        r.onload = () => res(r.result as string);
-        r.readAsDataURL(result.blob);
-      });
-      setCoverPreview(coverBase64);
-      return coverBase64;
-    } catch (e: any) {
-      alert('生成封面失败: ' + e.message);
-      return null;
+  const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('请上传图片文件');
+      return;
     }
+    try {
+      const compressed = await compressImage(file);
+      setCoverBase64(compressed);
+    } catch {
+      alert('封面处理失败');
+    }
+    e.target.value = '';
   };
 
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,33 +65,24 @@ export function SaveTemplateModal({ editor, onClose }: { editor: Editor; onClose
     }
     setVideoFile(file);
     setVideoPreviewUrl(URL.createObjectURL(file));
+    e.target.value = '';
   };
 
   const handleSave = async () => {
     if (!title.trim()) { alert('请输入标题'); return; }
+    if (!coverBase64) { alert('请上传封面图'); return; }
     if (!videoFile) { alert('请上传预览视频（mp4）'); return; }
 
     setLoading(true);
     setStep('generating');
 
     try {
-      // 1. 生成封面图
-      let coverBase64 = coverPreview;
-      if (!coverBase64) {
-        const c = await generateCover();
-        if (!c) { setLoading(false); setStep('form'); return; }
-        coverBase64 = c;
-      }
-
-      // 2. 拿 snapshot
       const snapshot = getSnapshot(editor.store);
 
-      // 3. 拿登录 token
       const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { alert('请先登录'); setLoading(false); setStep('form'); return; }
 
-      // 4. 提交 FormData
       const fd = new FormData();
       fd.append('title', title.trim());
       fd.append('description', description.trim());
@@ -187,6 +189,32 @@ export function SaveTemplateModal({ editor, onClose }: { editor: Editor; onClose
               />
             </div>
 
+            {/* 封面图上传 */}
+            <div>
+              <label className="text-gray-300 text-xs mb-1 block">
+                封面图 <span className="text-red-400">*</span>
+                <span className="text-gray-500 ml-2">（jpg / png，推荐 16:9）</span>
+              </label>
+              {coverBase64 ? (
+                <div className="relative rounded-lg overflow-hidden bg-black/40 border border-white/10">
+                  <img src={coverBase64} alt="封面预览" className="w-full max-h-48 object-contain" />
+                  <button
+                    onClick={() => setCoverBase64('')}
+                    disabled={loading}
+                    className="absolute top-2 right-2 w-7 h-7 bg-red-500/80 hover:bg-red-500 rounded-full text-white text-xs"
+                  >✕</button>
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center h-24 bg-black/40 border border-dashed border-white/15 rounded-lg cursor-pointer hover:border-white/30 transition-colors">
+                  <svg className="w-6 h-6 text-gray-500 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span className="text-xs text-gray-400">点击上传封面图</span>
+                  <input type="file" accept="image/*" className="hidden" onChange={handleCoverChange} disabled={loading} />
+                </label>
+              )}
+            </div>
+
             {/* 预览视频上传 */}
             <div>
               <label className="text-gray-300 text-xs mb-1 block">
@@ -213,26 +241,6 @@ export function SaveTemplateModal({ editor, onClose }: { editor: Editor; onClose
               )}
             </div>
 
-            {/* 封面预览 */}
-            <div>
-              <label className="text-gray-300 text-xs mb-1 block">
-                封面图（自动从画布生成）
-              </label>
-              {coverPreview ? (
-                <div className="rounded-lg overflow-hidden bg-black/40 border border-white/10">
-                  <img src={coverPreview} alt="封面预览" className="w-full max-h-40 object-contain" />
-                </div>
-              ) : (
-                <button
-                  onClick={generateCover}
-                  disabled={loading}
-                  className="w-full h-16 bg-black/40 border border-dashed border-white/15 rounded-lg text-xs text-gray-400 hover:border-white/30"
-                >
-                  预览封面
-                </button>
-              )}
-            </div>
-
             {/* 按钮 */}
             <div className="flex gap-2 pt-2">
               <button
@@ -242,7 +250,7 @@ export function SaveTemplateModal({ editor, onClose }: { editor: Editor; onClose
               >取消</button>
               <button
                 onClick={handleSave}
-                disabled={loading || !title.trim() || !videoFile}
+                disabled={loading || !title.trim() || !videoFile || !coverBase64}
                 className="flex-1 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium transition-all"
               >
                 {loading ? '保存中...' : '保存模板'}

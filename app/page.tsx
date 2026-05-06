@@ -5,6 +5,7 @@ import { Infinity, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import { TemplateGallery } from './_components/TemplateGallery';
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);
@@ -585,6 +586,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Workflow Templates Gallery */}
+      <TemplateGallery />
 
       {/* Pricing Section */}
       <section id="pricing" className="py-32 border-t border-white/5 relative z-10">

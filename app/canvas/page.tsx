@@ -1662,6 +1662,7 @@ function AssetPanel({ onClose }: { onClose: () => void }) {
 function CanvasPageContent() {
   const searchParams = useSearchParams();
   const isTutorial = searchParams.get('tutorial') === 'true';
+  const templateId = searchParams.get('templateId');
 
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
   const [cameraZoom, setCameraZoom] = useState(1);
@@ -1800,6 +1801,48 @@ function CanvasPageContent() {
         setIsLoggedIn(true);
         userIdRef.current = user.id;
         setUserEmail(user.email || '');
+
+        // 带 templateId：从模板创建新画布
+        if (templateId) {
+          try {
+            const tRes = await fetch(`/api/templates/${templateId}`);
+            const tData = await tRes.json();
+            if (tData.template) {
+              const { data: { session } } = await supabase.auth.getSession();
+              if (session) {
+                const createRes = await fetch('/api/canvas/create-from-template', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}`,
+                  },
+                  body: JSON.stringify({
+                    title: `${tData.template.title}（副本）`,
+                    snapshot: tData.template.snapshot_json,
+                  }),
+                });
+                const createData = await createRes.json();
+                if (createData.canvasId) {
+                  canvasIdRef.current = createData.canvasId;
+                  loadSnapshot(editor.store, tData.template.snapshot_json);
+                  // 刷新画布列表
+                  const { data: refreshed } = await supabase
+                    .from('canvases')
+                    .select('id, title')
+                    .eq('user_id', user.id)
+                    .order('updated_at', { ascending: false });
+                  if (refreshed) setCanvasList(refreshed);
+                  // 清掉 URL 里的 templateId
+                  window.history.replaceState({}, '', '/canvas');
+                  setTimeout(() => { isRestoringRef.current = false; }, 500);
+                  return;
+                }
+              }
+            }
+          } catch (e) {
+            console.error('从模板创建画布失败:', e);
+          }
+        }
 
         // 加载画布列表
         const { data: canvases } = await supabase
