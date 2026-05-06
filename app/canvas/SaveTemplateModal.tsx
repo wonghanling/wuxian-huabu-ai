@@ -83,19 +83,39 @@ export function SaveTemplateModal({ editor, onClose }: { editor: Editor; onClose
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { alert('请先登录'); setLoading(false); setStep('form'); return; }
 
-      const fd = new FormData();
-      fd.append('title', title.trim());
-      fd.append('description', description.trim());
-      fd.append('category', category);
-      fd.append('tags', tagsInput);
-      fd.append('coverBase64', coverBase64);
-      fd.append('previewVideo', videoFile);
-      fd.append('snapshot', JSON.stringify(snapshot));
+      // 1. 前端直接上传视频到 Supabase Storage（绕过 Vercel 4.5MB 限制）
+      const videoPath = `templates/videos/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.mp4`;
+      const { error: videoErr } = await supabase.storage
+        .from('assets')
+        .upload(videoPath, videoFile, { contentType: 'video/mp4' });
+      if (videoErr) throw new Error('视频上传失败: ' + videoErr.message);
+      const { data: { publicUrl: videoUrl } } = supabase.storage.from('assets').getPublicUrl(videoPath);
 
+      // 2. 前端直接上传封面图到 Supabase Storage
+      const coverBlob = await (await fetch(coverBase64)).blob();
+      const coverPath = `templates/covers/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+      const { error: coverErr } = await supabase.storage
+        .from('assets')
+        .upload(coverPath, coverBlob, { contentType: 'image/jpeg' });
+      if (coverErr) throw new Error('封面上传失败: ' + coverErr.message);
+      const { data: { publicUrl: coverUrl } } = supabase.storage.from('assets').getPublicUrl(coverPath);
+
+      // 3. 调 API 写数据库（只传 URL 和 JSON，不走文件）
       const res = await fetch('/api/templates/save', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${session.access_token}` },
-        body: fd,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          title: title.trim(),
+          description: description.trim(),
+          category,
+          tags: tagsInput,
+          coverUrl,
+          videoUrl,
+          snapshot,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '保存失败');
