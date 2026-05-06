@@ -132,7 +132,7 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
   getDefaultProps(): GemStep2CardShape['props'] {
     return {
       w: 400,
-      h: 580,
+      h: 440,
       visualProfile: '',
       script: '',
       gridSize: '9',
@@ -289,7 +289,7 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
 
     const toggleMinimize = (e: React.MouseEvent) => {
       e.stopPropagation();
-      update({ isMinimized: !isMinimized, w: isMinimized ? 400 : 160, h: isMinimized ? 580 : 48 });
+      update({ isMinimized: !isMinimized, w: isMinimized ? 400 : 160, h: isMinimized ? 440 : 48 });
     };
 
     const gridOptions = mode === 'story' ? STORY_GRID_OPTIONS : CINEMATIC_GRID_OPTIONS;
