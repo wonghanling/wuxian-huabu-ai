@@ -771,6 +771,10 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
     const connFirstFrame = connectedVideoImages[0] || '';
     const connLastFrame = connectedVideoImages[1] || '';
 
+    // 图片卡片多图连接（按模型限制数量）
+    const imageCardMaxConn = model === 'nano-banana-pro-multi' ? 10 : model === 'gpt-image-2-all' ? 10 : model === 'nano-banana' ? 2 : 1;
+    const connectedImageCardImages = cardType === 'image' ? getConnectedImages(imageCardMaxConn) : [];
+
     const toggleMinimize = (e: React.MouseEvent) => {
       e.stopPropagation();
 
@@ -2243,12 +2247,21 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     : model === 'flux-kontext' ? '参考图片（必填）' : '参考图片（可选）'}
                 </label>
 
-                {/* 连接图片预览 */}
-                {connectedGeneratedImage && (
-                  <div className="mb-2 relative w-full bg-black/30 rounded-xl overflow-hidden border border-purple-500/30"
-                    style={{ aspectRatio: '16/9', maxHeight: '96px' }}>
-                    <img src={connectedGeneratedImage} className="w-full h-full object-cover" />
-                    <div className="absolute bottom-0 left-0 right-0 bg-purple-600/80 text-white text-[10px] text-center py-0.5">来自连接卡片</div>
+                {/* 连接图片预览 - 按模型显示数量限制 */}
+                {connectedImageCardImages.length > 0 && (
+                  <div className="mb-2 flex flex-col gap-1">
+                    {connectedImageCardImages.map((img, idx) => (
+                      <div key={idx} className="relative w-full bg-black/30 rounded-xl overflow-hidden border border-purple-500/30"
+                        style={{ aspectRatio: '16/9', maxHeight: '96px' }}>
+                        <img src={img} className="w-full h-full object-cover" />
+                        <div className="absolute bottom-0 left-0 right-0 bg-purple-600/80 text-white text-[10px] text-center py-0.5">
+                          来自连接 {connectedImageCardImages.length > 1 ? `(${idx + 1}/${connectedImageCardImages.length})` : ''}
+                        </div>
+                      </div>
+                    ))}
+                    {connectedImageCardImages.length >= imageCardMaxConn && (
+                      <p className="text-[10px] text-yellow-400">已达到最大连接数量 ({imageCardMaxConn}张)</p>
+                    )}
                   </div>
                 )}
 
@@ -2425,7 +2438,8 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   /* 其他模型：单图上传 */
                   (() => {
                     const singleImgInputRef = { current: null as HTMLInputElement | null };
-                    const effectiveImage = connectedGeneratedImage || uploadedImage;
+                    const connImg = connectedImageCardImages[0] || '';
+                    const effectiveImage = connImg || uploadedImage;
                     const handleSingleFile = async (file: File) => {
                       const reader = new FileReader();
                       reader.onload = async (event) => {
@@ -2466,14 +2480,14 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           <div
                             className="relative w-full bg-black/30 rounded-xl overflow-hidden group cursor-pointer"
                             style={{ aspectRatio: uploadedImageRatio }}
-                            onClick={(e) => { e.stopPropagation(); if (!connectedGeneratedImage) singleImgInputRef.current?.click(); }}
+                            onClick={(e) => { e.stopPropagation(); if (!connImg) singleImgInputRef.current?.click(); }}
                             onPointerDown={(e) => e.stopPropagation()}
                           >
                             <img src={effectiveImage} alt="参考图" className="w-full h-full object-cover" />
-                            {connectedGeneratedImage && (
+                            {connImg && (
                               <div className="absolute bottom-0 left-0 right-0 bg-blue-600/70 text-white text-[10px] text-center py-0.5">来自连接</div>
                             )}
-                            {!connectedGeneratedImage && (
+                            {!connImg && (
                               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
                                 <button
                                   className="px-3 py-1.5 bg-white/15 hover:bg-white/25 rounded-lg text-white text-xs transition-colors"
@@ -2495,6 +2509,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           <div
                             className="w-full flex flex-col items-center justify-center gap-1.5 border border-dashed border-white/15 rounded-xl cursor-pointer hover:border-white/30 hover:bg-white/3 transition-all"
                             style={{ aspectRatio: '16/9', maxHeight: '96px' }}
+                            onClick={(e) => { e.stopPropagation(); singleImgInputRef.current?.click(); }}
                             onPointerDown={(e) => e.stopPropagation()}
                           >
                             <svg className="w-6 h-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2853,20 +2868,24 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       const imgs: string[] = uploadedImages ? JSON.parse(uploadedImages) : [];
 
                       let imagesToSend: string[] = [];
-                      // 连接图片优先
-                      if (connectedGeneratedImage) {
-                        const isBase64 = connectedGeneratedImage.startsWith('data:');
-                        const raw = isBase64 ? connectedGeneratedImage : await fetch(connectedGeneratedImage).then(r => r.blob()).then(b => new Promise<string>(res => { const rd = new FileReader(); rd.onload = () => res(rd.result as string); rd.readAsDataURL(b); }));
-                        imagesToSend.push(await softCompressImage(raw));
-                      }
-                      // 手动上传单图（gpt-image-2 单图模式）
-                      if (uploadedImage && !connectedGeneratedImage) {
-                        imagesToSend.push(await softCompressImage(uploadedImage));
-                      }
-                      // 多图（gpt-image-2-all 多图融合模式）
-                      if (imgs.length > 0) {
+                      if (model === 'gpt-image-2-all') {
+                        // 多图融合：连接图片（多张）+ 手动上传图片
+                        for (const connImg of connectedImageCardImages) {
+                          const isBase64 = connImg.startsWith('data:');
+                          const raw = isBase64 ? connImg : await fetch(connImg).then(r => r.blob()).then(b => new Promise<string>(res => { const rd = new FileReader(); rd.onload = () => res(rd.result as string); rd.readAsDataURL(b); }));
+                          imagesToSend.push(await softCompressImage(raw));
+                        }
                         for (const img of imgs) {
                           imagesToSend.push(await softCompressImage(img));
+                        }
+                      } else {
+                        // gpt-image-2 单图模式：连接图片优先，否则用手动上传
+                        if (connectedGeneratedImage) {
+                          const isBase64 = connectedGeneratedImage.startsWith('data:');
+                          const raw = isBase64 ? connectedGeneratedImage : await fetch(connectedGeneratedImage).then(r => r.blob()).then(b => new Promise<string>(res => { const rd = new FileReader(); rd.onload = () => res(rd.result as string); rd.readAsDataURL(b); }));
+                          imagesToSend.push(await softCompressImage(raw));
+                        } else if (uploadedImage) {
+                          imagesToSend.push(await softCompressImage(uploadedImage));
                         }
                       }
 
@@ -2941,38 +2960,32 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     let connImageBase64Array: string[] | undefined;
                     let connImageUrlArray: string[] | undefined;
 
-                    if (connectedGeneratedImage) {
-                      const connImg = connectedGeneratedImage;
-                      const isBase64 = connImg.startsWith('data:');
-                      if (['nano-banana-pro', 'nano-banana-pro-multi'].includes(model || '')) {
-                        // 需要 fal URL
-                        if (isBase64) {
-                          const blob = await fetch(connImg).then(r => r.blob());
-                          const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
-                          const url = await fal.storage.upload(file);
-                          connImageUrlArray = [url];
-                        } else {
-                          connImageUrlArray = [connImg];
-                        }
+                    const toBase64 = async (src: string): Promise<string> => {
+                      if (src.startsWith('data:')) return softCompressImage(src);
+                      const blob = await fetch(src).then(r => r.blob());
+                      const b64 = await new Promise<string>(res => { const r = new FileReader(); r.onload = () => res(r.result as string); r.readAsDataURL(blob); });
+                      return softCompressImage(b64);
+                    };
+                    const toFalUrl = async (src: string): Promise<string> => {
+                      if (!src.startsWith('data:')) return src;
+                      const blob = await fetch(src).then(r => r.blob());
+                      const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
+                      return fal.storage.upload(file);
+                    };
+
+                    if (connectedImageCardImages.length > 0) {
+                      if (model === 'nano-banana-pro-multi') {
+                        // 多图融合：所有连接图片转 fal URL
+                        connImageUrlArray = await Promise.all(connectedImageCardImages.map(toFalUrl));
+                      } else if (model === 'nano-banana-pro') {
+                        // 单图：取第一张连接图片转 fal URL
+                        connImageUrlArray = [await toFalUrl(connectedImageCardImages[0])];
                       } else if (model === 'nano-banana') {
-                        // 需要 base64 数组
-                        if (isBase64) {
-                          const compressed = await softCompressImage(connImg);
-                          connImageBase64Array = [compressed];
-                        } else {
-                          const blob = await fetch(connImg).then(r => r.blob());
-                          const base64 = await new Promise<string>(res => { const r = new FileReader(); r.onload = () => res(r.result as string); r.readAsDataURL(blob); });
-                          connImageBase64Array = [await softCompressImage(base64)];
-                        }
+                        // 最多2张连接图片转 base64
+                        connImageBase64Array = await Promise.all(connectedImageCardImages.slice(0, 2).map(toBase64));
                       } else {
-                        // flux-kontext, doubao, mj 等：base64
-                        if (isBase64) {
-                          connImageBase64 = await softCompressImage(connImg);
-                        } else {
-                          const blob = await fetch(connImg).then(r => r.blob());
-                          const base64 = await new Promise<string>(res => { const r = new FileReader(); r.onload = () => res(r.result as string); r.readAsDataURL(blob); });
-                          connImageBase64 = await softCompressImage(base64);
-                        }
+                        // flux-kontext, doubao, mj 等单图：取第一张
+                        connImageBase64 = await toBase64(connectedImageCardImages[0]);
                       }
                     }
 
@@ -2985,9 +2998,9 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         model: model || 'nano-banana-pro',
                         prompt: fullPrompt,
                         aspectRatio: aspectRatio || '1:1',
-                        imageBase64: connectedGeneratedImage ? connImageBase64 : (uploadedImage || undefined),
-                        imageBase64Array: connectedGeneratedImage ? connImageBase64Array : (model === 'nano-banana' && uploadedImages ? JSON.parse(uploadedImages) : undefined),
-                        imageUrlArray: connectedGeneratedImage ? connImageUrlArray : (['nano-banana-pro', 'nano-banana-pro-multi'].includes(model || '') && uploadedImageUrls ? JSON.parse(uploadedImageUrls) : undefined),
+                        imageBase64: connectedImageCardImages.length > 0 ? connImageBase64 : (uploadedImage || undefined),
+                        imageBase64Array: connectedImageCardImages.length > 0 ? connImageBase64Array : (model === 'nano-banana' && uploadedImages ? JSON.parse(uploadedImages) : undefined),
+                        imageUrlArray: connectedImageCardImages.length > 0 ? connImageUrlArray : (['nano-banana-pro', 'nano-banana-pro-multi'].includes(model || '') && uploadedImageUrls ? JSON.parse(uploadedImageUrls) : undefined),
                         imageQuality: ['nano-banana-pro', 'nano-banana-pro-multi'].includes(model || '') ? (imageQuality ?? '2k') : undefined,
                         userId: userId || undefined,
                       }),
