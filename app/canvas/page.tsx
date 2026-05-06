@@ -1658,29 +1658,6 @@ function AssetPanel({ onClose }: { onClose: () => void }) {
   );
 }
 
-// 清理 snapshot 中已废弃的 shape props，兼容旧画布
-function sanitizeSnapshot(snapshot: any): any {
-  if (!snapshot) return snapshot;
-  try {
-    const records = snapshot?.store || snapshot?.document?.store;
-    if (!records) return snapshot;
-    const deprecatedProps: Record<string, string[]> = {
-      'gem-step3-card': ['characterHint', 'storyboard'],
-    };
-    for (const key of Object.keys(records)) {
-      const rec = records[key];
-      if (rec?.typeName === 'shape' && rec?.type && deprecatedProps[rec.type]) {
-        for (const p of deprecatedProps[rec.type]) {
-          if (rec.props && p in rec.props) delete rec.props[p];
-        }
-      }
-    }
-  } catch (e) {
-    console.warn('sanitizeSnapshot 失败:', e);
-  }
-  return snapshot;
-}
-
 function CanvasPageContent() {
   const searchParams = useSearchParams();
   const isTutorial = searchParams.get('tutorial') === 'true';
@@ -1836,7 +1813,7 @@ function CanvasPageContent() {
 
         const snapshot = await loadCanvasSnapshot(canvasId);
         if (snapshot) {
-          loadSnapshot(editor.store, sanitizeSnapshot(snapshot));
+          loadSnapshot(editor.store, snapshot);
           console.log('画布已恢复');
         }
         // 加载完成后延迟解锁，让 store 批量写入完成
@@ -2155,7 +2132,7 @@ function CanvasPageContent() {
                                   const snapshot = await loadCanvasSnapshot(c.id);
                                   isRestoringRef.current = true;
                                   if (snapshot) {
-                                    loadSnapshot(editorInstance.store, sanitizeSnapshot(snapshot));
+                                    loadSnapshot(editorInstance.store, snapshot);
                                   } else {
                                     editorInstance.selectAll();
                                     editorInstance.deleteShapes(editorInstance.getSelectedShapeIds());
@@ -2199,7 +2176,7 @@ function CanvasPageContent() {
                                   if (editorInstance) {
                                     isRestoringRef.current = true;
                                     if (snapshot) {
-                                      loadSnapshot(editorInstance.store, sanitizeSnapshot(snapshot));
+                                      loadSnapshot(editorInstance.store, snapshot);
                                     } else {
                                       editorInstance.selectAll();
                                       editorInstance.deleteShapes(editorInstance.getSelectedShapeIds());
