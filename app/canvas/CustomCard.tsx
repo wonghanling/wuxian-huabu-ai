@@ -2439,7 +2439,9 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                   (() => {
                     const singleImgInputRef = { current: null as HTMLInputElement | null };
                     const connImg = connectedImageCardImages[0] || '';
-                    const effectiveImage = connImg || uploadedImage;
+                    // 有连接图片时不渲染上传区（连接预览区已经显示了）
+                    if (connImg) return null;
+                    const effectiveImage = uploadedImage;
                     const handleSingleFile = async (file: File) => {
                       const reader = new FileReader();
                       reader.onload = async (event) => {
@@ -2480,30 +2482,25 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           <div
                             className="relative w-full bg-black/30 rounded-xl overflow-hidden group cursor-pointer"
                             style={{ aspectRatio: uploadedImageRatio }}
-                            onClick={(e) => { e.stopPropagation(); if (!connImg) singleImgInputRef.current?.click(); }}
+                            onClick={(e) => { e.stopPropagation(); singleImgInputRef.current?.click(); }}
                             onPointerDown={(e) => e.stopPropagation()}
                           >
                             <img src={effectiveImage} alt="参考图" className="w-full h-full object-cover" />
-                            {connImg && (
-                              <div className="absolute bottom-0 left-0 right-0 bg-blue-600/70 text-white text-[10px] text-center py-0.5">来自连接</div>
-                            )}
-                            {!connImg && (
-                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                                <button
-                                  className="px-3 py-1.5 bg-white/15 hover:bg-white/25 rounded-lg text-white text-xs transition-colors"
-                                  onClick={(e) => { e.stopPropagation(); singleImgInputRef.current?.click(); }}
-                                  onPointerDown={(e) => e.stopPropagation()}
-                                >更换</button>
-                                <button
-                                  className="px-3 py-1.5 bg-red-500/40 hover:bg-red-500/60 rounded-lg text-white text-xs transition-colors"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImage: '' } });
-                                  }}
-                                  onPointerDown={(e) => e.stopPropagation()}
-                                >删除</button>
-                              </div>
-                            )}
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                              <button
+                                className="px-3 py-1.5 bg-white/15 hover:bg-white/25 rounded-lg text-white text-xs transition-colors"
+                                onClick={(e) => { e.stopPropagation(); singleImgInputRef.current?.click(); }}
+                                onPointerDown={(e) => e.stopPropagation()}
+                              >更换</button>
+                              <button
+                                className="px-3 py-1.5 bg-red-500/40 hover:bg-red-500/60 rounded-lg text-white text-xs transition-colors"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImage: '' } });
+                                }}
+                                onPointerDown={(e) => e.stopPropagation()}
+                              >删除</button>
+                            </div>
                           </div>
                         ) : (
                           <div
