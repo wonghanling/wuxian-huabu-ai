@@ -21,6 +21,7 @@ import { CameraControlCardUtil } from './CameraControlCard';
 import { SeedanceCardUtil } from './SeedanceCard';
 import { MediaUploadCardUtil } from './MediaUploadCard';
 import TutorialOverlay from './TutorialOverlay';
+import { SaveTemplateModal } from './SaveTemplateModal';
 import { createClient } from '@/lib/supabase/client';
 import { getOrCreateCanvas, loadSnapshot as loadCanvasSnapshot, saveSnapshot } from '@/lib/canvas-storage';
 import { useMembership } from '@/lib/useMembership';
@@ -1669,6 +1670,8 @@ function CanvasPageContent() {
   const [showTutorial, setShowTutorial] = useState(isTutorial);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('unsaved');
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [userEmail, setUserEmail] = useState<string>('');
+  const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
   const [canvasList, setCanvasList] = useState<{id: string; title: string}[]>([]);
   const [showCanvasList, setShowCanvasList] = useState(false);
   const [showAssetPanel, setShowAssetPanel] = useState(false);
@@ -1796,6 +1799,7 @@ function CanvasPageContent() {
 
         setIsLoggedIn(true);
         userIdRef.current = user.id;
+        setUserEmail(user.email || '');
 
         // 加载画布列表
         const { data: canvases } = await supabase
@@ -2053,6 +2057,20 @@ function CanvasPageContent() {
                   充值
                 </button>
               </div>
+
+              {/* 保存为模板（仅管理员） */}
+              {userEmail === '1825221780@qq.com' && editorInstance && (
+                <button
+                  onClick={() => setShowSaveTemplateModal(true)}
+                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-purple-600/30 backdrop-blur-md border border-purple-500/40 text-purple-200 hover:bg-purple-600/50 hover:border-purple-500/60 transition-all"
+                  title="保存当前画布为工作流模板"
+                >
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                  </svg>
+                  保存为模板
+                </button>
+              )}
 
               {/* 画布列表按钮 */}
               <div className="relative">
@@ -2775,6 +2793,11 @@ function CanvasPageContent() {
           animation-delay: 0.2s;
         }
       `}</style>
+
+      {/* 保存为模板弹窗 */}
+      {showSaveTemplateModal && editorInstance && (
+        <SaveTemplateModal editor={editorInstance} onClose={() => setShowSaveTemplateModal(false)} />
+      )}
 
       {/* 充值弹窗 */}
       {showRechargeModal && (
