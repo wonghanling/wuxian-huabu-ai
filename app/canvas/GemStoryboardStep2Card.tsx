@@ -103,6 +103,7 @@ export type GemStep2CardShape = TLBaseShape<
     isMinimized: boolean;
     showInstruction?: boolean;
     systemInstruction?: string;
+    showJsonPanel?: boolean;
   }
 >;
 
@@ -121,6 +122,7 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
     isGenerating: T.boolean,
     isMinimized: T.boolean,
     showInstruction: T.boolean.optional(),
+    showJsonPanel: T.boolean.optional() as any,
   };
 
   override isAspectRatioLocked = () => false;
@@ -146,7 +148,7 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
   }
 
   component(shape: GemStep2CardShape) {
-    const { w, h, script, gridSize = '9', mode = 'story', result, isGenerating, isMinimized } = shape.props;
+    const { w, h, script, gridSize = '9', mode = 'story', result, isGenerating, isMinimized, showJsonPanel } = shape.props;
     const editor = useEditor();
     const [copied, setCopied] = useState(false);
     const [showStyles, setShowStyles] = useState(false);
@@ -295,6 +297,41 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
 
     return (
       <HTMLContainer style={{ width: w, height: h, pointerEvents: 'all', overflow: 'visible' }}>
+        {/* 右侧浮板：分镜 JSON 输出 */}
+        {showJsonPanel && result && !isMinimized && (
+          <div
+            className="absolute rounded-2xl shadow-2xl backdrop-blur-xl overflow-hidden flex flex-col"
+            style={{
+              left: '100%', marginLeft: '8px', top: 0, width: 320, maxHeight: h,
+              zIndex: 200, pointerEvents: 'all',
+              background: 'linear-gradient(135deg, rgba(192,192,192,0.15) 0%, rgba(100,100,100,0.1) 100%)',
+              border: '1px solid rgba(192,192,192,0.3)',
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 flex-shrink-0">
+              <span className="text-xs text-gray-300 font-semibold">分镜 JSON ({selectedGrid.desc})</span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={(e) => { e.stopPropagation(); copyResult(); }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  className="text-[10px] text-blue-400 hover:text-blue-300 transition-colors"
+                >
+                  {copied ? '已复制 ✓' : '复制'}
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); update({ showJsonPanel: false }); }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  className="w-5 h-5 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all text-xs"
+                >✕</button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 min-h-0">
+              <pre className="text-gray-300 text-[10px] font-mono whitespace-pre-wrap break-all">{result}</pre>
+            </div>
+          </div>
+        )}
+
         {/* 模式说明 tooltip - 渲染在卡片外层避免被 overflow-hidden 裁掉 */}
         {tooltip && (
           <div
@@ -543,23 +580,15 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
                 {isGenerating ? '生成中...' : `生成 ${selectedGrid.label} 分镜`}
               </button>
 
-              {/* 结果输出 */}
+              {/* 结果输出按钮 */}
               {result && (
-                <div className="flex-1 flex flex-col min-h-0">
-                  <div className="flex items-center justify-between mb-1 flex-shrink-0">
-                    <span className="text-xs text-gray-400">分镜 JSON ({selectedGrid.desc})</span>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); copyResult(); }}
-                      onPointerDown={(e) => e.stopPropagation()}
-                      className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
-                    >
-                      {copied ? '已复制 ✓' : '复制'}
-                    </button>
-                  </div>
-                  <div className="flex-1 bg-black/40 border border-white/8 rounded-xl p-2 overflow-y-auto min-h-0">
-                    <pre className="text-gray-300 text-[10px] font-mono whitespace-pre-wrap break-all">{result}</pre>
-                  </div>
-                </div>
+                <button
+                  className="flex-shrink-0 w-full py-2 mt-1 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-blue-500/80 to-blue-600/80 hover:from-blue-500 hover:to-blue-600"
+                  onClick={(e) => { e.stopPropagation(); update({ showJsonPanel: !showJsonPanel }); }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >
+                  {showJsonPanel ? '隐藏分镜 JSON' : `查看分镜 JSON (${selectedGrid.desc})`}
+                </button>
               )}
             </div>
           )}

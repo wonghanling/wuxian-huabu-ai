@@ -48,6 +48,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
     generationStatus: T.string.optional(),
     showSettings: T.boolean.optional(),
     isMinimized: T.boolean.optional(),
+    showPromptPanel: T.boolean.optional(),
   };
 
   getDefaultProps() {
@@ -62,13 +63,14 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
       generatedVideo: '', capturedFrame: '', isGenerating: false,
       generationProgress: 0, generationStatus: '',
       showSettings: false, isMinimized: false,
+      showPromptPanel: false,
     };
   }
 
   component(shape: SeedanceCardShape) {
     const { w, h, mode, model, prompt, ratio, duration, resolution, generateAudio,
       firstFrameImage, lastFrameImage, refImages, refVideoUrl, refVideoName, refAudioBase64, refAudioName,
-      generatedVideo, capturedFrame, isGenerating, generationProgress, generationStatus, showSettings, isMinimized,
+      generatedVideo, capturedFrame, isGenerating, generationProgress, generationStatus, showSettings, isMinimized, showPromptPanel,
     } = shape.props;
 
     const editor = (this as any).editor;
@@ -336,6 +338,55 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
     return (
       <HTMLContainer style={{ width: w, height: h, pointerEvents: 'all', overflow: 'visible' }}>
 
+        {/* 右侧浮板：提示词编辑 */}
+        {showPromptPanel && !isMinimized && (
+          <div
+            className="absolute rounded-2xl shadow-2xl backdrop-blur-xl overflow-hidden flex flex-col"
+            style={{
+              left: '100%', marginLeft: '8px', top: 0, width: 340, maxHeight: h,
+              zIndex: 200, pointerEvents: 'all',
+              background: 'linear-gradient(135deg, rgba(192,192,192,0.15) 0%, rgba(100,100,100,0.1) 100%)',
+              border: '1px solid rgba(192,192,192,0.3)',
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 flex-shrink-0">
+              <span className="text-xs text-gray-300 font-semibold">
+                提示词{mode === 't2v' ? '（必填）' : '（可选）'}
+                {connectedInputs.textPrompt && <span className="text-emerald-400 ml-1 text-[10px]">·来自连接</span>}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  className="text-[10px] text-gray-400 hover:text-gray-300"
+                  onClick={async (e) => { e.stopPropagation(); try { const t = await navigator.clipboard.readText(); if (t) up({ prompt: (prompt ? prompt + '\n' : '') + t }); } catch {} }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >粘贴</button>
+                <button
+                  className="w-5 h-5 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all text-xs"
+                  onClick={(e) => { e.stopPropagation(); up({ showPromptPanel: false }); }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >✕</button>
+              </div>
+            </div>
+            <div className="p-3 flex-1 flex flex-col min-h-0">
+              <textarea
+                className="flex-1 w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs resize-none focus:outline-none focus:border-white/15 transition-all placeholder-gray-500"
+                style={{ minHeight: 200 }}
+                placeholder="描述视频内容..."
+                value={connectedInputs.textPrompt ? `${connectedInputs.textPrompt}${prompt ? '\n' + prompt : ''}` : prompt || ''}
+                onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+                onChange={(e) => {
+                  const full = e.target.value;
+                  const prefix = connectedInputs.textPrompt ? connectedInputs.textPrompt + '\n' : '';
+                  const userInput = prefix && full.startsWith(prefix) ? full.slice(prefix.length) : (connectedInputs.textPrompt && full.startsWith(connectedInputs.textPrompt) ? full.slice(connectedInputs.textPrompt.length) : full);
+                  up({ prompt: userInput });
+                }}
+              />
+            </div>
+          </div>
+        )}
+
         {/* lightbox */}
         {lightboxVideo && (
           <div className="fixed inset-0 z-[99999] bg-black/80 flex items-center justify-center"
@@ -456,28 +507,21 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
 
               {/* 提示词 */}
               <div className="mb-2">
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-gray-400 text-xs">
-                    提示词{mode === 't2v' ? '（必填）' : '（可选）'}
-                    {connectedInputs.textPrompt && <span className="text-emerald-400 ml-1">·来自连接</span>}
-                  </label>
-                  <button className="text-[10px] text-gray-400 hover:text-gray-300"
-                    onClick={async (e) => { e.stopPropagation(); try { const t = await navigator.clipboard.readText(); if (t) up({ prompt: (prompt ? prompt + '\n' : '') + t }); } catch {} }}
-                    onPointerDown={(e) => e.stopPropagation()}>粘贴</button>
-                </div>
-                <textarea
-                  className="w-full h-16 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs resize-none focus:outline-none focus:border-white/15 transition-all placeholder-gray-500"
-                  placeholder="描述视频内容..."
-                  value={connectedInputs.textPrompt ? `${connectedInputs.textPrompt}${prompt ? '\n' + prompt : ''}` : prompt || ''}
-                  onClick={(e) => e.stopPropagation()}
+                <button
+                  onClick={(e) => { e.stopPropagation(); up({ showPromptPanel: !showPromptPanel }); }}
                   onPointerDown={(e) => e.stopPropagation()}
-                  onChange={(e) => {
-                    const full = e.target.value;
-                    const prefix = connectedInputs.textPrompt ? connectedInputs.textPrompt + '\n' : '';
-                    const userInput = prefix && full.startsWith(prefix) ? full.slice(prefix.length) : (connectedInputs.textPrompt && full.startsWith(connectedInputs.textPrompt) ? full.slice(connectedInputs.textPrompt.length) : full);
-                    up({ prompt: userInput });
-                  }}
-                />
+                  className="w-full py-2 rounded-lg text-xs font-medium transition-all border bg-white/5 border-white/10 text-gray-300 hover:bg-white/10 flex items-center justify-between px-3"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    提示词{mode === 't2v' ? '（必填）' : '（可选）'}
+                    {connectedInputs.textPrompt && <span className="text-emerald-400 text-[10px]">·来自连接</span>}
+                    {prompt && !connectedInputs.textPrompt && <span className="text-gray-500 text-[10px]">已填写</span>}
+                  </span>
+                  <span className="text-[10px] text-gray-500">{showPromptPanel ? '收起 ◀' : '编辑 ▶'}</span>
+                </button>
               </div>
 
               {/* 首帧 */}
