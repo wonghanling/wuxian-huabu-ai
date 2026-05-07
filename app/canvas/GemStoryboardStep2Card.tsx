@@ -256,6 +256,7 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || '请求失败');
         update({ result: data.result, isGenerating: false });
+        (window as any).saveCanvasNow?.();
 
         // 自动推送 result 到连接的图片卡片
         const outBindings = editor.getBindingsFromShape(shape.id, 'connection');

@@ -176,6 +176,7 @@ export class GemStep3CardUtil extends BaseBoxShapeUtil<GemStep3CardShape> {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || '请求失败');
         update({ result: data.final_video_prompt, isGenerating: false });
+        (window as any).saveCanvasNow?.();
         pushResultToDownstream(data.final_video_prompt);
       } catch (err: any) {
         alert('生成失败: ' + err.message);

@@ -95,6 +95,7 @@ export class GemStep0CardUtil extends BaseBoxShapeUtil<GemStep0CardShape> {
           ? data.result
           : JSON.stringify(data.result, null, 2);
         update({ result: resultText, isGenerating: false });
+        (window as any).saveCanvasNow?.();
       } catch (err: any) {
         alert('生成失败: ' + err.message);
         update({ isGenerating: false });

@@ -1971,6 +1971,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                                   id: shape.id, type: 'custom-card' as any,
                                   props: { ...shape.props, characterGeneratedImage: data.imageUrl, isGenerating: false, showCharacterOutput: true },
                                 });
+                                (window as any).saveCanvasNow?.();
                                 await refreshBalance();
                                 return;
                               }
@@ -2061,6 +2062,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                                   isGenerating: false,
                                 },
                               });
+                              (window as any).saveCanvasNow?.();
                             } catch (err) {
                               console.error('三视角图片生成失败:', err);
                               editor.updateShape({
@@ -2948,11 +2950,13 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                           id: shape.id, type: 'custom-card' as any,
                           props: { ...(latestShape?.props || shape.props), generatedImage: pollResult, isGenerating: false, generationProgress: 100, generationStatus: '生成完成' },
                         });
+                        (window as any).saveCanvasNow?.();
                       } else {
                         editor.updateShape({
                           id: shape.id, type: 'custom-card' as any,
                           props: { ...shape.props, generatedImage: data.imageUrl, isGenerating: false, generationProgress: 100, generationStatus: '生成完成' },
                         });
+                        (window as any).saveCanvasNow?.();
                       }
                       await refreshBalance();
                       return;
@@ -3079,6 +3083,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         isGenerating: false,
                       },
                     });
+                    (window as any).saveCanvasNow?.();
                     refreshBalance();
 
                     // 后台异步上传到 Supabase Storage，完成后替换为永久 URL
@@ -3094,6 +3099,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                             type: 'custom-card' as any,
                             props: { ...(latest.props as any), generatedImage: permanentUrl },
                           });
+                          (window as any).saveCanvasNow?.();
                         }
                       }
                     } catch (uploadErr) {
@@ -3263,6 +3269,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                             generationStatus: '生成完成',
                           },
                         });
+                        (window as any).saveCanvasNow?.();
                         refreshBalance();
                       } else if (queryData.status === 'failed') {
                         throw new Error('视频生成失败');
@@ -3716,6 +3723,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                             const ls = editor.getShape(shape.id); const lp = ls ? (ls as any).props : shape.props;
                             if (qData.status === 'completed' && qData.videoUrl) {
                               editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...lp, isGenerating: false, klingGeneratedVideo: qData.videoUrl, generationProgress: 100, generationStatus: '完成' } });
+                              (window as any).saveCanvasNow?.();
                             } else if (qData.status === 'failed') {
                               editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...lp, isGenerating: false, generationStatus: '生成失败' } });
                             } else if (attempts < 60) {

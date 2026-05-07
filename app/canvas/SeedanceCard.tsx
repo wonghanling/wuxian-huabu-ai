@@ -269,6 +269,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
             const lp = ls ? (ls as any).props : shape.props;
             if (qData.status === 'completed' && qData.videoUrl) {
               editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...lp, isGenerating: false, generatedVideo: qData.videoUrl, generationProgress: 100, generationStatus: '完成' } });
+              (window as any).saveCanvasNow?.();
             } else if (qData.status === 'failed') {
               editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...lp, isGenerating: false, generationStatus: '失败: ' + (qData.error || '') } });
             } else if (attempts < 120) {

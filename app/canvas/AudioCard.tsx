@@ -131,6 +131,7 @@ export class AudioCardUtil extends BaseBoxShapeUtil<AudioCardShape> {
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || '生成失败');
           update({ audioUrl: data.audioUrl, isGenerating: false });
+          (window as any).saveCanvasNow?.();
         } catch (err: any) {
           alert('生成失败: ' + err.message);
           update({ isGenerating: false });

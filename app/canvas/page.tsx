@@ -1905,6 +1905,31 @@ function CanvasPageContent() {
     const t2 = setTimeout(doAutoSave, 60 * 60 * 1000);
     const t3 = setTimeout(doAutoSave, 90 * 60 * 1000);
 
+    // ── 生成成功触发保存（全局方法，节流 2 秒） ──────────────
+    let generationSaveTimer: ReturnType<typeof setTimeout> | null = null;
+    const saveCanvasNow = () => {
+      if (!canvasIdRef.current) return;
+      if (isRestoringRef.current) return; // 恢复期不保存
+      if (generationSaveTimer) return;    // 节流：2 秒内只触发一次
+      generationSaveTimer = setTimeout(async () => {
+        generationSaveTimer = null;
+        try {
+          const snapshot = getSnapshot(editor.store);
+          const shapeCount = Object.keys(snapshot?.document?.store ?? {}).filter(k => k.startsWith('shape:')).length;
+          if (shapeCount === 0) return; // 空画布保护
+          setSaveStatus('saving');
+          await saveSnapshot(canvasIdRef.current!, snapshot);
+          hasUnsavedRef.current = false;
+          setSaveStatus('saved');
+          setTimeout(() => setSaveStatus('unsaved'), 2000);
+        } catch (err) {
+          console.error('生成后自动保存失败:', err);
+          setSaveStatus('unsaved');
+        }
+      }, 2000);
+    };
+    (window as any).saveCanvasNow = saveCanvasNow;
+
     // 监听相机变化，更新缩放级别和位置（RAF 节流，避免 store 批量更新时主线程卡顿）
     let rafId: number | null = null;
     const updateCamera = () => {
@@ -2011,6 +2036,8 @@ function CanvasPageContent() {
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);
+      if (generationSaveTimer) clearTimeout(generationSaveTimer);
+      if ((window as any).saveCanvasNow === saveCanvasNow) delete (window as any).saveCanvasNow;
       if (rafId !== null) cancelAnimationFrame(rafId);
       unsubscribe();
       unsubscribeUnsaved();

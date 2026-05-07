@@ -244,6 +244,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
                 clearInterval(progressTimer);
                 const ls2 = editor.getShape(shape.id) as any;
                 editor.updateShape({ id: shape.id, type: 'gem-step4-card' as any, props: { ...ls2.props, generatedImage: qData.imageUrl, isGenerating: false, generationProgress: 100 } });
+                (window as any).saveCanvasNow?.();
               } else if (qData.error) {
                 clearInterval(progressTimer);
                 const ls2 = editor.getShape(shape.id) as any;
@@ -265,6 +266,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
         } else if (data.imageData) {
           clearInterval(progressTimer);
           update({ generatedImage: data.imageData, isGenerating: false, generationProgress: 100 });
+          (window as any).saveCanvasNow?.();
         }
       } catch (err: any) {
         clearInterval(progressTimer);
