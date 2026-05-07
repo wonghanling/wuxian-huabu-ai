@@ -62,31 +62,53 @@ export class MediaUploadCardUtil extends BaseBoxShapeUtil<MediaUploadCardShape> 
     const up = (props: Partial<MediaUploadCardShape['props']>) =>
       editor.updateShape({ id: shape.id, type: 'media-upload-card' as any, props: { ...shape.props, ...props } });
 
-    const handleImageUpload = (file: File) => {
-      const reader = new FileReader();
-      reader.onload = async (ev) => {
-        const raw = ev.target?.result as string;
-        // 压缩图片，最大 2048px，质量 0.92
-        const img = new Image();
-        img.onload = async () => {
-          const scale = Math.min(1, 2048 / Math.max(img.width, img.height));
-          const w = Math.round(img.width * scale);
-          const h = Math.round(img.height * scale);
-          const c = document.createElement('canvas');
-          c.width = w; c.height = h;
-          c.getContext('2d')!.drawImage(img, 0, 0, w, h);
-          const data = c.toDataURL('image/jpeg', 0.92);
-          const ratio = img.width / img.height;
-          const newW = 320;
-          const newH = Math.round(newW / ratio);
-          editor.updateShape({
-            id: shape.id, type: 'media-upload-card' as any,
-            props: { ...shape.props, mediaType: 'image', imageData: data, w: newW, h: newH + 48 },
-          });
+    const handleImageUpload = async (file: File) => {
+      up({ isUploading: true });
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { alert('请先登录'); up({ isUploading: false }); return; }
+
+        // 压缩图片再上传（最大 2048px，质量 0.92）
+        const reader = new FileReader();
+        reader.onload = async (ev) => {
+          const raw = ev.target?.result as string;
+          const img = new Image();
+          img.onload = async () => {
+            const scale = Math.min(1, 2048 / Math.max(img.width, img.height));
+            const w = Math.round(img.width * scale);
+            const h = Math.round(img.height * scale);
+            const c = document.createElement('canvas');
+            c.width = w; c.height = h;
+            c.getContext('2d')!.drawImage(img, 0, 0, w, h);
+            // 压缩后转 Blob 上传
+            c.toBlob(async (blob) => {
+              if (!blob) { up({ isUploading: false }); return; }
+              try {
+                const filename = `images/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
+                const { error } = await supabase.storage.from('assets').upload(filename, blob, { contentType: 'image/jpeg', upsert: false });
+                if (error) throw new Error(`上传失败: ${error.message}`);
+                const { data: urlData } = supabase.storage.from('assets').getPublicUrl(filename);
+                const ratio = img.width / img.height;
+                const newW = 320;
+                const newH = Math.round(newW / ratio);
+                editor.updateShape({
+                  id: shape.id, type: 'media-upload-card' as any,
+                  props: { ...shape.props, mediaType: 'image', imageData: urlData.publicUrl, w: newW, h: newH + 48, isUploading: false },
+                });
+              } catch (err: any) {
+                alert('上传失败: ' + err.message);
+                up({ isUploading: false });
+              }
+            }, 'image/jpeg', 0.92);
+          };
+          img.src = raw;
         };
-        img.src = raw;
-      };
-      reader.readAsDataURL(file);
+        reader.readAsDataURL(file);
+      } catch (err: any) {
+        alert('上传失败: ' + err.message);
+        up({ isUploading: false });
+      }
     };
 
     const handleVideoUpload = async (file: File) => {
