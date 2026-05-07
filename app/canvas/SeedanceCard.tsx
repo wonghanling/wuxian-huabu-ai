@@ -344,7 +344,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
           <div
             className="absolute rounded-2xl shadow-2xl backdrop-blur-xl overflow-hidden flex flex-col"
             style={{
-              left: '100%', marginLeft: '8px', top: 0, width: 340, maxHeight: h,
+              left: 'auto', right: '100%', marginRight: '8px', top: 0, width: 340, maxHeight: h,
               zIndex: 200, pointerEvents: 'all',
               background: 'linear-gradient(135deg, rgba(192,192,192,0.15) 0%, rgba(100,100,100,0.1) 100%)',
               border: '1px solid rgba(192,192,192,0.3)',
@@ -521,7 +521,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
                     {connectedInputs.textPrompt && <span className="text-emerald-400 text-[10px]">·来自连接</span>}
                     {prompt && !connectedInputs.textPrompt && <span className="text-gray-500 text-[10px]">已填写</span>}
                   </span>
-                  <span className="text-[10px] text-gray-500">{showPromptPanel ? '收起 ◀' : '编辑 ▶'}</span>
+                  <span className="text-[10px] text-gray-500">{showPromptPanel ? '收起 ▶' : '◀ 编辑'}</span>
                 </button>
               </div>
 
