@@ -542,6 +542,24 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
       }, 300);
     }, [editor, shape.id, shape.props]);
 
+    // 上传图片到 Supabase Storage 返回 URL（用于减轻 snapshot，避免 base64）
+    const uploadImageToStorage = async (file: File): Promise<string | null> => {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { alert('请先登录'); return null; }
+        const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+        const filename = `images/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const { error } = await supabase.storage.from('assets').upload(filename, file, { contentType: file.type || 'image/jpeg', upsert: false });
+        if (error) throw new Error(`上传失败: ${error.message}`);
+        const { data: urlData } = supabase.storage.from('assets').getPublicUrl(filename);
+        return urlData.publicUrl;
+      } catch (err: any) {
+        alert('图片上传失败: ' + err.message);
+        return null;
+      }
+    };
+
     const handleKlingVideoUpload = async (file: File) => {
       const lowerName = file.name.toLowerCase();
       if (!(lowerName.endsWith('.mp4') || lowerName.endsWith('.mov'))) {
@@ -1424,19 +1442,17 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                               className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
                               onClick={(e) => e.stopPropagation()}
                               onPointerDown={(e) => e.stopPropagation()}
-                              onChange={(e) => {
+                              onChange={async (e) => {
                                 const file = e.target.files?.[0];
                                 if (file) {
-                                  const reader = new FileReader();
-                                  reader.onload = (event) => {
-                                    const imageData = event.target?.result as string;
+                                  const url = await uploadImageToStorage(file);
+                                  if (url) {
                                     editor.updateShape({
                                       id: shape.id,
                                       type: 'custom-card' as any,
-                                      props: { ...shape.props, characterAnalyzeImage: imageData },
+                                      props: { ...shape.props, characterAnalyzeImage: url },
                                     });
-                                  };
-                                  reader.readAsDataURL(file);
+                                  }
                                 }
                                 e.target.value = '';
                               }}
@@ -2375,23 +2391,16 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                                 editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImageUrls: JSON.stringify(newUrls) } });
                                 setIsUploadingMulti(false);
                               } else {
-                                // nano-banana / gpt-image-2-all：base64
+                                // nano-banana / gpt-image-2-all：上传到 Storage 存 URL（减轻 snapshot）
                                 const remaining = Math.max(0, uploadRemaining - imgs.length);
                                 const toLoad = files.slice(0, remaining);
-                                let loaded = 0;
                                 const newImgs = [...imgs];
-                                toLoad.forEach(file => {
-                                  const reader = new FileReader();
-                                  reader.onload = async (ev) => {
-                                    const compressed = await softCompressImage(ev.target?.result as string);
-                                    newImgs.push(compressed);
-                                    loaded++;
-                                    if (loaded === toLoad.length) {
-                                      editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImages: JSON.stringify(newImgs) } });
-                                    }
-                                  };
-                                  reader.readAsDataURL(file);
-                                });
+                                for (const file of toLoad) {
+                                  const url = await uploadImageToStorage(file);
+                                  if (url) newImgs.push(url);
+                                }
+                                editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImages: JSON.stringify(newImgs) } });
+                              }
                               }
                               e.target.value = '';
                             }}
@@ -2454,25 +2463,20 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     if (connImg) return null;
                     const effectiveImage = uploadedImage;
                     const handleSingleFile = async (file: File) => {
-                      const reader = new FileReader();
-                      reader.onload = async (event) => {
-                        let imageData = event.target?.result as string;
-                        if (model === 'mj_imagine') {
-                          imageData = await softCompressImage(imageData);
-                        }
-                        // 检测宽高比
-                        const img = new Image();
-                        img.onload = () => {
-                          setUploadedImageRatio(img.height > img.width ? '9/16' : '16/9');
-                        };
-                        img.src = imageData;
-                        editor.updateShape({
-                          id: shape.id,
-                          type: 'custom-card' as any,
-                          props: { ...shape.props, uploadedImage: imageData },
-                        });
+                      // 先上传到 Supabase Storage 拿 URL（减轻 snapshot）
+                      const url = await uploadImageToStorage(file);
+                      if (!url) return;
+                      // 检测宽高比（用本地对象URL，不占 snapshot）
+                      const img = new Image();
+                      img.onload = () => {
+                        setUploadedImageRatio(img.height > img.width ? '9/16' : '16/9');
                       };
-                      reader.readAsDataURL(file);
+                      img.src = URL.createObjectURL(file);
+                      editor.updateShape({
+                        id: shape.id,
+                        type: 'custom-card' as any,
+                        props: { ...shape.props, uploadedImage: url },
+                      });
                     };
                     return (
                       <>
@@ -2561,7 +2565,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       <label className="flex flex-col items-center justify-center w-full h-16 bg-black/30 border border-white/8 border-dashed rounded-lg cursor-pointer hover:border-white/20 transition-all" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
                         <svg className="w-4 h-4 text-gray-500 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" /></svg>
                         <span className="text-[10px] text-gray-500">上传</span>
-                        <input type="file" accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) { const r = new FileReader(); r.onload = (ev) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, firstFrameImage: ev.target?.result as string } }); r.readAsDataURL(file); } e.target.value = ''; }} />
+                        <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { const url = await uploadImageToStorage(file); if (url) editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, firstFrameImage: url } }); } e.target.value = ''; }} />
                       </label>
                     ) : (
                       <div className="relative w-full h-16 bg-black/30 rounded-lg overflow-hidden group">
@@ -2578,7 +2582,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         <label className="flex flex-col items-center justify-center w-full h-16 bg-black/30 border border-white/8 border-dashed rounded-lg cursor-pointer hover:border-white/20 transition-all" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
                           <svg className="w-4 h-4 text-gray-500 mb-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m8-8H4" /></svg>
                           <span className="text-[10px] text-gray-500">上传</span>
-                          <input type="file" accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) { const r = new FileReader(); r.onload = (ev) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, lastFrameImage: ev.target?.result as string } }); r.readAsDataURL(file); } e.target.value = ''; }} />
+                          <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) { const url = await uploadImageToStorage(file); if (url) editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, lastFrameImage: url } }); } e.target.value = ''; }} />
                         </label>
                       ) : (
                         <div className="relative w-full h-16 bg-black/30 rounded-lg overflow-hidden group">
@@ -2648,9 +2652,9 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     <input type="file" accept="image/*"
                       className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
                       onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                      onChange={(e) => {
+                      onChange={async (e) => {
                         const file = e.target.files?.[0];
-                        if (file) { const r = new FileReader(); r.onload = (ev) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, firstFrameImage: ev.target?.result as string } }); r.readAsDataURL(file); }
+                        if (file) { const url = await uploadImageToStorage(file); if (url) editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, firstFrameImage: url } }); }
                         e.target.value = '';
                       }}
                     />
@@ -2675,9 +2679,9 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     <input type="file" accept="image/*"
                       className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
                       onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                      onChange={(e) => {
+                      onChange={async (e) => {
                         const file = e.target.files?.[0];
-                        if (file) { const r = new FileReader(); r.onload = (ev) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, lastFrameImage: ev.target?.result as string } }); r.readAsDataURL(file); }
+                        if (file) { const url = await uploadImageToStorage(file); if (url) editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, lastFrameImage: url } }); }
                         e.target.value = '';
                       }}
                     />
