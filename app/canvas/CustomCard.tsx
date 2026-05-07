@@ -772,7 +772,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
     const connLastFrame = connectedVideoImages[1] || '';
 
     // 图片卡片多图连接（按模型限制数量）
-    const imageCardMaxConn = model === 'nano-banana-pro-multi' ? 10 : model === 'gpt-image-2-all' ? 10 : model === 'nano-banana' ? 2 : 1;
+    const imageCardMaxConn = model === 'nano-banana-pro-multi' ? 10 : model === 'gpt-image-2-all' ? 10 : model === 'nano-banana' ? 2 : model === 'nano-banana-pro' ? 2 : 1;
     const connectedImageCardImages = cardType === 'image' ? getConnectedImages(imageCardMaxConn) : [];
 
     const toggleMinimize = (e: React.MouseEvent) => {
@@ -2333,13 +2333,21 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     {(() => {
                       const imgs: string[] = uploadedImages ? JSON.parse(uploadedImages) : [];
                       const urls: string[] = uploadedImageUrls ? JSON.parse(uploadedImageUrls) : [];
+                      const connCount = connectedImageCardImages.length;
+                      // nano-banana / nano-banana-pro：连接 + 上传合并上限 2
+                      // gpt-image-2-all：连接 + 上传合并上限 10
+                      const totalMax = model === 'gpt-image-2-all' ? 10 : 2;
+                      const uploadRemaining = totalMax - connCount;
+                      const uploadDisabled = model === 'nano-banana-pro'
+                        ? (connCount + urls.length) >= totalMax || isUploadingMulti
+                        : (connCount + imgs.length) >= totalMax;
                       return (
                         <>
                           <input
                             type="file"
                             accept="image/*"
                             multiple
-                            disabled={model === 'nano-banana-pro' ? urls.length >= 2 || isUploadingMulti : model === 'gpt-image-2-all' ? imgs.length >= 10 : imgs.length >= 2}
+                            disabled={uploadDisabled}
                             className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer disabled:opacity-50"
                             onClick={(e) => e.stopPropagation()}
                             onPointerDown={(e) => e.stopPropagation()}
@@ -2347,7 +2355,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                               const files = Array.from(e.target.files || []);
                               if (model === 'nano-banana-pro') {
                                 const existing = uploadedImageUrls ? JSON.parse(uploadedImageUrls) : [];
-                                const remaining = 2 - existing.length;
+                                const remaining = Math.max(0, uploadRemaining - existing.length);
                                 const toUpload = files.slice(0, remaining);
                                 if (toUpload.length === 0) return;
                                 setIsUploadingMulti(true);
@@ -2364,8 +2372,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                                 setIsUploadingMulti(false);
                               } else {
                                 // nano-banana / gpt-image-2-all：base64
-                                const maxImgs = model === 'gpt-image-2-all' ? 10 : 2;
-                                const remaining = maxImgs - imgs.length;
+                                const remaining = Math.max(0, uploadRemaining - imgs.length);
                                 const toLoad = files.slice(0, remaining);
                                 let loaded = 0;
                                 const newImgs = [...imgs];
@@ -2956,6 +2963,9 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     let connImageBase64: string | undefined;
                     let connImageBase64Array: string[] | undefined;
                     let connImageUrlArray: string[] | undefined;
+                    // 合并模式的总数组（连接优先 + 上传在后，截到上限）
+                    let mergedBase64Array: string[] | undefined;
+                    let mergedUrlArray: string[] | undefined;
 
                     const toBase64 = async (src: string): Promise<string> => {
                       if (src.startsWith('data:')) return softCompressImage(src);
@@ -2970,20 +2980,25 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       return fal.storage.upload(file);
                     };
 
-                    if (connectedImageCardImages.length > 0) {
-                      if (model === 'nano-banana-pro-multi') {
-                        // 多图融合：所有连接图片转 fal URL
-                        connImageUrlArray = await Promise.all(connectedImageCardImages.map(toFalUrl));
-                      } else if (model === 'nano-banana-pro') {
-                        // 单图：取第一张连接图片转 fal URL
-                        connImageUrlArray = [await toFalUrl(connectedImageCardImages[0])];
-                      } else if (model === 'nano-banana') {
-                        // 最多2张连接图片转 base64
-                        connImageBase64Array = await Promise.all(connectedImageCardImages.slice(0, 2).map(toBase64));
-                      } else {
-                        // flux-kontext, doubao, mj 等单图：取第一张
-                        connImageBase64 = await toBase64(connectedImageCardImages[0]);
-                      }
+                    // 合并上传 + 连接，按模型类型处理
+                    if (model === 'nano-banana-pro-multi') {
+                      // 多图融合：连接 + 上传 URL 合并，上限 10
+                      const existingUrls: string[] = uploadedImageUrls ? JSON.parse(uploadedImageUrls) : [];
+                      const connUrls = await Promise.all(connectedImageCardImages.map(toFalUrl));
+                      mergedUrlArray = [...connUrls, ...existingUrls].slice(0, 10);
+                    } else if (model === 'nano-banana-pro') {
+                      // 连接 + 上传 URL 合并，上限 2
+                      const existingUrls: string[] = uploadedImageUrls ? JSON.parse(uploadedImageUrls) : [];
+                      const connUrls = await Promise.all(connectedImageCardImages.map(toFalUrl));
+                      mergedUrlArray = [...connUrls, ...existingUrls].slice(0, 2);
+                    } else if (model === 'nano-banana') {
+                      // 连接 + 上传 base64 合并，上限 2
+                      const existingImgs: string[] = uploadedImages ? JSON.parse(uploadedImages) : [];
+                      const connImgs = await Promise.all(connectedImageCardImages.map(toBase64));
+                      mergedBase64Array = [...connImgs, ...existingImgs].slice(0, 2);
+                    } else if (connectedImageCardImages.length > 0) {
+                      // flux-kontext, doubao, mj 等单图：取第一张连接图片（没连接时走下面的 uploadedImage）
+                      connImageBase64 = await toBase64(connectedImageCardImages[0]);
                     }
 
                     const response = await fetch('/api/image/generate', {
@@ -2995,9 +3010,9 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                         model: model || 'nano-banana-pro',
                         prompt: fullPrompt,
                         aspectRatio: aspectRatio || '1:1',
-                        imageBase64: connectedImageCardImages.length > 0 ? connImageBase64 : (uploadedImage || undefined),
-                        imageBase64Array: connectedImageCardImages.length > 0 ? connImageBase64Array : (model === 'nano-banana' && uploadedImages ? JSON.parse(uploadedImages) : undefined),
-                        imageUrlArray: connectedImageCardImages.length > 0 ? connImageUrlArray : (['nano-banana-pro', 'nano-banana-pro-multi'].includes(model || '') && uploadedImageUrls ? JSON.parse(uploadedImageUrls) : undefined),
+                        imageBase64: mergedBase64Array ? undefined : (connImageBase64 || uploadedImage || undefined),
+                        imageBase64Array: mergedBase64Array,
+                        imageUrlArray: mergedUrlArray,
                         imageQuality: ['nano-banana-pro', 'nano-banana-pro-multi'].includes(model || '') ? (imageQuality ?? '2k') : undefined,
                         userId: userId || undefined,
                       }),
