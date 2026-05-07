@@ -2401,7 +2401,6 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                                 }
                                 editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImages: JSON.stringify(newImgs) } });
                               }
-                              }
                               e.target.value = '';
                             }}
                           />
