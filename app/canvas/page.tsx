@@ -1905,6 +1905,79 @@ function CanvasPageContent() {
     const t2 = setTimeout(doAutoSave, 60 * 60 * 1000);
     const t3 = setTimeout(doAutoSave, 90 * 60 * 1000);
 
+    // ── 调试工具：window.debugCanvasSnapshotSize() 查看 snapshot 大小 ──
+    (window as any).debugCanvasSnapshotSize = () => {
+      const snapshot = getSnapshot(editor.store);
+      const json = JSON.stringify(snapshot);
+      const totalBytes = new Blob([json]).size;
+      const mb = (totalBytes / 1024 / 1024).toFixed(2);
+      const kb = (totalBytes / 1024).toFixed(0);
+
+      console.log(`%c[Snapshot 大小]`, 'color: #3b82f6; font-weight: bold; font-size: 14px;');
+      console.log(`总大小：${mb} MB (${kb} KB)`);
+
+      // 统计每个 shape 的大小
+      const records = (snapshot as any)?.document?.store || {};
+      const shapes = Object.entries(records)
+        .filter(([k]) => k.startsWith('shape:'))
+        .map(([id, rec]: [string, any]) => {
+          const shapeJson = JSON.stringify(rec);
+          const bytes = new Blob([shapeJson]).size;
+          return {
+            id: id.slice(0, 30),
+            type: rec.type,
+            cardType: rec.props?.cardType,
+            bytes,
+            kb: (bytes / 1024).toFixed(1),
+          };
+        })
+        .sort((a, b) => b.bytes - a.bytes);
+
+      console.log(`共 ${shapes.length} 个 shape，按大小排序：`);
+      console.table(shapes.slice(0, 20).map(s => ({
+        type: s.cardType ? `${s.type}(${s.cardType})` : s.type,
+        size: `${s.kb} KB`,
+        id: s.id,
+      })));
+
+      // 找出含 base64 的字段
+      console.log(`%c[Base64 字段排查]`, 'color: #ef4444; font-weight: bold; font-size: 14px;');
+      const base64Fields: Array<{ shape: string; field: string; sizeKb: string }> = [];
+      Object.entries(records).forEach(([id, rec]: [string, any]) => {
+        if (!id.startsWith('shape:') || !rec.props) return;
+        Object.entries(rec.props).forEach(([key, val]) => {
+          if (typeof val === 'string' && val.startsWith('data:') && val.length > 10000) {
+            base64Fields.push({
+              shape: `${rec.type}(${rec.props.cardType || ''}) ${id.slice(-6)}`,
+              field: key,
+              sizeKb: (new Blob([val]).size / 1024).toFixed(1),
+            });
+          }
+          // JSON 字段里的 base64 数组
+          if (typeof val === 'string' && val.startsWith('[') && val.includes('data:') && val.length > 10000) {
+            base64Fields.push({
+              shape: `${rec.type}(${rec.props.cardType || ''}) ${id.slice(-6)}`,
+              field: `${key}[]`,
+              sizeKb: (new Blob([val]).size / 1024).toFixed(1),
+            });
+          }
+        });
+      });
+      if (base64Fields.length === 0) {
+        console.log('✅ 没有发现大 base64 字段');
+      } else {
+        console.table(base64Fields.sort((a, b) => parseFloat(b.sizeKb) - parseFloat(a.sizeKb)));
+      }
+
+      console.log(`%c诊断结论`, 'color: #10b981; font-weight: bold; font-size: 14px;');
+      if (totalBytes < 1 * 1024 * 1024) console.log('✅ snapshot < 1MB，无需优化');
+      else if (totalBytes < 3 * 1024 * 1024) console.log('⚠️ snapshot 1-3MB，建议但不紧急');
+      else if (totalBytes < 4.5 * 1024 * 1024) console.log('🔶 snapshot 3-4.5MB，接近 Vercel 413 临界，建议尽快优化');
+      else console.log('🚨 snapshot > 4.5MB，可能已触发 413 错误，必须立即优化');
+
+      return { totalMb: parseFloat(mb), shapeCount: shapes.length, base64Fields };
+    };
+
     // ── 生成成功触发保存（全局方法，节流 2 秒） ──────────────
     let generationSaveTimer: ReturnType<typeof setTimeout> | null = null;
     const saveCanvasNow = () => {
@@ -2038,6 +2111,7 @@ function CanvasPageContent() {
       clearTimeout(t3);
       if (generationSaveTimer) clearTimeout(generationSaveTimer);
       if ((window as any).saveCanvasNow === saveCanvasNow) delete (window as any).saveCanvasNow;
+      delete (window as any).debugCanvasSnapshotSize;
       if (rafId !== null) cancelAnimationFrame(rafId);
       unsubscribe();
       unsubscribeUnsaved();
