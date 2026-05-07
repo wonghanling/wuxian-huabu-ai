@@ -306,6 +306,32 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
       up({ refImages: JSON.stringify(arr) });
     };
 
+    // 上传图片到 Supabase Storage 返回 URL（用于减轻 snapshot）
+    const uploadImageToStorage = async (file: File): Promise<string> => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('请先登录');
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const filename = `images/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error } = await supabase.storage.from('assets').upload(filename, file, { contentType: file.type || 'image/jpeg', upsert: false });
+      if (error) throw new Error(`上传失败: ${error.message}`);
+      const { data: urlData } = supabase.storage.from('assets').getPublicUrl(filename);
+      return urlData.publicUrl;
+    };
+
+    const addRefImageByFile = async (file: File) => {
+      if (parsedRefImages.length >= 9) { alert('最多9张参考图'); return; }
+      try {
+        const url = await uploadImageToStorage(file);
+        const ls = editor.getShape(shape.id);
+        const lp = ls ? (ls as any).props : shape.props;
+        const existing: string[] = (() => { try { return JSON.parse(lp.refImages || '[]'); } catch { return []; } })();
+        editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...lp, refImages: JSON.stringify([...existing, url]) } });
+      } catch (err: any) {
+        alert(err?.message || '图片上传失败');
+      }
+    };
+
     const handleRefVideoUpload = async (file: File) => {
       if (file.size > 500 * 1024 * 1024) { alert('视频文件不能超过 500MB'); return; }
       up({ refVideoName: '上传中...', refVideoUrl: '' });
@@ -585,7 +611,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
                     <input type="file" accept="image/*" multiple
                       className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
                       onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                      onChange={(e) => { Array.from(e.target.files || []).forEach(f => { const r = new FileReader(); r.onload = (ev) => addRefImage(ev.target?.result as string); r.readAsDataURL(f); }); e.target.value = ''; }}
+                      onChange={async (e) => { const files = Array.from(e.target.files || []); for (const f of files) { await addRefImageByFile(f); } e.target.value = ''; }}
                     />
                     {(connectedInputs.imageUrls.length > 0 || parsedRefImages.length > 0) && (
                       <div className="mt-1 flex flex-wrap gap-1">
