@@ -311,6 +311,9 @@ export default function Home() {
         </div>
       </main>
 
+      {/* Workflow Templates Gallery */}
+      <TemplateGallery />
+
       {/* Features Section */}
       <section className="py-32 relative z-10">
         <div className="max-w-7xl mx-auto px-6">
@@ -373,9 +376,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* Workflow Templates Gallery */}
-      <TemplateGallery />
 
       {/* Card Types Section */}
       <section className="py-32 border-t border-white/5 relative z-10 bg-zinc-950/50">
