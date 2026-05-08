@@ -3255,25 +3255,38 @@ Maintain strong visual consistency in every panel.`;
                     if (['gpt-image-2', 'gpt-image-2-all'].includes(model || '')) {
                       const imgs: string[] = uploadedImages ? JSON.parse(uploadedImages || "[]") : [];
 
-                      let imagesToSend: string[] = [];
+                      // 区分两种发送方式：
+                      // 1. URL 数组（新路径，避免 Vercel 4.5MB 限制）
+                      // 2. base64 数组（老路径，兼容）
+                      let urlsToSend: string[] = [];
+                      let base64ToSend: string[] = [];
+
                       if (model === 'gpt-image-2-all') {
-                        // 多图融合：连接图片（多张）+ 手动上传图片
+                        // 多图融合：所有图优先走 URL
                         for (const connImg of connectedImageCardImages) {
-                          const isBase64 = connImg.startsWith('data:');
-                          const raw = isBase64 ? connImg : await fetch(connImg).then(r => r.blob()).then(b => new Promise<string>(res => { const rd = new FileReader(); rd.onload = () => res(rd.result as string); rd.readAsDataURL(b); }));
-                          imagesToSend.push(await softCompressImage(raw));
+                          if (connImg.startsWith('data:')) {
+                            // 连接的是老 base64 数据，兜底走 base64 路径
+                            base64ToSend.push(await softCompressImage(connImg));
+                          } else {
+                            urlsToSend.push(connImg);
+                          }
                         }
                         for (const img of imgs) {
-                          imagesToSend.push(await softCompressImage(img));
+                          if (img.startsWith('data:')) {
+                            base64ToSend.push(await softCompressImage(img));
+                          } else {
+                            urlsToSend.push(img);
+                          }
                         }
                       } else {
                         // gpt-image-2 单图模式：连接图片优先，否则用手动上传
-                        if (connectedGeneratedImage) {
-                          const isBase64 = connectedGeneratedImage.startsWith('data:');
-                          const raw = isBase64 ? connectedGeneratedImage : await fetch(connectedGeneratedImage).then(r => r.blob()).then(b => new Promise<string>(res => { const rd = new FileReader(); rd.onload = () => res(rd.result as string); rd.readAsDataURL(b); }));
-                          imagesToSend.push(await softCompressImage(raw));
-                        } else if (uploadedImage) {
-                          imagesToSend.push(await softCompressImage(uploadedImage));
+                        const src = connectedGeneratedImage || uploadedImage || '';
+                        if (src) {
+                          if (src.startsWith('data:')) {
+                            base64ToSend.push(await softCompressImage(src));
+                          } else {
+                            urlsToSend.push(src);
+                          }
                         }
                       }
 
@@ -3285,7 +3298,9 @@ Maintain strong visual consistency in every panel.`;
                           prompt: fullPrompt,
                           aspectRatio: aspectRatio || '2048x1152',
                           imageQuality: imageQuality || 'medium',
-                          imageBase64Array: imagesToSend.length > 0 ? imagesToSend : undefined,
+                          // 优先 URL 数组（瘦身）。base64 只在有 data: 老数据时作为兜底
+                          imageUrlArray: urlsToSend.length > 0 ? urlsToSend : undefined,
+                          imageBase64Array: base64ToSend.length > 0 ? base64ToSend : undefined,
                           userId: userId || undefined,
                         }),
                       });
