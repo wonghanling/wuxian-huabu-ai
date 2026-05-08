@@ -300,6 +300,7 @@ export type CustomCardShape = TLBaseShape<
     showImageSettingsPanel?: boolean;
     showPromptPanel?: boolean;
     showPresetPanel?: boolean;
+    showRefImagePanel?: boolean;
     showVideoOutput?: boolean;
     capturedFrame?: string;
     videoDuration?: number;
@@ -385,6 +386,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
     showImageSettingsPanel: T.boolean.optional(),
     showPromptPanel: T.boolean.optional(),
     showPresetPanel: T.boolean.optional(),
+    showRefImagePanel: T.boolean.optional(),
     showVideoOutput: T.boolean.optional(),
     capturedFrame: T.string.optional(),
     videoDuration: T.number.optional(),
@@ -516,7 +518,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
   }
 
   component(shape: CustomCardShape) {
-    const { cardType, title, prompt, model, w, h, uploadedImage, uploadedImages, uploadedImageUrls, generatedImage, aspectRatio, gridLayout, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showImageSettingsPanel, showPromptPanel, showPresetPanel, showVideoOutput, capturedFrame, videoDuration, videoResolution, videoGenerateAudio, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterAnalyzeImage, characterAnchorJson, characterThreeViewJson, characterThreeViewImage, characterGeneratedImage, characterImageModel, imageQuality, cameraTemplate, cameraStrength, showCharacterOutput, showAnalyzePanel, showThreeViewJsonPanel, showGeneratePanel, isMinimized, textOutput, isGenerating, generationProgress, generationStatus, klingDuration, klingAspectRatio, klingImage, klingGeneratedVideo, klingShowSettingsPanel, klingMode, klingVideoUrl, klingVideoName, klingCharacterOrientation, klingKeepSound, klingVideoMode, klingLipSyncSessionId, klingLipSyncFaceId, klingLipSyncAudio, klingLipSyncAudioName, klingLipSyncPhase, klingLipSyncSoundStart, klingLipSyncSoundEnd, klingLipSyncSoundInsert, klingLipSyncSoundVolume, klingLipSyncOriginalVolume } = shape.props;
+    const { cardType, title, prompt, model, w, h, uploadedImage, uploadedImages, uploadedImageUrls, generatedImage, aspectRatio, gridLayout, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showImageSettingsPanel, showPromptPanel, showPresetPanel, showRefImagePanel, showVideoOutput, capturedFrame, videoDuration, videoResolution, videoGenerateAudio, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterAnalyzeImage, characterAnchorJson, characterThreeViewJson, characterThreeViewImage, characterGeneratedImage, characterImageModel, imageQuality, cameraTemplate, cameraStrength, showCharacterOutput, showAnalyzePanel, showThreeViewJsonPanel, showGeneratePanel, isMinimized, textOutput, isGenerating, generationProgress, generationStatus, klingDuration, klingAspectRatio, klingImage, klingGeneratedVideo, klingShowSettingsPanel, klingMode, klingVideoUrl, klingVideoName, klingCharacterOrientation, klingKeepSound, klingVideoMode, klingLipSyncSessionId, klingLipSyncFaceId, klingLipSyncAudio, klingLipSyncAudioName, klingLipSyncPhase, klingLipSyncSoundStart, klingLipSyncSoundEnd, klingLipSyncSoundInsert, klingLipSyncSoundVolume, klingLipSyncOriginalVolume } = shape.props;
     const editor = useEditor();
     const videoRef = useRef<HTMLVideoElement>(null);
     const { isMember, userId, refresh: refreshBalance } = useMembership();
@@ -1087,6 +1089,122 @@ Maintain strong visual consistency in every panel.`;
           </div>
         )}
 
+        {/* 图片卡片 - 左侧参考图浮板（连接图 + 上传图，hover 放大） */}
+        {cardType === 'image' && !isMinimized && showRefImagePanel && ['nano-banana', 'nano-banana-pro', 'nano-banana-pro-multi', 'gpt-image-2', 'gpt-image-2-all', 'doubao-seedream-4-5-251128', 'flux-kontext', 'mj_imagine'].includes(model || '') && (() => {
+          const localImgs: string[] = uploadedImages ? (() => { try { return JSON.parse(uploadedImages); } catch { return []; } })() : [];
+          const localUrls: string[] = uploadedImageUrls ? (() => { try { return JSON.parse(uploadedImageUrls); } catch { return []; } })() : [];
+          return (
+            <div
+              className="absolute rounded-2xl shadow-2xl backdrop-blur-xl overflow-visible flex flex-col"
+              style={{
+                right: '100%', marginRight: '8px', top: 0, width: 320, maxHeight: h,
+                zIndex: 200, pointerEvents: 'all',
+                background: 'linear-gradient(135deg, rgba(192,192,192,0.15) 0%, rgba(100,100,100,0.1) 100%)',
+                border: '1px solid rgba(192,192,192,0.3)',
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 flex-shrink-0">
+                <span className="text-xs text-gray-300 font-semibold">参考图片</span>
+                <button
+                  className="w-5 h-5 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all text-xs"
+                  onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, showRefImagePanel: false } }); }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >✕</button>
+              </div>
+              <div className="p-3 flex-1 overflow-y-auto" style={{ overflow: 'visible' }}>
+                {/* 连接图片 */}
+                {connectedImageCardImages.length > 0 && (
+                  <div className="mb-3">
+                    <div className="text-[10px] text-purple-300 mb-1.5">来自连接（{connectedImageCardImages.length}）</div>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {connectedImageCardImages.map((img, idx) => (
+                        <div
+                          key={`conn-${idx}`}
+                          className="relative rounded-lg overflow-hidden border border-purple-500/40 transition-transform duration-150 hover:scale-[3.5] hover:z-[10] cursor-zoom-in origin-top-left"
+                          style={{ aspectRatio: '1', width: '100%', background: 'rgba(0,0,0,0.3)' }}
+                        >
+                          <img src={img} className="w-full h-full object-cover" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 上传图片 - nano-banana-pro/multi URL 数组 */}
+                {localUrls.length > 0 && (
+                  <div className="mb-3">
+                    <div className="text-[10px] text-gray-400 mb-1.5">手动上传（{localUrls.length}）</div>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {localUrls.map((img, idx) => (
+                        <div
+                          key={`url-${idx}`}
+                          className="relative rounded-lg overflow-hidden border border-white/15 transition-transform duration-150 hover:scale-[3.5] hover:z-[10] cursor-zoom-in group origin-top-left"
+                          style={{ aspectRatio: '1', width: '100%', background: 'rgba(0,0,0,0.3)' }}
+                        >
+                          <img src={img} className="w-full h-full object-cover" />
+                          <button
+                            onClick={(e) => { e.stopPropagation(); const arr = [...localUrls]; arr.splice(idx, 1); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImageUrls: JSON.stringify(arr) } }); }}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            className="absolute top-0 right-0 w-4 h-4 bg-black/70 hover:bg-red-500/90 rounded text-white text-[9px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 上传图片 - nano-banana/gpt-image-2-all base64/URL 数组 */}
+                {localImgs.length > 0 && (
+                  <div className="mb-3">
+                    <div className="text-[10px] text-gray-400 mb-1.5">手动上传（{localImgs.length}）</div>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {localImgs.map((img, idx) => (
+                        <div
+                          key={`img-${idx}`}
+                          className="relative rounded-lg overflow-hidden border border-white/15 transition-transform duration-150 hover:scale-[3.5] hover:z-[10] cursor-zoom-in group origin-top-left"
+                          style={{ aspectRatio: '1', width: '100%', background: 'rgba(0,0,0,0.3)' }}
+                        >
+                          <img src={img} className="w-full h-full object-cover" />
+                          <button
+                            onClick={(e) => { e.stopPropagation(); const arr = [...localImgs]; arr.splice(idx, 1); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImages: JSON.stringify(arr) } }); }}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            className="absolute top-0 right-0 w-4 h-4 bg-black/70 hover:bg-red-500/90 rounded text-white text-[9px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 单图上传（flux-kontext、doubao 等单图模型） */}
+                {uploadedImage && !localImgs.length && !localUrls.length && (
+                  <div className="mb-3">
+                    <div className="text-[10px] text-gray-400 mb-1.5">手动上传（1）</div>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      <div
+                        className="relative rounded-lg overflow-hidden border border-white/15 transition-transform duration-150 hover:scale-[3.5] hover:z-[10] cursor-zoom-in group origin-top-left"
+                        style={{ aspectRatio: '1', width: '100%', background: 'rgba(0,0,0,0.3)' }}
+                      >
+                        <img src={uploadedImage} className="w-full h-full object-cover" />
+                        <button
+                          onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImage: '' } }); }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          className="absolute top-0 right-0 w-4 h-4 bg-black/70 hover:bg-red-500/90 rounded text-white text-[9px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >✕</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="text-[9px] text-gray-500 mt-1 leading-relaxed border-t border-white/5 pt-2">
+                  鼠标悬停缩略图可放大预览。在卡片内"参考图片"区域可上传新图。
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* 图片卡片 - 右侧浮层容器（参数设置 + 图片输出紧靠在一起） */}
         {cardType === 'image' && !isMinimized && (showImageSettingsPanel || (showImageOutput && generatedImage)) && (
           <div
@@ -1423,6 +1541,19 @@ Maintain strong visual consistency in every panel.`;
                           className="text-[10px] px-2 py-0.5 rounded bg-blue-600/30 border border-blue-500/40 text-blue-300 hover:bg-blue-600/50 transition-colors"
                         >预设 ◀</button>
                       )}
+                      {cardType === 'image' && ['nano-banana', 'nano-banana-pro', 'nano-banana-pro-multi', 'gpt-image-2', 'gpt-image-2-all', 'doubao-seedream-4-5-251128', 'flux-kontext', 'mj_imagine'].includes(model || '') && (() => {
+                        const localImgs: string[] = uploadedImages ? (() => { try { return JSON.parse(uploadedImages); } catch { return []; } })() : [];
+                        const localUrls: string[] = uploadedImageUrls ? (() => { try { return JSON.parse(uploadedImageUrls); } catch { return []; } })() : [];
+                        const singleCount = uploadedImage ? 1 : 0;
+                        const totalCount = connectedImageCardImages.length + localImgs.length + localUrls.length + singleCount;
+                        return (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, showRefImagePanel: !showRefImagePanel } }); }}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            className="text-[10px] px-2 py-0.5 rounded bg-purple-600/30 border border-purple-500/40 text-purple-200 hover:bg-purple-600/50 transition-colors"
+                          >参考图{totalCount > 0 ? `(${totalCount})` : ''} ◀</button>
+                        );
+                      })()}
                       <button
                         className="text-[10px] text-gray-400 hover:text-gray-300 transition-colors"
                         onClick={async (e) => { e.stopPropagation(); try { const text = await navigator.clipboard.readText(); if (text) { const newPrompt = (localPrompt ? localPrompt + '\n' : '') + text; setLocalPrompt(newPrompt); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, prompt: newPrompt } }); } } catch {} }}
@@ -2363,7 +2494,7 @@ Maintain strong visual consistency in every panel.`;
 
             {/* 图片上传 - 支持图生图的模型才显示 */}
             {cardType === 'image' && ['nano-banana', 'nano-banana-pro', 'nano-banana-pro-multi', 'gpt-image-2', 'gpt-image-2-all', 'doubao-seedream-4-5-251128', 'flux-kontext', 'mj_imagine'].includes(model || '') && (
-              <div className="mb-2">
+              <div className="mb-2" style={{ display: showRefImagePanel ? 'none' : 'block' }}>
                 <label className="text-gray-400 text-xs mb-1 block">
                   {model === 'nano-banana-pro-multi'
                     ? '参考图片（必填，最多10张）'
