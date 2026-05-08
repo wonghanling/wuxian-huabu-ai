@@ -1091,8 +1091,8 @@ Maintain strong visual consistency in every panel.`;
 
         {/* 图片卡片 - 左侧参考图浮板（完整：上传 + 查看 + 删除） */}
         {cardType === 'image' && !isMinimized && showRefImagePanel && ['nano-banana', 'nano-banana-pro', 'nano-banana-pro-multi', 'gpt-image-2', 'gpt-image-2-all', 'doubao-seedream-4-5-251128', 'flux-kontext', 'mj_imagine'].includes(model || '') && (() => {
-          const localImgs: string[] = uploadedImages ? (() => { try { return JSON.parse(uploadedImages); } catch { return []; } })() : [];
-          const localUrls: string[] = uploadedImageUrls ? (() => { try { return JSON.parse(uploadedImageUrls); } catch { return []; } })() : [];
+          const localImgs: string[] = uploadedImages ? (() => { try { return JSON.parse(uploadedImages || "[]"); } catch { return []; } })() : [];
+          const localUrls: string[] = uploadedImageUrls ? (() => { try { return JSON.parse(uploadedImageUrls || "[]"); } catch { return []; } })() : [];
           const connCount = connectedImageCardImages.length;
           // 模型上传上限
           const isMultiUrl = model === 'nano-banana-pro-multi';
@@ -1608,8 +1608,8 @@ Maintain strong visual consistency in every panel.`;
                         >预设 ◀</button>
                       )}
                       {cardType === 'image' && ['nano-banana', 'nano-banana-pro', 'nano-banana-pro-multi', 'gpt-image-2', 'gpt-image-2-all', 'doubao-seedream-4-5-251128', 'flux-kontext', 'mj_imagine'].includes(model || '') && (() => {
-                        const localImgs: string[] = uploadedImages ? (() => { try { return JSON.parse(uploadedImages); } catch { return []; } })() : [];
-                        const localUrls: string[] = uploadedImageUrls ? (() => { try { return JSON.parse(uploadedImageUrls); } catch { return []; } })() : [];
+                        const localImgs: string[] = uploadedImages ? (() => { try { return JSON.parse(uploadedImages || "[]"); } catch { return []; } })() : [];
+                        const localUrls: string[] = uploadedImageUrls ? (() => { try { return JSON.parse(uploadedImageUrls || "[]"); } catch { return []; } })() : [];
                         const singleCount = uploadedImage ? 1 : 0;
                         const totalCount = connectedImageCardImages.length + localImgs.length + localUrls.length + singleCount;
                         return (
@@ -2591,7 +2591,7 @@ Maintain strong visual consistency in every panel.`;
                 {model === 'nano-banana-pro-multi' ? (
                   <>
                     {(() => {
-                      const urls: string[] = uploadedImageUrls ? JSON.parse(uploadedImageUrls) : [];
+                      const urls: string[] = uploadedImageUrls ? JSON.parse(uploadedImageUrls || "[]") : [];
                       return (
                         <>
                           <input
@@ -2653,8 +2653,8 @@ Maintain strong visual consistency in every panel.`;
                   /* nano-banana-pro 走 fal storage URL，nano-banana/gpt-image-2-all 走 base64 */
                   <>
                     {(() => {
-                      const imgs: string[] = uploadedImages ? JSON.parse(uploadedImages) : [];
-                      const urls: string[] = uploadedImageUrls ? JSON.parse(uploadedImageUrls) : [];
+                      const imgs: string[] = uploadedImages ? JSON.parse(uploadedImages || "[]") : [];
+                      const urls: string[] = uploadedImageUrls ? JSON.parse(uploadedImageUrls || "[]") : [];
                       const connCount = connectedImageCardImages.length;
                       // nano-banana / nano-banana-pro：连接 + 上传合并上限 2
                       // gpt-image-2-all：连接 + 上传合并上限 10
@@ -2676,7 +2676,7 @@ Maintain strong visual consistency in every panel.`;
                             onChange={async (e) => {
                               const files = Array.from(e.target.files || []);
                               if (model === 'nano-banana-pro') {
-                                const existing = uploadedImageUrls ? JSON.parse(uploadedImageUrls) : [];
+                                const existing = uploadedImageUrls ? JSON.parse(uploadedImageUrls || "[]") : [];
                                 const remaining = Math.max(0, uploadRemaining - existing.length);
                                 const toUpload = files.slice(0, remaining);
                                 if (toUpload.length === 0) return;
@@ -3178,7 +3178,7 @@ Maintain strong visual consistency in every panel.`;
                   try {
                     // GPT Image 2 单独处理
                     if (['gpt-image-2', 'gpt-image-2-all'].includes(model || '')) {
-                      const imgs: string[] = uploadedImages ? JSON.parse(uploadedImages) : [];
+                      const imgs: string[] = uploadedImages ? JSON.parse(uploadedImages || "[]") : [];
 
                       let imagesToSend: string[] = [];
                       if (model === 'gpt-image-2-all') {
@@ -3294,17 +3294,17 @@ Maintain strong visual consistency in every panel.`;
                     // 合并上传 + 连接，按模型类型处理
                     if (model === 'nano-banana-pro-multi') {
                       // 多图融合：连接 + 上传 URL 合并，上限 10
-                      const existingUrls: string[] = uploadedImageUrls ? JSON.parse(uploadedImageUrls) : [];
+                      const existingUrls: string[] = uploadedImageUrls ? JSON.parse(uploadedImageUrls || "[]") : [];
                       const connUrls = await Promise.all(connectedImageCardImages.map(toFalUrl));
                       mergedUrlArray = [...connUrls, ...existingUrls].slice(0, 10);
                     } else if (model === 'nano-banana-pro') {
                       // 连接 + 上传 URL 合并，上限 2
-                      const existingUrls: string[] = uploadedImageUrls ? JSON.parse(uploadedImageUrls) : [];
+                      const existingUrls: string[] = uploadedImageUrls ? JSON.parse(uploadedImageUrls || "[]") : [];
                       const connUrls = await Promise.all(connectedImageCardImages.map(toFalUrl));
                       mergedUrlArray = [...connUrls, ...existingUrls].slice(0, 2);
                     } else if (model === 'nano-banana') {
                       // 连接 + 上传 base64 合并，上限 2
-                      const existingImgs: string[] = uploadedImages ? JSON.parse(uploadedImages) : [];
+                      const existingImgs: string[] = uploadedImages ? JSON.parse(uploadedImages || "[]") : [];
                       const connImgs = await Promise.all(connectedImageCardImages.map(toBase64));
                       mergedBase64Array = [...connImgs, ...existingImgs].slice(0, 2);
                     } else if (connectedImageCardImages.length > 0) {
@@ -3350,7 +3350,7 @@ Maintain strong visual consistency in every panel.`;
 
                     // fal 异步模式：轮询查询结果
                     if (data.pending && data.requestId) {
-                      const hasImages = uploadedImageUrls && JSON.parse(uploadedImageUrls).length > 0;
+                      const hasImages = uploadedImageUrls && JSON.parse(uploadedImageUrls || "[]").length > 0;
                       const falEndpointMap: Record<string, string> = {
                         'flux-kontext': 'fal-ai/flux-pro/kontext/max',
                         'flux-kontext-max': 'fal-ai/flux-pro/kontext/max/text-to-image',
