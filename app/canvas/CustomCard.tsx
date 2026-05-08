@@ -547,14 +547,34 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
     }, [editor, shape.id, shape.props]);
 
     // 上传图片到 Supabase Storage 返回 URL（用于减轻 snapshot，避免 base64）
+    // 强制转换为 JPEG 格式避免 HEIC/BMP 等非主流格式导致 fal 拒绝
     const uploadImageToStorage = async (file: File): Promise<string | null> => {
       try {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) { alert('请先登录'); return null; }
-        const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-        const filename = `images/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-        const { error } = await supabase.storage.from('assets').upload(filename, file, { contentType: file.type || 'image/jpeg', upsert: false });
+
+        // 统一转 JPEG：用 canvas 重绘
+        const jpegBlob = await new Promise<Blob>((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) { reject(new Error('canvas 初始化失败')); return; }
+            ctx.drawImage(img, 0, 0);
+            canvas.toBlob((blob) => {
+              if (blob) resolve(blob);
+              else reject(new Error('转 JPEG 失败'));
+            }, 'image/jpeg', 0.92);
+          };
+          img.onerror = () => reject(new Error('图片加载失败，可能是格式不支持'));
+          img.src = URL.createObjectURL(file);
+        });
+
+        const filename = `images/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
+        const { error } = await supabase.storage.from('assets').upload(filename, jpegBlob, { contentType: 'image/jpeg', upsert: false });
         if (error) throw new Error(`上传失败: ${error.message}`);
         const { data: urlData } = supabase.storage.from('assets').getPublicUrl(filename);
         return urlData.publicUrl;
