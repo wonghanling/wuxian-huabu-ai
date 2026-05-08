@@ -1091,22 +1091,28 @@ Maintain strong visual consistency in every panel.`;
 
         {/* 图片卡片 - 左侧参考图浮板（完整：上传 + 查看 + 删除） */}
         {cardType === 'image' && !isMinimized && showRefImagePanel && ['nano-banana', 'nano-banana-pro', 'nano-banana-pro-multi', 'gpt-image-2', 'gpt-image-2-all', 'doubao-seedream-4-5-251128', 'flux-kontext', 'mj_imagine'].includes(model || '') && (() => {
-          const localImgs: string[] = uploadedImages ? (() => { try { return JSON.parse(uploadedImages || "[]"); } catch { return []; } })() : [];
-          const localUrls: string[] = uploadedImageUrls ? (() => { try { return JSON.parse(uploadedImageUrls || "[]"); } catch { return []; } })() : [];
+          const allImgs: string[] = uploadedImages ? (() => { try { return JSON.parse(uploadedImages || "[]"); } catch { return []; } })() : [];
+          const allUrls: string[] = uploadedImageUrls ? (() => { try { return JSON.parse(uploadedImageUrls || "[]"); } catch { return []; } })() : [];
           const connCount = connectedImageCardImages.length;
-          // 模型上传上限
+          // 模型适配
           const isMultiUrl = model === 'nano-banana-pro-multi';
           const isProUrl = model === 'nano-banana-pro';
           const isArrayBase64 = model === 'nano-banana' || model === 'gpt-image-2-all';
           const isSingleImage = !isMultiUrl && !isProUrl && !isArrayBase64; // flux-kontext / doubao / mj / gpt-image-2
-          const totalMax = isMultiUrl ? 10 : isSingleImage ? 1 : 2;
-          const uploadRemaining = Math.max(0, totalMax - connCount - localImgs.length - localUrls.length - (uploadedImage ? 1 : 0));
+          // 上限
+          const totalMax = isMultiUrl ? 10 : (model === 'gpt-image-2-all' ? 10 : isSingleImage ? 1 : 2);
+          // 当前模型使用哪个字段的图，其他字段不参与计数也不显示
+          const localImgs: string[] = isArrayBase64 ? allImgs : [];
+          const localUrls: string[] = (isMultiUrl || isProUrl) ? allUrls : [];
+          const singleImg: string = isSingleImage ? (uploadedImage || '') : '';
+          const currentTotal = connCount + localImgs.length + localUrls.length + (singleImg ? 1 : 0);
+          const uploadRemaining = Math.max(0, totalMax - currentTotal);
 
           const handleUploadFiles = async (files: File[]) => {
             if (files.length === 0) return;
             if (isMultiUrl || isProUrl) {
               // 上传到 fal.storage 拿 URL
-              const existing = [...localUrls];
+              const existing = [...allUrls];
               const toUpload = files.slice(0, uploadRemaining);
               for (const file of toUpload) {
                 try {
@@ -1117,7 +1123,7 @@ Maintain strong visual consistency in every panel.`;
               editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImageUrls: JSON.stringify(existing) } });
             } else if (isArrayBase64) {
               // 上传到 Supabase Storage 拿 URL
-              const newImgs = [...localImgs];
+              const newImgs = [...allImgs];
               const toUpload = files.slice(0, uploadRemaining);
               for (const file of toUpload) {
                 const url = await uploadImageToStorage(file);
@@ -1147,7 +1153,7 @@ Maintain strong visual consistency in every panel.`;
             >
               <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 flex-shrink-0">
                 <span className="text-xs text-gray-300 font-semibold">
-                  参考图片 <span className="text-gray-500 font-normal">({connCount + localImgs.length + localUrls.length + (uploadedImage ? 1 : 0)}/{totalMax})</span>
+                  参考图片 <span className="text-gray-500 font-normal">({currentTotal}/{totalMax})</span>
                 </span>
                 <button
                   className="w-5 h-5 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all text-xs"
@@ -1240,7 +1246,7 @@ Maintain strong visual consistency in every panel.`;
                 )}
 
                 {/* 单图上传（flux-kontext、doubao、mj、gpt-image-2） */}
-                {uploadedImage && isSingleImage && (
+                {singleImg && (
                   <div className="mb-3">
                     <div className="text-[10px] text-gray-400 mb-1.5">手动上传（1）</div>
                     <div className="grid grid-cols-4 gap-1.5">
@@ -1248,7 +1254,7 @@ Maintain strong visual consistency in every panel.`;
                         className="relative rounded-lg overflow-hidden border border-white/15 transition-transform duration-150 hover:scale-[3.5] hover:z-[10] cursor-zoom-in group origin-top-left"
                         style={{ aspectRatio: '1', width: '100%', background: 'rgba(0,0,0,0.3)' }}
                       >
-                        <img src={uploadedImage} className="w-full h-full object-cover" />
+                        <img src={singleImg} className="w-full h-full object-cover" />
                         <button
                           onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImage: '' } }); }}
                           onPointerDown={(e) => e.stopPropagation()}
@@ -1259,7 +1265,7 @@ Maintain strong visual consistency in every panel.`;
                   </div>
                 )}
 
-                {connCount + localImgs.length + localUrls.length + (uploadedImage ? 1 : 0) === 0 && (
+                {currentTotal === 0 && (
                   <div className="text-[10px] text-gray-500 text-center py-3">暂无参考图，可上传或连接</div>
                 )}
 
