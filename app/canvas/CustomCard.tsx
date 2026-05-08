@@ -1211,10 +1211,22 @@ Maintain strong visual consistency in every panel.`;
                       {connShown.map((img, idx) => (
                         <div
                           key={`conn-${idx}`}
-                          className="relative rounded-lg overflow-hidden border border-purple-500/40 transition-transform duration-150 hover:scale-[3.5] hover:z-[10] cursor-zoom-in origin-top-left"
+                          className="relative rounded-lg border border-purple-500/40 group"
                           style={{ aspectRatio: '1', width: '100%', background: 'rgba(0,0,0,0.3)' }}
                         >
-                          <img src={img} className="w-full h-full object-contain" />
+                          <img src={img} className="w-full h-full object-cover rounded-lg" />
+                          {/* hover 弹出原比例图层 */}
+                          <img
+                            src={img}
+                            className="absolute pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 shadow-2xl rounded-lg border border-purple-500/60"
+                            style={{
+                              left: 0, top: 0,
+                              maxWidth: 280, maxHeight: 280,
+                              width: 'auto', height: 'auto',
+                              zIndex: 20,
+                              background: 'rgba(0,0,0,0.9)',
+                            }}
+                          />
                         </div>
                       ))}
                     </div>
@@ -1229,14 +1241,19 @@ Maintain strong visual consistency in every panel.`;
                       {localUrls.map((img, idx) => (
                         <div
                           key={`url-${idx}`}
-                          className="relative rounded-lg overflow-hidden border border-white/15 transition-transform duration-150 hover:scale-[3.5] hover:z-[10] cursor-zoom-in group origin-top-left"
+                          className="relative rounded-lg border border-white/15 group"
                           style={{ aspectRatio: '1', width: '100%', background: 'rgba(0,0,0,0.3)' }}
                         >
-                          <img src={img} className="w-full h-full object-contain" />
+                          <img src={img} className="w-full h-full object-cover rounded-lg" />
+                          <img
+                            src={img}
+                            className="absolute pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 shadow-2xl rounded-lg border border-white/30"
+                            style={{ left: 0, top: 0, maxWidth: 280, maxHeight: 280, width: 'auto', height: 'auto', zIndex: 20, background: 'rgba(0,0,0,0.9)' }}
+                          />
                           <button
                             onClick={(e) => { e.stopPropagation(); const arr = [...localUrls]; arr.splice(idx, 1); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImageUrls: JSON.stringify(arr) } }); }}
                             onPointerDown={(e) => e.stopPropagation()}
-                            className="absolute top-0 right-0 w-4 h-4 bg-black/70 hover:bg-red-500/90 rounded text-white text-[9px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="absolute top-0 right-0 w-4 h-4 bg-black/70 hover:bg-red-500/90 rounded text-white text-[9px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-30"
                           >✕</button>
                         </div>
                       ))}
@@ -1252,14 +1269,19 @@ Maintain strong visual consistency in every panel.`;
                       {localImgs.map((img, idx) => (
                         <div
                           key={`img-${idx}`}
-                          className="relative rounded-lg overflow-hidden border border-white/15 transition-transform duration-150 hover:scale-[3.5] hover:z-[10] cursor-zoom-in group origin-top-left"
+                          className="relative rounded-lg border border-white/15 group"
                           style={{ aspectRatio: '1', width: '100%', background: 'rgba(0,0,0,0.3)' }}
                         >
-                          <img src={img} className="w-full h-full object-contain" />
+                          <img src={img} className="w-full h-full object-cover rounded-lg" />
+                          <img
+                            src={img}
+                            className="absolute pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 shadow-2xl rounded-lg border border-white/30"
+                            style={{ left: 0, top: 0, maxWidth: 280, maxHeight: 280, width: 'auto', height: 'auto', zIndex: 20, background: 'rgba(0,0,0,0.9)' }}
+                          />
                           <button
                             onClick={(e) => { e.stopPropagation(); const arr = [...localImgs]; arr.splice(idx, 1); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImages: JSON.stringify(arr) } }); }}
                             onPointerDown={(e) => e.stopPropagation()}
-                            className="absolute top-0 right-0 w-4 h-4 bg-black/70 hover:bg-red-500/90 rounded text-white text-[9px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="absolute top-0 right-0 w-4 h-4 bg-black/70 hover:bg-red-500/90 rounded text-white text-[9px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-30"
                           >✕</button>
                         </div>
                       ))}
@@ -1273,14 +1295,19 @@ Maintain strong visual consistency in every panel.`;
                     <div className="text-[10px] text-gray-400 mb-1.5">手动上传（1）</div>
                     <div className="grid grid-cols-4 gap-1.5">
                       <div
-                        className="relative rounded-lg overflow-hidden border border-white/15 transition-transform duration-150 hover:scale-[3.5] hover:z-[10] cursor-zoom-in group origin-top-left"
+                        className="relative rounded-lg overflow-hidden border border-white/15 group"
                         style={{ aspectRatio: '1', width: '100%', background: 'rgba(0,0,0,0.3)' }}
                       >
-                        <img src={singleImg} className="w-full h-full object-contain" />
+                        <img src={singleImg} className="w-full h-full object-cover rounded-lg" />
+                        <img
+                          src={singleImg}
+                          className="absolute pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 shadow-2xl rounded-lg border border-white/30"
+                          style={{ left: 0, top: 0, maxWidth: 280, maxHeight: 280, width: 'auto', height: 'auto', zIndex: 20, background: 'rgba(0,0,0,0.9)' }}
+                        />
                         <button
                           onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImage: '' } }); }}
                           onPointerDown={(e) => e.stopPropagation()}
-                          className="absolute top-0 right-0 w-4 h-4 bg-black/70 hover:bg-red-500/90 rounded text-white text-[9px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="absolute top-0 right-0 w-4 h-4 bg-black/70 hover:bg-red-500/90 rounded text-white text-[9px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-30"
                         >✕</button>
                       </div>
                     </div>
