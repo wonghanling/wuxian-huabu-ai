@@ -299,6 +299,7 @@ export type CustomCardShape = TLBaseShape<
     showImageOutput?: boolean;
     showImageSettingsPanel?: boolean;
     showPromptPanel?: boolean;
+    showPresetPanel?: boolean;
     showVideoOutput?: boolean;
     capturedFrame?: string;
     videoDuration?: number;
@@ -383,6 +384,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
     showImageOutput: T.boolean.optional(),
     showImageSettingsPanel: T.boolean.optional(),
     showPromptPanel: T.boolean.optional(),
+    showPresetPanel: T.boolean.optional(),
     showVideoOutput: T.boolean.optional(),
     capturedFrame: T.string.optional(),
     videoDuration: T.number.optional(),
@@ -514,7 +516,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
   }
 
   component(shape: CustomCardShape) {
-    const { cardType, title, prompt, model, w, h, uploadedImage, uploadedImages, uploadedImageUrls, generatedImage, aspectRatio, gridLayout, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showImageSettingsPanel, showPromptPanel, showVideoOutput, capturedFrame, videoDuration, videoResolution, videoGenerateAudio, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterAnalyzeImage, characterAnchorJson, characterThreeViewJson, characterThreeViewImage, characterGeneratedImage, characterImageModel, imageQuality, cameraTemplate, cameraStrength, showCharacterOutput, showAnalyzePanel, showThreeViewJsonPanel, showGeneratePanel, isMinimized, textOutput, isGenerating, generationProgress, generationStatus, klingDuration, klingAspectRatio, klingImage, klingGeneratedVideo, klingShowSettingsPanel, klingMode, klingVideoUrl, klingVideoName, klingCharacterOrientation, klingKeepSound, klingVideoMode, klingLipSyncSessionId, klingLipSyncFaceId, klingLipSyncAudio, klingLipSyncAudioName, klingLipSyncPhase, klingLipSyncSoundStart, klingLipSyncSoundEnd, klingLipSyncSoundInsert, klingLipSyncSoundVolume, klingLipSyncOriginalVolume } = shape.props;
+    const { cardType, title, prompt, model, w, h, uploadedImage, uploadedImages, uploadedImageUrls, generatedImage, aspectRatio, gridLayout, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showImageSettingsPanel, showPromptPanel, showPresetPanel, showVideoOutput, capturedFrame, videoDuration, videoResolution, videoGenerateAudio, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterAnalyzeImage, characterAnchorJson, characterThreeViewJson, characterThreeViewImage, characterGeneratedImage, characterImageModel, imageQuality, cameraTemplate, cameraStrength, showCharacterOutput, showAnalyzePanel, showThreeViewJsonPanel, showGeneratePanel, isMinimized, textOutput, isGenerating, generationProgress, generationStatus, klingDuration, klingAspectRatio, klingImage, klingGeneratedVideo, klingShowSettingsPanel, klingMode, klingVideoUrl, klingVideoName, klingCharacterOrientation, klingKeepSound, klingVideoMode, klingLipSyncSessionId, klingLipSyncFaceId, klingLipSyncAudio, klingLipSyncAudioName, klingLipSyncPhase, klingLipSyncSoundStart, klingLipSyncSoundEnd, klingLipSyncSoundInsert, klingLipSyncSoundVolume, klingLipSyncOriginalVolume } = shape.props;
     const editor = useEditor();
     const videoRef = useRef<HTMLVideoElement>(null);
     const { isMember, userId, refresh: refreshBalance } = useMembership();
@@ -982,6 +984,109 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
           </div>
         )}
 
+        {/* 图片卡片 - 左侧预设浮板（风格 + 角色设计） */}
+        {cardType === 'image' && !isMinimized && showPresetPanel && (
+          <div
+            className="absolute rounded-2xl shadow-2xl backdrop-blur-xl overflow-hidden flex flex-col"
+            style={{
+              right: '100%', marginRight: '8px', top: 0, width: 320, maxHeight: h,
+              zIndex: 200, pointerEvents: 'all',
+              background: 'linear-gradient(135deg, rgba(192,192,192,0.15) 0%, rgba(100,100,100,0.1) 100%)',
+              border: '1px solid rgba(192,192,192,0.3)',
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 flex-shrink-0">
+              <span className="text-xs text-gray-300 font-semibold">预设 Prompt</span>
+              <button
+                className="w-5 h-5 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all text-xs"
+                onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, showPresetPanel: false } }); }}
+                onPointerDown={(e) => e.stopPropagation()}
+              >✕</button>
+            </div>
+            <div className="p-3 flex-1 overflow-y-auto">
+              {/* 风格 */}
+              <div className="mb-3">
+                <div className="text-[10px] text-gray-400 mb-1.5">风格</div>
+                <div className="flex flex-wrap gap-1">
+                  {[
+                    { label: '电影写实3D', prompt: '3D animation style, game cinematic, Unreal Engine lighting, realistic shadows, high detail, consistent character,' },
+                    { label: '超写实电影', prompt: 'cinematic film still, photorealistic, natural skin texture, global illumination, volumetric lighting, depth of field,' },
+                    { label: '游戏CG', prompt: 'AAA game cinematic, Unreal Engine 5 render, real-time rendering, cinematic lighting, epic atmosphere,' },
+                    { label: '动漫3D', prompt: 'anime 3D style, stylized character, clean face shading, soft lighting, anime cinematic,' },
+                    { label: '宫崎骏', prompt: 'Studio Ghibli style, hand-painted background, soft warm lighting, anime film look,' },
+                    { label: '新海诚', prompt: 'Makoto Shinkai style, ultra detailed sky, light bloom, emotional atmosphere,' },
+                    { label: '黑暗电影', prompt: 'dark cinematic, moody lighting, low key lighting, dramatic shadows, foggy atmosphere,' },
+                    { label: '武侠电影', prompt: 'ancient Chinese wuxia style, dusty atmosphere, wind movement, cinematic composition, epic tone,' },
+                    { label: '赛博朋克', prompt: 'cyberpunk, futuristic city, neon lights, holographic displays, 3D render, Unreal Engine 5, cinematic lighting,' },
+                    { label: '迪士尼3D', prompt: 'Disney Pixar style, smooth skin, cartoon proportions, bright lighting,' },
+                    { label: '梦工厂', prompt: 'DreamWorks style, expressive face, stylized realism,' },
+                    { label: '油画风', prompt: 'oil painting, brush strokes, classical art,' },
+                    { label: '水墨风', prompt: 'ink wash painting, Chinese ink style, minimalist composition,' },
+                    { label: '电影胶片', prompt: 'film grain, analog film, vintage cinematic,' },
+                  ].map(s => (
+                    <button
+                      key={s.label}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const stylePattern = /^[a-zA-Z0-9 ,.\-()]+,\s*\n?/;
+                        const clean = stylePattern.test(localPrompt) ? localPrompt.replace(stylePattern, '') : localPrompt;
+                        const newPrompt = s.prompt + (clean ? '\n' + clean : '');
+                        setLocalPrompt(newPrompt);
+                        editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, prompt: newPrompt } });
+                      }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      className="text-[10px] px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-gray-300 hover:bg-blue-600/40 hover:border-blue-500/50 hover:text-white transition-all"
+                    >{s.label}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 其他预设 */}
+              <div>
+                <div className="text-[10px] text-gray-400 mb-1.5">其他预设</div>
+                <div className="flex flex-wrap gap-1">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const characterSheetPrompt = `Generate a professional MASTER CHARACTER SHEET based on the uploaded reference image.
+
+Preserve the exact identity, face, hairstyle, body proportions, clothing, accessories, colors, and original art style from the reference image.
+
+Create a clean production-style character presentation board including:
+
+- hero portrait
+- front / side / back / 3-4 turnaround views
+- facial expression studies
+- pose variations
+- clothing and accessory breakdown
+- color palette
+- cinematic portrait
+- material and texture callouts
+- character information panels
+- professional editorial layout
+
+High detail, visually organized, consistent character identity across all panels, premium character bible aesthetic, clean background, production-ready presentation design.
+
+Do not redesign the character.
+Do not change the art style.
+Do not create random collage layouts.
+Maintain strong visual consistency in every panel.`;
+                      setLocalPrompt(characterSheetPrompt);
+                      editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, prompt: characterSheetPrompt } });
+                    }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    className="text-[10px] px-2.5 py-1.5 rounded-lg bg-purple-600/30 border border-purple-500/50 text-purple-200 hover:bg-purple-600/50 hover:border-purple-500/70 hover:text-white transition-all font-medium"
+                  >角色设计</button>
+                </div>
+                <div className="text-[9px] text-gray-500 mt-1.5 leading-relaxed">
+                  点击"角色设计"会覆盖当前 Prompt，生成专业角色设定板（基于上传的参考图）
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* 图片卡片 - 右侧浮层容器（参数设置 + 图片输出紧靠在一起） */}
         {cardType === 'image' && !isMinimized && (showImageSettingsPanel || (showImageOutput && generatedImage)) && (
           <div
@@ -1313,10 +1418,10 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                     <div className="flex items-center gap-2">
                       {cardType === 'image' && (
                         <button
-                          onClick={(e) => { e.stopPropagation(); setShowImageStyles(v => !v); }}
+                          onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, showPresetPanel: !showPresetPanel } }); }}
                           onPointerDown={(e) => e.stopPropagation()}
                           className="text-[10px] px-2 py-0.5 rounded bg-blue-600/30 border border-blue-500/40 text-blue-300 hover:bg-blue-600/50 transition-colors"
-                        >选风格</button>
+                        >预设 ◀</button>
                       )}
                       <button
                         className="text-[10px] text-gray-400 hover:text-gray-300 transition-colors"
@@ -1325,7 +1430,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
                       >粘贴</button>
                     </div>
                   </div>
-                  {cardType === 'image' && showImageStyles && (
+                  {cardType === 'image' && false && showImageStyles && (
                     <div className="mb-1.5 flex flex-wrap gap-1" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
                       {[
                         { label: '电影写实3D', prompt: '3D animation style, game cinematic, Unreal Engine lighting, realistic shadows, high detail, consistent character,' },
