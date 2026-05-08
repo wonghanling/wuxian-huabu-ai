@@ -29,6 +29,17 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ pending: true, status: status.status });
   } catch (error: any) {
     console.error('[fal-query] error:', error);
-    return NextResponse.json({ error: error.message || JSON.stringify(error) || '查询失败' }, { status: 500 });
+    // 打印 fal 完整错误 body 供排查（包括 422 详细原因）
+    if (error?.body) {
+      console.error('[fal-query] error body:', JSON.stringify(error.body));
+    }
+    if (error?.status) {
+      console.error('[fal-query] error status:', error.status);
+    }
+    return NextResponse.json({
+      error: error.message || JSON.stringify(error) || '查询失败',
+      detail: error?.body || null,
+      status: error?.status || null,
+    }, { status: 500 });
   }
 }
