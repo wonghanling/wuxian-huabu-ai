@@ -189,12 +189,25 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
           '2x2': '/fenjingmuban2x2.jpg',
           '3x3': '/fenjingmuban3X3.jpg',
         };
-        const templateBlob = await fetch(templateFileMap[inputType]).then(r => r.blob());
-        const templateB64 = await new Promise<string>((resolve) => {
+        // 加 cache-buster 避免浏览器缓存 0 字节响应
+        const templateUrl = `${templateFileMap[inputType]}?v=${Date.now()}`;
+        const templateRes = await fetch(templateUrl, { cache: 'no-store' });
+        if (!templateRes.ok) {
+          throw new Error(`模板图片加载失败 (${templateRes.status})`);
+        }
+        const templateBlob = await templateRes.blob();
+        if (templateBlob.size === 0) {
+          throw new Error('模板图片加载失败：内容为空，请刷新页面后重试');
+        }
+        const templateB64 = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = (e) => resolve(e.target?.result as string);
+          reader.onerror = () => reject(new Error('模板图片读取失败'));
           reader.readAsDataURL(templateBlob);
         });
+        if (!templateB64 || !templateB64.startsWith('data:image/')) {
+          throw new Error('模板图片格式无效');
+        }
 
         const sizeMap: Record<string, string> = {
           '16:9': '2048x1152',
