@@ -1174,7 +1174,7 @@ Maintain strong visual consistency in every panel.`;
 
                 {/* 上传按钮 */}
                 {(uploadRemaining > 0 || isUploadingMulti) && (
-                  <label className={`flex items-center justify-center gap-2 w-full py-2 mb-3 rounded-lg border text-xs transition-all ${isUploadingMulti ? 'bg-blue-600/40 border-blue-500/60 text-blue-100 cursor-wait' : 'bg-blue-600/20 hover:bg-blue-600/40 border-blue-500/40 text-blue-200 cursor-pointer'}`}>
+                  <label className={`flex items-center justify-center gap-2 w-full py-2 mb-3 rounded-lg border text-xs transition-all ${isUploadingMulti ? 'bg-white/10 border-white/20 text-gray-300 cursor-wait' : 'bg-white/5 hover:bg-white/10 border-white/15 text-gray-300 cursor-pointer'}`}>
                     {isUploadingMulti ? (
                       <>
                         <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
