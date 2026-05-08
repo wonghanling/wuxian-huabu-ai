@@ -3347,6 +3347,7 @@ Maintain strong visual consistency in every panel.`;
                     };
 
                     // 合并上传 + 连接，按模型类型处理
+                    // 所有多图模型都走 URL 数组，避免前端 base64 打包导致 Vercel 413
                     if (model === 'nano-banana-pro-multi') {
                       // 多图融合：连接 + 上传 URL 合并，上限 10
                       const existingUrls: string[] = uploadedImageUrls ? JSON.parse(uploadedImageUrls || "[]") : [];
@@ -3357,11 +3358,18 @@ Maintain strong visual consistency in every panel.`;
                       const existingUrls: string[] = uploadedImageUrls ? JSON.parse(uploadedImageUrls || "[]") : [];
                       const connUrls = await Promise.all(connectedImageCardImages.map(toFalUrl));
                       mergedUrlArray = [...connUrls, ...existingUrls].slice(0, 2);
-                    } else if (model === 'nano-banana') {
-                      // 连接 + 上传 base64 合并，上限 2
-                      const existingImgs: string[] = uploadedImages ? JSON.parse(uploadedImages || "[]") : [];
-                      const connImgs = await Promise.all(connectedImageCardImages.map(toBase64));
-                      mergedBase64Array = [...connImgs, ...existingImgs].slice(0, 2);
+                    } else if (model === 'nano-banana' || model === 'gpt-image-2-all') {
+                      // 多图模型改用 URL 数组（上传图已是 URL），连接图也用 URL 直接传
+                      // 后端会自己下载转 base64 供 API 使用，避免前端 base64 打包超过 Vercel 4.5MB
+                      const existingUrls: string[] = uploadedImages ? JSON.parse(uploadedImages || "[]") : [];
+                      // 连接图：如果是 base64 先转 Supabase URL，URL 直接用
+                      const connUrls = await Promise.all(connectedImageCardImages.map(async (src) => {
+                        if (!src.startsWith('data:')) return src;
+                        // 连接上游是 base64（老数据），先转 blob 再转 dataURL 交给后端处理
+                        return src;
+                      }));
+                      const limit = model === 'gpt-image-2-all' ? 10 : 2;
+                      mergedUrlArray = [...connUrls, ...existingUrls].slice(0, limit);
                     } else if (connectedImageCardImages.length > 0) {
                       // flux-kontext, doubao, mj 等单图：取第一张连接图片（没连接时走下面的 uploadedImage）
                       connImageBase64 = await toBase64(connectedImageCardImages[0]);

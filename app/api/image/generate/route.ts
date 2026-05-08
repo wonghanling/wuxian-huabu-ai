@@ -176,9 +176,25 @@ export async function POST(req: NextRequest) {
         input.num_images = 1;
         input.output_format = 'jpeg';
 
-        // 图片处理：先上传到 fal storage 拿 URL
+        // 图片处理：先上传到 fal storage 拿 URL（或直接使用已有 URL）
         const allImages: string[] = [];
-        if (imageBase64Array && Array.isArray(imageBase64Array)) {
+        if (imageUrlArray && Array.isArray(imageUrlArray)) {
+          // 前端直接传 URL 数组（瘦身路径，避免 Vercel 4.5MB 限制）
+          for (const img of imageUrlArray) {
+            if (typeof img !== 'string') continue;
+            if (img.startsWith('http')) {
+              allImages.push(img);
+            } else if (img.startsWith('data:')) {
+              // 兼容老数据（连接的上游卡还存着 base64）
+              const base64Data = img.replace(/^data:image\/\w+;base64,/, '');
+              const buffer = Buffer.from(base64Data, 'base64');
+              const blob = new Blob([buffer], { type: 'image/jpeg' });
+              const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
+              const url = await fal.storage.upload(file);
+              allImages.push(url);
+            }
+          }
+        } else if (imageBase64Array && Array.isArray(imageBase64Array)) {
           for (const img of imageBase64Array) {
             const base64Data = img.replace(/^data:image\/\w+;base64,/, '');
             const buffer = Buffer.from(base64Data, 'base64');
@@ -217,8 +233,37 @@ export async function POST(req: NextRequest) {
     } else if (modelConfig.apiType === 'gemini-native') {
       const parts: any[] = [];
 
-      // 多图支持（imageBase64Array 优先）
-      if (imageBase64Array && Array.isArray(imageBase64Array)) {
+      // 辅助：把 URL 转 base64（云雾 Gemini 只认 inline_data）
+      const urlToInlineData = async (url: string) => {
+        try {
+          const res = await fetch(url);
+          const buf = await res.arrayBuffer();
+          const contentType = res.headers.get('content-type') || 'image/jpeg';
+          const mimeType = contentType.includes('png') ? 'image/png' : contentType.includes('webp') ? 'image/webp' : 'image/jpeg';
+          const b64 = Buffer.from(buf).toString('base64');
+          return { inline_data: { mime_type: mimeType, data: b64 } };
+        } catch (err) {
+          console.error('URL 转 base64 失败:', url, err);
+          return null;
+        }
+      };
+
+      // 优先处理 URL 数组（瘦身路径）
+      if (imageUrlArray && Array.isArray(imageUrlArray)) {
+        for (const img of imageUrlArray) {
+          if (typeof img !== 'string') continue;
+          if (img.startsWith('http')) {
+            const part = await urlToInlineData(img);
+            if (part) parts.push(part);
+          } else if (img.startsWith('data:')) {
+            const base64Match = img.match(/^data:image\/(jpeg|jpg|png|webp);base64,(.+)$/);
+            if (base64Match) {
+              parts.push({ inline_data: { mime_type: `image/${base64Match[1]}`, data: base64Match[2] } });
+            }
+          }
+        }
+      } else if (imageBase64Array && Array.isArray(imageBase64Array)) {
+        // 兼容：base64 数组（老数据或其他分支）
         imageBase64Array.forEach(img => {
           const base64Match = img.match(/^data:image\/(jpeg|jpg|png|webp);base64,(.+)$/);
           if (base64Match) {
