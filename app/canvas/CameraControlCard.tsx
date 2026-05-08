@@ -426,7 +426,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
             onPointerDown={(e) => e.stopPropagation()}
           >
             <div className="relative" style={{ maxWidth: '80vw', maxHeight: '80vh' }} onClick={(e) => e.stopPropagation()}>
-              <img src={generatedImage} alt="" className="rounded-xl object-contain" style={{ maxWidth: '80vw', maxHeight: '80vh', imageRendering: 'high-quality' }} />
+              <img src={generatedImage} alt="" className="rounded-xl object-contain" style={{ maxWidth: '80vw', maxHeight: '80vh', imageRendering: '-webkit-optimize-contrast' }} />
               <button
                 className="absolute -top-3 -right-3 w-7 h-7 bg-zinc-800 hover:bg-zinc-700 border border-white/20 rounded-full text-white text-sm flex items-center justify-center"
                 onClick={() => setLightbox(false)}
