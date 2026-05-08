@@ -189,15 +189,28 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
           '2x2': '/fenjingmuban2x2.jpg',
           '3x3': '/fenjingmuban3X3.jpg',
         };
-        // 加 cache-buster 避免浏览器缓存 0 字节响应
-        const templateUrl = `${templateFileMap[inputType]}?v=${Date.now()}`;
-        const templateRes = await fetch(templateUrl, { cache: 'no-store' });
-        if (!templateRes.ok) {
-          throw new Error(`模板图片加载失败 (${templateRes.status})`);
-        }
-        const templateBlob = await templateRes.blob();
-        if (templateBlob.size === 0) {
-          throw new Error('模板图片加载失败：内容为空，请刷新页面后重试');
+        // 重试加载模板图片（偶发的 fetch 失败兜底）
+        const fetchTemplate = async (attempt: number = 1): Promise<Blob> => {
+          const templateUrl = `${templateFileMap[inputType]}?v=${Date.now()}-${attempt}`;
+          const templateRes = await fetch(templateUrl, { cache: 'no-store' });
+          if (!templateRes.ok) throw new Error(`HTTP ${templateRes.status}`);
+          const blob = await templateRes.blob();
+          if (blob.size === 0) throw new Error('空响应');
+          return blob;
+        };
+        let templateBlob: Blob;
+        try {
+          templateBlob = await fetchTemplate(1);
+        } catch (err1) {
+          console.warn('模板图片第1次加载失败，重试:', err1);
+          await new Promise(r => setTimeout(r, 500));
+          try {
+            templateBlob = await fetchTemplate(2);
+          } catch (err2) {
+            console.warn('模板图片第2次加载失败，重试:', err2);
+            await new Promise(r => setTimeout(r, 1000));
+            templateBlob = await fetchTemplate(3);
+          }
         }
         const templateB64 = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
