@@ -1089,30 +1089,92 @@ Maintain strong visual consistency in every panel.`;
           </div>
         )}
 
-        {/* 图片卡片 - 左侧参考图浮板（连接图 + 上传图，hover 放大） */}
+        {/* 图片卡片 - 左侧参考图浮板（完整：上传 + 查看 + 删除） */}
         {cardType === 'image' && !isMinimized && showRefImagePanel && ['nano-banana', 'nano-banana-pro', 'nano-banana-pro-multi', 'gpt-image-2', 'gpt-image-2-all', 'doubao-seedream-4-5-251128', 'flux-kontext', 'mj_imagine'].includes(model || '') && (() => {
           const localImgs: string[] = uploadedImages ? (() => { try { return JSON.parse(uploadedImages); } catch { return []; } })() : [];
           const localUrls: string[] = uploadedImageUrls ? (() => { try { return JSON.parse(uploadedImageUrls); } catch { return []; } })() : [];
+          const connCount = connectedImageCardImages.length;
+          // 模型上传上限
+          const isMultiUrl = model === 'nano-banana-pro-multi';
+          const isProUrl = model === 'nano-banana-pro';
+          const isArrayBase64 = model === 'nano-banana' || model === 'gpt-image-2-all';
+          const isSingleImage = !isMultiUrl && !isProUrl && !isArrayBase64; // flux-kontext / doubao / mj / gpt-image-2
+          const totalMax = isMultiUrl ? 10 : isSingleImage ? 1 : 2;
+          const uploadRemaining = Math.max(0, totalMax - connCount - localImgs.length - localUrls.length - (uploadedImage ? 1 : 0));
+
+          const handleUploadFiles = async (files: File[]) => {
+            if (files.length === 0) return;
+            if (isMultiUrl || isProUrl) {
+              // 上传到 fal.storage 拿 URL
+              const existing = [...localUrls];
+              const toUpload = files.slice(0, uploadRemaining);
+              for (const file of toUpload) {
+                try {
+                  const url = await fal.storage.upload(file);
+                  if (url) existing.push(url);
+                } catch (err) { console.error('上传失败:', err); }
+              }
+              editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImageUrls: JSON.stringify(existing) } });
+            } else if (isArrayBase64) {
+              // 上传到 Supabase Storage 拿 URL
+              const newImgs = [...localImgs];
+              const toUpload = files.slice(0, uploadRemaining);
+              for (const file of toUpload) {
+                const url = await uploadImageToStorage(file);
+                if (url) newImgs.push(url);
+              }
+              editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImages: JSON.stringify(newImgs) } });
+            } else {
+              // 单图模型
+              if (uploadRemaining < 1) return;
+              const file = files[0];
+              const url = await uploadImageToStorage(file);
+              if (url) editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImage: url } });
+            }
+          };
+
           return (
             <div
-              className="absolute rounded-2xl shadow-2xl backdrop-blur-xl overflow-visible flex flex-col"
+              className="absolute rounded-2xl shadow-2xl backdrop-blur-xl flex flex-col"
               style={{
                 right: '100%', marginRight: '8px', top: 0, width: 320, maxHeight: h,
                 zIndex: 200, pointerEvents: 'all',
                 background: 'linear-gradient(135deg, rgba(192,192,192,0.15) 0%, rgba(100,100,100,0.1) 100%)',
                 border: '1px solid rgba(192,192,192,0.3)',
+                overflow: 'visible',
               }}
               onPointerDown={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 flex-shrink-0">
-                <span className="text-xs text-gray-300 font-semibold">参考图片</span>
+                <span className="text-xs text-gray-300 font-semibold">
+                  参考图片 <span className="text-gray-500 font-normal">({connCount + localImgs.length + localUrls.length + (uploadedImage ? 1 : 0)}/{totalMax})</span>
+                </span>
                 <button
                   className="w-5 h-5 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all text-xs"
                   onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, showRefImagePanel: false } }); }}
                   onPointerDown={(e) => e.stopPropagation()}
                 >✕</button>
               </div>
-              <div className="p-3 flex-1 overflow-y-auto" style={{ overflow: 'visible' }}>
+              <div className="p-3 flex-1" style={{ overflow: 'visible' }}>
+
+                {/* 上传按钮 */}
+                {uploadRemaining > 0 && (
+                  <label className="flex items-center justify-center gap-2 w-full py-2 mb-3 rounded-lg bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/40 text-blue-200 text-xs cursor-pointer transition-all">
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4v12" />
+                    </svg>
+                    <span>上传图片（还能传 {uploadRemaining} 张）</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple={!isSingleImage}
+                      className="hidden"
+                      onChange={async (e) => { const files = Array.from(e.target.files || []); await handleUploadFiles(files); e.target.value = ''; }}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </label>
+                )}
+
                 {/* 连接图片 */}
                 {connectedImageCardImages.length > 0 && (
                   <div className="mb-3">
@@ -1154,7 +1216,7 @@ Maintain strong visual consistency in every panel.`;
                   </div>
                 )}
 
-                {/* 上传图片 - nano-banana/gpt-image-2-all base64/URL 数组 */}
+                {/* 上传图片 - nano-banana/gpt-image-2-all */}
                 {localImgs.length > 0 && (
                   <div className="mb-3">
                     <div className="text-[10px] text-gray-400 mb-1.5">手动上传（{localImgs.length}）</div>
@@ -1177,8 +1239,8 @@ Maintain strong visual consistency in every panel.`;
                   </div>
                 )}
 
-                {/* 单图上传（flux-kontext、doubao 等单图模型） */}
-                {uploadedImage && !localImgs.length && !localUrls.length && (
+                {/* 单图上传（flux-kontext、doubao、mj、gpt-image-2） */}
+                {uploadedImage && isSingleImage && (
                   <div className="mb-3">
                     <div className="text-[10px] text-gray-400 mb-1.5">手动上传（1）</div>
                     <div className="grid grid-cols-4 gap-1.5">
@@ -1197,8 +1259,12 @@ Maintain strong visual consistency in every panel.`;
                   </div>
                 )}
 
+                {connCount + localImgs.length + localUrls.length + (uploadedImage ? 1 : 0) === 0 && (
+                  <div className="text-[10px] text-gray-500 text-center py-3">暂无参考图，可上传或连接</div>
+                )}
+
                 <div className="text-[9px] text-gray-500 mt-1 leading-relaxed border-t border-white/5 pt-2">
-                  鼠标悬停缩略图可放大预览。在卡片内"参考图片"区域可上传新图。
+                  鼠标悬停缩略图可放大预览
                 </div>
               </div>
             </div>
@@ -2492,8 +2558,8 @@ Maintain strong visual consistency in every panel.`;
               </button>
             )}
 
-            {/* 图片上传 - 支持图生图的模型才显示 */}
-            {cardType === 'image' && ['nano-banana', 'nano-banana-pro', 'nano-banana-pro-multi', 'gpt-image-2', 'gpt-image-2-all', 'doubao-seedream-4-5-251128', 'flux-kontext', 'mj_imagine'].includes(model || '') && (
+            {/* 图片上传 - 已移至左侧参考图浮板 */}
+            {false && cardType === 'image' && ['nano-banana', 'nano-banana-pro', 'nano-banana-pro-multi', 'gpt-image-2', 'gpt-image-2-all', 'doubao-seedream-4-5-251128', 'flux-kontext', 'mj_imagine'].includes(model || '') && (
               <div className="mb-2" style={{ display: showRefImagePanel ? 'none' : 'block' }}>
                 <label className="text-gray-400 text-xs mb-1 block">
                   {model === 'nano-banana-pro-multi'
