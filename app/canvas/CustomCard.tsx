@@ -1738,7 +1738,7 @@ Maintain strong visual consistency in every panel.`;
                     </div>
                   )}
                   <textarea
-                    className="w-full h-16 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs resize-none focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all placeholder-gray-500"
+                    className="w-full h-28 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs resize-none focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all placeholder-gray-500"
                     placeholder={
                       cardType === 'text'
                         ? 'Enter your text prompt...'
