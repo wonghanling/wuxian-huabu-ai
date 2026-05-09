@@ -91,17 +91,35 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     usePassThroughWheelEvents(scrollContainerRef);
 
-    const captureCurrentFrame = useCallback(() => {
+    const captureCurrentFrame = useCallback(async () => {
       const video = videoRef.current;
       if (!video) return;
       const canvas = document.createElement('canvas');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       canvas.getContext('2d')!.drawImage(video, 0, 0);
-      const frameImage = canvas.toDataURL('image/png');
-      const ls = editor.getShape(shape.id);
-      const lp = ls ? (ls as any).props : shape.props;
-      editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...lp, capturedFrame: frameImage } });
+      // 转 JPEG Blob 上传到 Supabase Storage 拿 URL（避免 base64 占 snapshot）
+      const blob = await new Promise<Blob | null>((resolve) => {
+        canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.92);
+      });
+      if (!blob) return;
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          alert('请先登录');
+          return;
+        }
+        const filename = `videos/${user.id}/frame-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
+        const { error } = await supabase.storage.from('assets').upload(filename, blob, { contentType: 'image/jpeg', upsert: false });
+        if (error) throw new Error(`上传失败: ${error.message}`);
+        const { data: urlData } = supabase.storage.from('assets').getPublicUrl(filename);
+        const ls = editor.getShape(shape.id);
+        const lp = ls ? (ls as any).props : shape.props;
+        editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...lp, capturedFrame: urlData.publicUrl } });
+      } catch (err: any) {
+        alert('截帧上传失败: ' + (err?.message || err));
+      }
     }, [editor, shape.id]);
 
     // 读取连接到当前卡片的上游数据，按模式填充对应字段
