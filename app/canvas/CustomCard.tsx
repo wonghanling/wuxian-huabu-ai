@@ -1346,6 +1346,135 @@ Maintain strong visual consistency in every panel.`;
           );
         })()}
 
+        {/* 视频卡片 - 左侧参考图浮板（首帧 + 尾帧） */}
+        {cardType === 'video' && !isMinimized && showRefImagePanel && (currentVideoModel?.mode === 'i2v' || currentVideoModel?.mode === 'firstLastFrame' || model === 'jimeng-camera') && (() => {
+          const needLast = currentVideoModel?.mode === 'firstLastFrame';
+          const firstSrc = connFirstFrame || firstFrameImage || '';
+          const lastSrc = connLastFrame || lastFrameImage || '';
+          return (
+            <div
+              className="absolute rounded-2xl shadow-2xl backdrop-blur-xl flex flex-col"
+              style={{
+                right: '100%', marginRight: '8px', top: 0, width: 320, maxHeight: h,
+                zIndex: 200, pointerEvents: 'all',
+                background: 'linear-gradient(135deg, rgba(192,192,192,0.15) 0%, rgba(100,100,100,0.1) 100%)',
+                border: '1px solid rgba(192,192,192,0.3)',
+                overflow: 'visible',
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 flex-shrink-0">
+                <span className="text-xs text-gray-300 font-semibold">参考图片</span>
+                <button
+                  className="w-5 h-5 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all text-xs"
+                  onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, showRefImagePanel: false } }); }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >✕</button>
+              </div>
+              <div className="p-3 flex-1" style={{ overflow: 'visible' }}>
+
+                {/* 首帧 */}
+                <div className="mb-3">
+                  <div className="text-[10px] text-gray-400 mb-1.5 flex items-center gap-1">
+                    <span>首帧图片</span>
+                    {connFirstFrame && <span className="text-blue-400">·来自连接</span>}
+                  </div>
+                  {!firstSrc ? (
+                    <label className="flex items-center justify-center gap-2 w-full py-3 rounded-lg bg-white/5 hover:bg-white/10 border border-dashed border-white/15 text-gray-400 text-xs cursor-pointer transition-all">
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4v12" />
+                      </svg>
+                      <span>上传首帧图片</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) { const url = await uploadImageToStorage(file); if (url) editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, firstFrameImage: url } }); }
+                          e.target.value = '';
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </label>
+                  ) : (
+                    <div
+                      className="relative rounded-lg border border-blue-500/40 group"
+                      style={{ width: '100%', aspectRatio: '16/9', background: 'rgba(0,0,0,0.3)' }}
+                    >
+                      <img src={firstSrc} className="w-full h-full object-cover rounded-lg" />
+                      <img
+                        src={firstSrc}
+                        className="absolute pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 shadow-2xl rounded-lg border border-blue-500/60"
+                        style={{ left: 0, top: 0, maxWidth: 280, maxHeight: 280, width: 'auto', height: 'auto', zIndex: 20, background: 'rgba(0,0,0,0.9)' }}
+                      />
+                      {!connFirstFrame && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, firstFrameImage: '' } }); }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          className="absolute top-1 right-1 w-5 h-5 bg-black/70 hover:bg-red-500/90 rounded text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-30"
+                        >✕</button>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* 尾帧（仅 firstLastFrame 模式） */}
+                {needLast && (
+                  <div className="mb-3">
+                    <div className="text-[10px] text-gray-400 mb-1.5 flex items-center gap-1">
+                      <span>尾帧图片</span>
+                      {connLastFrame && <span className="text-blue-400">·来自连接</span>}
+                    </div>
+                    {!lastSrc ? (
+                      <label className="flex items-center justify-center gap-2 w-full py-3 rounded-lg bg-white/5 hover:bg-white/10 border border-dashed border-white/15 text-gray-400 text-xs cursor-pointer transition-all">
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4v12" />
+                        </svg>
+                        <span>上传尾帧图片</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (file) { const url = await uploadImageToStorage(file); if (url) editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, lastFrameImage: url } }); }
+                            e.target.value = '';
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </label>
+                    ) : (
+                      <div
+                        className="relative rounded-lg border border-blue-500/40 group"
+                        style={{ width: '100%', aspectRatio: '16/9', background: 'rgba(0,0,0,0.3)' }}
+                      >
+                        <img src={lastSrc} className="w-full h-full object-cover rounded-lg" />
+                        <img
+                          src={lastSrc}
+                          className="absolute pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 shadow-2xl rounded-lg border border-blue-500/60"
+                          style={{ left: 0, top: 0, maxWidth: 280, maxHeight: 280, width: 'auto', height: 'auto', zIndex: 20, background: 'rgba(0,0,0,0.9)' }}
+                        />
+                        {!connLastFrame && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, lastFrameImage: '' } }); }}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            className="absolute top-1 right-1 w-5 h-5 bg-black/70 hover:bg-red-500/90 rounded text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-30"
+                          >✕</button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="text-[9px] text-gray-500 mt-1 leading-relaxed border-t border-white/5 pt-2">
+                  鼠标悬停缩略图可放大预览
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* 图片卡片 - 右侧浮层容器（参数设置 + 图片输出紧靠在一起） */}
         {cardType === 'image' && !isMinimized && (showImageSettingsPanel || (showImageOutput && generatedImage)) && (
           <div
@@ -1687,6 +1816,19 @@ Maintain strong visual consistency in every panel.`;
                         const localUrls: string[] = uploadedImageUrls ? (() => { try { return JSON.parse(uploadedImageUrls || "[]"); } catch { return []; } })() : [];
                         const singleCount = uploadedImage ? 1 : 0;
                         const totalCount = connectedImageCardImages.length + localImgs.length + localUrls.length + singleCount;
+                        return (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, showRefImagePanel: !showRefImagePanel } }); }}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            className="text-[10px] px-2 py-0.5 rounded bg-purple-600/30 border border-purple-500/40 text-purple-200 hover:bg-purple-600/50 transition-colors"
+                          >参考图{totalCount > 0 ? `(${totalCount})` : ''} ◀</button>
+                        );
+                      })()}
+                      {cardType === 'video' && (currentVideoModel?.mode === 'i2v' || currentVideoModel?.mode === 'firstLastFrame' || model === 'jimeng-camera') && (() => {
+                        const hasFirst = !!(connFirstFrame || firstFrameImage);
+                        const hasLast = !!(connLastFrame || lastFrameImage);
+                        const needLast = currentVideoModel?.mode === 'firstLastFrame';
+                        const totalCount = (hasFirst ? 1 : 0) + (needLast && hasLast ? 1 : 0);
                         return (
                           <button
                             onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, showRefImagePanel: !showRefImagePanel } }); }}
@@ -2932,7 +3074,7 @@ Maintain strong visual consistency in every panel.`;
 
             {/* 图片上传 - 视频卡片，i2v 模型直接显示在外面 */}
             {cardType === 'video' && currentVideoModel?.mode === 'i2v' && (
-              <div className="mb-2">
+              <div className="mb-2" style={{ display: showRefImagePanel ? 'none' : 'block' }}>
                 <div className="flex gap-2">
                   {/* 首帧 */}
                   <div className="flex-1">
@@ -2974,7 +3116,7 @@ Maintain strong visual consistency in every panel.`;
 
             {/* 即梦运镜参数 */}
             {cardType === 'video' && model === 'jimeng-camera' && (
-              <div className="mb-2 space-y-2">
+              <div className="mb-2 space-y-2" style={{ display: showRefImagePanel ? 'none' : 'block' }}>
                 <div>
                   <label className="text-gray-400 text-xs mb-1 block">运镜模板</label>
                   <select
@@ -3019,7 +3161,7 @@ Maintain strong visual consistency in every panel.`;
 
             {/* firstLastFrame 专属模型的首尾帧上传 */}
             {cardType === 'video' && currentVideoModel?.mode === 'firstLastFrame' && (
-              <div className="mb-2 space-y-2">
+              <div className="mb-2 space-y-2" style={{ display: showRefImagePanel ? 'none' : 'block' }}>
                 <div>
                   <label className="text-gray-400 text-xs mb-1 block">
                     首帧图片（必填）{connFirstFrame && <span className="text-blue-400 ml-1">·来自连接</span>}
