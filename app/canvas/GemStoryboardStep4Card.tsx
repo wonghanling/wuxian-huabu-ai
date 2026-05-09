@@ -276,7 +276,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
                 const ls2 = editor.getShape(shape.id) as any;
                 editor.updateShape({ id: shape.id, type: 'gem-step4-card' as any, props: { ...ls2.props, isGenerating: false, generationProgress: 0 } });
                 alert('生成失败: ' + qData.error);
-              } else if (attempts < 60) {
+              } else if (attempts < 120) {
                 poll();
               } else {
                 clearInterval(progressTimer);
@@ -285,7 +285,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
                 alert('生成超时，请重试');
               }
             } catch {
-              if (attempts < 60) poll();
+              if (attempts < 120) poll();
             }
           };
           poll();
