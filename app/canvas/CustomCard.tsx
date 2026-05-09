@@ -3072,8 +3072,8 @@ Maintain strong visual consistency in every panel.`;
               </div>
             )}
 
-            {/* 图片上传 - 视频卡片，i2v 模型直接显示在外面 */}
-            {cardType === 'video' && currentVideoModel?.mode === 'i2v' && (
+            {/* 图片上传 - 视频卡片 i2v - 已移至左侧参考图浮板 */}
+            {false && cardType === 'video' && currentVideoModel?.mode === 'i2v' && (
               <div className="mb-2" style={{ display: showRefImagePanel ? 'none' : 'block' }}>
                 <div className="flex gap-2">
                   {/* 首帧 */}
@@ -3115,7 +3115,8 @@ Maintain strong visual consistency in every panel.`;
             )}
 
             {/* 即梦运镜参数 */}
-            {cardType === 'video' && model === 'jimeng-camera' && (
+            {/* jimeng-camera 首帧上传 - 已移至左侧参考图浮板 */}
+            {false && cardType === 'video' && model === 'jimeng-camera' && (
               <div className="mb-2 space-y-2" style={{ display: showRefImagePanel ? 'none' : 'block' }}>
                 <div>
                   <label className="text-gray-400 text-xs mb-1 block">运镜模板</label>
@@ -3159,8 +3160,8 @@ Maintain strong visual consistency in every panel.`;
               </div>
             )}
 
-            {/* firstLastFrame 专属模型的首尾帧上传 */}
-            {cardType === 'video' && currentVideoModel?.mode === 'firstLastFrame' && (
+            {/* firstLastFrame 首尾帧上传 - 已移至左侧参考图浮板 */}
+            {false && cardType === 'video' && currentVideoModel?.mode === 'firstLastFrame' && (
               <div className="mb-2 space-y-2" style={{ display: showRefImagePanel ? 'none' : 'block' }}>
                 <div>
                   <label className="text-gray-400 text-xs mb-1 block">
