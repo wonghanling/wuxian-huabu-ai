@@ -658,8 +658,9 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
                 拖动摄像头图标旋转，参数自动添加到生成词
               </div>
 
-              {/* 模型选择 - 已移至右侧浮板 */}
+              {/* 模型选择 + 比例 + 清晰度 - 已全部移至右侧浮板 */}
               {false && (
+              <>
               <div className="flex-shrink-0">
                 <label className="text-gray-400 text-xs mb-1 block">模型</label>
                 <select
@@ -755,6 +756,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
                   </select>
                 </div>
               )}
+              </>
               )}
 
               {/* Prompt 输入 */}
