@@ -18,6 +18,7 @@ import {
   useValue,
   vecModelValidator,
 } from 'tldraw';
+import { useState } from 'react';
 import {
   createOrUpdateConnectionBinding,
   getConnectionBindingPosition,
@@ -229,6 +230,7 @@ export class ConnectionShapeUtil extends ShapeUtil<ConnectionShape> {
 
 function ConnectionShapeComponent({ connection }: { connection: ConnectionShape }) {
   const editor = useEditor();
+  const [hovered, setHovered] = useState(false);
 
   const { start, end } = useValue(
     'terminals',
@@ -236,15 +238,49 @@ function ConnectionShapeComponent({ connection }: { connection: ConnectionShape 
     [editor, connection]
   );
 
+  // 贝塞尔曲线中点（t=0.5）
+  const [cp1, cp2] = getConnectionControlPoints(start, end);
+  const t = 0.5;
+  const mt = 1 - t;
+  const midX = mt * mt * mt * start.x + 3 * mt * mt * t * cp1.x + 3 * mt * t * t * cp2.x + t * t * t * end.x;
+  const midY = mt * mt * mt * start.y + 3 * mt * mt * t * cp1.y + 3 * mt * t * t * cp2.y + t * t * t * end.y;
+
   return (
-    <SVGContainer className="connection-shape">
+    <SVGContainer
+      className="connection-shape"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {/* 透明粗线用于扩大 hover 命中区 */}
       <path
         d={getConnectionPath(start, end)}
-        stroke="#a0a0a0"
+        stroke="transparent"
+        strokeWidth="16"
+        fill="none"
+        style={{ pointerEvents: 'stroke', cursor: 'pointer' }}
+      />
+      <path
+        d={getConnectionPath(start, end)}
+        stroke={hovered ? '#f87171' : '#a0a0a0'}
         strokeWidth="2"
         fill="none"
         strokeLinecap="round"
+        style={{ pointerEvents: 'none', transition: 'stroke 0.15s' }}
       />
+      {/* hover 时在中点显示 ✕ 删除按钮 */}
+      {hovered && (
+        <g
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            editor.deleteShapes([connection.id]);
+          }}
+          style={{ cursor: 'pointer', pointerEvents: 'all' }}
+        >
+          <circle cx={midX} cy={midY} r={10} fill="#ef4444" stroke="white" strokeWidth="1.5" />
+          <line x1={midX - 4} y1={midY - 4} x2={midX + 4} y2={midY + 4} stroke="white" strokeWidth="2" strokeLinecap="round" />
+          <line x1={midX + 4} y1={midY - 4} x2={midX - 4} y2={midY + 4} stroke="white" strokeWidth="2" strokeLinecap="round" />
+        </g>
+      )}
     </SVGContainer>
   );
 }
