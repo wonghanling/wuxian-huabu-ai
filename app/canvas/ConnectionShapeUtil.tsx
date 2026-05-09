@@ -250,22 +250,15 @@ function ConnectionShapeComponent({ connection }: { connection: ConnectionShape 
       className="connection-shape"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      style={{ pointerEvents: 'none' }}
     >
-      {/* 透明粗线用于扩大 hover 命中区 */}
-      <path
-        d={getConnectionPath(start, end)}
-        stroke="transparent"
-        strokeWidth="16"
-        fill="none"
-        style={{ pointerEvents: 'stroke', cursor: 'pointer' }}
-      />
       <path
         d={getConnectionPath(start, end)}
         stroke={hovered ? '#f87171' : '#a0a0a0'}
         strokeWidth="2"
         fill="none"
         strokeLinecap="round"
-        style={{ pointerEvents: 'none', transition: 'stroke 0.15s' }}
+        style={{ pointerEvents: 'stroke', cursor: 'pointer', transition: 'stroke 0.15s' }}
       />
       {/* hover 时在中点显示 ✕ 删除按钮 */}
       {hovered && (
