@@ -134,6 +134,8 @@ export type CameraControlCardShape = TLBaseShape<
     prompt: string;
     aspectRatio: string;
     imageQuality: string;
+    showSettingsPanel?: boolean;
+    showOutputPanel?: boolean;
   }
 >;
 
@@ -154,6 +156,8 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
     prompt: T.string,
     aspectRatio: T.string,
     imageQuality: T.string,
+    showSettingsPanel: T.boolean.optional(),
+    showOutputPanel: T.boolean.optional(),
   };
 
   override isAspectRatioLocked = () => false;
@@ -163,7 +167,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
   getDefaultProps(): CameraControlCardShape['props'] {
     return {
       w: 360,
-      h: 720,
+      h: 500,
       sourceShapeId: '',
       cameraVertical: 0,
       cameraHorizontal: 0,
@@ -182,7 +186,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
   }
 
   component(shape: CameraControlCardShape) {
-    const { w, h, sourceShapeId, cameraVertical, cameraHorizontal, generatedImage, isGenerating, isMinimized, model, prompt, aspectRatio, imageQuality } = shape.props;
+    const { w, h, sourceShapeId, cameraVertical, cameraHorizontal, generatedImage, isGenerating, isMinimized, model, prompt, aspectRatio, imageQuality, showSettingsPanel, showOutputPanel } = shape.props;
     const editor = useEditor();
     const [lightbox, setLightbox] = useState(false);
 
@@ -385,11 +389,149 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
 
     const toggleMinimize = (e: React.MouseEvent) => {
       e.stopPropagation();
-      update({ isMinimized: !isMinimized, w: isMinimized ? 360 : 160, h: isMinimized ? 720 : 60 });
+      update({ isMinimized: !isMinimized, w: isMinimized ? 360 : 160, h: isMinimized ? 500 : 60 });
     };
 
     return (
       <HTMLContainer style={{ width: w, height: h, pointerEvents: 'all', overflow: 'visible' }}>
+
+        {/* 右侧浮板：参数设置（上）+ 图片输出（下） */}
+        {!isMinimized && (showSettingsPanel || (showOutputPanel && generatedImage)) && (
+          <div
+            className="absolute flex flex-col gap-2"
+            style={{ left: '100%', marginLeft: '8px', top: 0, width: 280, zIndex: 200, pointerEvents: 'all' }}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            {/* 参数设置 */}
+            {showSettingsPanel && (
+              <div
+                className="rounded-2xl shadow-2xl backdrop-blur-xl"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(192,192,192,0.15) 0%, rgba(100,100,100,0.1) 100%)',
+                  border: '1px solid rgba(192,192,192,0.3)',
+                }}
+              >
+                <div className="p-3 flex flex-col gap-2">
+                  <span className="text-[10px] text-gray-400 font-semibold">参数设置</span>
+
+                  <div>
+                    <label className="text-gray-400 text-xs mb-1 block">模型</label>
+                    <select
+                      className="w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 focus:bg-black/40 transition-all"
+                      value={model || 'nano-banana-pro'}
+                      onClick={(e) => e.stopPropagation()}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onChange={(e) => update({ model: e.target.value })}
+                    >
+                      <option value="nano-banana-pro">Nano Banana 2（2K ¥1.2 / 4K ¥1.5）</option>
+                      <option value="nano-banana">Nano Banana — ¥0.5/次</option>
+                      <option value="gpt-image-2">GPT Image 2 — ¥0.5~0.8/次</option>
+                      <option value="flux-kontext">Flux Kontext — ¥0.6/次</option>
+                      <option value="doubao-seedream-4-5-251128">豆包 Seedream — ¥0.3/次</option>
+                    </select>
+                  </div>
+
+                  {(model || 'nano-banana-pro') === 'nano-banana-pro' && (
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <label className="text-gray-400 text-xs mb-1 block">清晰度</label>
+                        <div className="flex gap-1">
+                          {[{ value: '2k', label: '2K ¥1.2' }, { value: '4k', label: '4K ¥1.5' }].map(({ value, label }) => (
+                            <button key={value}
+                              onClick={(e) => { e.stopPropagation(); update({ imageQuality: value }); }}
+                              onPointerDown={(e) => e.stopPropagation()}
+                              className={`flex-1 py-1 rounded text-[10px] font-semibold border transition-all ${(imageQuality || '2k') === value ? 'bg-blue-600 border-blue-500 text-white' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}`}
+                            >{label}</button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-gray-400 text-xs mb-1 block">比例</label>
+                        <select
+                          className="w-full bg-black/30 border border-white/8 rounded p-1 text-white text-[10px] focus:outline-none"
+                          value={aspectRatio || '16:9'}
+                          onClick={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onChange={(e) => update({ aspectRatio: e.target.value })}
+                        >
+                          {['1:1','16:9','9:16','4:3','3:4','3:2','2:3'].map(r => <option key={r} value={r}>{r}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                  )}
+
+                  {(model || 'nano-banana-pro') !== 'nano-banana-pro' && (
+                    <div>
+                      <label className="text-gray-400 text-xs mb-1 block">比例</label>
+                      <select
+                        className="w-full bg-black/30 border border-white/8 rounded p-1 text-white text-[10px] focus:outline-none"
+                        value={aspectRatio || '16:9'}
+                        onClick={(e) => e.stopPropagation()}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onChange={(e) => update({ aspectRatio: e.target.value })}
+                      >
+                        {['1:1','16:9','9:16','4:3','3:4','3:2','2:3'].map(r => <option key={r} value={r}>{r}</option>)}
+                      </select>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 图片输出 */}
+            {showOutputPanel && generatedImage && (
+              <div
+                className="rounded-2xl shadow-2xl backdrop-blur-xl overflow-hidden"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(192,192,192,0.15) 0%, rgba(100,100,100,0.1) 100%)',
+                  border: '1px solid rgba(192,192,192,0.3)',
+                }}
+              >
+                <div className="relative group">
+                  <img
+                    src={generatedImage}
+                    alt="Generated"
+                    className="w-full h-auto max-h-[400px] object-contain bg-black/20"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <button
+                      className="px-3 py-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
+                      onClick={(e) => { e.stopPropagation(); setLightbox(true); }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                      </svg>
+                      查看
+                    </button>
+                    <button
+                      className="px-3 py-2 bg-green-500/90 hover:bg-green-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
+                      onClick={(e) => { e.stopPropagation(); downloadImage(); }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      下载
+                    </button>
+                    <button
+                      className="px-3 py-2 bg-red-500/90 hover:bg-red-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
+                      onClick={(e) => { e.stopPropagation(); update({ generatedImage: '', showOutputPanel: false }); }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      删除
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* 输出端口 - Right */}
         <div
           className="absolute top-1/2 -translate-y-1/2 cursor-crosshair group"
@@ -436,7 +578,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
           </div>
         )}
 
-        <div className="w-full h-full bg-zinc-900/95 backdrop-blur-sm border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+        <div className="w-full h-full bg-zinc-900/95 backdrop-blur-sm border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-visible">
           {/* 标题栏 */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/8 flex-shrink-0">
             <div className="flex items-center gap-2">
@@ -453,7 +595,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
           </div>
 
           {!isMinimized && (
-            <div className="flex-1 flex flex-col overflow-y-auto p-3 gap-2" onPointerDown={(e) => e.stopPropagation()} onWheelCapture={(e) => e.stopPropagation()}>
+            <div className="flex-1 flex flex-col overflow-visible p-3 gap-2" onPointerDown={(e) => e.stopPropagation()} onWheelCapture={(e) => e.stopPropagation()}>
 
               {/* 说明 */}
               <div className="flex-shrink-0 p-2">
@@ -465,9 +607,22 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
 
               {/* 源图片小预览 */}
               {sourceImage && (
-                <div className="flex-shrink-0 relative w-full h-20 bg-black/30 rounded-lg overflow-hidden border border-white/8">
-                  <img src={sourceImage} alt="source" className="w-full h-full object-cover" />
-                  <div className="absolute bottom-1 left-1 text-[9px] text-white/40 bg-black/40 px-1 rounded">源图片</div>
+                <div className="flex-shrink-0">
+                  <label className="text-gray-400 text-xs mb-1 block">源图片（来自连接）</label>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    <div
+                      className="relative rounded-lg border border-purple-500/40 group"
+                      style={{ aspectRatio: '1', width: '100%', background: 'rgba(0,0,0,0.3)' }}
+                    >
+                      <img src={sourceImage} alt="source" className="w-full h-full object-cover rounded-lg" />
+                      {/* hover 弹出原比例图层 */}
+                      <img
+                        src={sourceImage}
+                        className="absolute pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 shadow-2xl rounded-lg border border-purple-500/60"
+                        style={{ left: 0, top: 0, maxWidth: 280, maxHeight: 280, width: 'auto', height: 'auto', zIndex: 20, background: 'rgba(0,0,0,0.9)' }}
+                      />
+                    </div>
+                  </div>
                 </div>
               )}
               {!sourceImage && (
@@ -503,7 +658,8 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
                 拖动摄像头图标旋转，参数自动添加到生成词
               </div>
 
-              {/* 模型选择 */}
+              {/* 模型选择 - 已移至右侧浮板 */}
+              {false && (
               <div className="flex-shrink-0">
                 <label className="text-gray-400 text-xs mb-1 block">模型</label>
                 <select
@@ -599,6 +755,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
                   </select>
                 </div>
               )}
+              )}
 
               {/* Prompt 输入 */}
               <div className="flex-shrink-0">
@@ -612,6 +769,15 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
                   onChange={(e) => update({ prompt: e.target.value })}
                 />
               </div>
+
+              {/* 展开参数设置按钮 */}
+              <button
+                className="flex-shrink-0 w-full py-1.5 rounded-lg text-[10px] font-medium transition-all bg-white/5 text-gray-400 hover:bg-white/10 hover:text-gray-300"
+                onClick={(e) => { e.stopPropagation(); update({ showSettingsPanel: !showSettingsPanel }); }}
+                onPointerDown={(e) => e.stopPropagation()}
+              >
+                {showSettingsPanel ? '收起参数设置 ▲' : `展开参数设置 ▼  ${model || 'nano-banana-pro'} · ${aspectRatio || '16:9'}`}
+              </button>
 
               {/* 生成按钮 */}
               <button
@@ -627,8 +793,19 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
                 {isGenerating ? '生成中...' : '生成'}
               </button>
 
-              {/* 生成结果 */}
+              {/* 查看图片按钮 */}
               {generatedImage && (
+                <button
+                  className="flex-shrink-0 w-full py-2 mt-1 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg backdrop-blur-sm bg-gradient-to-r from-green-500/80 to-green-600/80 hover:from-green-500 hover:to-green-600"
+                  onClick={(e) => { e.stopPropagation(); update({ showOutputPanel: !showOutputPanel }); }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >
+                  {showOutputPanel ? '隐藏图片' : '查看生成图片'}
+                </button>
+              )}
+
+              {/* 生成结果 - 已移至右侧浮板 */}
+              {false && generatedImage && (
                 <div className="flex-shrink-0 flex flex-col">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[10px] text-gray-400">生成结果</span>
