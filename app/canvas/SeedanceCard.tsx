@@ -598,7 +598,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
                     <input type="file" accept="image/*"
                       className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
                       onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                      onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = (ev) => up({ firstFrameImage: ev.target?.result as string }); r.readAsDataURL(f); e.target.value = ''; }}
+                      onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; const url = await uploadImageToStorage(f); if (url) up({ firstFrameImage: url }); e.target.value = ''; }}
                     />
                   )}
                   {(connFirstFrame || firstFrameImage) && (
@@ -623,7 +623,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
                     <input type="file" accept="image/*"
                       className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
                       onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                      onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = (ev) => up({ lastFrameImage: ev.target?.result as string }); r.readAsDataURL(f); e.target.value = ''; }}
+                      onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; const url = await uploadImageToStorage(f); if (url) up({ lastFrameImage: url }); e.target.value = ''; }}
                     />
                   )}
                   {(connLastFrame || lastFrameImage) && (
@@ -713,7 +713,25 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
                     <input type="file" accept="audio/*"
                       className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
                       onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                      onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = (ev) => up({ refAudioBase64: ev.target?.result as string, refAudioName: f.name }); r.readAsDataURL(f); e.target.value = ''; }}
+                      onChange={async (e) => {
+                        const f = e.target.files?.[0]; if (!f) return;
+                        up({ refAudioName: '上传中...' });
+                        try {
+                          const supabase = createClient();
+                          const { data: { user } } = await supabase.auth.getUser();
+                          if (!user) { alert('请先登录'); up({ refAudioName: '' }); return; }
+                          const ext = f.name.split('.').pop()?.toLowerCase() || 'mp3';
+                          const filename = `audio/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+                          const { error } = await supabase.storage.from('assets').upload(filename, f, { contentType: f.type || 'audio/mpeg', upsert: false });
+                          if (error) throw new Error(error.message);
+                          const { data: urlData } = supabase.storage.from('assets').getPublicUrl(filename);
+                          up({ refAudioBase64: urlData.publicUrl, refAudioName: f.name });
+                        } catch (err: any) {
+                          alert('音频上传失败: ' + (err?.message || err));
+                          up({ refAudioName: '' });
+                        }
+                        e.target.value = '';
+                      }}
                     />
                     {refAudioBase64 && (
                       <div className="mt-1 flex items-center gap-2 bg-black/20 border border-white/10 rounded p-1">
