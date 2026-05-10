@@ -603,7 +603,7 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
         </button>
 
         {/* 视频生成按钮 - 下拉菜单 */}
-        <div className="relative">
+        <div className="relative" data-tutorial="video-button">
           <button
             onClick={() => setShowVideoMenu(!showVideoMenu)}
             className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-all group w-full"
