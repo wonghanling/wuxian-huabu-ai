@@ -295,14 +295,11 @@ export default function TutorialOverlay({ editor, onComplete, onSkip }: Tutorial
             top: highlightRect.top - 8,
             width: highlightRect.width + 16,
             height: highlightRect.height + 16,
-            boxShadow: '0 0 0 9999px rgba(0,0,0,0.65)',
+            boxShadow: '0 0 0 9999px rgba(0,0,0,0.45)',
             borderRadius: 12,
             border: '3px solid #3b82f6',
           }}
         />
-      )}
-      {!highlightRect && (
-        <div className="absolute inset-0 bg-black/50 pointer-events-none" />
       )}
 
       {/* 教程卡片 */}
