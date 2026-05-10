@@ -302,8 +302,38 @@ export default function TutorialOverlay({ editor, onComplete, onSkip }: Tutorial
         />
       )}
 
-      {/* 教程卡片 */}
-      <div className="absolute top-6 right-6 pointer-events-auto w-[360px]">
+      {/* 教程卡片 - 跟随高亮元素位置 */}
+      <div
+        className="absolute pointer-events-auto w-[360px] transition-all duration-300"
+        style={(() => {
+          if (!highlightRect) {
+            // 无高亮：默认右上角
+            return { top: 24, right: 24 };
+          }
+          // 有高亮：优先放在高亮元素右侧，超出屏幕则放左侧，再不行放下方
+          const panelW = 360;
+          const panelH = 280; // 估算高度
+          const margin = 20;
+          const vw = window.innerWidth;
+          const vh = window.innerHeight;
+          let left = highlightRect.right + margin;
+          let top = highlightRect.top;
+          // 右侧放不下 → 左侧
+          if (left + panelW > vw - 16) {
+            left = highlightRect.left - panelW - margin;
+          }
+          // 左侧也放不下 → 放下方
+          if (left < 16) {
+            left = Math.min(Math.max(highlightRect.left, 16), vw - panelW - 16);
+            top = highlightRect.bottom + margin;
+          }
+          // 垂直方向超出 → 往上调
+          if (top + panelH > vh - 16) {
+            top = Math.max(16, vh - panelH - 16);
+          }
+          return { left, top };
+        })()}
+      >
         <div
           className="rounded-2xl p-5 shadow-2xl"
           style={{
