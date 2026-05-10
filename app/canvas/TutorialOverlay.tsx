@@ -13,192 +13,172 @@ interface TutorialOverlayProps {
 const STEPS = [
   {
     id: 'welcome',
-    title: 'Welcome to Infinite Canvas',
-    titleCn: '欢迎来到无限画布',
-    description: "Let's learn the full workflow: cards, connections, character design, and director timeline.",
-    descriptionCn: '让我们学习完整工作流：卡片、连接、角色设计和导演流程。',
+    title: 'Welcome to FanBu 帆布',
+    titleCn: '欢迎使用帆布',
+    description: "Follow this tutorial to build a complete AI workflow: image generation, video generation, and storyboard design.",
+    descriptionCn: '跟着教程做一遍，搭建完整的 AI 工作流：图片生成、视频生成、分镜设计。',
     target: null as string | null,
     needsAction: false,
     action: '', actionCn: '',
   },
 
-  // === 基础工作流 ===
-  {
-    id: 'create-text',
-    title: 'Step 1 · Create a Text Card',
-    titleCn: '第1步 · 创建文本卡片',
-    description: 'Click the "Text" button in the toolbar on the left.',
-    descriptionCn: '点击左侧工具栏中的"Text 文本生成"按钮。',
-    action: 'Click Text button', actionCn: '点击 Text 按钮',
-    target: '[data-tutorial="text-button"]' as string | null,
-    needsAction: true,
-  },
+  // === 图片生成卡片 ===
   {
     id: 'create-image',
-    title: 'Step 2 · Create an Image Card',
-    titleCn: '第2步 · 创建图片卡片',
-    description: 'Click the "Image" button in the toolbar.',
-    descriptionCn: '点击工具栏中的"Image 图片生成"按钮。',
+    title: 'Step 1 · Create an Image Card',
+    titleCn: '第 1 步 · 创建图片生成卡片',
+    description: 'Click the "Image" button in the toolbar on the left.',
+    descriptionCn: '点击左侧工具栏的 "Image 图片生成" 按钮。',
     action: 'Click Image button', actionCn: '点击 Image 按钮',
     target: '[data-tutorial="image-button"]' as string | null,
     needsAction: true,
   },
   {
-    id: 'connect-cards',
-    title: 'Step 3 · Connect the Cards',
-    titleCn: '第3步 · 连接卡片',
-    description: 'Drag from the gray port (right) of the Text card to the blue port (left) of the Image card.',
-    descriptionCn: '从文本卡片右边的灰色端口拖拽到图片卡片左边的蓝色端口。',
+    id: 'open-preset',
+    title: 'Step 2 · Open Preset Panel',
+    titleCn: '第 2 步 · 打开预设浮板',
+    description: 'In the Image card, click the "预设 ◀" button. A panel opens on the left.',
+    descriptionCn: '在图片生成卡片上点击"预设 ◀"按钮，左侧会弹出预设浮板。提示：有参考图时无需选择风格；角色设计按钮专门用于角色多细节设定。',
+    action: 'Click 预设', actionCn: '点击预设按钮',
+    target: null as string | null,
+    needsAction: false,
+  },
+  {
+    id: 'open-settings',
+    title: 'Step 3 · Open Settings Panel',
+    titleCn: '第 3 步 · 展开参数设置',
+    description: 'Click "展开参数设置" to open the right panel — model, aspect ratio, quality.',
+    descriptionCn: '点击图片卡片的"展开参数设置"按钮，右侧浮板出现：模型选择 / 比例选择 / 清晰度选择。',
+    action: 'Click Settings', actionCn: '展开参数设置',
+    target: null as string | null,
+    needsAction: false,
+  },
+
+  // === 时空镜头延展 ===
+  {
+    id: 'open-camera-control',
+    title: 'Step 4 · Time-Space Camera Extension',
+    titleCn: '第 4 步 · 时空镜头延展',
+    description: 'Click the "⋯" button on the right edge of the Image card, then click "时空镜头延展". You can generate the future 5s or past 5s of that image. Drag the camera to pick angle.',
+    descriptionCn: '点击图片卡片右侧的"⋯"三点按钮，选择"时空镜头延展"。可以生成这张图画面的未来 5 秒 / 过去 5 秒。拖动摄像头图标选择角度。',
+    action: 'Open Camera Control', actionCn: '打开时空镜头延展',
+    target: null as string | null,
+    needsAction: true,
+  },
+
+  // === 视频生成 ===
+  {
+    id: 'create-video',
+    title: 'Step 5 · Create a Video Card',
+    titleCn: '第 5 步 · 创建视频生成卡片',
+    description: 'Click "Video" in the toolbar. Three types available: Video (general), Seedance, and Kling.',
+    descriptionCn: '点击工具栏的"Video"按钮创建视频生成卡片。类型有：通用视频、Seedance、Kling。',
+    action: 'Click Video button', actionCn: '点击 Video 按钮',
+    target: '[data-tutorial="video-button"]' as string | null,
+    needsAction: true,
+  },
+
+  // === 分镜工作流 ===
+  {
+    id: 'create-director',
+    title: 'Step 6 · Open Director Engine',
+    titleCn: '第 6 步 · 打开导演引擎',
+    description: 'Click "Director Timeline" in the toolbar. This creates Step 0 / Step 2 / Step 3 / Step 3-Solo cards.',
+    descriptionCn: '点击工具栏的"Director Timeline 导演引擎"按钮。会生成 Step 0 / Step 2 / Step 3 / Step 3-Solo 几张分镜卡片。',
+    action: 'Click Director Timeline', actionCn: '点击导演引擎',
+    target: '[data-tutorial="director-button"]' as string | null,
+    needsAction: true,
+  },
+  {
+    id: 'cleanup-storyboard',
+    title: 'Step 7 · Keep What You Need',
+    titleCn: '第 7 步 · 整理分镜卡片',
+    description: 'Click Step 0 card, press Delete to remove. Keep Step 2 (storyboard JSON) and Step 3-Solo (storyboard image).',
+    descriptionCn: '点击 Step 0 卡片，按键盘 Delete 删除。保留 Step 2（分镜 JSON）和 Step 3-Solo（分镜脚本图）。',
+    action: 'Delete Step 0', actionCn: '删除 Step 0',
+    target: null as string | null,
+    needsAction: false,
+  },
+  {
+    id: 'step2-intro',
+    title: 'Step 8 · Step 2 Storyboard JSON',
+    titleCn: '第 8 步 · Step 2 分镜 JSON',
+    description: 'In Step 2 card: the left field is for story script. Click "时空" button for time-space hints.',
+    descriptionCn: '在 Step 2 卡片中填写"故事/剧本"，点击"时空"按钮可查看时空场景提示。生成后会得到分镜 JSON。',
+    action: '', actionCn: '',
+    target: null as string | null,
+    needsAction: false,
+  },
+
+  // === 连接工作流 ===
+  {
+    id: 'connect-to-step2',
+    title: 'Step 9 · Connect Image → Step 2',
+    titleCn: '第 9 步 · 图片卡片 → Step 2',
+    description: 'Drag from the right port of the Image card to the left port of Step 2. Provides reference image for storyboard.',
+    descriptionCn: '从图片卡片右侧的端口拖到 Step 2 左侧端口。为分镜 JSON 生成提供参考图。',
+    action: 'Drag to connect', actionCn: '拖拽连接',
+    target: null as string | null,
+    needsAction: true,
+  },
+  {
+    id: 'connect-step2-to-video',
+    title: 'Step 10 · Connect Step 2 → Video',
+    titleCn: '第 10 步 · Step 2 → 通用视频',
+    description: 'Drag from Step 2 right port to Video card left port. The JSON becomes the video prompt.',
+    descriptionCn: '从 Step 2 右侧端口拖到通用视频卡片左侧端口。Step 2 生成的 JSON 会作为视频卡片的 prompt。',
+    action: 'Drag to connect', actionCn: '拖拽连接',
+    target: null as string | null,
+    needsAction: true,
+  },
+  {
+    id: 'connect-to-solo',
+    title: 'Step 11 · Connect Image → Step 3-Solo',
+    titleCn: '第 11 步 · 图片卡片 → Step 3-Solo',
+    description: 'Drag Image card right port to Step 3-Solo left port. Solo uses the image as reference for storyboard sheet.',
+    descriptionCn: '从图片卡片右侧端口拖到 Step 3-Solo 左侧端口。Step 3-Solo 会用这张图生成分镜脚本图。',
+    action: 'Drag to connect', actionCn: '拖拽连接',
+    target: null as string | null,
+    needsAction: true,
+  },
+  {
+    id: 'connect-solo-to-video',
+    title: 'Step 12 · Connect Step 3-Solo → Video',
+    titleCn: '第 12 步 · Step 3-Solo → 通用视频',
+    description: 'Drag Step 3-Solo right port to a Video card left port. The storyboard image becomes the first frame.',
+    descriptionCn: '从 Step 3-Solo 右侧端口拖到通用视频卡片左侧端口。分镜脚本图会作为视频首帧。',
     action: 'Drag to connect', actionCn: '拖拽连接',
     target: null as string | null,
     needsAction: true,
   },
 
-  // === 角色设计 ===
+  // === 小贴士 ===
   {
-    id: 'create-character',
-    title: 'Step 4 · Create a Character Card',
-    titleCn: '第4步 · 创建角色设计卡片',
-    description: 'Click the "Character Design" button in the toolbar.',
-    descriptionCn: '点击工具栏中的"Character Design 角色设计"按钮。',
-    action: 'Click Character Design', actionCn: '点击角色设计按钮',
-    target: '[data-tutorial="character-button"]' as string | null,
-    needsAction: true,
-  },
-  {
-    id: 'upload-and-analyze',
-    title: 'Step 5 · Upload & Analyze',
-    titleCn: '第5步 · 上传图片并分析',
-    description: 'In the Character card: upload any image, then click "分析生成 Anchor JSON".',
-    descriptionCn: '在角色设计卡片中：上传任意图片，然后点击"分析生成 Anchor JSON"按钮。',
-    action: 'Upload → Click Analyze', actionCn: '上传图片 → 点击分析',
-    target: null as string | null,
-    needsAction: true,
-  },
-  {
-    id: 'three-view-json',
-    title: 'Step 6 · Generate Three-View JSON',
-    titleCn: '第6步 · 生成三视角 JSON',
-    description: 'Switch to "2.三视角JSON" tab in the Character card, then click "生成三视角 JSON".',
-    descriptionCn: '切换到角色卡片的"2.三视角JSON"标签，点击"生成三视角 JSON"按钮。',
-    action: 'Click 生成三视角 JSON', actionCn: '点击生成三视角 JSON',
-    target: null as string | null,
-    needsAction: true,
-  },
-  {
-    id: 'generate-character-image',
-    title: 'Step 7 · Generate Character Image',
-    titleCn: '第7步 · 生成角色图片',
-    description: 'Switch to "3.生成图片" tab, upload a reference image, then click "生成三视角图片".',
-    descriptionCn: '切换到"3.生成图片"标签，上传参考图片，然后点击"生成三视角图片"按钮。',
-    action: 'Upload → Click Generate', actionCn: '上传图片 → 点击生成',
-    target: null as string | null,
-    needsAction: true,
-  },
-
-  // === 卡片操作 ===
-  {
-    id: 'minimize-card',
-    title: 'Step 8 · Minimize a Card',
-    titleCn: '第8步 · 缩小卡片',
-    description: 'Click the "−" button at the top-right corner of any card to minimize it.',
-    descriptionCn: '点击任意卡片右上角的"−"按钮可以将卡片缩小收起。',
-    action: 'Click − to minimize', actionCn: '点击右上角 − 缩小卡片',
-    target: null as string | null,
-    needsAction: true,
-  },
-
-  // === 导演流程 ===
-  {
-    id: 'create-director',
-    title: 'Step 9 · Create Director Timeline',
-    titleCn: '第9步 · 创建导演流程',
-    description: 'Click the "Director Timeline" button in the toolbar.',
-    descriptionCn: '点击工具栏中的"Director Timeline 导演流程"按钮。',
-    action: 'Click Director Timeline', actionCn: '点击导演流程按钮',
-    target: '[data-tutorial="director-button"]' as string | null,
-    needsAction: true,
-  },
-  {
-    id: 'director-connect-image',
-    title: 'Step 10 · Connect Director → Image',
-    titleCn: '第10步 · 导演流程连接图片卡片',
-    description: 'Drag from the Director Timeline port to the left port of the Image card.',
-    descriptionCn: '从导演流程的端口拖拽连接到图片生成卡片的左边端口。',
-    action: 'Connect Director → Image card', actionCn: '连接导演流程到图片卡片',
-    target: null as string | null,
-    needsAction: true,
-  },
-  {
-    id: 'create-video',
-    title: 'Step 11 · Create a Video Card',
-    titleCn: '第11步 · 创建视频生成卡片',
-    description: 'Click the "Video" button in the toolbar to create a video generation card.',
-    descriptionCn: '点击工具栏中的"Video 视频生成"按钮，创建视频生成卡片。',
-    action: 'Click Video button', actionCn: '点击 Video 按钮',
-    target: '[data-tutorial="video-button"]' as string | null,
-    needsAction: true,
-  },
-  {
-    id: 'connect-image-video',
-    title: 'Step 12 · Connect Image → Video',
-    titleCn: '第12步 · 连接图片到视频卡片',
-    description: 'Drag from the right port of the Image card to the left port of the Video card.',
-    descriptionCn: '从图片生成卡片的右边端口拖拽连接到视频生成卡片的左边端口。',
-    action: 'Connect Image → Video card', actionCn: '连接图片卡片到视频卡片',
-    target: null as string | null,
-    needsAction: true,
-  },
-  {
-    id: 'director-zoom',
-    title: 'Step 13 · Director Timeline Controls',
-    titleCn: '第13步 · 导演流程缩放控制',
-    description: 'The Director Timeline has zoom in/out buttons to expand or compress the timeline view.',
-    descriptionCn: '导演流程有缩小和放大按钮，可以压缩或展开时间轴视图，方便管理不同时长的场景。',
-    action: 'Try the zoom buttons on the timeline', actionCn: '尝试点击时间轴上的缩放按钮',
+    id: 'minimize-tip',
+    title: 'Pro Tip · Minimize Finished Cards',
+    titleCn: '小贴士 · 完成的卡片记得缩小',
+    description: 'When an image or video is done, click the "+" at the top-right to minimize. Click "+" again to expand when needed.',
+    descriptionCn: '生成好的图片或视频卡片，点击右上角的"+"按钮缩小，需要时再次点击展开。让画布保持整洁。',
+    action: '', actionCn: '',
     target: null as string | null,
     needsAction: false,
   },
-
-  // === 电影控制器 ===
   {
-    id: 'film-controller',
-    title: 'Step 14 · Film Controller',
-    titleCn: '第14步 · 电影控制器',
-    description: 'Hover over "Film Controller" in the toolbar, then select "超远景" to create a shot card.',
-    descriptionCn: '将鼠标悬停在工具栏的"Film Controller 电影控制器"上，然后选择"超远景"创建景别卡片。',
-    action: 'Hover Film Controller → Select 超远景', actionCn: '悬停电影控制器 → 选择超远景',
-    target: '[data-tutorial="film-controller-button"]' as string | null,
-    needsAction: true,
-  },
-  {
-    id: 'shot-camera-move',
-    title: 'Step 15 · Select Camera Movement',
-    titleCn: '第15步 · 选择运镜方式（必选）',
-    description: 'In the Shot card, select a camera movement type. This is required for video generation.',
-    descriptionCn: '在景别卡片中，选择一种运镜方式。这是视频生成的必选项，决定镜头的运动方式。',
-    action: 'Select a camera movement', actionCn: '选择运镜方式（必选）',
-    target: null as string | null,
-    needsAction: true,
-  },
-  {
-    id: 'director-mindset',
-    title: 'Step 16 · Director Mindset (Optional)',
-    titleCn: '第16步 · 导演思维侧重（可选）',
-    description: 'You can optionally select one or more director mindset tags to guide the AI style. These are not required.',
-    descriptionCn: '你可以选择一个或多个导演思维侧重标签来引导 AI 风格，这些是可选项，不是必须的。',
-    action: 'Optionally select mindset tags', actionCn: '可选：选择导演思维标签',
+    id: 'delete-connection',
+    title: 'Pro Tip · Delete a Connection',
+    titleCn: '小贴士 · 删除连接线',
+    description: 'Hover any connection line, a red ✕ appears at the middle. Click to delete. Or select and press Del.',
+    descriptionCn: '鼠标悬停任何连接线，中点会出现红色 ✕，点击删除。也可以点选连接线后按 Del 键删除。',
+    action: '', actionCn: '',
     target: null as string | null,
     needsAction: false,
   },
-
-  // === 完成 ===
   {
     id: 'complete',
     title: 'Tutorial Complete! 🎬',
     titleCn: '教程完成！',
-    description: "You've mastered the full workflow: cards, connections, character design, director timeline, and film controller.",
-    descriptionCn: '你已经掌握了完整工作流：卡片连接、角色设计、导演流程和电影控制器。开始创作吧！',
+    description: "You've mastered the full workflow. Go create something amazing!",
+    descriptionCn: '你已经掌握了完整工作流——图片生成、时空镜头、视频生成、分镜连接。开始创作吧！',
     action: '', actionCn: '',
     target: null as string | null,
     needsAction: false,
@@ -256,48 +236,24 @@ export default function TutorialOverlay({ editor, onComplete, onSkip }: Tutorial
       let done = false;
 
       switch (step.id) {
-        case 'create-text':
-          done = shapes.filter(s => s.type === 'custom-card' && s.props.cardType === 'text').length > initialTextCount.current;
-          break;
         case 'create-image':
           done = shapes.filter(s => s.type === 'custom-card' && s.props.cardType === 'image').length > initialImageCount.current;
           break;
-        case 'connect-cards':
-        case 'director-connect-image':
-        case 'connect-image-video':
-          done = shapes.filter(s => s.type === 'connection').length > initialConnectionCount.current;
-          if (done) initialConnectionCount.current = shapes.filter(s => s.type === 'connection').length;
-          break;
-        case 'create-character':
-          done = shapes.filter(s => s.type === 'custom-card' && s.props.cardType === 'character').length > initialCharacterCount.current;
-          break;
-        case 'upload-and-analyze':
-          done = shapes.filter(s => s.type === 'custom-card' && s.props.cardType === 'character' && s.props.characterAnchorJson).length > initialAnchorJsonCount.current;
-          break;
-        case 'three-view-json':
-          done = shapes.filter(s => s.type === 'custom-card' && s.props.cardType === 'character' && s.props.characterThreeViewJson).length > initialThreeViewJsonCount.current;
-          break;
-        case 'generate-character-image':
-          done = shapes.filter(s => s.type === 'custom-card' && s.props.cardType === 'character' && s.props.characterGeneratedImage).length > initialThreeViewImageCount.current;
-          break;
-        case 'minimize-card':
-          done = shapes.filter(s => (s as any).props?.isMinimized === true).length > initialMinimizedCount.current;
-          break;
-        case 'create-director':
-          done = shapes.filter(s => s.type === 'timeline').length > initialDirectorCount.current;
+        case 'open-camera-control':
+          done = shapes.filter(s => s.type === 'camera-control-card').length > 0;
           break;
         case 'create-video':
           done = shapes.filter(s => s.type === 'custom-card' && s.props.cardType === 'video').length > initialVideoCount.current;
           break;
-        case 'film-controller':
-          done = shapes.filter(s => s.type === 'shot-card').length > initialShotCount.current;
+        case 'create-director':
+          done = shapes.filter(s => s.type === 'timeline' || s.type === 'gem-step2-card' || s.type === 'gem-step4-card').length > initialDirectorCount.current;
           break;
-        case 'shot-camera-move':
-          const shotCards = shapes.filter(s => s.type === 'shot-card');
-          if (shotCards.length > 0) {
-            const currentValue = shotCards[0].props?.cameraMovement || '';
-            done = currentValue !== initialCameraMovementValue.current && currentValue !== 'Follow/Tracking';
-          }
+        case 'connect-to-step2':
+        case 'connect-step2-to-video':
+        case 'connect-to-solo':
+        case 'connect-solo-to-video':
+          done = shapes.filter(s => s.type === 'connection').length > initialConnectionCount.current;
+          if (done) initialConnectionCount.current = shapes.filter(s => s.type === 'connection').length;
           break;
       }
 
