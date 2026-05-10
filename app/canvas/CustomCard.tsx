@@ -1806,6 +1806,7 @@ Maintain strong visual consistency in every panel.`;
                     <div className="flex items-center gap-2">
                       {cardType === 'image' && (
                         <button
+                          data-tutorial="preset-button"
                           onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, showPresetPanel: !showPresetPanel } }); }}
                           onPointerDown={(e) => e.stopPropagation()}
                           className="text-[10px] px-2 py-0.5 rounded bg-blue-600/30 border border-blue-500/40 text-blue-300 hover:bg-blue-600/50 transition-colors"
@@ -2767,6 +2768,7 @@ Maintain strong visual consistency in every panel.`;
             {/* 图片卡片 - 展开参数设置按钮 */}
             {cardType === 'image' && (
               <button
+                data-tutorial="image-settings-button"
                 className="w-full py-1.5 mb-2 rounded-lg text-xs font-medium transition-all bg-white/5 text-gray-400 hover:bg-white/10 hover:text-gray-300"
                 onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, showImageSettingsPanel: !showImageSettingsPanel } }); }}
                 onPointerDown={(e) => e.stopPropagation()}
