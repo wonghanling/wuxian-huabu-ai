@@ -3476,11 +3476,19 @@ Maintain strong visual consistency in every panel.`;
                             const qRes = await fetch(`/api/image/fal-query?requestId=${encodeURIComponent(data.requestId)}&endpoint=${encodeURIComponent(falEndpoint)}`);
                             const qData = await qRes.json();
                             if (qData.success && qData.imageUrl) return qData.imageUrl;
-                            if (qData.error) throw new Error(qData.error);
+                            // fal 明确错误（审核/参数）→ 打印但继续轮询（fal 可能下次返回正常结果，图片最终有概率拿到）
+                            if (qData.error) {
+                              console.warn('[fal-query] 本次查询错误，继续轮询:', qData.error, qData.detail || '');
+                              if (pollAttempts > 60) throw new Error('生成超时，请重试');
+                              await new Promise(r => setTimeout(r, 5000));
+                              return poll();
+                            }
                             if (pollAttempts > 60) throw new Error('生成超时');
                             return poll();
                           } catch (e: any) {
-                            if (e.message && (e.message.includes('超时') || e.message.includes('error'))) throw e;
+                            // 网络错误或超时才对用户可见
+                            const msg = e?.message || '';
+                            if (msg.includes('超时')) throw e;
                             if (pollAttempts > 60) throw new Error('生成超时');
                             await new Promise(r => setTimeout(r, 5000));
                             return poll();
