@@ -1,9 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 
 export const maxDuration = 60;
 
 const MINIMAX_BASE_URL = 'https://api.n1n.ai/minimax/v1';
 const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
+
+// 用账号池执行 fetch，自动 pickKey/releaseKey
+async function fetchWithN1nPool(url: string, init: RequestInit & { headers?: Record<string, string> }): Promise<Response> {
+  const keyInfo = await pickKey('n1n');
+  let success = false;
+  let caught: any = null;
+  try {
+    const res = await fetch(url, {
+      ...init,
+      headers: {
+        ...(init.headers || {}),
+        'Authorization': `Bearer ${keyInfo.keyValue}`,
+      },
+    });
+    success = res.ok;
+    return res;
+  } catch (err) {
+    caught = err;
+    throw err;
+  } finally {
+    await releaseKey(keyInfo.keyId, success, success ? undefined : categorizeError(caught));
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,11 +41,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: '缺少 text 或 voiceId' }, { status: 400 });
       }
 
-      const res = await fetch(`${MINIMAX_BASE_URL}/t2a_v2`, {
+      const res = await fetchWithN1nPool(`${MINIMAX_BASE_URL}/t2a_v2`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${YUNWU_API_KEY}`,
         },
         body: JSON.stringify({
           model: 'speech-02-hd',
@@ -64,11 +87,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: '缺少 prompt 或 voiceId' }, { status: 400 });
       }
 
-      const res = await fetch(`${MINIMAX_BASE_URL}/voice_design`, {
+      const res = await fetchWithN1nPool(`${MINIMAX_BASE_URL}/voice_design`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${YUNWU_API_KEY}`,
         },
         body: JSON.stringify({
           prompt,
@@ -93,11 +115,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: '缺少 fileId 或 voiceId' }, { status: 400 });
       }
 
-      const res = await fetch(`${MINIMAX_BASE_URL}/voice_clone`, {
+      const res = await fetchWithN1nPool(`${MINIMAX_BASE_URL}/voice_clone`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${YUNWU_API_KEY}`,
         },
         body: JSON.stringify({
           file_id: fileId,

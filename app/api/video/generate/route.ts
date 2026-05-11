@@ -507,7 +507,20 @@ export async function POST(req: NextRequest) {
     let taskEndpoint: string;
 
     if (cfg.provider === 'jimeng') {
-      // 即梦 火山引擎 API
+      // 即梦 火山引擎 API（账号池：每次请求取一组双 key 动态创建 volcService）
+      const jmKeyInfo = await pickKey('volc');
+      const jmVolcService = new Service({
+        host: 'visual.volcengineapi.com',
+        region: 'cn-north-1',
+        serviceName: 'cv',
+        accessKeyId: jmKeyInfo.keyValue,
+        secretKey: jmKeyInfo.secondaryValue || '',
+      });
+      const jmSubmit = jmVolcService.createJSONAPI('CVSync2AsyncSubmitTask', { Version: '2022-08-31' });
+
+      let jmSuccess = false;
+      let jmErr: any = null;
+      try {
       const jmBody: Record<string, unknown> = {
         req_key: cfg.jimengReqKey,
         prompt,
@@ -539,15 +552,26 @@ export async function POST(req: NextRequest) {
         jmBody.camera_strength = cameraStrength || 'medium';
       }
 
-      const jmRes = await jimengSubmit(jmBody) as any;
+      const jmRes = await jmSubmit(jmBody) as any;
       console.log('即梦提交结果:', JSON.stringify(jmRes).slice(0, 500));
 
       if (jmRes?.code !== 10000) {
-        throw new Error(`即梦提交失败: ${jmRes?.message || JSON.stringify(jmRes)}`);
+        jmErr = new Error(`即梦提交失败: ${jmRes?.message || JSON.stringify(jmRes)}`);
+        throw jmErr;
       }
       taskId = jmRes?.data?.task_id;
-      if (!taskId) throw new Error(`即梦未返回 task_id: ${JSON.stringify(jmRes)}`);
+      if (!taskId) {
+        jmErr = new Error(`即梦未返回 task_id: ${JSON.stringify(jmRes)}`);
+        throw jmErr;
+      }
       taskEndpoint = `jimeng:${cfg.jimengReqKey}`;
+      jmSuccess = true;
+      } catch (err) {
+        if (!jmErr) jmErr = err;
+        throw err;
+      } finally {
+        await releaseKey(jmKeyInfo.keyId, jmSuccess, jmSuccess ? undefined : categorizeError(jmErr));
+      }
 
     } else if (cfg.provider === 'dashscope') {
       // DashScope 官方 API

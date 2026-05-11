@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Service } from '@volcengine/openapi';
 import { createClient } from '@supabase/supabase-js';
+import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 
 const FAL_KEY = process.env.FAL_KEY!;
 const DASHSCOPE_KEY = process.env.DASHSCOPE_API_KEY!;
@@ -58,9 +59,31 @@ export async function GET(request: NextRequest) {
     let errorDetail: any = null;
 
     if (endpoint.startsWith('jimeng:')) {
-      // 即梦 火山引擎查询
+      // 即梦 火山引擎查询（账号池：每次请求取一组双 key 动态创建）
       const reqKey = endpoint.replace('jimeng:', '');
-      const jmRes = await jimengQuery({ req_key: reqKey, task_id: taskId }) as any;
+      const jmKeyInfo = await pickKey('volc');
+      const jmVolcService = new Service({
+        host: 'visual.volcengineapi.com',
+        region: 'cn-north-1',
+        serviceName: 'cv',
+        accessKeyId: jmKeyInfo.keyValue,
+        secretKey: jmKeyInfo.secondaryValue || '',
+      });
+      const jmQuery = jmVolcService.createJSONAPI('CVSync2AsyncGetResult', { Version: '2022-08-31' });
+
+      let jmSuccess = false;
+      let jmErr: any = null;
+      let jmRes: any;
+      try {
+        jmRes = await jmQuery({ req_key: reqKey, task_id: taskId }) as any;
+        jmSuccess = true;
+      } catch (err) {
+        jmErr = err;
+        throw err;
+      } finally {
+        await releaseKey(jmKeyInfo.keyId, jmSuccess, jmSuccess ? undefined : categorizeError(jmErr));
+      }
+
       console.log('即梦查询结果:', JSON.stringify(jmRes).slice(0, 500));
 
       if (jmRes?.code !== 10000) {
