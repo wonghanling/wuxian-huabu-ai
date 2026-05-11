@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fal } from '@fal-ai/client';
+import { fal as falSingleton, createFalClient } from '@fal-ai/client';
+import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 
 export const maxDuration = 300;
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
@@ -11,7 +12,8 @@ const supabaseAdmin = createSupabaseClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-fal.config({ credentials: process.env.FAL_KEY! });
+// 保留单例配置作为最终回退（Node 模块 pickKey 失败也会 fallback env，这里是双保险）
+falSingleton.config({ credentials: process.env.FAL_KEY! });
 
 const YUNWU_BASE_URL = 'https://api.n1n.ai';
 const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
@@ -123,6 +125,12 @@ export async function POST(req: NextRequest) {
 
     // ── fal.ai 路径 ──────────────────────────────────────────────
     if (modelConfig.provider === 'fal') {
+      // 账号池：取一个可用 key 创建请求级 fal client（下面所有 fal.xxx 用它）
+      const keyInfo = await pickKey('fal');
+      const fal = createFalClient({ credentials: keyInfo.keyValue });
+      let falSuccess = false;
+      let falErr: any = null;
+      try {
       const endpoint = modelConfig.falEndpoint!;
       const input: Record<string, unknown> = {
         prompt,
@@ -218,6 +226,7 @@ export async function POST(req: NextRequest) {
         const submitted = await fal.queue.submit(gptEndpoint, { input });
         const requestId = submitted.request_id;
         if (!requestId) throw new Error('fal.ai 未返回 requestId');
+        falSuccess = true;
         return NextResponse.json({ success: true, requestId, endpoint: gptEndpoint, model, prompt, pending: true });
       } else if (imageBase64) {
         input.image_url = imageBase64;
@@ -227,7 +236,14 @@ export async function POST(req: NextRequest) {
       const requestId = submitted.request_id;
       if (!requestId) throw new Error('fal.ai 未返回 requestId');
 
+      falSuccess = true;
       return NextResponse.json({ success: true, requestId, model, prompt, pending: true });
+      } catch (e) {
+        falErr = e;
+        throw e;
+      } finally {
+        await releaseKey(keyInfo.keyId, falSuccess, falSuccess ? undefined : categorizeError(falErr));
+      }
 
     // ── n1n.ai 路径 ──────────────────────────────────────────────
     } else if (modelConfig.apiType === 'gemini-native') {
