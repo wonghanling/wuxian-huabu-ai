@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 
 const YUNWU_BASE_URL = process.env.YUNWU_BASE_URL || 'https://yunwu.ai';
 const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
@@ -7,9 +8,21 @@ export async function GET(req: NextRequest) {
   const taskId = req.nextUrl.searchParams.get('taskId');
   if (!taskId) return NextResponse.json({ error: '缺少 taskId' }, { status: 400 });
 
-  const res = await fetch(`${YUNWU_BASE_URL}/mj/task/${taskId}/fetch`, {
-    headers: { 'Authorization': `Bearer ${YUNWU_API_KEY}` },
-  });
+  const keyInfo = await pickKey('n1n');
+  let success = false;
+  let caught: any = null;
+  let res: Response;
+  try {
+    res = await fetch(`${YUNWU_BASE_URL}/mj/task/${taskId}/fetch`, {
+      headers: { 'Authorization': `Bearer ${keyInfo.keyValue}` },
+    });
+    success = res.ok;
+  } catch (err) {
+    caught = err;
+    throw err;
+  } finally {
+    await releaseKey(keyInfo.keyId, success, success ? undefined : categorizeError(caught));
+  }
 
   if (!res.ok) return NextResponse.json({ status: 'pending' });
 

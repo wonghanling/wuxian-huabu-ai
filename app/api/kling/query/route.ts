@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 
 export const runtime = 'nodejs';
 
@@ -61,13 +62,26 @@ export async function GET(request: NextRequest) {
       if (user) userId = user.id;
     }
 
-    const res = await fetch(`${N1N_BASE}${endpointBase}/${taskId}`, {
-      headers: {
-        Authorization: `Bearer ${N1N_API_KEY}`,
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-    });
+    // 账号池：取一个 n1n key 查询
+    const qKeyInfo = await pickKey('n1n');
+    let qSuccess = false;
+    let qErr: any = null;
+    let res: Response;
+    try {
+      res = await fetch(`${N1N_BASE}${endpointBase}/${taskId}`, {
+        headers: {
+          Authorization: `Bearer ${qKeyInfo.keyValue}`,
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+      });
+      qSuccess = res.ok;
+    } catch (err) {
+      qErr = err;
+      throw err;
+    } finally {
+      await releaseKey(qKeyInfo.keyId, qSuccess, qSuccess ? undefined : categorizeError(qErr));
+    }
 
     if (!res.ok) {
       const err = await res.text();

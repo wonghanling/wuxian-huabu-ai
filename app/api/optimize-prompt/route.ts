@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { UNIVERSAL_VIDEO_SKILL } from './skill-content';
+import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 
 const YUNWU_BASE_URL = 'https://api.n1n.ai';
 const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
@@ -31,21 +32,33 @@ export async function POST(request: NextRequest) {
       userMessage = `请为以下视频需求生成专业的提示词：\n\n视频描述：${userInput}\n时长：${duration}\n比例：${ratio}\n\n请直接输出可用的提示词，不要解释。`;
     }
 
-    const response = await fetch(`${YUNWU_BASE_URL}/v1/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${YUNWU_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-5.2',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userMessage },
+    const opKeyInfo = await pickKey('n1n');
+    let opSuccess = false;
+    let opErr: any = null;
+    let response: Response;
+    try {
+      response = await fetch(`${YUNWU_BASE_URL}/v1/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${opKeyInfo.keyValue}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-5.2',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userMessage },
         ],
         max_tokens: 2000,
       }),
     });
+      opSuccess = response.ok;
+    } catch (err) {
+      opErr = err;
+      throw err;
+    } finally {
+      await releaseKey(opKeyInfo.keyId, opSuccess, opSuccess ? undefined : categorizeError(opErr));
+    }
 
     if (!response.ok) {
       const errorText = await response.text();

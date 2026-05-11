@@ -1,12 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { calcImagePrice } from '@/lib/pricing';
 import { deductBalance, refundBalance } from '@/lib/billing';
+import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;
 
 const YUNWU_BASE_URL = 'https://api.n1n.ai';
 const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
+
+// 用账号池执行 fetch，自动 pickKey/releaseKey
+async function fetchWithN1nPool(url: string, init: RequestInit & { headers?: Record<string, string> }): Promise<Response> {
+  const keyInfo = await pickKey('n1n');
+  let success = false;
+  let caught: any = null;
+  try {
+    const res = await fetch(url, {
+      ...init,
+      headers: {
+        ...(init.headers || {}),
+        'Authorization': `Bearer ${keyInfo.keyValue}`,
+      },
+    });
+    success = res.ok;
+    return res;
+  } catch (err) {
+    caught = err;
+    throw err;
+  } finally {
+    await releaseKey(keyInfo.keyId, success, success ? undefined : categorizeError(caught));
+  }
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -49,9 +73,9 @@ export async function POST(req: NextRequest) {
       if (size) formData.append('size', size);
       if (quality) formData.append('quality', quality);
 
-      const res = await fetch(`${YUNWU_BASE_URL}/v1/images/edits`, {
+      const res = await fetchWithN1nPool(`${YUNWU_BASE_URL}/v1/images/edits`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${YUNWU_API_KEY}` },
+        headers: {},
         body: formData,
       });
       const data = await res.json();
@@ -63,10 +87,9 @@ export async function POST(req: NextRequest) {
       imageUrl = extractImageUrl(data);
     } else {
       // 文生图
-      const res = await fetch(`${YUNWU_BASE_URL}/v1/images/generations`, {
+      const res = await fetchWithN1nPool(`${YUNWU_BASE_URL}/v1/images/generations`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${YUNWU_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
