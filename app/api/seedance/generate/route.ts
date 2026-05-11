@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { checkMembership, deductBalance, refundBalance } from '@/lib/billing';
+import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 
 export const maxDuration = 60;
 
@@ -157,20 +158,35 @@ export async function POST(req: NextRequest) {
 
     console.log('Seedance 请求:', JSON.stringify({ model, mode, ratio, resolution, duration, generate_audio: generateAudio }));
 
-    const res = await fetch(ARK_BASE_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${ARK_API_KEY}`,
-      },
-      body: JSON.stringify(requestBody),
-    });
+    // 账号池：取一个 ARK key
+    const keyInfo = await pickKey('ark');
+    let arkSuccess = false;
+    let arkErr: any = null;
+    let data: any;
+    try {
+      const res = await fetch(ARK_BASE_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${keyInfo.keyValue}`,
+        },
+        body: JSON.stringify(requestBody),
+      });
 
-    const data = await res.json();
-    console.log('Seedance 提交结果:', JSON.stringify(data).slice(0, 300));
+      data = await res.json();
+      console.log('Seedance 提交结果:', JSON.stringify(data).slice(0, 300));
 
-    if (!res.ok) {
-      throw new Error(data?.error?.message || data?.message || '提交失败');
+      if (!res.ok) {
+        arkErr = new Error(data?.error?.message || data?.message || '提交失败');
+        (arkErr as any).status = res.status;
+        throw arkErr;
+      }
+      arkSuccess = true;
+    } catch (err) {
+      if (!arkErr) arkErr = err;
+      throw err;
+    } finally {
+      await releaseKey(keyInfo.keyId, arkSuccess, arkSuccess ? undefined : categorizeError(arkErr));
     }
 
     const taskId = data.id;

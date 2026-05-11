@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { checkMembership, deductBalance, refundBalance } from '@/lib/billing';
+import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;
@@ -303,15 +304,31 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const res = await fetch(`${N1N_BASE}${endpoint}`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${N1N_API_KEY}`,
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    });
+    // 账号池：取一个 n1n key（仅用于本次 fetch 提交）
+    const kKeyInfo = await pickKey('n1n');
+    let kSuccess = false;
+    let kErr: any = null;
+    let res: Response;
+    try {
+      res = await fetch(`${N1N_BASE}${endpoint}`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${kKeyInfo.keyValue}`,
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+      kSuccess = res.ok;
+    } catch (err) {
+      kErr = err;
+      throw err;
+    } finally {
+      if (!kSuccess && !kErr) {
+        // 非网络错误的业务失败（如 429/500），在 finally 释放
+      }
+      await releaseKey(kKeyInfo.keyId, kSuccess, kSuccess ? undefined : categorizeError(kErr));
+    }
 
     if (!res.ok) {
       const err = await res.text();

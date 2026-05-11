@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fal } from '@fal-ai/client';
+import { fal as falSingleton, createFalClient } from '@fal-ai/client';
+import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 
 export const maxDuration = 60;
 
@@ -19,7 +20,7 @@ const volcService = new Service({
 const jimengSubmit = volcService.createJSONAPI('CVSync2AsyncSubmitTask', { Version: '2022-08-31' });
 const jimengQuery  = volcService.createJSONAPI('CVSync2AsyncGetResult',  { Version: '2022-08-31' });
 
-fal.config({ credentials: process.env.FAL_KEY! });
+falSingleton.config({ credentials: process.env.FAL_KEY! });
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -597,10 +598,22 @@ export async function POST(req: NextRequest) {
       taskEndpoint = `dashscope:${cfg.dashscopeModel}`;
 
     } else {
-      // fal 队列
-      const { request_id } = await fal.queue.submit(cfg.endpoint, { input });
-      taskId = request_id;
-      taskEndpoint = cfg.endpoint;
+      // fal 队列（账号池）
+      const keyInfo = await pickKey('fal');
+      const fal = createFalClient({ credentials: keyInfo.keyValue });
+      let falSuccess = false;
+      let falErr: any = null;
+      try {
+        const { request_id } = await fal.queue.submit(cfg.endpoint, { input });
+        taskId = request_id;
+        taskEndpoint = cfg.endpoint;
+        falSuccess = true;
+      } catch (err) {
+        falErr = err;
+        throw err;
+      } finally {
+        await releaseKey(keyInfo.keyId, falSuccess, falSuccess ? undefined : categorizeError(falErr));
+      }
     }
 
     // 写入数据库记录

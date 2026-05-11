@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fal } from '@fal-ai/client';
+import { fal as falSingleton, createFalClient } from '@fal-ai/client';
+import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 
 export const maxDuration = 300;
 
-fal.config({ credentials: process.env.FAL_KEY! });
+// 回退保险
+falSingleton.config({ credentials: process.env.FAL_KEY! });
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,37 +20,51 @@ export async function POST(req: NextRequest) {
       '2048x2048': { width: 2048, height: 2048 },
     };
 
-    // 上传图片到 fal storage 拿 URL（base64 需上传，URL 直接用）
-    const allImages: string[] = [];
-    for (const img of imageBase64Array) {
-      if (img.startsWith('http')) {
-        allImages.push(img);
-        console.log('[StoryboardImage] direct url:', img.slice(0, 80));
-      } else {
-        const base64Data = img.replace(/^data:image\/\w+;base64,/, '');
-        const buffer = Buffer.from(base64Data, 'base64');
-        const blob = new Blob([buffer], { type: 'image/jpeg' });
-        const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
-        const url = await fal.storage.upload(file);
-        console.log('[StoryboardImage] fal url:', url);
-        allImages.push(url);
+    // 账号池：取一个可用 fal key
+    const keyInfo = await pickKey('fal');
+    const fal = createFalClient({ credentials: keyInfo.keyValue });
+    let success = false;
+    let caughtErr: any = null;
+
+    try {
+      // 上传图片到 fal storage 拿 URL（base64 需上传，URL 直接用）
+      const allImages: string[] = [];
+      for (const img of imageBase64Array) {
+        if (img.startsWith('http')) {
+          allImages.push(img);
+          console.log('[StoryboardImage] direct url:', img.slice(0, 80));
+        } else {
+          const base64Data = img.replace(/^data:image\/\w+;base64,/, '');
+          const buffer = Buffer.from(base64Data, 'base64');
+          const blob = new Blob([buffer], { type: 'image/jpeg' });
+          const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
+          const url = await fal.storage.upload(file);
+          console.log('[StoryboardImage] fal url:', url);
+          allImages.push(url);
+        }
       }
+
+      const submitted = await fal.queue.submit('openai/gpt-image-2/edit', {
+        input: {
+          prompt,
+          image_urls: allImages,
+          image_size: sizeMap[aspectRatio] || { width: 2048, height: 1152 },
+          quality: 'high',
+          num_images: 1,
+          output_format: 'jpeg',
+        },
+      });
+      const requestId = submitted.request_id;
+      if (!requestId) throw new Error('fal.ai 未返回 requestId');
+
+      success = true;
+      return NextResponse.json({ success: true, requestId, endpoint: 'openai/gpt-image-2/edit', pending: true });
+    } catch (err) {
+      caughtErr = err;
+      throw err;
+    } finally {
+      await releaseKey(keyInfo.keyId, success, success ? undefined : categorizeError(caughtErr));
     }
-
-    const submitted = await fal.queue.submit('openai/gpt-image-2/edit', {
-      input: {
-        prompt,
-        image_urls: allImages,
-        image_size: sizeMap[aspectRatio] || { width: 2048, height: 1152 },
-        quality: 'high',
-        num_images: 1,
-        output_format: 'jpeg',
-      },
-    });
-    const requestId = submitted.request_id;
-    if (!requestId) throw new Error('fal.ai 未返回 requestId');
-
-    return NextResponse.json({ success: true, requestId, endpoint: 'openai/gpt-image-2/edit', pending: true });
   } catch (error: any) {
     console.error('StoryboardImage 错误:', error);
     console.error('StoryboardImage error body:', JSON.stringify(error?.body));
