@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 
 const ARK_API_KEY = process.env.ARK_API_KEY!;
 const ARK_QUERY_URL = 'https://ark.cn-beijing.volces.com/api/v3/contents/generations/tasks/';
@@ -36,9 +37,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '未配置 ARK_API_KEY' }, { status: 500 });
     }
 
-    const res = await fetch(ARK_QUERY_URL + taskId, {
-      headers: { 'Authorization': `Bearer ${ARK_API_KEY}` },
-    });
+    // 账号池
+    const arkQKeyInfo = await pickKey('ark');
+    let arkQSuccess = false;
+    let arkQErr: any = null;
+    let res: Response;
+    try {
+      res = await fetch(ARK_QUERY_URL + taskId, {
+        headers: { 'Authorization': `Bearer ${arkQKeyInfo.keyValue}` },
+      });
+      arkQSuccess = res.ok;
+    } catch (err) {
+      arkQErr = err;
+      throw err;
+    } finally {
+      await releaseKey(arkQKeyInfo.keyId, arkQSuccess, arkQSuccess ? undefined : categorizeError(arkQErr));
+    }
 
     const data = await res.json();
     console.log('Seedance 查询结果:', JSON.stringify(data).slice(0, 300));

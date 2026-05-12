@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 
 const YUNWU_BASE_URL = 'https://api.n1n.ai';
 const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
@@ -52,21 +53,33 @@ export async function POST(req: NextRequest) {
 
     const userMessage = `以下是中文故事文本：\n\n${story}\n\n请分析并输出剧情分段。`;
 
-    const response = await fetch(
-      `${YUNWU_BASE_URL}/v1beta/models/gemini-3-pro-preview-thinking:generateContent`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${YUNWU_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-          contents: [{ role: 'user', parts: [{ text: userMessage }] }],
-          generationConfig: { temperature: 0.5 },
-        }),
-      }
-    );
+    const keyInfo = await pickKey('n1n');
+    let success = false;
+    let caught: any = null;
+    let response: Response;
+    try {
+      response = await fetch(
+        `${YUNWU_BASE_URL}/v1beta/models/gemini-3-pro-preview-thinking:generateContent`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${keyInfo.keyValue}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
+            contents: [{ role: 'user', parts: [{ text: userMessage }] }],
+            generationConfig: { temperature: 0.5 },
+          }),
+        }
+      );
+      success = response.ok;
+    } catch (err) {
+      caught = err;
+      throw err;
+    } finally {
+      await releaseKey(keyInfo.keyId, success, success ? undefined : categorizeError(caught));
+    }
 
     if (!response.ok) {
       const errText = await response.text();

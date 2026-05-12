@@ -117,11 +117,23 @@ export async function GET(request: NextRequest) {
         }
       }
     } else if (endpoint.startsWith('dashscope:')) {
-      // DashScope 官方 API 查询
-      const res = await fetch(
-        `https://dashscope-intl.aliyuncs.com/api/v1/tasks/${taskId}`,
-        { headers: { 'Authorization': `Bearer ${DASHSCOPE_KEY}` } }
-      );
+      // DashScope 官方 API 查询（账号池）
+      const dsQKeyInfo = await pickKey('dashscope');
+      let dsQSuccess = false;
+      let dsQErr: any = null;
+      let res: Response;
+      try {
+        res = await fetch(
+          `https://dashscope-intl.aliyuncs.com/api/v1/tasks/${taskId}`,
+          { headers: { 'Authorization': `Bearer ${dsQKeyInfo.keyValue}` } }
+        );
+        dsQSuccess = res.ok;
+      } catch (err) {
+        dsQErr = err;
+        throw err;
+      } finally {
+        await releaseKey(dsQKeyInfo.keyId, dsQSuccess, dsQSuccess ? undefined : categorizeError(dsQErr));
+      }
 
       if (!res.ok) {
         const err = await res.text();
@@ -156,16 +168,22 @@ export async function GET(request: NextRequest) {
         errorDetail = data?.output;
       }
     } else {
-      // fal 查询
+      // fal 查询（账号池）
       const appId = endpoint.split('/').slice(0, 2).join('/');
+      const falKeyInfo = await pickKey('fal');
+      let falQSuccess = false;
+      let falQErr: any = null;
 
+      try {
       const statusRes = await fetch(
         `https://queue.fal.run/${appId}/requests/${taskId}/status`,
-        { headers: { 'Authorization': `Key ${FAL_KEY}` } }
+        { headers: { 'Authorization': `Key ${falKeyInfo.keyValue}` } }
       );
 
       if (!statusRes.ok) {
         const err = await statusRes.text();
+        falQErr = new Error(`查询状态失败: ${err}`);
+        (falQErr as any).status = statusRes.status;
         return NextResponse.json({ error: '查询状态失败', details: err }, { status: 500 });
       }
 
@@ -175,7 +193,7 @@ export async function GET(request: NextRequest) {
       if (statusData.status === 'COMPLETED') {
         const resultRes = await fetch(
           `https://queue.fal.run/${appId}/requests/${taskId}`,
-          { headers: { 'Authorization': `Key ${FAL_KEY}` } }
+          { headers: { 'Authorization': `Key ${falKeyInfo.keyValue}` } }
         );
         if (resultRes.ok) {
           const data = await resultRes.json();
@@ -207,6 +225,13 @@ export async function GET(request: NextRequest) {
         status = 'failed';
         progress = 0;
         errorDetail = statusData;
+      }
+      falQSuccess = true;
+      } catch (err) {
+        if (!falQErr) falQErr = err;
+        throw err;
+      } finally {
+        await releaseKey(falKeyInfo.keyId, falQSuccess, falQSuccess ? undefined : categorizeError(falQErr));
       }
     }
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 
 export const maxDuration = 60;
 
@@ -20,13 +21,26 @@ export async function POST(req: NextRequest) {
     uploadFormData.append('file', file);
     uploadFormData.append('purpose', purpose || 'voice_clone');
 
-    const res = await fetch(`${MINIMAX_BASE_URL}/files`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${YUNWU_API_KEY}`,
-      },
-      body: uploadFormData,
-    });
+    // 账号池
+    const keyInfo = await pickKey('n1n');
+    let success = false;
+    let caught: any = null;
+    let res: Response;
+    try {
+      res = await fetch(`${MINIMAX_BASE_URL}/files`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${keyInfo.keyValue}`,
+        },
+        body: uploadFormData,
+      });
+      success = res.ok;
+    } catch (err) {
+      caught = err;
+      throw err;
+    } finally {
+      await releaseKey(keyInfo.keyId, success, success ? undefined : categorizeError(caught));
+    }
 
     if (!res.ok) {
       const err = await res.text();

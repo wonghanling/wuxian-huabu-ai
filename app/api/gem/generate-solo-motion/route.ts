@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 
 export const maxDuration = 120;
 
@@ -198,25 +199,37 @@ async function callGPT(image: string, systemPrompt: string, userText: string): P
   const match = image.match(/^data:image\/(jpeg|jpg|png|webp);base64,(.+)$/);
   const imageContent = match ? [{ type: 'image_url', image_url: { url: image } }] : [];
 
-  const res = await fetch(`${YUNWU_BASE_URL}/v1/chat/completions`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${YUNWU_API_KEY}` },
-    body: JSON.stringify({
-      model: 'gpt-5.4-mini',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        {
-          role: 'user',
-          content: [
-            ...imageContent,
-            { type: 'text', text: userText }
-          ]
-        }
-      ],
-      max_tokens: 1024,
-      temperature: 0.2,
-    }),
-  });
+  const keyInfo = await pickKey('n1n');
+  let success = false;
+  let caught: any = null;
+  let res: Response;
+  try {
+    res = await fetch(`${YUNWU_BASE_URL}/v1/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${keyInfo.keyValue}` },
+      body: JSON.stringify({
+        model: 'gpt-5.4-mini',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          {
+            role: 'user',
+            content: [
+              ...imageContent,
+              { type: 'text', text: userText }
+            ]
+          }
+        ],
+        max_tokens: 1024,
+        temperature: 0.2,
+      }),
+    });
+    success = res.ok;
+  } catch (err) {
+    caught = err;
+    throw err;
+  } finally {
+    await releaseKey(keyInfo.keyId, success, success ? undefined : categorizeError(caught));
+  }
 
   if (!res.ok) throw new Error(`GPT API 错误: ${res.status}`);
   const data = await res.json();

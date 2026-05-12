@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 
 // 云雾 API 配置
 const YUNWU_BASE_URL = 'https://api.n1n.ai';
@@ -53,25 +54,37 @@ export async function POST(req: NextRequest) {
       ];
     }
 
-    // 调用云雾 API
-    const response = await fetch(`${YUNWU_BASE_URL}/v1/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${YUNWU_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: modelConfig.yunwuModel,
-        messages: [
-          {
-            role: 'user',
-            content: messageContent,
-          },
-        ],
-        stream: stream,
-        max_tokens: 4096,
-      }),
-    });
+    // 调用云雾 API（账号池）
+    const keyInfo = await pickKey('n1n');
+    let success = false;
+    let caught: any = null;
+    let response: Response;
+    try {
+      response = await fetch(`${YUNWU_BASE_URL}/v1/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${keyInfo.keyValue}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: modelConfig.yunwuModel,
+          messages: [
+            {
+              role: 'user',
+              content: messageContent,
+            },
+          ],
+          stream: stream,
+          max_tokens: 4096,
+        }),
+      });
+      success = response.ok;
+    } catch (err) {
+      caught = err;
+      throw err;
+    } finally {
+      await releaseKey(keyInfo.keyId, success, success ? undefined : categorizeError(caught));
+    }
 
     if (!response.ok) {
       const errorText = await response.text();

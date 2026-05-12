@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { fal } from '@fal-ai/client';
+import { fal as falSingleton, createFalClient } from '@fal-ai/client';
+import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 
 export const maxDuration = 60;
 
-fal.config({ credentials: process.env.FAL_KEY! });
+falSingleton.config({ credentials: process.env.FAL_KEY! });
 
 export async function POST(req: NextRequest) {
   try {
@@ -33,8 +34,21 @@ export async function POST(req: NextRequest) {
       file = new File([buffer], 'upload.jpg', { type: mimeType });
     }
 
-    const url = await fal.storage.upload(file);
-    return NextResponse.json({ url });
+    // 账号池
+    const keyInfo = await pickKey('fal');
+    const fal = createFalClient({ credentials: keyInfo.keyValue });
+    let success = false;
+    let caught: any = null;
+    try {
+      const url = await fal.storage.upload(file);
+      success = true;
+      return NextResponse.json({ url });
+    } catch (err) {
+      caught = err;
+      throw err;
+    } finally {
+      await releaseKey(keyInfo.keyId, success, success ? undefined : categorizeError(caught));
+    }
   } catch (error: any) {
     console.error('Image upload error:', error);
     return NextResponse.json({ error: error.message || '上传失败' }, { status: 500 });

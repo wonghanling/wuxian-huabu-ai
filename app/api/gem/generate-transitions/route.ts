@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 
 export const maxDuration = 120;
 
@@ -112,18 +113,30 @@ Analyze the visual difference between the two frames and output a single-line vi
 
 Output the prompt only. Nothing else.` });
 
-  const res = await fetch(
-    `${YUNWU_BASE_URL}/v1beta/models/gemini-3-flash-preview:generateContent`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${YUNWU_API_KEY}` },
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-        contents: [{ role: 'user', parts }],
-        generationConfig: { temperature: 0.2 },
-      }),
-    }
-  );
+  const keyInfo = await pickKey('n1n');
+  let success = false;
+  let caught: any = null;
+  let res: Response;
+  try {
+    res = await fetch(
+      `${YUNWU_BASE_URL}/v1beta/models/gemini-3-flash-preview:generateContent`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${keyInfo.keyValue}` },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
+          contents: [{ role: 'user', parts }],
+          generationConfig: { temperature: 0.2 },
+        }),
+      }
+    );
+    success = res.ok;
+  } catch (err) {
+    caught = err;
+    throw err;
+  } finally {
+    await releaseKey(keyInfo.keyId, success, success ? undefined : categorizeError(caught));
+  }
 
   if (!res.ok) throw new Error(`Gemini API 错误: ${res.status}`);
   const data = await res.json();

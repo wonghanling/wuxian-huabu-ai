@@ -15,6 +15,29 @@ const supabaseAdmin = createSupabaseClient(
 // 保留单例配置作为最终回退（Node 模块 pickKey 失败也会 fallback env，这里是双保险）
 falSingleton.config({ credentials: process.env.FAL_KEY! });
 
+// 用账号池执行 n1n 请求，自动 pickKey/releaseKey
+async function fetchWithN1nPool(url: string, init: RequestInit & { headers?: Record<string, string> }): Promise<Response> {
+  const keyInfo = await pickKey('n1n');
+  let success = false;
+  let caught: any = null;
+  try {
+    const res = await fetch(url, {
+      ...init,
+      headers: {
+        ...(init.headers || {}),
+        'Authorization': `Bearer ${keyInfo.keyValue}`,
+      },
+    });
+    success = res.ok;
+    return res;
+  } catch (err) {
+    caught = err;
+    throw err;
+  } finally {
+    await releaseKey(keyInfo.keyId, success, success ? undefined : categorizeError(caught));
+  }
+}
+
 const YUNWU_BASE_URL = 'https://api.n1n.ai';
 const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
 
@@ -296,11 +319,11 @@ export async function POST(req: NextRequest) {
 
       parts.push({ text: prompt });
 
-      const response = await fetch(
+      const response = await fetchWithN1nPool(
         `${YUNWU_BASE_URL}/v1beta/models/${modelConfig.yunwuModel}:generateContent`,
         {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${YUNWU_API_KEY}`, 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ role: 'user', parts }],
             generationConfig: { responseModalities: ['TEXT', 'IMAGE'], imageConfig: { aspectRatio } },
@@ -327,9 +350,9 @@ export async function POST(req: NextRequest) {
 
     } else if (modelConfig.apiType === 'midjourney') {
       const base64Array = imageBase64 ? [imageBase64] : [];
-      const response = await fetch(`${YUNWU_BASE_URL}/mj/submit/imagine`, {
+      const response = await fetchWithN1nPool(`${YUNWU_BASE_URL}/mj/submit/imagine`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${YUNWU_API_KEY}`, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ botType: 'MID_JOURNEY', prompt, base64Array, notifyHook: '', state: '' }),
       });
       if (!response.ok) throw new Error(`API 错误: ${response.status}`);
@@ -348,9 +371,9 @@ export async function POST(req: NextRequest) {
       };
       if (imageBase64) requestBody.image = imageBase64;
 
-      const response = await fetch(`${YUNWU_BASE_URL}/v1/images/generations`, {
+      const response = await fetchWithN1nPool(`${YUNWU_BASE_URL}/v1/images/generations`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${YUNWU_API_KEY}`, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody),
       });
       if (!response.ok) throw new Error(`API 错误: ${response.status}`);
@@ -378,9 +401,9 @@ export async function POST(req: NextRequest) {
         if (aspectRatio) formData.append('size', aspectRatio);
         if (imageQuality) formData.append('quality', imageQuality);
 
-        const response = await fetch(`${YUNWU_BASE_URL}/v1/images/edits`, {
+        const response = await fetchWithN1nPool(`${YUNWU_BASE_URL}/v1/images/edits`, {
           method: 'POST',
-          headers: { Authorization: `Bearer ${YUNWU_API_KEY}` },
+          headers: {},
           body: formData,
         });
         if (!response.ok) throw new Error(`API 错误: ${response.status}`);
@@ -388,9 +411,9 @@ export async function POST(req: NextRequest) {
         imageUrl = extractGptImageUrl(data);
       } else {
         // 文生图
-        const response = await fetch(`${YUNWU_BASE_URL}/v1/images/generations`, {
+        const response = await fetchWithN1nPool(`${YUNWU_BASE_URL}/v1/images/generations`, {
           method: 'POST',
-          headers: { Authorization: `Bearer ${YUNWU_API_KEY}`, 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             model: 'gpt-image-2',
             prompt,

@@ -574,8 +574,11 @@ export async function POST(req: NextRequest) {
       }
 
     } else if (cfg.provider === 'dashscope') {
-      // DashScope 官方 API
-      const DASHSCOPE_KEY = process.env.DASHSCOPE_API_KEY!;
+      // DashScope 官方 API（账号池）
+      const dsKeyInfo = await pickKey('dashscope');
+      let dsSuccess = false;
+      let dsErr: any = null;
+      try {
       const dsInput: Record<string, unknown> = { prompt };
       const dsParams: Record<string, unknown> = { prompt_extend: true };
 
@@ -599,7 +602,7 @@ export async function POST(req: NextRequest) {
         {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${DASHSCOPE_KEY}`,
+            'Authorization': `Bearer ${dsKeyInfo.keyValue}`,
             'Content-Type': 'application/json',
             'X-DashScope-Async': 'enable',
           },
@@ -613,13 +616,25 @@ export async function POST(req: NextRequest) {
 
       if (!dsRes.ok) {
         const err = await dsRes.text();
-        throw new Error(`DashScope 提交失败: ${err}`);
+        dsErr = new Error(`DashScope 提交失败: ${err}`);
+        (dsErr as any).status = dsRes.status;
+        throw dsErr;
       }
 
       const dsData = await dsRes.json();
       taskId = dsData.output?.task_id;
-      if (!taskId) throw new Error(`DashScope 未返回 task_id: ${JSON.stringify(dsData)}`);
+      if (!taskId) {
+        dsErr = new Error(`DashScope 未返回 task_id: ${JSON.stringify(dsData)}`);
+        throw dsErr;
+      }
       taskEndpoint = `dashscope:${cfg.dashscopeModel}`;
+      dsSuccess = true;
+      } catch (err) {
+        if (!dsErr) dsErr = err;
+        throw err;
+      } finally {
+        await releaseKey(dsKeyInfo.keyId, dsSuccess, dsSuccess ? undefined : categorizeError(dsErr));
+      }
 
     } else {
       // fal 队列（账号池）
