@@ -141,6 +141,12 @@ export default function ApiPoolAdminPage() {
             <p className="text-sm text-zinc-400 mt-1">仅管理员 {ADMIN_EMAIL} 可访问</p>
           </div>
           <div className="flex gap-2">
+            <a
+              href="/admin/api-pool/stats"
+              className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-sm"
+            >
+              📊 监控
+            </a>
             <button
               onClick={() => loadKeys()}
               className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-sm"

@@ -39,6 +39,8 @@ export interface KeyInfo {
   keyId: string | null; // null 表示用的是 env fallback，release 时会跳过
   keyValue: string; // 主 key / access_key
   secondaryValue?: string; // volc 的 secret_access_key
+  provider?: ApiProvider; // 记录 provider，release 时写日志用
+  startedAt?: number; // 毫秒时间戳，release 时计算 duration_ms
 }
 
 // ============================================================================
@@ -82,6 +84,7 @@ function getAdminClient() {
 // pickKey: 取一个 key（优先从池，空池回退 env）
 // ============================================================================
 export async function pickKey(provider: ApiProvider): Promise<KeyInfo> {
+  const startedAt = Date.now();
   try {
     const admin = getAdminClient();
     const { data, error } = await admin.rpc('pick_api_key', { p_provider: provider });
@@ -92,6 +95,8 @@ export async function pickKey(provider: ApiProvider): Promise<KeyInfo> {
         keyId: row.id,
         keyValue: row.key_value,
         secondaryValue: row.secondary_value ?? undefined,
+        provider,
+        startedAt,
       };
     }
   } catch (err) {
@@ -106,33 +111,60 @@ export async function pickKey(provider: ApiProvider): Promise<KeyInfo> {
       `[api-key-pool] No API key available for provider "${provider}" (database pool empty and no env fallback)`
     );
   }
-  return envKey;
+  return { ...envKey, provider, startedAt };
 }
 
 // ============================================================================
 // releaseKey: 释放 key（必须在 try-finally 里调用）
+// 支持两种调用方式：
+//   1. releaseKey(keyId, success, errorType)  ← 兼容旧调用
+//   2. releaseKey(keyInfo, success, errorType, errorMsg)  ← 推荐，自动写日志
 // ============================================================================
 export async function releaseKey(
-  keyId: string | null,
+  keyOrInfo: string | null | KeyInfo,
   success: boolean,
-  errorType?: 'rate_limit' | 'auth' | 'content' | 'timeout' | 'other'
+  errorType?: 'rate_limit' | 'auth' | 'content' | 'timeout' | 'other',
+  errorMsg?: string
 ): Promise<void> {
-  // env 回退时 keyId 是 null，跳过
-  if (!keyId) return;
+  const keyInfo: KeyInfo | null = typeof keyOrInfo === 'object' && keyOrInfo !== null
+    ? keyOrInfo
+    : (typeof keyOrInfo === 'string' ? { keyId: keyOrInfo, keyValue: '' } : null);
 
-  try {
-    const admin = getAdminClient();
+  const keyId = keyInfo?.keyId ?? null;
+
+  // 同时进行：释放并发槽 + 写日志（即使 env 回退也写日志）
+  const tasks: Promise<any>[] = [];
+  const admin = getAdminClient();
+
+  // 任务 1：释放并发计数（仅池中 key）
+  if (keyId) {
     if (success) {
-      await admin.rpc('release_api_key_success', { p_key_id: keyId });
+      tasks.push(admin.rpc('release_api_key_success', { p_key_id: keyId }).then(() => {}));
     } else {
-      await admin.rpc('release_api_key_failure', {
-        p_key_id: keyId,
-        p_error_type: errorType ?? null,
-      });
+      tasks.push(admin.rpc('release_api_key_failure', { p_key_id: keyId, p_error_type: errorType ?? null }).then(() => {}));
     }
+  }
+
+  // 任务 2：写调用日志（如果有 provider 和 startedAt）
+  if (keyInfo?.provider && keyInfo?.startedAt) {
+    const durationMs = Date.now() - keyInfo.startedAt;
+    tasks.push(
+      admin.from('api_call_logs').insert({
+        key_id: keyId,
+        provider: keyInfo.provider,
+        duration_ms: durationMs,
+        success,
+        error_type: success ? null : (errorType ?? null),
+        error_msg: errorMsg ? errorMsg.slice(0, 500) : null,
+      }).then(() => {})
+    );
+  }
+
+  // 失败不抛，避免掩盖业务错误
+  try {
+    await Promise.all(tasks);
   } catch (err) {
-    // 释放失败不抛，避免掩盖原本的业务错误
-    console.error('[api-key-pool] releaseKey failed (not fatal):', err);
+    console.error('[api-key-pool] releaseKey/log failed (not fatal):', err);
   }
 }
 
