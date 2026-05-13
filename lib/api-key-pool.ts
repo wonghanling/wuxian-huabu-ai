@@ -133,15 +133,15 @@ export async function releaseKey(
   const keyId = keyInfo?.keyId ?? null;
 
   // 同时进行：释放并发槽 + 写日志（即使 env 回退也写日志）
-  const tasks: Promise<any>[] = [];
+  const tasks: PromiseLike<any>[] = [];
   const admin = getAdminClient();
 
   // 任务 1：释放并发计数（仅池中 key）
   if (keyId) {
     if (success) {
-      tasks.push(admin.rpc('release_api_key_success', { p_key_id: keyId }).then(() => {}));
+      tasks.push(admin.rpc('release_api_key_success', { p_key_id: keyId }));
     } else {
-      tasks.push(admin.rpc('release_api_key_failure', { p_key_id: keyId, p_error_type: errorType ?? null }).then(() => {}));
+      tasks.push(admin.rpc('release_api_key_failure', { p_key_id: keyId, p_error_type: errorType ?? null }));
     }
   }
 
@@ -156,7 +156,7 @@ export async function releaseKey(
         success,
         error_type: success ? null : (errorType ?? null),
         error_msg: errorMsg ? errorMsg.slice(0, 500) : null,
-      }).then(() => {})
+      })
     );
   }
 
