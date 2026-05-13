@@ -145,7 +145,7 @@ export default function ApiPoolAdminPage() {
               href="/admin/api-pool/stats"
               className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-sm"
             >
-              📊 监控
+              监控
             </a>
             <button
               onClick={() => loadKeys()}
