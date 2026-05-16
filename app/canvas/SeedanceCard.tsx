@@ -433,6 +433,27 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
               </div>
             </div>
             <div className="p-3 flex-1 flex flex-col min-h-0">
+              {/* 常用提示词快捷按钮 */}
+              <div className="flex gap-1.5 mb-2 flex-shrink-0">
+                <button
+                  className="flex-1 px-2 py-1 rounded bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/30 text-blue-200 text-[10px] transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const grid4 = '根据这张4宫格分解表和一张人物设计图生成一段视频。没有网格，没有面板，没有边框，没有拼贴布局，保持场景连续性，遵循可见的连续性，如果场景变化存在，遵循它，如果没有场景变化，不要添加一个，不要描述帧号。\n避免没有中间运动的突然状态变化。总是描述状态之间的过渡性移动。';
+                    up({ prompt: grid4 });
+                  }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >4 宫格</button>
+                <button
+                  className="flex-1 px-2 py-1 rounded bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/30 text-purple-200 text-[10px] transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const grid9 = '根据这张9宫格分解表和一张人物设计图生成一段视频。没有网格，没有面板，没有边框，没有拼贴布局，保持场景连续性，遵循可见的连续性，如果场景变化存在，遵循它，如果没有场景变化，不要添加一个，不要描述帧号。\n避免没有中间运动的突然状态变化。总是描述状态之间的过渡性移动。';
+                    up({ prompt: grid9 });
+                  }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >9 宫格</button>
+              </div>
               <textarea
                 className="flex-1 w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs resize-none focus:outline-none focus:border-white/15 transition-all placeholder-gray-500"
                 style={{ minHeight: 200 }}

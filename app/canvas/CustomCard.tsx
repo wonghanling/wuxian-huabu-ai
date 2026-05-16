@@ -1227,26 +1227,14 @@ Maintain strong visual consistency in every panel.`;
                 {connShown.length > 0 && (
                   <div className="mb-3">
                     <div className="text-[10px] text-purple-300 mb-1.5">来自连接（{connShown.length}）</div>
-                    <div className="grid grid-cols-4 gap-1.5">
+                    <div className="flex flex-col gap-1.5 items-center">
                       {connShown.map((img, idx) => (
                         <div
                           key={`conn-${idx}`}
-                          className="relative rounded-lg border border-purple-500/40 group"
-                          style={{ aspectRatio: '1', width: '100%', background: 'rgba(0,0,0,0.3)' }}
+                          className="relative rounded-lg border border-purple-500/40"
+                          style={{ maxWidth: 280, background: 'rgba(0,0,0,0.3)' }}
                         >
-                          <img src={img} className="w-full h-full object-cover rounded-lg" />
-                          {/* hover 弹出原比例图层 */}
-                          <img
-                            src={img}
-                            className="absolute pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 shadow-2xl rounded-lg border border-purple-500/60"
-                            style={{
-                              left: 0, top: 0,
-                              maxWidth: 280, maxHeight: 280,
-                              width: 'auto', height: 'auto',
-                              zIndex: 20,
-                              background: 'rgba(0,0,0,0.9)',
-                            }}
-                          />
+                          <img src={img} className="h-auto block rounded-lg" style={{ maxWidth: 280 }} />
                         </div>
                       ))}
                     </div>
@@ -1257,23 +1245,18 @@ Maintain strong visual consistency in every panel.`;
                 {localUrls.length > 0 && (
                   <div className="mb-3">
                     <div className="text-[10px] text-gray-400 mb-1.5">手动上传（{localUrls.length}）</div>
-                    <div className="grid grid-cols-4 gap-1.5">
+                    <div className="flex flex-col gap-1.5 items-center">
                       {localUrls.map((img, idx) => (
                         <div
                           key={`url-${idx}`}
                           className="relative rounded-lg border border-white/15 group"
-                          style={{ aspectRatio: '1', width: '100%', background: 'rgba(0,0,0,0.3)' }}
+                          style={{ maxWidth: 280, background: 'rgba(0,0,0,0.3)' }}
                         >
-                          <img src={img} className="w-full h-full object-cover rounded-lg" />
-                          <img
-                            src={img}
-                            className="absolute pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 shadow-2xl rounded-lg border border-white/30"
-                            style={{ left: 0, top: 0, maxWidth: 280, maxHeight: 280, width: 'auto', height: 'auto', zIndex: 20, background: 'rgba(0,0,0,0.9)' }}
-                          />
+                          <img src={img} className="h-auto block rounded-lg" style={{ maxWidth: 280 }} />
                           <button
                             onClick={(e) => { e.stopPropagation(); const arr = [...localUrls]; arr.splice(idx, 1); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImageUrls: JSON.stringify(arr) } }); }}
                             onPointerDown={(e) => e.stopPropagation()}
-                            className="absolute top-0 right-0 w-4 h-4 bg-black/70 hover:bg-red-500/90 rounded text-white text-[9px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-30"
+                            className="absolute top-1 right-1 w-5 h-5 bg-black/70 hover:bg-red-500/90 rounded text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-30"
                           >✕</button>
                         </div>
                       ))}
@@ -1285,23 +1268,18 @@ Maintain strong visual consistency in every panel.`;
                 {localImgs.length > 0 && (
                   <div className="mb-3">
                     <div className="text-[10px] text-gray-400 mb-1.5">手动上传（{localImgs.length}）</div>
-                    <div className="grid grid-cols-4 gap-1.5">
+                    <div className="flex flex-col gap-1.5 items-center">
                       {localImgs.map((img, idx) => (
                         <div
                           key={`img-${idx}`}
                           className="relative rounded-lg border border-white/15 group"
-                          style={{ aspectRatio: '1', width: '100%', background: 'rgba(0,0,0,0.3)' }}
+                          style={{ maxWidth: 280, background: 'rgba(0,0,0,0.3)' }}
                         >
-                          <img src={img} className="w-full h-full object-cover rounded-lg" />
-                          <img
-                            src={img}
-                            className="absolute pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 shadow-2xl rounded-lg border border-white/30"
-                            style={{ left: 0, top: 0, maxWidth: 280, maxHeight: 280, width: 'auto', height: 'auto', zIndex: 20, background: 'rgba(0,0,0,0.9)' }}
-                          />
+                          <img src={img} className="h-auto block rounded-lg" style={{ maxWidth: 280 }} />
                           <button
                             onClick={(e) => { e.stopPropagation(); const arr = [...localImgs]; arr.splice(idx, 1); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImages: JSON.stringify(arr) } }); }}
                             onPointerDown={(e) => e.stopPropagation()}
-                            className="absolute top-0 right-0 w-4 h-4 bg-black/70 hover:bg-red-500/90 rounded text-white text-[9px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-30"
+                            className="absolute top-1 right-1 w-5 h-5 bg-black/70 hover:bg-red-500/90 rounded text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-30"
                           >✕</button>
                         </div>
                       ))}
@@ -1313,21 +1291,16 @@ Maintain strong visual consistency in every panel.`;
                 {singleImg && (
                   <div className="mb-3">
                     <div className="text-[10px] text-gray-400 mb-1.5">手动上传（1）</div>
-                    <div className="grid grid-cols-4 gap-1.5">
+                    <div className="flex flex-col items-center">
                       <div
-                        className="relative rounded-lg overflow-hidden border border-white/15 group"
-                        style={{ aspectRatio: '1', width: '100%', background: 'rgba(0,0,0,0.3)' }}
+                        className="relative rounded-lg border border-white/15 group"
+                        style={{ maxWidth: 280, background: 'rgba(0,0,0,0.3)' }}
                       >
-                        <img src={singleImg} className="w-full h-full object-cover rounded-lg" />
-                        <img
-                          src={singleImg}
-                          className="absolute pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 shadow-2xl rounded-lg border border-white/30"
-                          style={{ left: 0, top: 0, maxWidth: 280, maxHeight: 280, width: 'auto', height: 'auto', zIndex: 20, background: 'rgba(0,0,0,0.9)' }}
-                        />
+                        <img src={singleImg} className="h-auto block rounded-lg" style={{ maxWidth: 280 }} />
                         <button
                           onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, uploadedImage: '' } }); }}
                           onPointerDown={(e) => e.stopPropagation()}
-                          className="absolute top-0 right-0 w-4 h-4 bg-black/70 hover:bg-red-500/90 rounded text-white text-[9px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-30"
+                          className="absolute top-1 right-1 w-5 h-5 bg-black/70 hover:bg-red-500/90 rounded text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-30"
                         >✕</button>
                       </div>
                     </div>
@@ -1338,9 +1311,6 @@ Maintain strong visual consistency in every panel.`;
                   <div className="text-[10px] text-gray-500 text-center py-3">暂无参考图，可上传或连接</div>
                 )}
 
-                <div className="text-[9px] text-gray-500 mt-1 leading-relaxed border-t border-white/5 pt-2">
-                  鼠标悬停缩略图可放大预览
-                </div>
               </div>
             </div>
           );
@@ -1398,23 +1368,20 @@ Maintain strong visual consistency in every panel.`;
                       />
                     </label>
                   ) : (
-                    <div
-                      className="relative rounded-lg border border-blue-500/40 group"
-                      style={{ width: '100%', aspectRatio: '16/9', background: 'rgba(0,0,0,0.3)' }}
-                    >
-                      <img src={firstSrc} className="w-full h-full object-cover rounded-lg" />
-                      <img
-                        src={firstSrc}
-                        className="absolute pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 shadow-2xl rounded-lg border border-blue-500/60"
-                        style={{ left: 0, top: 0, maxWidth: 280, maxHeight: 280, width: 'auto', height: 'auto', zIndex: 20, background: 'rgba(0,0,0,0.9)' }}
-                      />
-                      {!connFirstFrame && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, firstFrameImage: '' } }); }}
-                          onPointerDown={(e) => e.stopPropagation()}
-                          className="absolute top-1 right-1 w-5 h-5 bg-black/70 hover:bg-red-500/90 rounded text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-30"
-                        >✕</button>
-                      )}
+                    <div className="flex flex-col items-center">
+                      <div
+                        className="relative rounded-lg border border-blue-500/40 group"
+                        style={{ maxWidth: 280, background: 'rgba(0,0,0,0.3)' }}
+                      >
+                        <img src={firstSrc} className="h-auto block rounded-lg" style={{ maxWidth: 280 }} />
+                        {!connFirstFrame && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, firstFrameImage: '' } }); }}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            className="absolute top-1 right-1 w-5 h-5 bg-black/70 hover:bg-red-500/90 rounded text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-30"
+                          >✕</button>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1445,31 +1412,24 @@ Maintain strong visual consistency in every panel.`;
                         />
                       </label>
                     ) : (
-                      <div
-                        className="relative rounded-lg border border-blue-500/40 group"
-                        style={{ width: '100%', aspectRatio: '16/9', background: 'rgba(0,0,0,0.3)' }}
-                      >
-                        <img src={lastSrc} className="w-full h-full object-cover rounded-lg" />
-                        <img
-                          src={lastSrc}
-                          className="absolute pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 shadow-2xl rounded-lg border border-blue-500/60"
-                          style={{ left: 0, top: 0, maxWidth: 280, maxHeight: 280, width: 'auto', height: 'auto', zIndex: 20, background: 'rgba(0,0,0,0.9)' }}
-                        />
-                        {!connLastFrame && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, lastFrameImage: '' } }); }}
-                            onPointerDown={(e) => e.stopPropagation()}
-                            className="absolute top-1 right-1 w-5 h-5 bg-black/70 hover:bg-red-500/90 rounded text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-30"
-                          >✕</button>
-                        )}
+                      <div className="flex flex-col items-center">
+                        <div
+                          className="relative rounded-lg border border-blue-500/40 group"
+                          style={{ maxWidth: 280, background: 'rgba(0,0,0,0.3)' }}
+                        >
+                          <img src={lastSrc} className="h-auto block rounded-lg" style={{ maxWidth: 280 }} />
+                          {!connLastFrame && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, lastFrameImage: '' } }); }}
+                              onPointerDown={(e) => e.stopPropagation()}
+                              className="absolute top-1 right-1 w-5 h-5 bg-black/70 hover:bg-red-500/90 rounded text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-30"
+                            >✕</button>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
                 )}
-
-                <div className="text-[9px] text-gray-500 mt-1 leading-relaxed border-t border-white/5 pt-2">
-                  鼠标悬停缩略图可放大预览
-                </div>
               </div>
             </div>
           );
@@ -1886,7 +1846,7 @@ Maintain strong visual consistency in every panel.`;
                       cardType === 'text'
                         ? 'Enter your text prompt...'
                         : cardType === 'image'
-                        ? 'Describe the image...'
+                        ? '描述图片内容…\n\n提示：有参考图时无需选择风格按钮，AI 会自动参考图片风格生成。'
                         : 'Describe the video...'
                     }
                     value={displayPrefix ? `${displayPrefix}${localPrompt ? '\n' + localPrompt : ''}` : localPrompt}
