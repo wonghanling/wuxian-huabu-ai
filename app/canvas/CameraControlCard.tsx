@@ -607,6 +607,18 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
           </div>
 
 
+          {!isMinimized && isCollapsed && (
+            <div className="px-3 h-full flex items-center">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0"></div>
+                <div className="min-w-0">
+                  <div className="text-white text-xs font-semibold truncate">时空镜头延展</div>
+                  <div className="text-gray-500 text-[10px]">▼展开</div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {!isMinimized && !isCollapsed && (
             <div className="flex flex-col overflow-visible p-3 gap-2" onPointerDown={(e) => e.stopPropagation()} onWheelCapture={(e) => e.stopPropagation()}>
 

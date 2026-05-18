@@ -1724,9 +1724,26 @@ Maintain strong visual consistency in every panel.`;
                 <div className="text-gray-500 text-[10px] mt-2">点击+展开</div>
               </div>
             </div>
+          ) : isCollapsed && ['image', 'video', 'character'].includes(cardType) ? (
+            <div className="p-3 h-full flex items-center">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className={`w-5 h-5 rounded ${color.iconBg} flex items-center justify-center flex-shrink-0`}>
+                  {cardType === 'image' && <svg className={`w-3 h-3 ${color.icon}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
+                  {cardType === 'video' && <svg className={`w-3 h-3 ${color.icon}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>}
+                  {cardType === 'character' && <svg className={`w-3 h-3 ${color.icon}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>}
+                </div>
+                <div className="min-w-0">
+                  <div className="text-white text-xs font-semibold truncate">{title}</div>
+                  <div className="text-gray-500 text-[10px] truncate">
+                    {cardType === 'image' && '图片生成'}
+                    {cardType === 'video' && '视频生成'}
+                    {cardType === 'character' && '角色设计'}
+                    {' · ▼展开'}
+                  </div>
+                </div>
+              </div>
+            </div>
           ) : (
-            /* 正常状态 - 显示所有内容 */
-            <div className="p-4 h-full flex flex-col" style={{ display: isCollapsed ? 'none' : undefined }}>
             {/* 标题栏 */}
             <div className="flex items-center gap-2 mb-3">
               <div className={`w-8 h-8 rounded-lg ${color.iconBg} flex items-center justify-center flex-shrink-0 backdrop-blur-sm`}>
@@ -3847,196 +3864,6 @@ Maintain strong visual consistency in every panel.`;
               </button>
             )}
 
-            {/* 视频输出面板 */}
-            {cardType === 'video' && showVideoOutput && generatedVideo && (
-              <div className="absolute backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden"
-                style={{
-                  left: '100%', marginLeft: '8px',
-                  top: showVideoModePanel ? '200px' : '0px',
-                  width: '320px', zIndex: 200,
-                  background: 'linear-gradient(135deg,rgba(192,192,192,0.15) 0%,rgba(169,169,169,0.12) 50%,rgba(128,128,128,0.08) 100%)',
-                  border: '1px solid rgba(192,192,192,0.3)',
-                  boxShadow: '0 0 40px rgba(192,192,192,0.15)',
-                }}
-                onPointerDown={(e) => e.stopPropagation()}
-              >
-                <div className="relative group" style={{ minHeight: '200px' }}>
-                  {/* 生成的视频播放器 */}
-                  <video
-                    ref={videoRef}
-                    src={generatedVideo}
-                    controls
-                    crossOrigin="anonymous"
-                    className="w-full bg-black"
-                    style={{ minHeight: '200px', maxHeight: '250px' }}
-                    onClick={(e) => e.stopPropagation()}
-                    onPointerDown={(e) => e.stopPropagation()}
-                  >
-                    您的浏览器不支持视频播放
-                  </video>
-
-                  {/* 悬停时显示的操作按钮 */}
-                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {/* 保存当前帧按钮 */}
-                    <button
-                      className="p-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white transition-all"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        captureCurrentFrame();
-                      }}
-                      onPointerDown={(e) => e.stopPropagation()}
-                      title="保存当前帧"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                    </button>
-
-                    {/* 全屏播放按钮 */}
-                    <button
-                      className="p-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white transition-all"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setLightboxVideo(generatedVideo);
-                      }}
-                      onPointerDown={(e) => e.stopPropagation()}
-                      title="放大播放"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                      </svg>
-                    </button>
-
-                    {/* 下载视频按钮 */}
-                    <button
-                      className="p-2 bg-green-500/90 hover:bg-green-600 rounded-lg text-white transition-all"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        downloadFile(generatedVideo, `generated-video-${Date.now()}.mp4`);
-                      }}
-                      onPointerDown={(e) => e.stopPropagation()}
-                      title="下载视频"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                      </svg>
-                    </button>
-
-                    {/* 删除视频按钮 */}
-                    <button
-                      className="p-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white transition-all"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        editor.updateShape({
-                          id: shape.id,
-                          type: 'custom-card' as any,
-                          props: {
-                            ...shape.props,
-                            generatedVideo: '',
-                            showVideoOutput: false,
-                          },
-                        });
-                      }}
-                      onPointerDown={(e) => e.stopPropagation()}
-                      title="删除视频"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
-
-                  {/* 视频信息 */}
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 pointer-events-none">
-                    <p className="text-white text-[10px] truncate">
-                      生成成功 · {videoMode === 'text' ? '文本生成' : videoMode === 'first-frame' ? '首帧生成' : '首尾帧生成'}
-                    </p>
-                  </div>
-                </div>
-
-                {/* 捕获的帧图片显示 */}
-                {capturedFrame && (
-                  <div className="mt-2 bg-black/40 border border-purple-500/30 rounded-lg overflow-hidden">
-                    <div className="p-2 bg-purple-500/10 border-b border-purple-500/20">
-                      <p className="text-purple-400 text-[10px] font-semibold">捕获的视频帧</p>
-                    </div>
-                    <div className="relative group">
-                      <img
-                        src={capturedFrame}
-                        alt="Captured Frame"
-                        className="w-full h-auto max-h-[200px] object-contain bg-black/20"
-                        onClick={(e) => e.stopPropagation()}
-                      />
-
-                      {/* 悬停时显示的操作按钮 */}
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                        {/* 查看大图按钮 */}
-                        <button
-                          className="px-3 py-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setLightboxVideo(capturedFrame);
-                          }}
-                          onPointerDown={(e) => e.stopPropagation()}
-                          title="查看大图"
-                        >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                          </svg>
-                          查看
-                        </button>
-
-                        {/* 下载按钮 */}
-                        <button
-                          className="px-3 py-2 bg-green-500/90 hover:bg-green-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            downloadFile(capturedFrame, `video-frame-${Date.now()}.png`);
-                          }}
-                          onPointerDown={(e) => e.stopPropagation()}
-                          title="下载图片"
-                        >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                          </svg>
-                          下载
-                        </button>
-
-                        {/* 删除按钮 */}
-                        <button
-                          className="px-3 py-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            editor.updateShape({
-                              id: shape.id,
-                              type: 'custom-card' as any,
-                              props: {
-                                ...shape.props,
-                                capturedFrame: '',
-                              },
-                            });
-                          }}
-                          onPointerDown={(e) => e.stopPropagation()}
-                          title="删除图片"
-                        >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                          删除
-                        </button>
-                      </div>
-
-                      {/* 图片信息 */}
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 pointer-events-none">
-                        <p className="text-white text-[10px] truncate">已保存视频帧</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
             {/* Kling 卡片内容 */}
             {cardType === 'kling' && (
               <div className="flex flex-col gap-2 flex-1">
@@ -4454,6 +4281,75 @@ Maintain strong visual consistency in every panel.`;
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* 视频卡片 - 右侧视频输出浮板（顶层，折叠时也显示） */}
+        {cardType === 'video' && (!isMinimized || isCollapsed) && showVideoOutput && generatedVideo && (
+          <div className="absolute backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden"
+            style={{
+              left: '100%', marginLeft: '8px',
+              top: showVideoModePanel ? '200px' : '0px',
+              width: '320px', zIndex: 200,
+              background: 'linear-gradient(135deg,rgba(192,192,192,0.15) 0%,rgba(169,169,169,0.12) 50%,rgba(128,128,128,0.08) 100%)',
+              border: '1px solid rgba(192,192,192,0.3)',
+              boxShadow: '0 0 40px rgba(192,192,192,0.15)',
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <div className="relative group" style={{ minHeight: '200px' }}>
+              <video
+                ref={videoRef}
+                src={generatedVideo}
+                controls
+                crossOrigin="anonymous"
+                className="w-full bg-black"
+                style={{ minHeight: '200px', maxHeight: '250px' }}
+                onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+              >
+                您的浏览器不支持视频播放
+              </video>
+              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button className="p-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white transition-all" title="保存当前帧"
+                  onClick={(e) => { e.stopPropagation(); captureCurrentFrame(); }} onPointerDown={(e) => e.stopPropagation()}>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                </button>
+                <button className="p-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white transition-all" title="放大播放"
+                  onClick={(e) => { e.stopPropagation(); setLightboxVideo(generatedVideo); }} onPointerDown={(e) => e.stopPropagation()}>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+                </button>
+                <button className="p-2 bg-green-500/90 hover:bg-green-600 rounded-lg text-white transition-all" title="下载视频"
+                  onClick={(e) => { e.stopPropagation(); downloadFile(generatedVideo, `generated-video-${Date.now()}.mp4`); }} onPointerDown={(e) => e.stopPropagation()}>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                </button>
+                <button className="p-2 bg-red-500/90 hover:bg-red-600 rounded-lg text-white transition-all" title="删除视频"
+                  onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, generatedVideo: '', showVideoOutput: false } }); }} onPointerDown={(e) => e.stopPropagation()}>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                </button>
+              </div>
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 pointer-events-none">
+                <p className="text-white text-[10px] truncate">生成成功 · {videoMode === 'text' ? '文本生成' : videoMode === 'first-frame' ? '首帧生成' : '首尾帧生成'}</p>
+              </div>
+            </div>
+            {capturedFrame && (
+              <div className="mt-2 bg-black/40 border border-purple-500/30 rounded-lg overflow-hidden">
+                <div className="p-2 bg-purple-500/10 border-b border-purple-500/20">
+                  <p className="text-purple-400 text-[10px] font-semibold">捕获的视频帧</p>
+                </div>
+                <div className="relative group">
+                  <img src={capturedFrame} alt="Captured Frame" className="w-full h-auto max-h-[200px] object-contain bg-black/20" onClick={(e) => e.stopPropagation()} />
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <button className="px-3 py-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white text-xs font-semibold transition-all"
+                      onClick={(e) => { e.stopPropagation(); setLightboxVideo(capturedFrame); }} onPointerDown={(e) => e.stopPropagation()}>查看</button>
+                    <button className="px-3 py-2 bg-green-500/90 hover:bg-green-600 rounded-lg text-white text-xs font-semibold transition-all"
+                      onClick={(e) => { e.stopPropagation(); downloadFile(capturedFrame, `video-frame-${Date.now()}.png`); }} onPointerDown={(e) => e.stopPropagation()}>下载</button>
+                    <button className="px-3 py-2 bg-red-500/90 hover:bg-red-600 rounded-lg text-white text-xs font-semibold transition-all"
+                      onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, capturedFrame: '' } }); }} onPointerDown={(e) => e.stopPropagation()}>删除</button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
