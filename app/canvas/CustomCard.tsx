@@ -922,7 +922,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
     const color = colors[cardType];
 
     // 计算缩放比例（缩小时固定为1，避免内容被压缩）
-    const scale = isMinimized ? 1 : Math.min(w / 380, h / 380);
+    const scale = (isMinimized || isCollapsed) ? 1 : Math.min(w / 380, h / 380);
 
     // 处理输出端口点击 - 开始连接
     const handleOutputPortDown = (e: React.MouseEvent) => {
