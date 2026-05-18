@@ -3177,66 +3177,7 @@ Maintain strong visual consistency in every panel.`;
             )}
 
 
-            {/* 视频模式面板 - absolute 浮在右边 */}
-            {cardType === 'video' && showVideoModePanel && (
-              <div className="absolute top-0 p-3 backdrop-blur-xl rounded-2xl shadow-2xl space-y-3"
-                style={{
-                  left: '100%', marginLeft: '8px', width: '260px', zIndex: 200,
-                  background: 'linear-gradient(135deg,rgba(192,192,192,0.15) 0%,rgba(169,169,169,0.12) 50%,rgba(128,128,128,0.08) 100%)',
-                  border: '1px solid rgba(192,192,192,0.3)',
-                  boxShadow: '0 0 40px rgba(192,192,192,0.15)',
-                }}
-                onPointerDown={(e) => e.stopPropagation()}
-              >
-                {currentVideoModel && currentVideoModel.durations.length > 0 && (
-                  <div>
-                    <label className="text-gray-400 text-xs mb-1 block">时长</label>
-                    <div className="flex gap-1 flex-wrap">
-                      {currentVideoModel.durations.map((dur) => (
-                        <button key={dur}
-                          className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${(videoDuration ?? currentVideoModel.durations[0]) === dur ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
-                          onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, videoDuration: dur } }); }}
-                          onPointerDown={(e) => e.stopPropagation()}
-                        >{dur}s</button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* 清晰度 */}
-                {currentVideoModel && currentVideoModel.resolutions.length > 0 && (
-                  <div>
-                    <label className="text-gray-400 text-xs mb-1 block">清晰度</label>
-                    <div className="flex gap-1 flex-wrap">
-                      {currentVideoModel.resolutions.map((res) => (
-                        <button key={res}
-                          className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${(videoResolution ?? currentVideoModel.defaultResolution) === res ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
-                          onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, videoResolution: res } }); }}
-                          onPointerDown={(e) => e.stopPropagation()}
-                        >{res.toUpperCase()}</button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* 音频开关 */}
-                {currentVideoModel?.supportsAudio && !currentVideoModel.audioBuiltIn && (
-                  <div className="flex items-center justify-between">
-                    <label className="text-gray-400 text-xs">生成音频（更贵）</label>
-                    <button
-                      className={`relative w-10 h-5 rounded-full transition-colors ${videoGenerateAudio ? 'bg-blue-500' : 'bg-white/10'}`}
-                      onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, videoGenerateAudio: !videoGenerateAudio } }); }}
-                      onPointerDown={(e) => e.stopPropagation()}
-                    >
-                      <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform ${videoGenerateAudio ? 'translate-x-5' : 'translate-x-0'}`} />
-                    </button>
-                  </div>
-                )}
-                {currentVideoModel?.audioBuiltIn && (
-                  <p className="text-[10px] text-gray-500">该模型自带音频</p>
-                )}
-              </div>
-            )}
+            {/* 视频模式面板已移到顶层（与视频输出面板组合） */}
 
             {/* 生成按钮 - 仅非角色/kling卡片显示 */}
             {cardType !== 'character' && cardType !== 'kling' && (
@@ -4286,19 +4227,77 @@ Maintain strong visual consistency in every panel.`;
           </div>
         )}
 
-        {/* 视频卡片 - 右侧视频输出浮板（顶层，折叠时也显示） */}
-        {cardType === 'video' && (!isMinimized || isCollapsed) && showVideoOutput && generatedVideo && (
-          <div className="absolute backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden"
-            style={{
-              left: '100%', marginLeft: '8px',
-              top: showVideoModePanel ? '200px' : '0px',
-              width: '320px', zIndex: 200,
-              background: 'linear-gradient(135deg,rgba(192,192,192,0.15) 0%,rgba(169,169,169,0.12) 50%,rgba(128,128,128,0.08) 100%)',
-              border: '1px solid rgba(192,192,192,0.3)',
-              boxShadow: '0 0 40px rgba(192,192,192,0.15)',
-            }}
+        {/* 视频卡片 - 右侧浮层容器（参数设置 + 视频输出） */}
+        {cardType === 'video' && (!isMinimized || isCollapsed) && ((showVideoModePanel && !isCollapsed) || (showVideoOutput && generatedVideo)) && (
+          <div
+            className="absolute flex flex-col gap-2"
+            style={{ left: '100%', marginLeft: '8px', top: 0, width: 320, zIndex: 200, pointerEvents: 'all' }}
             onPointerDown={(e) => e.stopPropagation()}
           >
+            {/* 视频参数面板 - 折叠时隐藏 */}
+            {showVideoModePanel && !isCollapsed && (
+              <div className="p-3 backdrop-blur-xl rounded-2xl shadow-2xl space-y-3"
+                style={{
+                  background: 'linear-gradient(135deg,rgba(192,192,192,0.15) 0%,rgba(169,169,169,0.12) 50%,rgba(128,128,128,0.08) 100%)',
+                  border: '1px solid rgba(192,192,192,0.3)',
+                  boxShadow: '0 0 40px rgba(192,192,192,0.15)',
+                }}
+              >
+                {currentVideoModel && currentVideoModel.durations.length > 0 && (
+                  <div>
+                    <label className="text-gray-400 text-xs mb-1 block">时长</label>
+                    <div className="flex gap-1 flex-wrap">
+                      {currentVideoModel.durations.map((dur) => (
+                        <button key={dur}
+                          className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${(videoDuration ?? currentVideoModel.durations[0]) === dur ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
+                          onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, videoDuration: dur } }); }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                        >{dur}s</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {currentVideoModel && currentVideoModel.resolutions.length > 0 && (
+                  <div>
+                    <label className="text-gray-400 text-xs mb-1 block">清晰度</label>
+                    <div className="flex gap-1 flex-wrap">
+                      {currentVideoModel.resolutions.map((res) => (
+                        <button key={res}
+                          className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${(videoResolution ?? currentVideoModel.defaultResolution) === res ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
+                          onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, videoResolution: res } }); }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                        >{res.toUpperCase()}</button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {currentVideoModel?.supportsAudio && !currentVideoModel.audioBuiltIn && (
+                  <div className="flex items-center justify-between">
+                    <label className="text-gray-400 text-xs">生成音频（更贵）</label>
+                    <button
+                      className={`relative w-10 h-5 rounded-full transition-colors ${videoGenerateAudio ? 'bg-blue-500' : 'bg-white/10'}`}
+                      onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, videoGenerateAudio: !videoGenerateAudio } }); }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                    >
+                      <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform ${videoGenerateAudio ? 'translate-x-5' : 'translate-x-0'}`} />
+                    </button>
+                  </div>
+                )}
+                {currentVideoModel?.audioBuiltIn && (
+                  <p className="text-[10px] text-gray-500">该模型自带音频</p>
+                )}
+              </div>
+            )}
+
+            {/* 视频输出 */}
+            {showVideoOutput && generatedVideo && (
+              <div className="backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden"
+                style={{
+                  background: 'linear-gradient(135deg,rgba(192,192,192,0.15) 0%,rgba(169,169,169,0.12) 50%,rgba(128,128,128,0.08) 100%)',
+                  border: '1px solid rgba(192,192,192,0.3)',
+                  boxShadow: '0 0 40px rgba(192,192,192,0.15)',
+                }}
+              >
             <div className="relative group" style={{ minHeight: '200px' }}>
               <video
                 ref={videoRef}
@@ -4352,6 +4351,8 @@ Maintain strong visual consistency in every panel.`;
                 </div>
               </div>
             )}
+          </div>
+        )}
           </div>
         )}
 
