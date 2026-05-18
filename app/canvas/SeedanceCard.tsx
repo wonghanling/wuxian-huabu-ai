@@ -484,7 +484,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
               {lightboxVideo.includes('.mp4') || lightboxVideo.includes('video') ? (
                 <video src={lightboxVideo} controls autoPlay className="rounded-xl" style={{ maxWidth: '70vw', maxHeight: '70vh' }} />
               ) : (
-                <img src={lightboxVideo} alt="大图" className="rounded-xl object-contain" style={{ maxWidth: '70vw', maxHeight: '70vh', imageRendering: 'high-quality' }} />
+                <img src={lightboxVideo} alt="大图" className="rounded-xl object-contain" style={{ maxWidth: '70vw', maxHeight: '70vh', imageRendering: 'high-quality' as any }} />
               )}
               <button className="absolute -top-3 -right-3 w-7 h-7 bg-zinc-800 hover:bg-zinc-700 border border-white/20 rounded-full text-white text-sm flex items-center justify-center"
                 onClick={() => setLightboxVideo(null)} onPointerDown={(e) => e.stopPropagation()}>✕</button>

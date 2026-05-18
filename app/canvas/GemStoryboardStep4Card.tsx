@@ -323,7 +323,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
           <div className="fixed inset-0 z-[99999] bg-black/80 flex items-center justify-center"
             onClick={() => setLightbox(false)} onPointerDown={(e) => e.stopPropagation()}>
             <div className="relative" style={{ maxWidth: '85vw', maxHeight: '85vh' }} onClick={(e) => e.stopPropagation()}>
-              <img src={generatedImage} alt="分镜脚本" className="rounded-xl object-contain" style={{ maxWidth: '85vw', maxHeight: '85vh', imageRendering: 'high-quality' }} />
+              <img src={generatedImage} alt="分镜脚本" className="rounded-xl object-contain" style={{ maxWidth: '85vw', maxHeight: '85vh', imageRendering: 'high-quality' as any }} />
               <button className="absolute -top-3 -right-3 w-7 h-7 bg-zinc-800 hover:bg-zinc-700 border border-white/20 rounded-full text-white text-sm flex items-center justify-center"
                 onClick={() => setLightbox(false)} onPointerDown={(e) => e.stopPropagation()}>✕</button>
             </div>
