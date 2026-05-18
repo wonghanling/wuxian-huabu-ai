@@ -398,14 +398,14 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
       <HTMLContainer style={{ width: w, height: h, pointerEvents: 'all', overflow: 'visible' }}>
 
         {/* 右侧浮板：参数设置（上）+ 图片输出（下） */}
-        {!isMinimized && (showSettingsPanel || (showOutputPanel && generatedImage)) && (
+        {(!isMinimized || isCollapsed) && (showSettingsPanel || (showOutputPanel && generatedImage)) && (
           <div
             className="absolute flex flex-col gap-2"
             style={{ left: '100%', marginLeft: '8px', top: 0, width: 280, zIndex: 200, pointerEvents: 'all' }}
             onPointerDown={(e) => e.stopPropagation()}
           >
-            {/* 参数设置 */}
-            {showSettingsPanel && (
+            {/* 参数设置 - 折叠时隐藏 */}
+            {showSettingsPanel && !isCollapsed && (
               <div
                 className="rounded-2xl shadow-2xl backdrop-blur-xl"
                 style={{
@@ -591,7 +591,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
               {/* 折叠按钮 */}
               {!isMinimized && (
                 <button
-                  onClick={(e) => { e.stopPropagation(); update({ isCollapsed: !isCollapsed, w: isCollapsed ? 360 : 200, h: isCollapsed ? 400 : 44 }); }}
+                  onClick={(e) => { e.stopPropagation(); update({ isCollapsed: !isCollapsed, w: isCollapsed ? 360 : 150, h: isCollapsed ? 400 : 80 }); }}
                   onPointerDown={(e) => e.stopPropagation()}
                   className="w-6 h-6 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all text-xs"
                   title={isCollapsed ? '展开' : '折叠'}

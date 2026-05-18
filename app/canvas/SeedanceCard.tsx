@@ -549,7 +549,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
           {/* 折叠按钮（缩小按钮左边） */}
           {!isMinimized && (
             <button
-              onClick={(e) => { e.stopPropagation(); up({ isCollapsed: !isCollapsed, w: isCollapsed ? 420 : 200, h: isCollapsed ? 380 : 44 }); }}
+              onClick={(e) => { e.stopPropagation(); up({ isCollapsed: !isCollapsed, w: isCollapsed ? 420 : 150, h: isCollapsed ? 380 : 80 }); }}
               onPointerDown={(e) => e.stopPropagation()}
               className="absolute top-2 right-11 w-7 h-7 bg-zinc-800/90 hover:bg-zinc-700/90 border border-white/20 rounded flex items-center justify-center text-white text-xs z-10"
               style={{ transform: `scale(${1 / scale})`, transformOrigin: 'center' }}
@@ -748,7 +748,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
           )}
 
           {/* 视频输出面板 - absolute 浮在右边，参数面板下方 */}
-          {generatedVideo && showVideoOutput && !isMinimized && (
+          {generatedVideo && showVideoOutput && (!isMinimized || isCollapsed) && (
             <div className="absolute backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden"
               style={{
                 left: '100%', marginLeft: '8px',
@@ -825,7 +825,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
         </div>
 
         {/* 左侧参考内容浮板 */}
-        {!isMinimized && showRefContentPanel && (mode === 'i2v' || mode === 'first-last' || mode === 'multimodal') && (
+        {(!isMinimized || isCollapsed) && showRefContentPanel && (mode === 'i2v' || mode === 'first-last' || mode === 'multimodal') && (
           <div
             className="absolute rounded-2xl shadow-2xl backdrop-blur-xl flex flex-col"
             style={{

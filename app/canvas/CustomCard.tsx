@@ -1112,7 +1112,7 @@ Maintain strong visual consistency in every panel.`;
         )}
 
         {/* 图片卡片 - 左侧参考图浮板（完整：上传 + 查看 + 删除） */}
-        {cardType === 'image' && !isMinimized && showRefImagePanel && ['nano-banana', 'nano-banana-pro', 'nano-banana-pro-multi', 'gpt-image-2', 'gpt-image-2-all', 'doubao-seedream-4-5-251128', 'flux-kontext', 'mj_imagine'].includes(model || '') && (() => {
+        {cardType === 'image' && (!isMinimized || isCollapsed) && showRefImagePanel && ['nano-banana', 'nano-banana-pro', 'nano-banana-pro-multi', 'gpt-image-2', 'gpt-image-2-all', 'doubao-seedream-4-5-251128', 'flux-kontext', 'mj_imagine'].includes(model || '') && (() => {
           const allImgs: string[] = uploadedImages ? (() => { try { return JSON.parse(uploadedImages || "[]"); } catch { return []; } })() : [];
           const allUrls: string[] = uploadedImageUrls ? (() => { try { return JSON.parse(uploadedImageUrls || "[]"); } catch { return []; } })() : [];
           // 模型适配
@@ -1319,7 +1319,7 @@ Maintain strong visual consistency in every panel.`;
         })()}
 
         {/* 视频卡片 - 左侧参考图浮板（首帧 + 尾帧） */}
-        {cardType === 'video' && !isMinimized && showRefImagePanel && (currentVideoModel?.mode === 'i2v' || currentVideoModel?.mode === 'firstLastFrame' || model === 'jimeng-camera') && (() => {
+        {cardType === 'video' && (!isMinimized || isCollapsed) && showRefImagePanel && (currentVideoModel?.mode === 'i2v' || currentVideoModel?.mode === 'firstLastFrame' || model === 'jimeng-camera') && (() => {
           const needLast = currentVideoModel?.mode === 'firstLastFrame';
           const firstSrc = connFirstFrame || firstFrameImage || '';
           const lastSrc = connLastFrame || lastFrameImage || '';
@@ -1438,7 +1438,7 @@ Maintain strong visual consistency in every panel.`;
         })()}
 
         {/* 图片卡片 - 右侧浮层容器（参数设置 + 图片输出紧靠在一起） */}
-        {cardType === 'image' && !isMinimized && (showImageSettingsPanel || (showImageOutput && generatedImage)) && (
+        {cardType === 'image' && (!isMinimized || isCollapsed) && (showImageSettingsPanel || (showImageOutput && generatedImage)) && (
           <div
             className="absolute flex flex-col gap-2"
             style={{ left: '100%', marginLeft: '8px', top: 0, width: 280, zIndex: 200, pointerEvents: 'all' }}
@@ -1701,7 +1701,7 @@ Maintain strong visual consistency in every panel.`;
           {/* 折叠按钮（仅图片/视频/角色卡显示） */}
           {!isMinimized && ['image', 'video', 'character'].includes(cardType) && (
             <button
-              onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, isCollapsed: !isCollapsed, w: isCollapsed ? 380 : 200, h: isCollapsed ? 380 : 44 } }); }}
+              onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, isCollapsed: !isCollapsed, w: isCollapsed ? 380 : 150, h: isCollapsed ? 380 : 80 } }); }}
               onPointerDown={(e) => e.stopPropagation()}
               className="absolute top-2 z-10 w-7 h-7 bg-zinc-800/90 hover:bg-zinc-700/90 border border-white/20 rounded flex items-center justify-center text-white text-xs transition-all"
               style={{ right: '38px', transform: `scale(${1 / scale})`, transformOrigin: 'center' }}
@@ -4410,7 +4410,7 @@ Maintain strong visual consistency in every panel.`;
         </div>
 
         {/* 角色卡片 - 右侧输出浮板 */}
-        {cardType === 'character' && !isMinimized && showCharacterOutput && characterGeneratedImage && (
+        {cardType === 'character' && (!isMinimized || isCollapsed) && showCharacterOutput && characterGeneratedImage && (
           <div
             className="absolute rounded-2xl shadow-2xl backdrop-blur-xl flex flex-col"
             style={{
