@@ -43,6 +43,7 @@ export type GemStep4CardShape = TLBaseShape<
     generationProgress?: number;
     showImageOutput?: boolean;
     showSettingsPanel?: boolean;
+    isCollapsed?: boolean;
   }
 >;
 
@@ -65,6 +66,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
     generationProgress: T.number.optional() as any,
     showImageOutput: T.boolean.optional() as any,
     showSettingsPanel: T.boolean.optional() as any,
+    isCollapsed: T.boolean.optional() as any,
   };
 
   override isAspectRatioLocked = () => false;
@@ -91,7 +93,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
   }
 
   component(shape: GemStep4CardShape) {
-    const { w, h, actionSuggestion, result, generatedImage, isGenerating, isMinimized, duration, scriptMode, ratio, generationProgress, showImageOutput, showSettingsPanel } = shape.props;
+    const { w, h, actionSuggestion, result, generatedImage, isGenerating, isMinimized, duration, scriptMode, ratio, generationProgress, showImageOutput, showSettingsPanel, isCollapsed } = shape.props;
     const editor = useEditor();
     const [image, setImage] = useState<string>('');
     const [image2, setImage2] = useState<string>('');
@@ -329,14 +331,14 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
         )}
 
         {/* 右侧浮层容器 - 参数设置 + 图片输出紧靠在一起 */}
-        {(showSettingsPanel || (showImageOutput && generatedImage)) && !isMinimized && (
+        {((showSettingsPanel && !isCollapsed) || (showImageOutput && generatedImage)) && (!isMinimized || isCollapsed) && (
           <div
             className="absolute flex flex-col gap-2"
             style={{ left: '100%', marginLeft: '8px', top: 0, width: 280, zIndex: 200, pointerEvents: 'all' }}
             onPointerDown={(e) => e.stopPropagation()}
           >
-            {/* 参数设置 */}
-            {showSettingsPanel && (
+            {/* 参数设置 - 折叠时隐藏 */}
+            {showSettingsPanel && !isCollapsed && (
               <div
                 className="rounded-2xl shadow-2xl backdrop-blur-xl"
                 style={{
@@ -478,14 +480,25 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
               <span className="text-white text-sm font-semibold truncate">GEM 导演引擎 · Step 3-Solo</span>
               {!isMinimized && <span className="text-gray-500 text-xs flex-shrink-0">单图运动</span>}
             </div>
-            <button onClick={toggleMinimize} onPointerDown={(e) => e.stopPropagation()}
-              className="w-6 h-6 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all text-sm">
-              {isMinimized ? '+' : '−'}
-            </button>
+            <div className="flex items-center gap-1">
+              {/* 折叠按钮 */}
+              {!isMinimized && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); update({ isCollapsed: !isCollapsed, w: isCollapsed ? 380 : 150, h: isCollapsed ? 520 : 80 }); }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  className="w-6 h-6 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all text-xs"
+                  title={isCollapsed ? '展开' : '折叠'}
+                >{isCollapsed ? '▼' : '▲'}</button>
+              )}
+              <button onClick={toggleMinimize} onPointerDown={(e) => e.stopPropagation()}
+                className="w-6 h-6 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all text-sm">
+                {isMinimized ? '+' : '−'}
+              </button>
+            </div>
           </div>
 
           {!isMinimized && (
-            <div className="flex-1 flex flex-col overflow-visible p-3 gap-2">
+            <div className="flex-1 flex flex-col overflow-visible p-3 gap-2" style={{ display: isCollapsed ? 'none' : undefined }}>
 
               {/* 模式选择 */}
               <div className="flex gap-1 flex-shrink-0">
