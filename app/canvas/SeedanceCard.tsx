@@ -549,7 +549,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
           {/* 折叠按钮（缩小按钮左边） */}
           {!isMinimized && (
             <button
-              onClick={(e) => { e.stopPropagation(); up({ isCollapsed: !isCollapsed }); }}
+              onClick={(e) => { e.stopPropagation(); up({ isCollapsed: !isCollapsed, h: isCollapsed ? 380 : 44 }); }}
               onPointerDown={(e) => e.stopPropagation()}
               className="absolute top-2 right-11 w-7 h-7 bg-zinc-800/90 hover:bg-zinc-700/90 border border-white/20 rounded flex items-center justify-center text-white text-xs z-10"
               style={{ transform: `scale(${1 / scale})`, transformOrigin: 'center' }}
@@ -565,41 +565,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
                 <div className="text-gray-500 text-[10px] mt-2">点击+展开</div>
               </div>
             </div>
-          ) : isCollapsed ? (
-            /* 折叠状态：只显示标题 + 上传图/输出图 */
-            <div className="p-3 flex flex-col gap-2">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded bg-gradient-to-br from-gray-400/20 to-gray-500/20 flex items-center justify-center flex-shrink-0">
-                  <svg className="w-3 h-3 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                </div>
-                <span className="text-white text-xs font-semibold">Seedance 2.0</span>
-                <span className="text-gray-500 text-[10px]">{mode || 't2v'} · {model?.includes('2-0') ? '2.0' : '1.0'}</span>
-              </div>
-              {/* 上传图预览 */}
-              {(connFirstFrame || firstFrameImage || connLastFrame || lastFrameImage) && (
-                <div className="flex gap-2 flex-wrap">
-                  {(connFirstFrame || firstFrameImage) && (
-                    <img src={connFirstFrame || firstFrameImage} className="h-auto rounded-lg" style={{ maxWidth: 120, maxHeight: 80, objectFit: 'contain' }} />
-                  )}
-                  {(connLastFrame || lastFrameImage) && (
-                    <img src={connLastFrame || lastFrameImage} className="h-auto rounded-lg" style={{ maxWidth: 120, maxHeight: 80, objectFit: 'contain' }} />
-                  )}
-                </div>
-              )}
-              {/* 输出视频封面 */}
-              {(generatedVideo || capturedFrame) && (
-                <div className="flex gap-2 flex-wrap">
-                  {capturedFrame && <img src={capturedFrame} className="h-auto rounded-lg" style={{ maxWidth: 120, maxHeight: 80, objectFit: 'contain' }} />}
-                  {generatedVideo && !capturedFrame && (
-                    <div className="flex items-center gap-1 bg-black/30 rounded-lg px-2 py-1">
-                      <svg className="w-3 h-3 text-green-400" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                      <span className="text-green-400 text-[10px]">视频已生成</span>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          ) : (
+          ) : isCollapsed ? null : (
             <div ref={scrollContainerRef} className="p-4 flex flex-col">
 
               {/* 标题 */}

@@ -591,7 +591,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
               {/* 折叠按钮 */}
               {!isMinimized && (
                 <button
-                  onClick={(e) => { e.stopPropagation(); update({ isCollapsed: !isCollapsed }); }}
+                  onClick={(e) => { e.stopPropagation(); update({ isCollapsed: !isCollapsed, h: isCollapsed ? 400 : 44 }); }}
                   onPointerDown={(e) => e.stopPropagation()}
                   className="w-6 h-6 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all text-xs"
                   title={isCollapsed ? '展开' : '折叠'}
@@ -606,20 +606,6 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
             </div>
           </div>
 
-          {!isMinimized && isCollapsed && (
-            /* 折叠状态：只显示源图 + 输出图 */
-            <div className="p-3 flex gap-2 flex-wrap">
-              {sourceImage && (
-                <img src={sourceImage} className="h-auto rounded-lg" style={{ maxWidth: 120, maxHeight: 80, objectFit: 'contain' }} />
-              )}
-              {generatedImage && (
-                <img src={generatedImage} className="h-auto rounded-lg" style={{ maxWidth: 120, maxHeight: 80, objectFit: 'contain' }} />
-              )}
-              {!sourceImage && !generatedImage && (
-                <span className="text-gray-500 text-xs">暂无图片</span>
-              )}
-            </div>
-          )}
 
           {!isMinimized && !isCollapsed && (
             <div className="flex flex-col overflow-visible p-3 gap-2" onPointerDown={(e) => e.stopPropagation()} onWheelCapture={(e) => e.stopPropagation()}>
