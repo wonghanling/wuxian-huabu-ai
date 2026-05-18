@@ -1758,7 +1758,7 @@ Maintain strong visual consistency in every panel.`;
             </div>
 
             {/* 输入区域 */}
-            <div className="mb-2 flex-1">
+            <div className="mb-2">
               {cardType !== 'character' && cardType !== 'kling' && (
                 <>
                   <div className="flex items-center justify-between mb-1">
@@ -2582,64 +2582,16 @@ Maintain strong visual consistency in every panel.`;
                         ) : (characterGeneratedImage && showGeneratePanel ? '收起三视角图片' : '生成三视角图片')}
                       </button>
 
-                      {/* 显示生成的图片 */}
-                      {showGeneratePanel && characterGeneratedImage && (
-                        <div className="mt-2 bg-black/40 border border-white/10 rounded-lg overflow-visible">
-                          <div className="relative group">
-                            <img src={characterGeneratedImage} alt="Generated Three Views" className="w-full h-auto max-h-[250px] object-contain bg-black/20" />
-
-                            {/* 悬停时显示的操作按钮 */}
-                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                              {/* 查看大图按钮 */}
-                              <button
-                                className="px-3 py-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setLightboxVideo(characterGeneratedImage);
-                                }}
-                                onPointerDown={(e) => e.stopPropagation()}
-                                title="查看大图"
-                              >
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
-                                </svg>
-                                查看
-                              </button>
-
-                              {/* 下载按钮 */}
-                              <button
-                                className="px-3 py-2 bg-green-500/90 hover:bg-green-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  downloadFile(characterGeneratedImage, `character-three-view-${Date.now()}.png`);
-                                }}
-                                onPointerDown={(e) => e.stopPropagation()}
-                                title="下载图片"
-                              >
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                </svg>
-                                下载
-                              </button>
-                            </div>
-
-                            {/* 图片信息 */}
-                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 pointer-events-none">
-                              <p className="text-white text-[10px] truncate">三视角生成成功</p>
-                            </div>
-                          </div>
-                        </div>
+                      {/* 生成完成后显示查看按钮 */}
+                      {characterGeneratedImage && (
+                        <button
+                          className="w-full mt-2 py-2 rounded-lg font-semibold text-white text-xs transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg bg-gradient-to-r from-green-500/80 to-green-600/80 hover:from-green-500 hover:to-green-600"
+                          onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, showCharacterOutput: !showCharacterOutput } }); }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                        >{showCharacterOutput ? '隐藏输出 ▶' : '查看三视角输出 ◀'}</button>
                       )}
                     </div>
-                    {/* 滚动提示 - 步骤3 */}
-                    {characterGeneratedImage && showCharacterOutput && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-black/80 to-transparent pt-8 pb-2 pointer-events-none">
-                        <div className="text-center">
-                          <p className="text-[10px] text-yellow-400 animate-bounce">👇 向下滚动查看生成图片</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                    </div>
                   )}
                 </div>
               )}
@@ -4448,6 +4400,53 @@ Maintain strong visual consistency in every panel.`;
           )}
         </div>
 
+        {/* 角色卡片 - 右侧输出浮板 */}
+        {cardType === 'character' && !isMinimized && showCharacterOutput && characterGeneratedImage && (
+          <div
+            className="absolute rounded-2xl shadow-2xl backdrop-blur-xl flex flex-col"
+            style={{
+              left: '100%', marginLeft: '8px', top: 0, width: 280, zIndex: 200, pointerEvents: 'all',
+              background: 'linear-gradient(135deg, rgba(192,192,192,0.15) 0%, rgba(100,100,100,0.1) 100%)',
+              border: '1px solid rgba(192,192,192,0.3)',
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 flex-shrink-0">
+              <span className="text-xs text-gray-300 font-semibold">三视角输出</span>
+              <button
+                className="w-5 h-5 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all text-xs"
+                onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, showCharacterOutput: false } }); }}
+                onPointerDown={(e) => e.stopPropagation()}
+              >✕</button>
+            </div>
+            <div className="p-3">
+              <div className="relative group rounded-lg overflow-hidden bg-black/20">
+                <img src={characterGeneratedImage} alt="Generated Three Views" className="w-full h-auto block rounded-lg" />
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                  <button
+                    className="px-3 py-2 bg-blue-500/90 hover:bg-blue-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
+                    onClick={(e) => { e.stopPropagation(); setLightboxVideo(characterGeneratedImage); }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg>
+                    查看
+                  </button>
+                  <button
+                    className="px-3 py-2 bg-green-500/90 hover:bg-green-600 rounded-lg text-white text-xs font-semibold flex items-center gap-1 transition-all"
+                    onClick={(e) => { e.stopPropagation(); downloadFile(characterGeneratedImage, `character-three-view-${Date.now()}.png`); }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                    下载
+                  </button>
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 pointer-events-none">
+                  <p className="text-white text-[10px] truncate">三视角生成成功</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 镜头控制滑块样式 */}
         <style jsx>{`

@@ -2601,7 +2601,7 @@ function CanvasPageContent() {
                 type: 'custom-card' as any,
                 x: pos.x,
                 y: pos.y,
-                props: { w: 380, h: 580, cardType: 'character', title: 'Character Design', prompt: '', model: 'nano-banana-pro' },
+                props: { w: 380, h: 360, cardType: 'character', title: 'Character Design', prompt: '', model: 'nano-banana-pro' },
               });
               createConnection(floatingMenu.shapeId, newId as any);
               editor.select(newId);

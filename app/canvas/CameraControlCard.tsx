@@ -60,7 +60,7 @@ function CameraController({
   };
 
   return (
-    <div className="relative w-full h-44 bg-gradient-to-br from-black/50 to-zinc-900/50 rounded-xl border border-white/8 overflow-hidden">
+    <div className="relative w-full h-36 bg-gradient-to-br from-black/50 to-zinc-900/50 rounded-xl border border-white/8 overflow-hidden">
       <div
         className="absolute inset-0 flex items-center justify-center cursor-grab active:cursor-grabbing"
         style={{ perspective: '800px' }}
@@ -167,7 +167,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
   getDefaultProps(): CameraControlCardShape['props'] {
     return {
       w: 360,
-      h: 500,
+      h: 400,
       sourceShapeId: '',
       cameraVertical: 0,
       cameraHorizontal: 0,
@@ -598,11 +598,8 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
             <div className="flex-1 flex flex-col overflow-visible p-3 gap-2" onPointerDown={(e) => e.stopPropagation()} onWheelCapture={(e) => e.stopPropagation()}>
 
               {/* 说明 */}
-              <div className="flex-shrink-0 p-2">
-                <div className="text-[10px] text-green-400 leading-relaxed space-y-0.5">
-                  <div>• 时空后退 —5s：生成画面前5秒的场景</div>
-                  <div>• 时空前进 +5s：生成画面后5秒的场景</div>
-                </div>
+              <div className="flex-shrink-0 px-2 pt-1">
+                <span className="text-[10px] text-green-400">• 后退 —5s：前5秒场景 &nbsp;• 前进 +5s：后5秒场景</span>
               </div>
 
               {/* 源图片小预览 */}
@@ -763,7 +760,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
               <div className="flex-shrink-0">
                 <label className="text-gray-400 text-xs mb-1 block">补充描述（可选）</label>
                 <textarea
-                  className="w-full h-16 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs resize-none focus:outline-none focus:border-white/20 placeholder-gray-600"
+                  className="w-full h-12 bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs resize-none focus:outline-none focus:border-white/20 placeholder-gray-600"
                   placeholder="描述镜头细节，如：低角度仰拍，背景虚化..."
                   value={prompt}
                   onClick={(e) => e.stopPropagation()}
