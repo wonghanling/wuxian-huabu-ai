@@ -591,7 +591,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
               {/* 折叠按钮 */}
               {!isMinimized && (
                 <button
-                  onClick={(e) => { e.stopPropagation(); update({ isCollapsed: !isCollapsed, h: isCollapsed ? 400 : 44 }); }}
+                  onClick={(e) => { e.stopPropagation(); update({ isCollapsed: !isCollapsed, w: isCollapsed ? 360 : 200, h: isCollapsed ? 400 : 44 }); }}
                   onPointerDown={(e) => e.stopPropagation()}
                   className="w-6 h-6 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all text-xs"
                   title={isCollapsed ? '展开' : '折叠'}

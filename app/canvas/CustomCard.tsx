@@ -1676,7 +1676,7 @@ Maintain strong visual consistency in every panel.`;
         </div>
 
         <div
-          className="relative w-full h-full backdrop-blur-xl rounded-2xl shadow-2xl transition-all duration-300 overflow-hidden"
+          className="relative w-full backdrop-blur-xl rounded-2xl shadow-2xl transition-all duration-300"
           style={{
             background: color.gradient,
             border: `1px solid ${color.border}`,
@@ -1686,6 +1686,7 @@ Maintain strong visual consistency in every panel.`;
             transformOrigin: 'top left',
             width: `${100 / scale}%`,
             height: `${100 / scale}%`,
+            overflow: 'visible',
           }}
         >
           {/* 缩放按钮 */}
@@ -1700,7 +1701,7 @@ Maintain strong visual consistency in every panel.`;
           {/* 折叠按钮（仅图片/视频/角色卡显示） */}
           {!isMinimized && ['image', 'video', 'character'].includes(cardType) && (
             <button
-              onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, isCollapsed: !isCollapsed, h: isCollapsed ? 380 : 44 } }); }}
+              onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, isCollapsed: !isCollapsed, w: isCollapsed ? 380 : 200, h: isCollapsed ? 380 : 44 } }); }}
               onPointerDown={(e) => e.stopPropagation()}
               className="absolute top-2 z-10 w-7 h-7 bg-zinc-800/90 hover:bg-zinc-700/90 border border-white/20 rounded flex items-center justify-center text-white text-xs transition-all"
               style={{ right: '38px', transform: `scale(${1 / scale})`, transformOrigin: 'center' }}
@@ -1723,9 +1724,9 @@ Maintain strong visual consistency in every panel.`;
                 <div className="text-gray-500 text-[10px] mt-2">点击+展开</div>
               </div>
             </div>
-          ) : isCollapsed && ['image', 'video', 'character'].includes(cardType) ? null : (
+          ) : (
             /* 正常状态 - 显示所有内容 */
-            <div className="p-4 h-full flex flex-col">
+            <div className="p-4 h-full flex flex-col" style={{ display: isCollapsed ? 'none' : undefined }}>
             {/* 标题栏 */}
             <div className="flex items-center gap-2 mb-3">
               <div className={`w-8 h-8 rounded-lg ${color.iconBg} flex items-center justify-center flex-shrink-0 backdrop-blur-sm`}>

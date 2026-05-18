@@ -522,7 +522,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
 
         {/* 卡片主体 */}
         <div
-          className="relative w-full backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden"
+          className="relative w-full backdrop-blur-xl rounded-2xl shadow-2xl"
           style={{
             background: 'linear-gradient(135deg,rgba(192,192,192,0.15) 0%,rgba(169,169,169,0.12) 50%,rgba(128,128,128,0.08) 100%)',
             border: '1px solid rgba(192,192,192,0.3)',
@@ -549,7 +549,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
           {/* 折叠按钮（缩小按钮左边） */}
           {!isMinimized && (
             <button
-              onClick={(e) => { e.stopPropagation(); up({ isCollapsed: !isCollapsed, h: isCollapsed ? 380 : 44 }); }}
+              onClick={(e) => { e.stopPropagation(); up({ isCollapsed: !isCollapsed, w: isCollapsed ? 420 : 200, h: isCollapsed ? 380 : 44 }); }}
               onPointerDown={(e) => e.stopPropagation()}
               className="absolute top-2 right-11 w-7 h-7 bg-zinc-800/90 hover:bg-zinc-700/90 border border-white/20 rounded flex items-center justify-center text-white text-xs z-10"
               style={{ transform: `scale(${1 / scale})`, transformOrigin: 'center' }}
@@ -565,8 +565,8 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
                 <div className="text-gray-500 text-[10px] mt-2">点击+展开</div>
               </div>
             </div>
-          ) : isCollapsed ? null : (
-            <div ref={scrollContainerRef} className="p-4 flex flex-col">
+          ) : (
+            <div ref={scrollContainerRef} className="p-4 flex flex-col" style={{ display: isCollapsed ? 'none' : undefined }}>
 
               {/* 标题 */}
               <div className="flex items-center gap-2 mb-3">
