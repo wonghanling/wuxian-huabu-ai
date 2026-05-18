@@ -50,6 +50,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
     isMinimized: T.boolean.optional(),
     showPromptPanel: T.boolean.optional(),
     showRefContentPanel: T.boolean.optional(),
+    isCollapsed: T.boolean.optional(),
   };
 
   getDefaultProps() {
@@ -66,13 +67,14 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
       showSettings: false, isMinimized: false,
       showPromptPanel: false,
       showRefContentPanel: false,
+      isCollapsed: false,
     };
   }
 
   component(shape: SeedanceCardShape) {
     const { w, h, mode, model, prompt, ratio, duration, resolution, generateAudio,
       firstFrameImage, lastFrameImage, refImages, refVideoUrl, refVideoName, refAudioBase64, refAudioName,
-      generatedVideo, capturedFrame, isGenerating, generationProgress, generationStatus, showSettings, isMinimized, showPromptPanel, showRefContentPanel,
+      generatedVideo, capturedFrame, isGenerating, generationProgress, generationStatus, showSettings, isMinimized, showPromptPanel, showRefContentPanel, isCollapsed,
     } = shape.props;
 
     const editor = (this as any).editor;
@@ -520,7 +522,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
 
         {/* 卡片主体 */}
         <div
-          className="relative w-full h-full backdrop-blur-xl rounded-2xl shadow-2xl"
+          className="relative w-full backdrop-blur-xl rounded-2xl shadow-2xl"
           style={{
             background: 'linear-gradient(135deg,rgba(192,192,192,0.15) 0%,rgba(169,169,169,0.12) 50%,rgba(128,128,128,0.08) 100%)',
             border: '1px solid rgba(192,192,192,0.3)',
@@ -532,16 +534,28 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
             transition: 'all 0.2s ease',
           }}
         >
+          {/* 缩小按钮 */}
           <button
             onClick={(e) => {
               e.stopPropagation();
               const newMinimized = !isMinimized;
-              editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...shape.props, isMinimized: newMinimized, w: newMinimized ? 150 : 420, h: newMinimized ? 80 : 560 } });
+              editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...shape.props, isMinimized: newMinimized, w: newMinimized ? 150 : 420, h: newMinimized ? 80 : 380 } });
             }}
             onPointerDown={(e) => e.stopPropagation()}
             className="absolute top-2 right-2 w-7 h-7 bg-zinc-800/90 hover:bg-zinc-700/90 border border-white/20 rounded flex items-center justify-center text-white text-lg z-10"
             style={{ transform: `scale(${1 / scale})`, transformOrigin: 'center' }}
           >{isMinimized ? '+' : '−'}</button>
+
+          {/* 折叠按钮（缩小按钮左边） */}
+          {!isMinimized && (
+            <button
+              onClick={(e) => { e.stopPropagation(); up({ isCollapsed: !isCollapsed }); }}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="absolute top-2 right-11 w-7 h-7 bg-zinc-800/90 hover:bg-zinc-700/90 border border-white/20 rounded flex items-center justify-center text-white text-xs z-10"
+              style={{ transform: `scale(${1 / scale})`, transformOrigin: 'center' }}
+              title={isCollapsed ? '展开卡片' : '折叠卡片'}
+            >{isCollapsed ? '▼' : '▲'}</button>
+          )}
 
           {isMinimized ? (
             <div className="p-4 h-full flex items-center justify-center">
@@ -551,8 +565,42 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
                 <div className="text-gray-500 text-[10px] mt-2">点击+展开</div>
               </div>
             </div>
+          ) : isCollapsed ? (
+            /* 折叠状态：只显示标题 + 上传图/输出图 */
+            <div className="p-3 flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded bg-gradient-to-br from-gray-400/20 to-gray-500/20 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-3 h-3 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                </div>
+                <span className="text-white text-xs font-semibold">Seedance 2.0</span>
+                <span className="text-gray-500 text-[10px]">{mode || 't2v'} · {model?.includes('2-0') ? '2.0' : '1.0'}</span>
+              </div>
+              {/* 上传图预览 */}
+              {(connFirstFrame || firstFrameImage || connLastFrame || lastFrameImage) && (
+                <div className="flex gap-2 flex-wrap">
+                  {(connFirstFrame || firstFrameImage) && (
+                    <img src={connFirstFrame || firstFrameImage} className="h-auto rounded-lg" style={{ maxWidth: 120, maxHeight: 80, objectFit: 'contain' }} />
+                  )}
+                  {(connLastFrame || lastFrameImage) && (
+                    <img src={connLastFrame || lastFrameImage} className="h-auto rounded-lg" style={{ maxWidth: 120, maxHeight: 80, objectFit: 'contain' }} />
+                  )}
+                </div>
+              )}
+              {/* 输出视频封面 */}
+              {(generatedVideo || capturedFrame) && (
+                <div className="flex gap-2 flex-wrap">
+                  {capturedFrame && <img src={capturedFrame} className="h-auto rounded-lg" style={{ maxWidth: 120, maxHeight: 80, objectFit: 'contain' }} />}
+                  {generatedVideo && !capturedFrame && (
+                    <div className="flex items-center gap-1 bg-black/30 rounded-lg px-2 py-1">
+                      <svg className="w-3 h-3 text-green-400" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                      <span className="text-green-400 text-[10px]">视频已生成</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           ) : (
-            <div ref={scrollContainerRef} className="p-4 flex-1 min-h-0 flex flex-col overflow-y-auto">
+            <div ref={scrollContainerRef} className="p-4 flex flex-col">
 
               {/* 标题 */}
               <div className="flex items-center gap-2 mb-3">
@@ -831,23 +879,25 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
                 onPointerDown={(e) => e.stopPropagation()}
               >✕</button>
             </div>
-            <div className="p-3 flex-1 overflow-y-auto space-y-3">
+            <div className="p-3 space-y-3">
 
               {/* 首帧 */}
               {(mode === 'i2v' || mode === 'first-last') && (
                 <div>
-                  <label className="text-gray-400 text-xs mb-1 block">
-                    首帧图片（必填）{connFirstFrame && <span className="text-blue-400 ml-1">·来自连接</span>}
-                  </label>
-                  {!connFirstFrame && (
-                    <input type="file" accept="image/*"
-                      className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
-                      onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                      onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; const url = await uploadImageToStorage(f); if (url) up({ firstFrameImage: url }); e.target.value = ''; }}
-                    />
-                  )}
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-gray-400 text-xs">首帧图片（必填）{connFirstFrame && <span className="text-blue-400 ml-1">·来自连接</span>}</label>
+                    {!connFirstFrame && (
+                      <label className="text-[10px] px-2 py-0.5 rounded bg-gray-600/50 text-white hover:bg-gray-600/70 cursor-pointer">
+                        上传
+                        <input type="file" accept="image/*" className="hidden"
+                          onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
+                          onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; const url = await uploadImageToStorage(f); if (url) up({ firstFrameImage: url }); e.target.value = ''; }}
+                        />
+                      </label>
+                    )}
+                  </div>
                   {(connFirstFrame || firstFrameImage) && (
-                    <div className="mt-1 flex flex-col items-center">
+                    <div className="flex flex-col items-center">
                       <div className="relative bg-black/30 rounded-lg group" style={{ maxWidth: 280 }}>
                         <img src={connFirstFrame || firstFrameImage} className="h-auto block rounded-lg" style={{ maxWidth: 280 }} />
                         {!connFirstFrame && (
@@ -863,18 +913,20 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
               {/* 尾帧 */}
               {mode === 'first-last' && (
                 <div>
-                  <label className="text-gray-400 text-xs mb-1 block">
-                    尾帧图片（必填）{connLastFrame && <span className="text-blue-400 ml-1">·来自连接</span>}
-                  </label>
-                  {!connLastFrame && (
-                    <input type="file" accept="image/*"
-                      className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
-                      onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                      onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; const url = await uploadImageToStorage(f); if (url) up({ lastFrameImage: url }); e.target.value = ''; }}
-                    />
-                  )}
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-gray-400 text-xs">尾帧图片（必填）{connLastFrame && <span className="text-blue-400 ml-1">·来自连接</span>}</label>
+                    {!connLastFrame && (
+                      <label className="text-[10px] px-2 py-0.5 rounded bg-gray-600/50 text-white hover:bg-gray-600/70 cursor-pointer">
+                        上传
+                        <input type="file" accept="image/*" className="hidden"
+                          onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
+                          onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; const url = await uploadImageToStorage(f); if (url) up({ lastFrameImage: url }); e.target.value = ''; }}
+                        />
+                      </label>
+                    )}
+                  </div>
                   {(connLastFrame || lastFrameImage) && (
-                    <div className="mt-1 flex flex-col items-center">
+                    <div className="flex flex-col items-center">
                       <div className="relative bg-black/30 rounded-lg group" style={{ maxWidth: 280 }}>
                         <img src={connLastFrame || lastFrameImage} className="h-auto block rounded-lg" style={{ maxWidth: 280 }} />
                         {!connLastFrame && (
@@ -887,106 +939,112 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
                 </div>
               )}
 
-              {/* 多模态：参考图片 */}
+              {/* 多模态 */}
               {mode === 'multimodal' && (
                 <>
-                  <div>
-                    <label className="text-gray-400 text-xs mb-1 block">
-                      参考图片（最多9张）{connectedInputs.imageUrls.length > 0 && <span className="text-blue-400 ml-1">·{connectedInputs.imageUrls.length}张来自连接</span>}
+                  {/* 上传按钮区 - 全部在顶部 */}
+                  <div className="flex gap-2 flex-wrap">
+                    <label className="text-[10px] px-2 py-1 rounded bg-gray-600/50 text-white hover:bg-gray-600/70 cursor-pointer flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4v12" /></svg>
+                      上传图片
+                      <input type="file" accept="image/*" multiple className="hidden"
+                        onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
+                        onChange={async (e) => { const files = Array.from(e.target.files || []); for (const f of files) { await addRefImageByFile(f); } e.target.value = ''; }}
+                      />
                     </label>
-                    <input type="file" accept="image/*" multiple
-                      className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
-                      onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                      onChange={async (e) => { const files = Array.from(e.target.files || []); for (const f of files) { await addRefImageByFile(f); } e.target.value = ''; }}
-                    />
-                    {(connectedInputs.imageUrls.length > 0 || parsedRefImages.length > 0) && (
-                      <div className="mt-1 flex flex-col gap-1 items-center">
-                        {connectedInputs.imageUrls.map((img: string, i: number) => (
-                          <div key={`conn-${i}`} className="relative bg-black/30 rounded" style={{ maxWidth: 280 }}>
-                            <img src={img} className="h-auto block rounded" style={{ maxWidth: 280 }} />
-                            <span className="absolute bottom-1 left-1 text-[10px] text-blue-300 bg-black/70 px-1 rounded">[{i + 1}]</span>
-                          </div>
-                        ))}
-                        {parsedRefImages.map((img: string, i: number) => (
-                          <div key={`upload-${i}`} className="relative bg-black/30 rounded group" style={{ maxWidth: 280 }}>
-                            <img src={img} className="h-auto block rounded" style={{ maxWidth: 280 }} />
-                            <button className="absolute top-1 right-1 w-5 h-5 bg-black/60 hover:bg-red-500/80 rounded text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={(e) => { e.stopPropagation(); removeRefImage(i); }} onPointerDown={(e) => e.stopPropagation()}>✕</button>
-                            <span className="absolute bottom-1 left-1 text-[10px] text-white bg-black/70 px-1 rounded">[{connectedInputs.imageUrls.length + i + 1}]</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* 参考视频 */}
-                  <div>
-                    <label className="text-gray-400 text-xs mb-1 block">
-                      参考视频（可选，mp4/mov ≤50MB）{connectedInputs.videoUrl && <span className="text-blue-400 ml-1">·来自连接</span>}
-                    </label>
-                    {connectedInputs.videoUrl ? (
-                      <div className="bg-black/20 border border-blue-500/30 rounded-lg p-2">
-                        <span className="text-blue-300 text-xs break-all line-clamp-2">{connectedInputs.videoUrl}</span>
-                      </div>
-                    ) : (
-                      <>
-                        <input type="file" accept="video/mp4,video/quicktime"
-                          className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
+                    {!connectedInputs.videoUrl && (
+                      <label className="text-[10px] px-2 py-1 rounded bg-gray-600/50 text-white hover:bg-gray-600/70 cursor-pointer flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                        上传视频
+                        <input type="file" accept="video/mp4,video/quicktime" className="hidden"
                           onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
                           onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; await handleRefVideoUpload(f); e.target.value = ''; }}
                         />
-                        {refVideoName && refVideoName !== '上传中...' && (
-                          <div className="mt-1 flex items-center gap-2 bg-black/20 border border-white/10 rounded p-1">
-                            <span className="text-gray-300 text-xs truncate flex-1">{refVideoName}</span>
-                            <button className="text-gray-500 hover:text-red-400 text-xs"
-                              onClick={(e) => { e.stopPropagation(); up({ refVideoUrl: '', refVideoName: '' }); }} onPointerDown={(e) => e.stopPropagation()}>x</button>
-                          </div>
-                        )}
-                        {refVideoName === '上传中...' && <div className="mt-1 text-gray-400 text-xs">上传中...</div>}
-                        {!refVideoName && (
-                          <input
-                            className="mt-1 w-full bg-black/30 border border-white/8 rounded-lg p-2 text-white text-xs focus:outline-none focus:border-white/15 transition-all placeholder-gray-500"
-                            placeholder="或直接填写视频 URL https://..."
-                            value={refVideoUrl && !refVideoName ? refVideoUrl : ''}
-                            onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                            onChange={(e) => up({ refVideoUrl: e.target.value, refVideoName: '' })}
-                          />
-                        )}
-                      </>
+                      </label>
+                    )}
+                    <label className="text-[10px] px-2 py-1 rounded bg-gray-600/50 text-white hover:bg-gray-600/70 cursor-pointer flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" /></svg>
+                      上传音频
+                      <input type="file" accept="audio/*" className="hidden"
+                        onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
+                        onChange={async (e) => {
+                          const f = e.target.files?.[0]; if (!f) return;
+                          up({ refAudioName: '上传中...' });
+                          try {
+                            const supabase = createClient();
+                            const { data: { user } } = await supabase.auth.getUser();
+                            if (!user) { alert('请先登录'); up({ refAudioName: '' }); return; }
+                            const ext = f.name.split('.').pop()?.toLowerCase() || 'mp3';
+                            const filename = `audio/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+                            const { error } = await supabase.storage.from('assets').upload(filename, f, { contentType: f.type || 'audio/mpeg', upsert: false });
+                            if (error) throw new Error(error.message);
+                            const { data: urlData } = supabase.storage.from('assets').getPublicUrl(filename);
+                            up({ refAudioBase64: urlData.publicUrl, refAudioName: f.name });
+                          } catch (err: any) {
+                            alert('音频上传失败: ' + (err?.message || err));
+                            up({ refAudioName: '' });
+                          }
+                          e.target.value = '';
+                        }}
+                      />
+                    </label>
+                    {!refVideoName && !connectedInputs.videoUrl && (
+                      <input
+                        className="flex-1 min-w-[120px] bg-black/30 border border-white/8 rounded px-2 py-1 text-white text-[10px] focus:outline-none focus:border-white/15 placeholder-gray-500"
+                        placeholder="视频 URL https://..."
+                        value={refVideoUrl && !refVideoName ? refVideoUrl : ''}
+                        onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
+                        onChange={(e) => up({ refVideoUrl: e.target.value, refVideoName: '' })}
+                      />
                     )}
                   </div>
 
-                  {/* 参考音频 */}
-                  <div>
-                    <label className="text-gray-400 text-xs mb-1 block">参考音频（可选，wav/mp3）</label>
-                    <input type="file" accept="audio/*"
-                      className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
-                      onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-                      onChange={async (e) => {
-                        const f = e.target.files?.[0]; if (!f) return;
-                        up({ refAudioName: '上传中...' });
-                        try {
-                          const supabase = createClient();
-                          const { data: { user } } = await supabase.auth.getUser();
-                          if (!user) { alert('请先登录'); up({ refAudioName: '' }); return; }
-                          const ext = f.name.split('.').pop()?.toLowerCase() || 'mp3';
-                          const filename = `audio/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-                          const { error } = await supabase.storage.from('assets').upload(filename, f, { contentType: f.type || 'audio/mpeg', upsert: false });
-                          if (error) throw new Error(error.message);
-                          const { data: urlData } = supabase.storage.from('assets').getPublicUrl(filename);
-                          up({ refAudioBase64: urlData.publicUrl, refAudioName: f.name });
-                        } catch (err: any) {
-                          alert('音频上传失败: ' + (err?.message || err));
-                          up({ refAudioName: '' });
-                        }
-                        e.target.value = '';
-                      }}
-                    />
+                  {/* 已上传内容展示区 */}
+                  <div className="space-y-2">
+                    {/* 参考图片 */}
+                    {(connectedInputs.imageUrls.length > 0 || parsedRefImages.length > 0) && (
+                      <div>
+                        <div className="text-[10px] text-gray-500 mb-1">参考图片（{connectedInputs.imageUrls.length + parsedRefImages.length}/9）</div>
+                        <div className="flex flex-col gap-1 items-center">
+                          {connectedInputs.imageUrls.map((img: string, i: number) => (
+                            <div key={`conn-${i}`} className="relative bg-black/30 rounded" style={{ maxWidth: 280 }}>
+                              <img src={img} className="h-auto block rounded" style={{ maxWidth: 280 }} />
+                              <span className="absolute bottom-1 left-1 text-[10px] text-blue-300 bg-black/70 px-1 rounded">[{i + 1}]</span>
+                            </div>
+                          ))}
+                          {parsedRefImages.map((img: string, i: number) => (
+                            <div key={`upload-${i}`} className="relative bg-black/30 rounded group" style={{ maxWidth: 280 }}>
+                              <img src={img} className="h-auto block rounded" style={{ maxWidth: 280 }} />
+                              <button className="absolute top-1 right-1 w-5 h-5 bg-black/60 hover:bg-red-500/80 rounded text-white text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={(e) => { e.stopPropagation(); removeRefImage(i); }} onPointerDown={(e) => e.stopPropagation()}>✕</button>
+                              <span className="absolute bottom-1 left-1 text-[10px] text-white bg-black/70 px-1 rounded">[{connectedInputs.imageUrls.length + i + 1}]</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 参考视频 */}
+                    {(connectedInputs.videoUrl || refVideoName) && (
+                      <div className="flex items-center gap-2 bg-black/20 border border-white/10 rounded-lg p-2">
+                        <svg className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                        <span className="text-gray-300 text-xs truncate flex-1">
+                          {connectedInputs.videoUrl ? <span className="text-blue-300">来自连接</span> : (refVideoName === '上传中...' ? <span className="text-gray-400">上传中...</span> : refVideoName)}
+                        </span>
+                        {!connectedInputs.videoUrl && refVideoName && refVideoName !== '上传中...' && (
+                          <button className="text-gray-500 hover:text-red-400 text-xs flex-shrink-0"
+                            onClick={(e) => { e.stopPropagation(); up({ refVideoUrl: '', refVideoName: '' }); }} onPointerDown={(e) => e.stopPropagation()}>✕</button>
+                        )}
+                      </div>
+                    )}
+
+                    {/* 参考音频 */}
                     {refAudioBase64 && (
-                      <div className="mt-1 flex items-center gap-2 bg-black/20 border border-white/10 rounded p-1">
+                      <div className="flex items-center gap-2 bg-black/20 border border-white/10 rounded-lg p-2">
+                        <svg className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" /></svg>
                         <span className="text-gray-300 text-xs truncate flex-1">{refAudioName || '已上传'}</span>
-                        <button className="text-gray-500 hover:text-red-400 text-xs"
-                          onClick={(e) => { e.stopPropagation(); up({ refAudioBase64: '', refAudioName: '' }); }} onPointerDown={(e) => e.stopPropagation()}>x</button>
+                        <button className="text-gray-500 hover:text-red-400 text-xs flex-shrink-0"
+                          onClick={(e) => { e.stopPropagation(); up({ refAudioBase64: '', refAudioName: '' }); }} onPointerDown={(e) => e.stopPropagation()}>✕</button>
                       </div>
                     )}
                   </div>

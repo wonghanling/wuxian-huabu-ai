@@ -330,6 +330,7 @@ export type CustomCardShape = TLBaseShape<
     showThreeViewJsonPanel?: boolean;
     showGeneratePanel?: boolean;
     isMinimized?: boolean; // 是否缩小状态
+    isCollapsed?: boolean; // 是否折叠状态（只留标题+图片预览）
     textOutput?: string; // 文本卡片输出
     isGenerating?: boolean; // 是否正在生成
     generationProgress?: number; // 生成进度 0-100
@@ -415,6 +416,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
     showThreeViewJsonPanel: T.boolean.optional(),
     showGeneratePanel: T.boolean.optional(),
     isMinimized: T.boolean.optional(),
+    isCollapsed: T.boolean.optional(),
     textOutput: T.string.optional(),
     isGenerating: T.boolean.optional(),
     generationProgress: T.number.optional(),
@@ -518,7 +520,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
   }
 
   component(shape: CustomCardShape) {
-    const { cardType, title, prompt, model, w, h, uploadedImage, uploadedImages, uploadedImageUrls, generatedImage, aspectRatio, gridLayout, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showImageSettingsPanel, showPromptPanel, showPresetPanel, showRefImagePanel, showVideoOutput, capturedFrame, videoDuration, videoResolution, videoGenerateAudio, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterAnalyzeImage, characterAnchorJson, characterThreeViewJson, characterThreeViewImage, characterGeneratedImage, characterImageModel, imageQuality, cameraTemplate, cameraStrength, showCharacterOutput, showAnalyzePanel, showThreeViewJsonPanel, showGeneratePanel, isMinimized, textOutput, isGenerating, generationProgress, generationStatus, klingDuration, klingAspectRatio, klingImage, klingGeneratedVideo, klingShowSettingsPanel, klingMode, klingVideoUrl, klingVideoName, klingCharacterOrientation, klingKeepSound, klingVideoMode, klingLipSyncSessionId, klingLipSyncFaceId, klingLipSyncAudio, klingLipSyncAudioName, klingLipSyncPhase, klingLipSyncSoundStart, klingLipSyncSoundEnd, klingLipSyncSoundInsert, klingLipSyncSoundVolume, klingLipSyncOriginalVolume } = shape.props;
+    const { cardType, title, prompt, model, w, h, uploadedImage, uploadedImages, uploadedImageUrls, generatedImage, aspectRatio, gridLayout, videoMode, firstFrameImage, lastFrameImage, generatedVideo, showVideoModePanel, showImageOutput, showImageSettingsPanel, showPromptPanel, showPresetPanel, showRefImagePanel, showVideoOutput, capturedFrame, videoDuration, videoResolution, videoGenerateAudio, characterName, characterAppearance, characterClothing, characterPersonality, characterBackground, characterKeywords, characterForbiddenWords, characterReferenceImage, characterStep, characterAnalyzeImage, characterAnchorJson, characterThreeViewJson, characterThreeViewImage, characterGeneratedImage, characterImageModel, imageQuality, cameraTemplate, cameraStrength, showCharacterOutput, showAnalyzePanel, showThreeViewJsonPanel, showGeneratePanel, isMinimized, isCollapsed, textOutput, isGenerating, generationProgress, generationStatus, klingDuration, klingAspectRatio, klingImage, klingGeneratedVideo, klingShowSettingsPanel, klingMode, klingVideoUrl, klingVideoName, klingCharacterOrientation, klingKeepSound, klingVideoMode, klingLipSyncSessionId, klingLipSyncFaceId, klingLipSyncAudio, klingLipSyncAudioName, klingLipSyncPhase, klingLipSyncSoundStart, klingLipSyncSoundEnd, klingLipSyncSoundInsert, klingLipSyncSoundVolume, klingLipSyncOriginalVolume } = shape.props;
     const editor = useEditor();
     const videoRef = useRef<HTMLVideoElement>(null);
     const { isMember, userId, refresh: refreshBalance } = useMembership();
@@ -1691,16 +1693,22 @@ Maintain strong visual consistency in every panel.`;
             onClick={toggleMinimize}
             onPointerDown={(e) => e.stopPropagation()}
             className="absolute top-2 right-2 w-7 h-7 bg-zinc-800/90 hover:bg-zinc-700/90 border border-white/20 rounded flex items-center justify-center text-white text-lg transition-all z-10"
-            style={{
-              transform: `scale(${1 / scale})`,
-              transformOrigin: 'center',
-            }}
+            style={{ transform: `scale(${1 / scale})`, transformOrigin: 'center' }}
             title={isMinimized ? "展开" : "缩小"}
-          >
-            {isMinimized ? '+' : '−'}
-          </button>
+          >{isMinimized ? '+' : '−'}</button>
 
-          {/* 缩小状态 - 只显示标题 */}
+          {/* 折叠按钮（仅图片/视频/角色卡显示） */}
+          {!isMinimized && ['image', 'video', 'character'].includes(cardType) && (
+            <button
+              onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, isCollapsed: !isCollapsed } }); }}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="absolute top-2 z-10 w-7 h-7 bg-zinc-800/90 hover:bg-zinc-700/90 border border-white/20 rounded flex items-center justify-center text-white text-xs transition-all"
+              style={{ right: '38px', transform: `scale(${1 / scale})`, transformOrigin: 'center' }}
+              title={isCollapsed ? '展开' : '折叠'}
+            >{isCollapsed ? '▼' : '▲'}</button>
+          )}
+
+          {/* 缩小状态 */}
           {isMinimized ? (
             <div className="p-4 h-full flex items-center justify-center">
               <div className="text-center">
@@ -1713,6 +1721,38 @@ Maintain strong visual consistency in every panel.`;
                   {cardType === 'kling' && 'Kling 视频'}
                 </div>
                 <div className="text-gray-500 text-[10px] mt-2">点击+展开</div>
+              </div>
+            </div>
+          ) : isCollapsed && ['image', 'video', 'character'].includes(cardType) ? (
+            /* 折叠状态：标题 + 上传图 + 输出图 */
+            <div className="p-3 flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <div className={`w-6 h-6 rounded ${color.iconBg} flex items-center justify-center flex-shrink-0`}>
+                  {cardType === 'image' && <svg className={`w-3 h-3 ${color.icon}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>}
+                  {cardType === 'video' && <svg className={`w-3 h-3 ${color.icon}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>}
+                  {cardType === 'character' && <svg className={`w-3 h-3 ${color.icon}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>}
+                </div>
+                <span className="text-white text-xs font-semibold truncate">{title}</span>
+                <span className="text-gray-500 text-[10px] flex-shrink-0">{model?.split('-').slice(0, 2).join('-')}</span>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                {/* 上传图 */}
+                {uploadedImage && <img src={uploadedImage} className="h-auto rounded" style={{ maxWidth: 100, maxHeight: 70, objectFit: 'contain' }} />}
+                {firstFrameImage && <img src={firstFrameImage} className="h-auto rounded" style={{ maxWidth: 100, maxHeight: 70, objectFit: 'contain' }} />}
+                {characterReferenceImage && <img src={characterReferenceImage} className="h-auto rounded" style={{ maxWidth: 100, maxHeight: 70, objectFit: 'contain' }} />}
+                {/* 输出图/视频 */}
+                {generatedImage && <img src={generatedImage} className="h-auto rounded" style={{ maxWidth: 100, maxHeight: 70, objectFit: 'contain' }} />}
+                {characterGeneratedImage && <img src={characterGeneratedImage} className="h-auto rounded" style={{ maxWidth: 100, maxHeight: 70, objectFit: 'contain' }} />}
+                {capturedFrame && <img src={capturedFrame} className="h-auto rounded" style={{ maxWidth: 100, maxHeight: 70, objectFit: 'contain' }} />}
+                {generatedVideo && !capturedFrame && (
+                  <div className="flex items-center gap-1 bg-black/30 rounded px-2 py-1">
+                    <svg className="w-3 h-3 text-green-400" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    <span className="text-green-400 text-[10px]">视频已生成</span>
+                  </div>
+                )}
+                {!uploadedImage && !firstFrameImage && !characterReferenceImage && !generatedImage && !characterGeneratedImage && !capturedFrame && !generatedVideo && (
+                  <span className="text-gray-500 text-xs">暂无图片</span>
+                )}
               </div>
             </div>
           ) : (

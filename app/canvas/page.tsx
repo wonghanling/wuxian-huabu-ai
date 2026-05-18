@@ -2702,13 +2702,11 @@ function CanvasPageContent() {
 
       {/* 自定义样式 - 纯黑色主题 */}
       <style jsx global>{`
-        /* tldraw 画布背景 - 细线网格，随缩放和位置变化 */
+        /* tldraw 画布背景 - 点状网格，随缩放和位置变化 */
         .tl-background {
           background-color: #000000 !important;
-          background-image:
-            linear-gradient(rgba(100, 100, 100, 0.4) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(100, 100, 100, 0.4) 1px, transparent 1px);
-          background-size: ${30 * cameraZoom}px ${30 * cameraZoom}px;
+          background-image: radial-gradient(circle, rgba(120, 120, 120, 0.35) 1px, transparent 1px);
+          background-size: ${60 * cameraZoom}px ${60 * cameraZoom}px;
           background-position: ${-cameraPos.x * cameraZoom}px ${-cameraPos.y * cameraZoom}px;
         }
 

@@ -136,6 +136,7 @@ export type CameraControlCardShape = TLBaseShape<
     imageQuality: string;
     showSettingsPanel?: boolean;
     showOutputPanel?: boolean;
+    isCollapsed?: boolean;
   }
 >;
 
@@ -158,6 +159,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
     imageQuality: T.string,
     showSettingsPanel: T.boolean.optional(),
     showOutputPanel: T.boolean.optional(),
+    isCollapsed: T.boolean.optional(),
   };
 
   override isAspectRatioLocked = () => false;
@@ -186,7 +188,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
   }
 
   component(shape: CameraControlCardShape) {
-    const { w, h, sourceShapeId, cameraVertical, cameraHorizontal, generatedImage, isGenerating, isMinimized, model, prompt, aspectRatio, imageQuality, showSettingsPanel, showOutputPanel } = shape.props;
+    const { w, h, sourceShapeId, cameraVertical, cameraHorizontal, generatedImage, isGenerating, isMinimized, model, prompt, aspectRatio, imageQuality, showSettingsPanel, showOutputPanel, isCollapsed } = shape.props;
     const editor = useEditor();
     const [lightbox, setLightbox] = useState(false);
 
@@ -578,24 +580,49 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
           </div>
         )}
 
-        <div className="w-full h-full bg-zinc-900/95 backdrop-blur-sm border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-visible">
+        <div className="w-full bg-zinc-900/95 backdrop-blur-sm border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-visible">
           {/* 标题栏 */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/8 flex-shrink-0">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-blue-400"></div>
               <span className="text-white text-sm font-semibold">时空镜头延展</span>
             </div>
-            <button
-              onClick={toggleMinimize}
-              onPointerDown={(e) => e.stopPropagation()}
-              className="w-6 h-6 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all text-sm"
-            >
-              {isMinimized ? '+' : '−'}
-            </button>
+            <div className="flex items-center gap-1">
+              {/* 折叠按钮 */}
+              {!isMinimized && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); update({ isCollapsed: !isCollapsed }); }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  className="w-6 h-6 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all text-xs"
+                  title={isCollapsed ? '展开' : '折叠'}
+                >{isCollapsed ? '▼' : '▲'}</button>
+              )}
+              {/* 缩小按钮 */}
+              <button
+                onClick={toggleMinimize}
+                onPointerDown={(e) => e.stopPropagation()}
+                className="w-6 h-6 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all text-sm"
+              >{isMinimized ? '+' : '−'}</button>
+            </div>
           </div>
 
-          {!isMinimized && (
-            <div className="flex-1 flex flex-col overflow-visible p-3 gap-2" onPointerDown={(e) => e.stopPropagation()} onWheelCapture={(e) => e.stopPropagation()}>
+          {!isMinimized && isCollapsed && (
+            /* 折叠状态：只显示源图 + 输出图 */
+            <div className="p-3 flex gap-2 flex-wrap">
+              {sourceImage && (
+                <img src={sourceImage} className="h-auto rounded-lg" style={{ maxWidth: 120, maxHeight: 80, objectFit: 'contain' }} />
+              )}
+              {generatedImage && (
+                <img src={generatedImage} className="h-auto rounded-lg" style={{ maxWidth: 120, maxHeight: 80, objectFit: 'contain' }} />
+              )}
+              {!sourceImage && !generatedImage && (
+                <span className="text-gray-500 text-xs">暂无图片</span>
+              )}
+            </div>
+          )}
+
+          {!isMinimized && !isCollapsed && (
+            <div className="flex flex-col overflow-visible p-3 gap-2" onPointerDown={(e) => e.stopPropagation()} onWheelCapture={(e) => e.stopPropagation()}>
 
               {/* 说明 */}
               <div className="flex-shrink-0 px-2 pt-1">
