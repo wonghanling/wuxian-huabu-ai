@@ -1676,7 +1676,7 @@ Maintain strong visual consistency in every panel.`;
         </div>
 
         <div
-          className="relative w-full h-full backdrop-blur-xl rounded-2xl shadow-2xl transition-all duration-300"
+          className="relative w-full h-full backdrop-blur-xl rounded-2xl shadow-2xl transition-all duration-300 overflow-hidden"
           style={{
             background: color.gradient,
             border: `1px solid ${color.border}`,
