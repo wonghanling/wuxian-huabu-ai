@@ -1744,6 +1744,8 @@ Maintain strong visual consistency in every panel.`;
               </div>
             </div>
           ) : (
+            /* 正常状态 - 显示所有内容 */
+            <div className="p-4 h-full flex flex-col">
             {/* 标题栏 */}
             <div className="flex items-center gap-2 mb-3">
               <div className={`w-8 h-8 rounded-lg ${color.iconBg} flex items-center justify-center flex-shrink-0 backdrop-blur-sm`}>
