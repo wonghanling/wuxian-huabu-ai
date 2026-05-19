@@ -7,6 +7,7 @@ import {
   useEditor,
   Rectangle2d,
 } from 'tldraw';
+import { createClient } from '@/lib/supabase/client';
 
 export type GemStep0CardShape = TLBaseShape<
   'gem-step0-card',
@@ -84,10 +85,12 @@ export class GemStep0CardUtil extends BaseBoxShapeUtil<GemStep0CardShape> {
       if (!story.trim()) { alert('请输入故事文本（最多800字）'); return; }
       update({ isGenerating: true, result: '' });
       try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
         const res = await fetch('/api/gem/generate-beats', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ story }),
+          body: JSON.stringify({ story, userId: user?.id }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || '请求失败');

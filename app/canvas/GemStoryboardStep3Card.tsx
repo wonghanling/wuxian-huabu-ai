@@ -8,6 +8,7 @@ import {
   Rectangle2d,
 } from 'tldraw';
 import { useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
 
 function compressImage(dataUrl: string, maxSize = 1280, quality = 0.85): Promise<string> {
   return new Promise((resolve) => {
@@ -168,10 +169,12 @@ export class GemStep3CardUtil extends BaseBoxShapeUtil<GemStep3CardShape> {
         const compressedStart = await compressImage(displayStart, 800, 0.8);
         const compressedEnd = await compressImage(displayEnd, 800, 0.8);
 
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
         const res = await fetch('/api/gem/generate-transitions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ startImage: compressedStart, endImage: compressedEnd, characterHint, actionSuggestion }),
+          body: JSON.stringify({ startImage: compressedStart, endImage: compressedEnd, characterHint, actionSuggestion, userId: user?.id }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || '请求失败');

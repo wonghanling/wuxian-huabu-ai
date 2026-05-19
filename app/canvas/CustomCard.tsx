@@ -962,7 +962,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
           overflow: 'visible',
         }}
       >
-        {showMemberModal && <MembershipModal onClose={() => setShowMemberModal(false)} onPay={() => handlePay('membership', 115)} />}
+        {showMemberModal && <MembershipModal onClose={() => setShowMemberModal(false)} onPay={() => handlePay('membership', 39)} />}
 
         {/* 视频/图片放大弹窗 */}
         {lightboxVideo && (
@@ -1569,12 +1569,18 @@ Maintain strong visual consistency in every panel.`;
             {/* 图片输出 */}
             {showImageOutput && generatedImage && (
               <div
-                className="rounded-2xl shadow-2xl backdrop-blur-xl overflow-hidden"
+                className="rounded-2xl shadow-2xl backdrop-blur-xl overflow-hidden relative"
                 style={{
                   background: 'linear-gradient(135deg, rgba(192,192,192,0.15) 0%, rgba(100,100,100,0.1) 100%)',
                   border: '1px solid rgba(192,192,192,0.3)',
                 }}
               >
+                <button
+                  className="absolute top-2 left-2 z-10 w-7 h-7 rounded-full bg-zinc-800/90 hover:bg-zinc-700/90 border border-white/20 text-white text-base flex items-center justify-center transition-all"
+                  onClick={(e) => { e.stopPropagation(); (window as any).openOutputMenu?.(shape.id, e.clientX, e.clientY, 'image-output'); }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  title="继续创建下游卡片"
+                >+</button>
                 <div className="relative group">
                   <img
                     src={generatedImage}
@@ -2046,6 +2052,7 @@ Maintain strong visual consistency in every panel.`;
                                   prompt: '请分析这张图片中的角色，生成一个【单人成功范式 JSON】。只做单人分析，反推出稳定可复现的人物 JSON。不要加三视角、不要加转面、不要做设定稿。请直接输出 JSON，不要解释。',
                                   imageUrl: connectedGeneratedImage || characterAnalyzeImage,
                                   stream: false,
+                                  userId,
                                 }),
                               });
                               const data = await res.json();
@@ -2215,6 +2222,7 @@ Maintain strong visual consistency in every panel.`;
                                   model: model || 'gpt-5.2',
                                   prompt: `基于下面的 Anchor JSON，生成一份【稳定的三视角（正/侧/背）完整 JSON】。要求：同一人物、同一服装、同一发型、同一身材比例；使用 character turnaround 工程化方式，不要摄影模式；必须避免重复正面或换人，按上次成功的方式来。\n\nAnchor JSON：\n${characterAnchorJson}\n\n请直接输出 JSON，不要解释。`,
                                   stream: false,
+                                  userId,
                                 }),
                               });
                               const data = await res.json();
@@ -3220,6 +3228,7 @@ Maintain strong visual consistency in every panel.`;
                         model: model || 'gpt-5.2',
                         prompt: prompt,
                         stream: false,
+                        userId,
                       }),
                     });
 
@@ -4194,11 +4203,19 @@ Maintain strong visual consistency in every panel.`;
           >
             <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 flex-shrink-0">
               <span className="text-xs text-gray-300 font-semibold">三视角输出</span>
-              <button
-                className="w-5 h-5 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all text-xs"
-                onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, showCharacterOutput: false } }); }}
-                onPointerDown={(e) => e.stopPropagation()}
-              >✕</button>
+              <div className="flex items-center gap-1">
+                <button
+                  className="w-5 h-5 rounded flex items-center justify-center text-gray-300 hover:text-white hover:bg-white/10 transition-all text-base"
+                  onClick={(e) => { e.stopPropagation(); (window as any).openOutputMenu?.(shape.id, e.clientX, e.clientY, 'image-output'); }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  title="继续创建下游卡片"
+                >+</button>
+                <button
+                  className="w-5 h-5 rounded flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-all text-xs"
+                  onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, showCharacterOutput: false } }); }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >✕</button>
+              </div>
             </div>
             <div className="p-3">
               <div className="relative group rounded-lg overflow-hidden bg-black/20">
@@ -4293,13 +4310,19 @@ Maintain strong visual consistency in every panel.`;
 
             {/* 视频输出 */}
             {showVideoOutput && generatedVideo && (
-              <div className="backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden"
+              <div className="backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden relative"
                 style={{
                   background: 'linear-gradient(135deg,rgba(192,192,192,0.15) 0%,rgba(169,169,169,0.12) 50%,rgba(128,128,128,0.08) 100%)',
                   border: '1px solid rgba(192,192,192,0.3)',
                   boxShadow: '0 0 40px rgba(192,192,192,0.15)',
                 }}
               >
+            <button
+              className="absolute top-2 left-2 z-10 w-7 h-7 rounded-full bg-zinc-800/90 hover:bg-zinc-700/90 border border-white/20 text-white text-base flex items-center justify-center transition-all"
+              onClick={(e) => { e.stopPropagation(); (window as any).openOutputMenu?.(shape.id, e.clientX, e.clientY, 'video-output'); }}
+              onPointerDown={(e) => e.stopPropagation()}
+              title="继续创建下游卡片"
+            >+</button>
             <div className="relative group" style={{ minHeight: '200px' }}>
               <video
                 ref={videoRef}

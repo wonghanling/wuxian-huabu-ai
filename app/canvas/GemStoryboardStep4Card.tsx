@@ -8,6 +8,7 @@ import {
   Rectangle2d,
 } from 'tldraw';
 import { useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
 
 function compressImage(dataUrl: string, maxSize = 1280, quality = 0.85): Promise<string> {
   return new Promise((resolve) => {
@@ -242,6 +243,9 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
             : `把${gridLabel}分镜图的画面嵌入分镜脚本模板的空白画面框里，同时只在模板原本说明栏填写镜头号、时间轴、景别、运镜、动作说明、音效。不覆盖分镜画面。写一个${duration}s电影级分镜脚本。${actionSuggestion}`;
         }
 
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
         const res = await fetch('/api/gem/generate-storyboard-image', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -251,6 +255,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
             imageBase64Array: inputType === 'single'
               ? [displayImage, image2, templateB64]
               : [displayImage, templateB64],
+            userId: user?.id,
           }),
         });
         const data = await res.json();
@@ -273,6 +278,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
                 const ls2 = editor.getShape(shape.id) as any;
                 editor.updateShape({ id: shape.id, type: 'gem-step4-card' as any, props: { ...ls2.props, generatedImage: qData.imageUrl, isGenerating: false, generationProgress: 100 } });
                 (window as any).saveCanvasNow?.();
+                (window as any).refreshBalance?.();
               } else if (qData.error) {
                 clearInterval(progressTimer);
                 const ls2 = editor.getShape(shape.id) as any;
@@ -295,6 +301,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
           clearInterval(progressTimer);
           update({ generatedImage: data.imageData, isGenerating: false, generationProgress: 100 });
           (window as any).saveCanvasNow?.();
+          (window as any).refreshBalance?.();
         }
       } catch (err: any) {
         clearInterval(progressTimer);

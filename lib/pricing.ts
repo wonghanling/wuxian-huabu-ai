@@ -4,7 +4,7 @@
 // 图片按次计费，会员/普通同价
 // ============================================================
 
-export const MEMBERSHIP_PRICE = 115; // 元/月
+export const MEMBERSHIP_PRICE = 39; // 元/月
 
 // ============================================================
 // 图片定价（按次，会员/普通同价）
@@ -65,6 +65,15 @@ function tier(costPerSec: number): VideoTierPrice {
     costPerSec,
     memberPerSec: costPerSec + MEMBER_MARKUP,
     normalPerSec: costPerSec + NORMAL_MARKUP,
+  };
+}
+
+// Seedance 用更低加价（成本+0.2 会员 / 成本+0.4 普通），保持会员每秒省 0.2
+function tierSeedance(costPerSec: number): VideoTierPrice {
+  return {
+    costPerSec,
+    memberPerSec: Math.round((costPerSec + 0.2) * 100) / 100,
+    normalPerSec: Math.round((costPerSec + 0.4) * 100) / 100,
   };
 }
 
@@ -153,25 +162,27 @@ export const VIDEO_PRICING: Record<string, VideoModelPrice> = {
     },
   },
 
-  // ── Seedance 2.0（有声/无声分开）────────────────────────
-  // key 规则：分辨率 + "_audio" 表示有声版
+  // ── Seedance 2.0（新规则：成本+0.2会员 / +0.4普通）────────
+  // 有声 = 无声成本 + 0.2/秒（音频额外成本）
   'doubao-seedance-2-0-260128': {
     audioVariants: true,
     resolutions: {
-      '480p':        tier(0.3),  // 无声 0.7/秒
-      '480p_audio':  tier(0.6),  // 有声 1.0/秒
-      '720p':        tier(1.1),  // 无声 1.5/秒
-      '720p_audio':  tier(1.5),  // 有声 1.9/秒
+      '480p':        tierSeedance(0.51), // 会员 0.71 / 普通 0.91
+      '480p_audio':  tierSeedance(0.71), // 会员 0.91 / 普通 1.11
+      '720p':        tierSeedance(1.09), // 会员 1.29 / 普通 1.49
+      '720p_audio':  tierSeedance(1.29), // 会员 1.49 / 普通 1.69
+      '1080p':       tierSeedance(2.71), // 会员 2.91 / 普通 3.11
+      '1080p_audio': tierSeedance(2.91), // 会员 3.11 / 普通 3.31
     },
   },
-  // ── Seedance 2.0 Fast（有声/无声分开）────────────────────
+  // ── Seedance 2.0 Fast（新规则）────────────────────────────
   'doubao-seedance-2-0-fast-260128': {
     audioVariants: true,
     resolutions: {
-      '480p':        tier(0.35), // 无声 0.75/秒
-      '480p_audio':  tier(0.5),  // 有声 0.9/秒
-      '720p':        tier(0.9),  // 无声 1.3/秒
-      '720p_audio':  tier(1.3),  // 有声 1.7/秒
+      '480p':        tierSeedance(0.40), // 会员 0.60 / 普通 0.80
+      '480p_audio':  tierSeedance(0.60), // 会员 0.80 / 普通 1.00
+      '720p':        tierSeedance(0.86), // 会员 1.06 / 普通 1.26
+      '720p_audio':  tierSeedance(1.06), // 会员 1.26 / 普通 1.46
     },
   },
 

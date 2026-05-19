@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireMemberWithDailyQuota } from '@/lib/billing';
 import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 
 export const maxDuration = 30;
@@ -8,8 +9,12 @@ const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
 
 export async function POST(req: NextRequest) {
   try {
-    const { visualJson } = await req.json();
+    const { visualJson, userId } = await req.json();
     if (!visualJson) return NextResponse.json({ error: '缺少 visualJson' }, { status: 400 });
+
+    // 守卫：会员 + 每日额度
+    const guard = await requireMemberWithDailyQuota(userId, 100);
+    if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
 
     const userPrompt = `From the following visual profile JSON, extract a single concise character_hint string.
 

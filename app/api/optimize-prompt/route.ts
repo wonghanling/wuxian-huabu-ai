@@ -1,16 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { UNIVERSAL_VIDEO_SKILL } from './skill-content';
 import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
+import { requireMemberWithDailyQuota } from '@/lib/billing';
 
 const YUNWU_BASE_URL = 'https://api.n1n.ai';
 const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
 
 export async function POST(request: NextRequest) {
   try {
-    const { userInput, duration, ratio, uploadedImage } = await request.json();
+    const { userInput, duration, ratio, uploadedImage, userId } = await request.json();
 
     if (!userInput) {
       return NextResponse.json({ error: '请提供视频描述' }, { status: 400 });
+    }
+
+    // 守卫：会员检查 + 每日 100 次额度
+    const guard = await requireMemberWithDailyQuota(userId, 100);
+    if (!guard.ok) {
+      return NextResponse.json({ error: guard.error }, { status: guard.status });
     }
 
     const systemPrompt = UNIVERSAL_VIDEO_SKILL;

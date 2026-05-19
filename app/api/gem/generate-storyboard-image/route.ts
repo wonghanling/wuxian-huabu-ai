@@ -1,18 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fal as falSingleton, createFalClient } from '@fal-ai/client';
 import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
+import { deductBalance, refundBalance, checkMembership } from '@/lib/billing';
+import { createClient } from '@supabase/supabase-js';
 
 export const maxDuration = 300;
 
 // 回退保险
 falSingleton.config({ credentials: process.env.FAL_KEY! });
 
+const STEP4_PRICE = 1.5; // 固定 ¥1.5/次
+
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, aspectRatio = '2048x1152', imageBase64Array } = await req.json();
+    const { prompt, aspectRatio = '2048x1152', imageBase64Array, userId } = await req.json();
 
     if (!prompt) return NextResponse.json({ error: '缺少 prompt' }, { status: 400 });
     if (!imageBase64Array || imageBase64Array.length === 0) return NextResponse.json({ error: '缺少图片' }, { status: 400 });
+
+    // 守卫：会员检查
+    if (userId) {
+      const isMember = await checkMembership(userId);
+      if (!isMember) return NextResponse.json({ error: '需要开通会员才能使用导演引擎' }, { status: 402 });
+
+      // 扣费 ¥1.5
+      const deduct = await deductBalance(userId, STEP4_PRICE, 'image_deduct', 'GEM Step4 分镜图生成（GPT Image 2）', { model: 'gpt-image-2', aspectRatio });
+      if (!deduct.success) {
+        return NextResponse.json({ error: deduct.error || '余额不足，请充值' }, { status: 402 });
+      }
+    }
 
     const sizeMap: Record<string, { width: number; height: number }> = {
       '2048x1152': { width: 2048, height: 1152 },
@@ -61,6 +77,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, requestId, endpoint: 'openai/gpt-image-2/edit', pending: true });
     } catch (err) {
       caughtErr = err;
+      // 失败退款
+      if (userId) {
+        await refundBalance(userId, STEP4_PRICE, 'GEM Step4 分镜图生成失败退款', { model: 'gpt-image-2', aspectRatio });
+      }
       throw err;
     } finally {
       await releaseKey(keyInfo.keyId, success, success ? undefined : categorizeError(caughtErr));

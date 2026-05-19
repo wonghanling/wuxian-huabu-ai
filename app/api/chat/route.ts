@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
+import { requireMemberWithDailyQuota } from '@/lib/billing';
 
 // 云雾 API 配置
 const YUNWU_BASE_URL = 'https://api.n1n.ai';
@@ -27,10 +28,16 @@ const MODEL_MAP: Record<string, { yunwuModel: string; tier: 'advanced' | 'basic'
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { model, prompt, imageUrl, stream = false } = body;
+    const { model, prompt, imageUrl, stream = false, userId } = body;
 
     if (!model || !prompt) {
       return NextResponse.json({ error: '缺少必要参数' }, { status: 400 });
+    }
+
+    // 守卫：会员检查 + 每日 100 次额度
+    const guard = await requireMemberWithDailyQuota(userId, 100);
+    if (!guard.ok) {
+      return NextResponse.json({ error: guard.error }, { status: guard.status });
     }
 
     // 验证模型

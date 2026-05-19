@@ -663,7 +663,8 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
           </div>
         </button>
 
-        {/* 资产库按钮 */}
+        {/* 资产库按钮 - 暂时隐藏（用户隔离 + 性能未确认） */}
+        {false && (
         <button
           onClick={createAssetCard}
           className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-all group"
@@ -679,6 +680,7 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
             <span className="text-xs text-gray-500 whitespace-nowrap">资产库</span>
           </div>
         </button>
+        )}
 
         {/* 导演流程按钮 */}
         <button
@@ -1681,8 +1683,14 @@ function CanvasPageContent() {
   const [showRechargeModal, setShowRechargeModal] = useState(false);
   const [showImageSplitModal, setShowImageSplitModal] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
-  const [floatingMenu, setFloatingMenu] = useState<{ x: number; y: number; shapeId: string; type: 'image-card' | 'step2-card' | 'media-upload-card' } | null>(null);
+  const [floatingMenu, setFloatingMenu] = useState<{ x: number; y: number; shapeId: string; type: 'image-card' | 'step2-card' | 'media-upload-card' | 'image-output' | 'video-output' } | null>(null);
   const { isMember, balance, refresh: refreshMembership } = useMembership();
+
+  // 暴露给所有扣费卡片调用，用于生成成功后立即刷新余额
+  useEffect(() => {
+    (window as any).refreshBalance = refreshMembership;
+    return () => { delete (window as any).refreshBalance; };
+  }, [refreshMembership]);
 
   const handlePay = async (plan: 'membership' | 'recharge', amount: number) => {
     const supabase = createClient();
@@ -1778,10 +1786,15 @@ function CanvasPageContent() {
     setEditorInstance(editor);
     editorRef.current = editor;
 
-    // 立即设置初始缩放为 60%
+    // 立即设置初始缩放为 80%
     setTimeout(() => {
-      editor.setCamera({ x: 0, y: 0, z: 0.7 });
+      editor.setCamera({ x: 0, y: 0, z: 0.8 });
     }, 0);
+
+    // 暴露给卡片输出浮板的 ➕ 按钮调用
+    (window as any).openOutputMenu = (shapeId: string, clientX: number, clientY: number, kind: 'image-output' | 'video-output') => {
+      setFloatingMenu({ x: clientX, y: clientY, shapeId, type: kind });
+    };
 
     // 3秒后隐藏介绍动画
     setTimeout(() => setShowIntro(false), 3000);
@@ -2476,6 +2489,134 @@ function CanvasPageContent() {
         // 图片卡片菜单选项
         const imageCardOptions: { label: string; desc?: string; onClick: () => void }[] = [
           {
+            label: '图片生成',
+            onClick: () => {
+              const srcShape = editor.getShape(floatingMenu.shapeId as any) as any;
+              if (!srcShape) return;
+              const pos = getShapeRight(floatingMenu.shapeId);
+              const newId = createShapeId();
+              editor.createShape({
+                id: newId,
+                type: 'custom-card' as any,
+                x: pos.x,
+                y: pos.y,
+                props: {
+                  w: 380, h: 380,
+                  cardType: 'image',
+                  title: 'Image Generation',
+                  prompt: '',
+                  model: 'nano-banana-pro',
+                },
+              });
+              createConnection(floatingMenu.shapeId, newId as any);
+              editor.select(newId);
+            },
+          },
+          {
+            label: '视频生成',
+            desc: '默认 Veo 3.1 Fast 图生视频（可在卡片内切换其他视频模型）',
+            onClick: () => {
+              const pos = getShapeRight(floatingMenu.shapeId);
+              const newId = createShapeId();
+              editor.createShape({
+                id: newId,
+                type: 'custom-card' as any,
+                x: pos.x,
+                y: pos.y,
+                props: {
+                  w: 380, h: 380,
+                  cardType: 'video',
+                  title: 'Video Generation',
+                  prompt: '',
+                  model: 'veo3.1-fast-i2v',
+                },
+              });
+              createConnection(floatingMenu.shapeId, newId as any);
+              editor.select(newId);
+            },
+          },
+          {
+            label: 'Seedance 视频',
+            desc: '豆包 Seedance 2.0 视频生成（图生视频 / 多模态）',
+            onClick: () => {
+              const pos = getShapeRight(floatingMenu.shapeId);
+              const newId = createShapeId();
+              editor.createShape({
+                id: newId,
+                type: 'seedance-card' as any,
+                x: pos.x,
+                y: pos.y,
+                props: {
+                  w: 380, h: 380,
+                  mode: 'i2v',
+                  model: 'doubao-seedance-2-0-260128',
+                  prompt: '',
+                  ratio: '16:9',
+                  duration: '5',
+                  resolution: '720p',
+                  generateAudio: true,
+                  firstFrameImage: '',
+                  lastFrameImage: '',
+                  refImages: '[]',
+                  refVideoUrl: '',
+                  refVideoName: '',
+                  refAudioBase64: '',
+                  refAudioName: '',
+                  generatedVideo: '',
+                  capturedFrame: '',
+                  isGenerating: false,
+                  generationProgress: 0,
+                  generationStatus: '',
+                  showSettings: false,
+                  isMinimized: false,
+                  showPromptPanel: false,
+                  showRefContentPanel: false,
+                  isCollapsed: false,
+                },
+              });
+              createConnection(floatingMenu.shapeId, newId as any);
+              editor.select(newId);
+            },
+          },
+          {
+            label: '角色设计',
+            onClick: () => {
+              const srcShape = editor.getShape(floatingMenu.shapeId as any) as any;
+              if (!srcShape) return;
+              const pos = getShapeRight(floatingMenu.shapeId);
+              const newId = createShapeId();
+              editor.createShape({
+                id: newId,
+                type: 'custom-card' as any,
+                x: pos.x,
+                y: pos.y,
+                props: {
+                  w: 380, h: 380,
+                  cardType: 'character',
+                  title: 'Character Design',
+                  prompt: '',
+                  model: 'nano-banana-pro',
+                },
+              });
+              createConnection(floatingMenu.shapeId, newId as any);
+              editor.select(newId);
+            },
+          },
+          {
+            label: 'GEM 分镜设计',
+            desc: '故事模式：输入剧本，AI 按叙事节奏拆解为分镜\n时空模式：上传首帧和尾帧，AI 生成两帧之间的过渡中间镜头',
+            onClick: () => {
+              const srcShape = editor.getShape(floatingMenu.shapeId as any) as any;
+              if (!srcShape) return;
+              const baseX = srcShape.x + (srcShape.props?.w ?? 380) + 40;
+              const baseY = srcShape.y;
+              const step2Id = createShapeId();
+              editor.createShape({ id: step2Id, type: 'gem-step2-card' as any, x: baseX, y: baseY, props: { w: 400, h: 580 } });
+              createConnection(floatingMenu.shapeId, step2Id as any);
+              editor.select(step2Id);
+            },
+          },
+          {
             label: '时空镜头延展',
             desc: '时空后退 −5s：生成画面前5秒的场景\n时空前进 +5s：生成画面后5秒的场景',
             onClick: () => {
@@ -2504,25 +2645,57 @@ function CanvasPageContent() {
               editor.select(newId);
             },
           },
+        ];
+
+        // 视频输出菜单（来自视频卡 / Seedance 输出）
+        const videoOutputOptions: { label: string; desc?: string; onClick: () => void }[] = [
           {
-            label: 'GEM 分镜设计',
-            desc: '故事模式：输入剧本，AI 按叙事节奏拆解为分镜\n时空模式：上传首帧和尾帧，AI 生成两帧之间的过渡中间镜头',
+            label: 'Seedance 多模态',
+            desc: '把视频作为多模态参考输入到 Seedance 2.0',
             onClick: () => {
-              const srcShape = editor.getShape(floatingMenu.shapeId as any) as any;
-              if (!srcShape) return;
-              const baseX = srcShape.x + (srcShape.props?.w ?? 380) + 40;
-              const baseY = srcShape.y;
-              const step2Id = createShapeId();
-              editor.createShape({ id: step2Id, type: 'gem-step2-card' as any, x: baseX, y: baseY, props: { w: 400, h: 580 } });
-              createConnection(floatingMenu.shapeId, step2Id as any);
-              editor.select(step2Id);
+              const pos = getShapeRight(floatingMenu.shapeId);
+              const newId = createShapeId();
+              editor.createShape({
+                id: newId,
+                type: 'seedance-card' as any,
+                x: pos.x,
+                y: pos.y,
+                props: {
+                  w: 380, h: 380,
+                  mode: 'multimodal',
+                  model: 'doubao-seedance-2-0-260128',
+                  prompt: '',
+                  ratio: '16:9',
+                  duration: '5',
+                  resolution: '720p',
+                  generateAudio: true,
+                  firstFrameImage: '',
+                  lastFrameImage: '',
+                  refImages: '[]',
+                  refVideoUrl: '',
+                  refVideoName: '',
+                  refAudioBase64: '',
+                  refAudioName: '',
+                  generatedVideo: '',
+                  capturedFrame: '',
+                  isGenerating: false,
+                  generationProgress: 0,
+                  generationStatus: '',
+                  showSettings: false,
+                  isMinimized: false,
+                  showPromptPanel: false,
+                  showRefContentPanel: false,
+                  isCollapsed: false,
+                },
+              });
+              createConnection(floatingMenu.shapeId, newId as any);
+              editor.select(newId);
             },
           },
           {
-            label: '角色设计',
+            label: 'Kling 视频配音',
+            desc: '把视频作为对口型输入到 Kling（lip-sync 模式）',
             onClick: () => {
-              const srcShape = editor.getShape(floatingMenu.shapeId as any) as any;
-              if (!srcShape) return;
               const pos = getShapeRight(floatingMenu.shapeId);
               const newId = createShapeId();
               editor.createShape({
@@ -2532,10 +2705,11 @@ function CanvasPageContent() {
                 y: pos.y,
                 props: {
                   w: 380, h: 380,
-                  cardType: 'character',
-                  title: 'Character Design',
+                  cardType: 'kling',
+                  title: 'Kling Video',
                   prompt: '',
-                  model: 'nano-banana-pro',
+                  model: 'kling',
+                  klingMode: 'lip-sync',
                 },
               });
               createConnection(floatingMenu.shapeId, newId as any);
@@ -2626,7 +2800,11 @@ function CanvasPageContent() {
           },
         ];
 
-        const options = floatingMenu.type === 'image-card' ? imageCardOptions : floatingMenu.type === 'media-upload-card' ? mediaUploadCardOptions : step2CardOptions;
+        const options =
+          floatingMenu.type === 'image-card' || floatingMenu.type === 'image-output' ? imageCardOptions :
+          floatingMenu.type === 'video-output' ? videoOutputOptions :
+          floatingMenu.type === 'media-upload-card' ? mediaUploadCardOptions :
+          step2CardOptions;
 
         return (
           <div

@@ -8,6 +8,7 @@ import {
   Rectangle2d,
 } from 'tldraw';
 import { useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
 
 export type GemStep1CardShape = TLBaseShape<
   'gem-step1-card',
@@ -146,10 +147,12 @@ export class GemStep1CardUtil extends BaseBoxShapeUtil<GemStep1CardShape> {
       if (allImages.length === 0) { alert('请先上传图片或连接图片卡片'); return; }
       update({ isGenerating: true, result: '' });
       try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
         const res = await fetch('/api/gem/analyze-images', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ images: allImages }),
+          body: JSON.stringify({ images: allImages, userId: user?.id }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || '请求失败');
@@ -187,10 +190,12 @@ export class GemStep1CardUtil extends BaseBoxShapeUtil<GemStep1CardShape> {
       if (!result.trim()) { alert('请先分析图片获取视觉档案'); return; }
       update({ isExtractingHint: true });
       try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
         const res = await fetch('/api/gem/extract-character-hint', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ visualJson: result }),
+          body: JSON.stringify({ visualJson: result, userId: user?.id }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || '请求失败');

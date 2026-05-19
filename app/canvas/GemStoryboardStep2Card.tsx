@@ -8,6 +8,7 @@ import {
   Rectangle2d,
 } from 'tldraw';
 import { useState, useRef } from 'react';
+import { createClient } from '@/lib/supabase/client';
 
 type GridSize = '4' | '9' | '12' | '16' | '25';
 
@@ -248,10 +249,12 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
       if (!script.trim()) { alert('请输入剧本/故事'); return; }
       update({ isGenerating: true, result: '' });
       try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
         const res = await fetch('/api/gem/generate-storyboard', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ images: allImages, script, gridSize, mode }),
+          body: JSON.stringify({ images: allImages, script, gridSize, mode, userId: user?.id }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || '请求失败');

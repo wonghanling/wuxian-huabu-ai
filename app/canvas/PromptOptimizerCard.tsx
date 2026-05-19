@@ -131,6 +131,8 @@ export class PromptOptimizerCardUtil extends BaseBoxShapeUtil<PromptOptimizerCar
       });
 
       try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
         const response = await fetch('/api/optimize-prompt', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -138,7 +140,8 @@ export class PromptOptimizerCardUtil extends BaseBoxShapeUtil<PromptOptimizerCar
             userInput,
             duration,
             ratio,
-            uploadedImage: uploadedImage || null, // 可选：发送图片
+            uploadedImage: uploadedImage || null,
+            userId: user?.id,
           }),
         });
 
@@ -208,7 +211,7 @@ export class PromptOptimizerCardUtil extends BaseBoxShapeUtil<PromptOptimizerCar
           overflow: 'visible',
         }}
       >
-        {showMemberModal && <MembershipModal onClose={() => setShowMemberModal(false)} onPay={() => handlePay('membership', 115)} />}
+        {showMemberModal && <MembershipModal onClose={() => setShowMemberModal(false)} onPay={() => handlePay('membership', 39)} />}
         {/* 输出端口 - Right（灰色，只能主动发起连接）*/}
         <div
           className="absolute top-1/2 -translate-y-1/2 cursor-crosshair group"

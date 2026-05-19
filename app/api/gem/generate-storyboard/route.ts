@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireMemberWithDailyQuota } from '@/lib/billing';
 import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 
 const YUNWU_BASE_URL = 'https://api.n1n.ai';
@@ -584,7 +585,11 @@ const GRID_LABELS: Record<string, string> = {
 
 export async function POST(req: NextRequest) {
   try {
-    const { visualProfile = '', images = [], script, gridSize = '12', mode = 'cinematic' } = await req.json();
+    const { visualProfile = '', images = [], script, gridSize = '12', mode = 'cinematic', userId } = await req.json();
+
+    // 守卫：会员 + 每日额度
+    const guard = await requireMemberWithDailyQuota(userId, 100);
+    if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
 
     if (!script) {
       return NextResponse.json({ error: '缺少剧本内容' }, { status: 400 });

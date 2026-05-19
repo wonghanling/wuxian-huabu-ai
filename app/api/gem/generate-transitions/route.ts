@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireMemberWithDailyQuota } from '@/lib/billing';
 import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 
 export const maxDuration = 120;
@@ -147,7 +148,11 @@ Output the prompt only. Nothing else.` });
 
 export async function POST(req: NextRequest) {
   try {
-    const { startImage, endImage, characterHint = '', actionSuggestion = '' } = await req.json();
+    const { startImage, endImage, characterHint = '', actionSuggestion = '', userId } = await req.json();
+
+    // 守卫：会员 + 每日额度
+    const guard = await requireMemberWithDailyQuota(userId, 100);
+    if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
 
     if (!startImage || !endImage) {
       return NextResponse.json({ error: '缺少 startImage 或 endImage' }, { status: 400 });

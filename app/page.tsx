@@ -632,18 +632,16 @@ export default function Home() {
                 <p className="text-zinc-400 text-sm">解锁全部 AI 能力</p>
               </div>
               <div className="flex items-end gap-1 mb-6">
-                <span className="text-4xl font-bold text-white">¥115</span>
+                <span className="text-4xl font-bold text-white">¥39</span>
                 <span className="text-zinc-400 text-sm mb-1">/月</span>
               </div>
               <ul className="space-y-3 text-sm text-zinc-300 mb-8">
-                <li className="flex items-center gap-2"><span className="text-violet-400">✓</span> 无限使用文本卡片（大模型）</li>
-                <li className="flex items-center gap-2"><span className="text-violet-400">✓</span> 角色设计 & Prompt 优化</li>
-                <li className="flex items-center gap-2"><span className="text-violet-400">✓</span> 图片生成 ¥0.3–1.5 / 次</li>
+                <li className="flex items-center gap-2"><span className="text-violet-400">✓</span> 无限使用文本大模型</li>
+                <li className="flex items-center gap-2"><span className="text-violet-400">✓</span> 导演引擎功能</li>
                 <li className="flex items-center gap-2"><span className="text-violet-400">✓</span> 视频生成每秒省 ¥0.2</li>
-                <li className="flex items-center gap-2"><span className="text-violet-400">✓</span> 优先客服支持</li>
               </ul>
               <button
-                onClick={() => handlePay('membership', 115)}
+                onClick={() => handlePay('membership', 39)}
                 className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white text-sm font-semibold transition-all shadow-lg shadow-violet-500/20"
               >
                 立即开通
@@ -671,10 +669,47 @@ export default function Home() {
                   <tr><td className="py-3">Wan 2.6 720P</td><td className="text-right">5秒</td><td className="text-right text-violet-400">¥5.0</td><td className="text-right">¥6.0</td></tr>
                   <tr><td className="py-3">Veo 3.1 Fast 720P</td><td className="text-right">5秒</td><td className="text-right text-violet-400">¥5.45</td><td className="text-right">¥6.45</td></tr>
                   <tr><td className="py-3">Veo 3.1 720P</td><td className="text-right">5秒</td><td className="text-right text-violet-400">¥8.9</td><td className="text-right">¥9.9</td></tr>
+                  <tr><td className="py-3">Seedance 2.0 Fast 480P 无声</td><td className="text-right">5秒</td><td className="text-right text-violet-400">¥3.0</td><td className="text-right">¥4.0</td></tr>
+                  <tr><td className="py-3">Seedance 2.0 Fast 720P 无声</td><td className="text-right">5秒</td><td className="text-right text-violet-400">¥5.3</td><td className="text-right">¥6.3</td></tr>
+                  <tr><td className="py-3">Seedance 2.0 480P 无声</td><td className="text-right">5秒</td><td className="text-right text-violet-400">¥3.55</td><td className="text-right">¥4.55</td></tr>
+                  <tr><td className="py-3">Seedance 2.0 720P 无声</td><td className="text-right">5秒</td><td className="text-right text-violet-400">¥6.45</td><td className="text-right">¥7.45</td></tr>
+                  <tr><td className="py-3">Seedance 2.0 1080P 无声</td><td className="text-right">5秒</td><td className="text-right text-violet-400">¥14.55</td><td className="text-right">¥15.55</td></tr>
                 </tbody>
               </table>
             </div>
-            <p className="text-zinc-600 text-xs text-center mt-4">完整定价以实际生成时长和分辨率为准</p>
+            <p className="text-zinc-600 text-xs text-center mt-4">完整定价以实际生成时长和分辨率为准 · 有声版每秒加 ¥0.2（音频额外成本）</p>
+          </div>
+
+          {/* 图片定价说明 */}
+          <div className="mt-8 rounded-2xl border border-white/5 bg-zinc-900/30 p-8">
+            <h4 className="text-white font-semibold mb-2 text-center">图片生成参考价格</h4>
+            <p className="text-zinc-500 text-xs text-center mb-6">图片按次计费，会员和普通用户同价</p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-zinc-400">
+                <thead>
+                  <tr className="border-b border-white/5 text-zinc-500 text-xs uppercase tracking-wider">
+                    <th className="text-left pb-3 font-medium">模型</th>
+                    <th className="text-right pb-3 font-medium">规格</th>
+                    <th className="text-right pb-3 font-medium">价格/次</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  <tr><td className="py-3">Nano Banana</td><td className="text-right">默认</td><td className="text-right">¥0.5</td></tr>
+                  <tr><td className="py-3">Nano Banana Pro</td><td className="text-right">2K</td><td className="text-right">¥1.2</td></tr>
+                  <tr><td className="py-3">Nano Banana Pro</td><td className="text-right">4K</td><td className="text-right">¥1.5</td></tr>
+                  <tr><td className="py-3">Nano Banana Pro 多图</td><td className="text-right">2K / 4K</td><td className="text-right">¥1.5 / ¥2.5</td></tr>
+                  <tr><td className="py-3">GPT Image 2 Medium</td><td className="text-right">方形 / 横屏</td><td className="text-right">¥0.7</td></tr>
+                  <tr><td className="py-3">GPT Image 2 Medium</td><td className="text-right">4K 横/竖</td><td className="text-right">¥1.5</td></tr>
+                  <tr><td className="py-3">GPT Image 2 High</td><td className="text-right">方形</td><td className="text-right">¥1.0</td></tr>
+                  <tr><td className="py-3">GPT Image 2 High</td><td className="text-right">4K 横/竖</td><td className="text-right">¥2.0</td></tr>
+                  <tr><td className="py-3">Flux Kontext</td><td className="text-right">默认</td><td className="text-right">¥0.6</td></tr>
+                  <tr><td className="py-3">Flux Kontext Max</td><td className="text-right">高清</td><td className="text-right">¥1.0</td></tr>
+                  <tr><td className="py-3">豆包 Seedream 4.5</td><td className="text-right">默认</td><td className="text-right">¥0.3</td></tr>
+                  <tr><td className="py-3">Midjourney</td><td className="text-right">默认</td><td className="text-right">¥0.6</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="text-zinc-600 text-xs text-center mt-4">文本生成、角色设计、Prompt 优化等功能会员无限使用</p>
           </div>
         </div>
       </section>

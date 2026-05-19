@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireMemberWithDailyQuota } from '@/lib/billing';
 import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 
 export const maxDuration = 120;
@@ -238,7 +239,11 @@ async function callGPT(image: string, systemPrompt: string, userText: string): P
 
 export async function POST(req: NextRequest) {
   try {
-    const { image, characterHint = '', actionSuggestion = '', inputType = 'single' } = await req.json();
+    const { image, characterHint = '', actionSuggestion = '', inputType = 'single', userId } = await req.json();
+
+    // 守卫：会员 + 每日额度
+    const guard = await requireMemberWithDailyQuota(userId, 100);
+    if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
 
     if (!image) {
       return NextResponse.json({ error: '缺少 image 参数' }, { status: 400 });

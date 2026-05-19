@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireMemberWithDailyQuota } from '@/lib/billing';
 import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 
 const YUNWU_BASE_URL = 'https://api.n1n.ai';
@@ -87,7 +88,11 @@ STRICT OUTPUT RULES
 
 export async function POST(req: NextRequest) {
   try {
-    const { images } = await req.json();
+    const { images, userId } = await req.json();
+
+    // 守卫：会员 + 每日额度
+    const guard = await requireMemberWithDailyQuota(userId, 100);
+    if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
 
     if (!images || !Array.isArray(images) || images.length === 0) {
       return NextResponse.json({ error: '请上传至少一张图片' }, { status: 400 });

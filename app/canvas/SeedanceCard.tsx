@@ -292,6 +292,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
             if (qData.status === 'completed' && qData.videoUrl) {
               editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...lp, isGenerating: false, generatedVideo: qData.videoUrl, generationProgress: 100, generationStatus: '完成' } });
               (window as any).saveCanvasNow?.();
+              (window as any).refreshBalance?.();
             } else if (qData.status === 'failed') {
               editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...lp, isGenerating: false, generationStatus: '失败: ' + (qData.error || '') } });
             } else if (attempts < 120) {
@@ -615,8 +616,8 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
                   onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
                   onChange={(e) => up({ model: e.target.value })}
                 >
-                  <option value="doubao-seedance-2-0-260128">Seedance 2.0 (480p无声0.7/有声1.0，720p无声1.5/有声1.9，1080p无声2.8/有声3.0 元/秒)</option>
-                  <option value="doubao-seedance-2-0-fast-260128">Seedance 2.0 Fast (480p无声0.75/有声0.9，720p无声1.3/有声1.7 元/秒)</option>
+                  <option value="doubao-seedance-2-0-260128">Seedance 2.0 — 480P 会员¥0.71/普通¥0.91，720P 会员¥1.29/普通¥1.49，1080P 会员¥2.91/普通¥3.11（有声各+¥0.2/秒）</option>
+                  <option value="doubao-seedance-2-0-fast-260128">Seedance 2.0 Fast — 480P 会员¥0.60/普通¥0.80，720P 会员¥1.06/普通¥1.26（有声各+¥0.2/秒）</option>
                 </select>
               </div>
 
@@ -775,6 +776,12 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
             }}
             onPointerDown={(e) => e.stopPropagation()}
           >
+            <button
+              className="absolute top-2 left-2 z-10 w-7 h-7 rounded-full bg-zinc-800/90 hover:bg-zinc-700/90 border border-white/20 text-white text-base flex items-center justify-center transition-all"
+              onClick={(e) => { e.stopPropagation(); (window as any).openOutputMenu?.(shape.id, e.clientX, e.clientY, 'video-output'); }}
+              onPointerDown={(e) => e.stopPropagation()}
+              title="继续创建下游卡片"
+            >+</button>
             <div className="relative group" style={{ minHeight: '180px' }}>
               <video
                 ref={videoRef}

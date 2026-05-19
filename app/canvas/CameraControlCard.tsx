@@ -269,6 +269,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || '生成失败');
           update({ generatedImage: data.imageUrl, isGenerating: false });
+          (window as any).refreshBalance?.();
           return;
         }
 
@@ -351,6 +352,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
         }
 
         update({ generatedImage: data.imageUrl, isGenerating: false });
+        (window as any).refreshBalance?.();
 
         // 后台上传到 Supabase
         try {
@@ -462,7 +464,44 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
                     </div>
                   )}
 
-                  {(model || 'nano-banana-pro') !== 'nano-banana-pro' && (
+                  {model === 'gpt-image-2' && (
+                    <>
+                      <div>
+                        <label className="text-gray-400 text-xs mb-1 block">尺寸</label>
+                        <div className="flex gap-1 flex-wrap">
+                          {[
+                            { value: '2048x1152', label: '16:9 2K', priceMedium: '¥0.7', priceHigh: '¥0.7' },
+                            { value: '3840x2160', label: '16:9 4K', priceMedium: '¥1.5', priceHigh: '¥2.0' },
+                            { value: '2160x3840', label: '9:16 4K', priceMedium: '¥1.5', priceHigh: '¥2.0' },
+                            { value: '2048x2048', label: '1:1 2K', priceMedium: '¥0.7', priceHigh: '¥1.0' },
+                          ].map(({ value, label, priceMedium, priceHigh }) => (
+                            <button key={value}
+                              onClick={(e) => { e.stopPropagation(); update({ aspectRatio: value }); }}
+                              onPointerDown={(e) => e.stopPropagation()}
+                              className={`flex-1 py-1.5 rounded-lg border text-[10px] font-medium transition-all ${(aspectRatio ?? '2048x1152') === value ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
+                            >
+                              <div>{label}</div>
+                              <div className="text-[10px] opacity-70">{(imageQuality ?? 'medium') === 'high' ? priceHigh : priceMedium}</div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-gray-400 text-xs mb-1 block">画质</label>
+                        <div className="flex gap-1">
+                          {[{ value: 'medium', label: 'Medium' }, { value: 'high', label: 'High' }].map(({ value, label }) => (
+                            <button key={value}
+                              onClick={(e) => { e.stopPropagation(); update({ imageQuality: value }); }}
+                              onPointerDown={(e) => e.stopPropagation()}
+                              className={`flex-1 py-1.5 rounded-lg border text-xs font-medium transition-all ${(imageQuality ?? 'medium') === value ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
+                            >{label}</button>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {!['nano-banana-pro', 'gpt-image-2'].includes(model || 'nano-banana-pro') && (
                     <div>
                       <label className="text-gray-400 text-xs mb-1 block">比例</label>
                       <select
@@ -483,12 +522,18 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
             {/* 图片输出 */}
             {showOutputPanel && generatedImage && (
               <div
-                className="rounded-2xl shadow-2xl backdrop-blur-xl overflow-hidden"
+                className="rounded-2xl shadow-2xl backdrop-blur-xl overflow-hidden relative"
                 style={{
                   background: 'linear-gradient(135deg, rgba(192,192,192,0.15) 0%, rgba(100,100,100,0.1) 100%)',
                   border: '1px solid rgba(192,192,192,0.3)',
                 }}
               >
+                <button
+                  className="absolute top-2 left-2 z-10 w-7 h-7 rounded-full bg-zinc-800/90 hover:bg-zinc-700/90 border border-white/20 text-white text-base flex items-center justify-center transition-all"
+                  onClick={(e) => { e.stopPropagation(); (window as any).openOutputMenu?.(shape.id, e.clientX, e.clientY, 'image-output'); }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  title="继续创建下游卡片"
+                >+</button>
                 <div className="relative group">
                   <img
                     src={generatedImage}
