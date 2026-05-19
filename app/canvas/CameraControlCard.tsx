@@ -257,21 +257,50 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
         if (currentModel === 'gpt-image-2') {
           const raw = isBase64 ? sourceImage : await fetch(sourceImage).then(r => r.blob()).then(b => new Promise<string>(res => { const rd = new FileReader(); rd.onload = () => res(rd.result as string); rd.readAsDataURL(b); }));
           const compressed = await compressImage(raw);
+          // 兼容：如果 aspectRatio/imageQuality 是 nano-banana 的值，转成 GPT Image 2 的合法值
+          const gptAspect = ['2048x1152', '3840x2160', '2160x3840', '2048x2048'].includes(aspectRatio) ? aspectRatio : '2048x1152';
+          const gptQuality = ['medium', 'high'].includes(imageQuality) ? imageQuality : 'medium';
           const res = await fetch('/api/image/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               model: 'gpt-image-2',
               prompt: cameraPrompt,
-              aspectRatio: aspectRatio || '2048x1152',
-              imageQuality: imageQuality || 'medium',
+              aspectRatio: gptAspect,
+              imageQuality: gptQuality,
               imageBase64Array: [compressed],
               userId: user.id,
             }),
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || '生成失败');
-          update({ generatedImage: data.imageUrl, isGenerating: false });
+
+          // GPT Image 2 是异步模式，需要轮询
+          if (data.pending && data.requestId) {
+            const endpoint = data.endpoint || 'openai/gpt-image-2/edit';
+            let pollAttempts = 0;
+            const poll = async (): Promise<string> => {
+              pollAttempts++;
+              await new Promise(r => setTimeout(r, 3000));
+              try {
+                const qRes = await fetch(`/api/image/fal-query?requestId=${encodeURIComponent(data.requestId)}&endpoint=${encodeURIComponent(endpoint)}`);
+                const qData = await qRes.json();
+                if (qData.imageUrl) return qData.imageUrl;
+                if (qData.status === 'failed') throw new Error(qData.error || '生成失败');
+                if (pollAttempts >= 60) throw new Error('生成超时');
+                return poll();
+              } catch (e: any) {
+                if (pollAttempts >= 60) throw e;
+                return poll();
+              }
+            };
+            const imageUrl = await poll();
+            update({ generatedImage: imageUrl, isGenerating: false });
+          } else if (data.imageUrl) {
+            update({ generatedImage: data.imageUrl, isGenerating: false });
+          } else {
+            throw new Error('未获取到图片');
+          }
           (window as any).refreshBalance?.();
           return;
         }
