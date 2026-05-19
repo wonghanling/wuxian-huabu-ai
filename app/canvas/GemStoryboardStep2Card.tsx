@@ -177,6 +177,15 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
           if (src?.type === 'custom-card' && src.props?.generatedImage) {
             imgs.push(src.props.generatedImage);
           }
+          if (src?.type === 'custom-card' && src.props?.cardType === 'character' && src.props?.characterGeneratedImage) {
+            imgs.push(src.props.characterGeneratedImage);
+          }
+          if (src?.type === 'camera-control-card' && src.props?.generatedImage) {
+            imgs.push(src.props.generatedImage);
+          }
+          if (src?.type === 'gem-step4-card' && src.props?.generatedImage) {
+            imgs.push(src.props.generatedImage);
+          }
           if (imgs.length >= 9) return imgs;
         }
       }

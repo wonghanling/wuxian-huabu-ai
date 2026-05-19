@@ -147,11 +147,15 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
           const srcType = (src as any).type;
 
           if (srcType === 'custom-card') {
-            if (sp.generatedImage) imageUrls.push(sp.generatedImage);
+            // 角色卡：优先用三视角输出，否则用通用 generatedImage
+            if (sp.cardType === 'character' && sp.characterGeneratedImage) imageUrls.push(sp.characterGeneratedImage);
+            else if (sp.generatedImage) imageUrls.push(sp.generatedImage);
             if (sp.generatedVideo && !sp.generatedImage) videoUrl = sp.generatedVideo;
             if (sp.klingGeneratedVideo) videoUrl = sp.klingGeneratedVideo;
             // 文本卡片输出
             if (sp.cardType === 'text' && sp.textOutput) textPrompt = sp.textOutput;
+          } else if (srcType === 'camera-control-card') {
+            if (sp.generatedImage) imageUrls.push(sp.generatedImage);
           } else if (srcType === 'seedance-card') {
             if (sp.generatedVideo) videoUrl = sp.generatedVideo;
             if (sp.capturedFrame) imageUrls.push(sp.capturedFrame);

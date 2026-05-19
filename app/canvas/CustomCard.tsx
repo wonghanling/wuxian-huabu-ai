@@ -840,34 +840,42 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
       });
     };
 
-    // 捕获视频当前帧
-    const captureCurrentFrame = useCallback(() => {
+    // 捕获视频当前帧（上传 Supabase 拿 URL，避免 base64 占 snapshot）
+    const captureCurrentFrame = useCallback(async () => {
       const video = videoRef.current;
       if (!video) return;
 
-      // 创建canvas元素
       const canvas = document.createElement('canvas');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-
-      // 将视频当前帧绘制到canvas
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
-
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-      // 转换为base64图片
-      const frameImage = canvas.toDataURL('image/png');
-
-      // 更新shape状态
-      editor.updateShape({
-        id: shape.id,
-        type: 'custom-card' as any,
-        props: {
-          ...shape.props,
-          capturedFrame: frameImage,
-        },
+      // 转 JPEG Blob 上传到 Supabase Storage 拿 URL
+      const blob = await new Promise<Blob | null>((resolve) => {
+        canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.92);
       });
+      if (!blob) return;
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) { alert('请先登录'); return; }
+        const filename = `videos/${user.id}/frame-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
+        const { error } = await supabase.storage.from('assets').upload(filename, blob, { contentType: 'image/jpeg', upsert: false });
+        if (error) throw new Error(`上传失败: ${error.message}`);
+        const { data: urlData } = supabase.storage.from('assets').getPublicUrl(filename);
+        editor.updateShape({
+          id: shape.id,
+          type: 'custom-card' as any,
+          props: {
+            ...shape.props,
+            capturedFrame: urlData.publicUrl,
+          },
+        });
+      } catch (err: any) {
+        alert('截帧上传失败: ' + (err?.message || err));
+      }
     }, [editor, shape.id, shape.props]);
 
     // 根据卡片类型设置颜色和渐变

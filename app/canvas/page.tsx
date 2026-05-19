@@ -2746,59 +2746,8 @@ function CanvasPageContent() {
           },
         ];
 
-        // 素材上传卡片菜单选项（只读取上传的图片，不读视频）
-        const mediaUploadCardOptions: { label: string; desc?: string; onClick: () => void }[] = [
-          {
-            label: '时空镜头延展',
-            desc: '时空后退 −5s：生成画面前5秒的场景\n时空前进 +5s：生成画面后5秒的场景',
-            onClick: () => {
-              const pos = getShapeRight(floatingMenu.shapeId);
-              const newId = createShapeId();
-              editor.createShape({
-                id: newId,
-                type: 'camera-control-card' as any,
-                x: pos.x,
-                y: pos.y,
-                props: { w: 360, h: 720, sourceShapeId: '', cameraVertical: 0, cameraHorizontal: 0, generatedImage: '', isGenerating: false, isMinimized: false, model: 'nano-banana-pro', prompt: '' },
-              });
-              createConnection(floatingMenu.shapeId, newId as any);
-              editor.select(newId);
-            },
-          },
-          {
-            label: '角色设计',
-            onClick: () => {
-              const pos = getShapeRight(floatingMenu.shapeId);
-              const newId = createShapeId();
-              editor.createShape({
-                id: newId,
-                type: 'custom-card' as any,
-                x: pos.x,
-                y: pos.y,
-                props: { w: 380, h: 360, cardType: 'character', title: 'Character Design', prompt: '', model: 'nano-banana-pro' },
-              });
-              createConnection(floatingMenu.shapeId, newId as any);
-              editor.select(newId);
-            },
-          },
-          {
-            label: 'GEM 分镜设计',
-            desc: '故事模式：输入剧本，AI 按叙事节奏拆解为分镜\n时空模式：上传首帧和尾帧，AI 生成两帧之间的过渡中间镜头',
-            onClick: () => {
-              const pos = getShapeRight(floatingMenu.shapeId);
-              const step2Id = createShapeId();
-              editor.createShape({
-                id: step2Id,
-                type: 'gem-step2-card' as any,
-                x: pos.x,
-                y: pos.y,
-                props: { w: 400, h: 480, result: '', isGenerating: false, isMinimized: false },
-              });
-              createConnection(floatingMenu.shapeId, step2Id as any);
-              editor.select(step2Id);
-            },
-          },
-        ];
+        // 素材上传卡片菜单 = 图片卡片菜单（保持同步）
+        const mediaUploadCardOptions = imageCardOptions;
 
         const options =
           floatingMenu.type === 'image-card' || floatingMenu.type === 'image-output' ? imageCardOptions :

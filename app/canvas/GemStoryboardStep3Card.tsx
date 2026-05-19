@@ -98,7 +98,10 @@ export class GemStep3CardUtil extends BaseBoxShapeUtil<GemStep3CardShape> {
           if ((cb as any).props?.terminal !== 'start') continue;
           const src = editor.getShape((cb as any).toId) as any;
           if (!src) continue;
-          if (src.type === 'custom-card' && src.props?.generatedImage) imgs.push(src.props.generatedImage);
+          if (src.type === 'custom-card' && src.props?.cardType === 'character' && src.props?.characterGeneratedImage) imgs.push(src.props.characterGeneratedImage);
+          else if (src.type === 'custom-card' && src.props?.generatedImage) imgs.push(src.props.generatedImage);
+          else if (src.type === 'camera-control-card' && src.props?.generatedImage) imgs.push(src.props.generatedImage);
+          else if (src.type === 'gem-step4-card' && src.props?.generatedImage) imgs.push(src.props.generatedImage);
           else if (src.type === 'media-upload-card' && src.props?.mediaType === 'image' && src.props?.imageData) imgs.push(src.props.imageData);
           if (imgs.length >= 2) return imgs;
         }
