@@ -522,15 +522,17 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
 
         {/* 卡片主体 */}
         <div
-          className="relative w-full backdrop-blur-xl rounded-2xl shadow-2xl"
+          className="relative w-full h-full backdrop-blur-xl rounded-2xl shadow-2xl"
           style={{
             background: 'linear-gradient(135deg,rgba(192,192,192,0.15) 0%,rgba(169,169,169,0.12) 50%,rgba(128,128,128,0.08) 100%)',
             border: '1px solid rgba(192,192,192,0.3)',
             boxShadow: '0 0 40px rgba(192,192,192,0.15)',
-            transform: `scale(${scale})`,
-            transformOrigin: 'top left',
-            width: `${100 / scale}%`,
-            height: `${100 / scale}%`,
+            ...(scale !== 1 ? {
+              transform: `scale(${scale})`,
+              transformOrigin: 'top left',
+              width: `${100 / scale}%`,
+              height: `${100 / scale}%`,
+            } : {}),
             transition: 'all 0.2s ease',
           }}
         >

@@ -1676,16 +1676,18 @@ Maintain strong visual consistency in every panel.`;
         </div>
 
         <div
-          className="relative w-full backdrop-blur-xl rounded-2xl shadow-2xl transition-all duration-300"
+          className="relative w-full h-full backdrop-blur-xl rounded-2xl shadow-2xl transition-all duration-300"
           style={{
             background: color.gradient,
             border: `1px solid ${color.border}`,
             backgroundColor: 'rgba(192, 192, 192, 0.08)',
             boxShadow: color.glow,
-            transform: `scale(${scale})`,
-            transformOrigin: 'top left',
-            width: `${100 / scale}%`,
-            height: `${100 / scale}%`,
+            ...(scale !== 1 ? {
+              transform: `scale(${scale})`,
+              transformOrigin: 'top left',
+              width: `${100 / scale}%`,
+              height: `${100 / scale}%`,
+            } : {}),
             overflow: 'visible',
           }}
         >
