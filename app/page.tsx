@@ -147,12 +147,6 @@ export default function Home() {
       {/* Hero Section */}
       <main className="relative pt-32 pb-20 px-6 flex flex-col items-center">
         <div className="relative z-10 max-w-5xl mx-auto text-center">
-          {/* Badge */}
-          <div className="inline-flex items-center px-5 py-2.5 rounded-full border border-white/15 bg-white/8 mb-8 animate-fade-in">
-            <span className="w-3 h-3 rounded-full bg-blue-500 mr-3 animate-pulse flex-shrink-0"></span>
-            <span className="text-base font-bold text-white tracking-wide">内测中 · 少量开放 <span className="text-zinc-400 text-sm font-normal">/ Private Beta</span></span>
-          </div>
-
           <h1 className="text-6xl md:text-8xl font-bold tracking-tighter hero-text leading-[1.1] mb-4">
             The AI workspace for <br/> <span className="italic">infinite</span> creative flow.
           </h1>

@@ -118,6 +118,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
           if (!src) continue;
           if (src.type === 'custom-card' && src.props?.cardType === 'character' && src.props?.characterGeneratedImage) return src.props.characterGeneratedImage;
           if (src.type === 'custom-card' && src.props?.generatedImage) return src.props.generatedImage;
+          if (src.type === 'camera-control-card' && src.props?.generatedImage) return src.props.generatedImage;
           if (src.type === 'media-upload-card' && src.props?.mediaType === 'image' && src.props?.imageData) return src.props.imageData;
         }
       }

@@ -744,6 +744,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
           if (!srcShape) continue;
           if (srcShape.type === 'custom-card' && srcShape.props?.cardType === 'character' && srcShape.props?.characterGeneratedImage) return srcShape.props.characterGeneratedImage;
           if (srcShape.type === 'custom-card' && srcShape.props?.generatedImage) return srcShape.props.generatedImage;
+          if (srcShape.type === 'camera-control-card' && srcShape.props?.generatedImage) return srcShape.props.generatedImage;
           if (srcShape.type === 'media-upload-card' && srcShape.props?.mediaType === 'image' && srcShape.props?.imageData) return srcShape.props.imageData;
         }
       }
@@ -805,6 +806,7 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
           if (!src) continue;
           if (src.type === 'custom-card' && src.props?.cardType === 'character' && src.props?.characterGeneratedImage) imgs.push(src.props.characterGeneratedImage);
           else if (src.type === 'custom-card' && src.props?.generatedImage) imgs.push(src.props.generatedImage);
+          else if (src.type === 'camera-control-card' && src.props?.generatedImage) imgs.push(src.props.generatedImage);
           else if (src.type === 'media-upload-card' && src.props?.mediaType === 'image' && src.props?.imageData) imgs.push(src.props.imageData);
           if (imgs.length >= maxCount) return imgs;
         }
