@@ -180,6 +180,21 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
   const [showShotTypePanel, setShowShotTypePanel] = useState(false);
   const [showVideoMenu, setShowVideoMenu] = useState(false);
 
+  const minimizableTypes = ['custom-card', 'seedance-card', 'camera-control-card', 'shot-card', 'audio-card', 'prompt-optimizer-card', 'gem-step0-card', 'gem-step1-card', 'gem-step2-card', 'gem-step3-card', 'gem-step4-card'];
+
+  const collapseAllCards = () => {
+    const shapes = editor.getCurrentPageShapes();
+    const updates = shapes
+      .filter((s) => minimizableTypes.includes((s as any).type))
+      .map((s) => {
+        const type = (s as any).type;
+        const w = type === 'camera-control-card' ? 160 : 150;
+        const h = type === 'camera-control-card' ? 60 : 80;
+        return { id: s.id, type: type, props: { ...(s as any).props, isMinimized: true, isCollapsed: false, w, h } };
+      });
+    if (updates.length > 0) editor.updateShapes(updates as any);
+  };
+
   const createTextCard = () => {
     console.log('点击文本生成按钮');
     try {
@@ -801,6 +816,21 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
           <div className="flex flex-col items-start">
             <span className="text-sm text-gray-300 whitespace-nowrap">Image Split</span>
             <span className="text-xs text-gray-500 whitespace-nowrap">图片切割</span>
+          </div>
+        </button>
+
+        {/* 全部折叠按钮 */}
+        <button
+          onClick={collapseAllCards}
+          className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-all group"
+          title="全部折叠卡片"
+        >
+          <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
+            <span className="text-gray-400 text-base font-bold leading-none">−</span>
+          </div>
+          <div className="flex flex-col items-start">
+            <span className="text-sm text-gray-300 whitespace-nowrap">Collapse</span>
+            <span className="text-xs text-gray-500 whitespace-nowrap">全部折叠</span>
           </div>
         </button>
 
