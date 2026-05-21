@@ -162,7 +162,7 @@ export default function Home() {
             在你的工作流中，直接与 AI 智能体协作，完成头脑风暴、设计与原型构建。
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
             <Link href="/canvas">
               <button className="px-8 py-4 rounded-full font-semibold btn-primary text-base min-w-[200px] flex flex-col items-center">
                 <span>Try the Infinite Canvas</span>
@@ -176,6 +176,22 @@ export default function Home() {
               </button>
             </Link>
           </div>
+
+          {/* 注册送会员横幅 */}
+          {!user && (
+            <Link href="/auth">
+              <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-gradient-to-r from-violet-600/20 to-indigo-600/20 border border-violet-500/30 hover:border-violet-400/50 hover:from-violet-600/30 hover:to-indigo-600/30 transition-all cursor-pointer mb-16 group">
+                <span className="text-lg">🎁</span>
+                <div className="text-left">
+                  <span className="text-violet-300 font-semibold text-sm">注册即送 30 天会员</span>
+                  <span className="text-white/40 text-sm"> · 免费体验全部 AI 功能</span>
+                </div>
+                <svg className="w-4 h-4 text-violet-400 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+            </Link>
+          )}
 
           {/* Dashboard Preview */}
           <div className="text-center mb-6">
