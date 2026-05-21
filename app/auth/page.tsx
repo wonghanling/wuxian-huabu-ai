@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -15,8 +15,17 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [otpSent, setOtpSent] = useState(false);
+  const [alreadyLoggedIn, setAlreadyLoggedIn] = useState(false);
   const router = useRouter();
   const supabase = createClient();
+
+  // 已登录用户显示提示
+  useEffect(() => {
+    if (!supabase) return;
+    supabase.auth.getUser().then(({ data: { user } }: { data: { user: any } }) => {
+      if (user) setAlreadyLoggedIn(true);
+    });
+  }, []);
 
   // 检查 Supabase 是否配置
   const isSupabaseConfigured = !!supabase;
@@ -205,7 +214,30 @@ export default function AuthPage() {
       {/* Auth Form */}
       <main className="relative pt-32 pb-20 px-6 flex flex-col items-center justify-center min-h-screen">
         <div className="relative z-10 w-full max-w-md">
-          {/* Glass Card */}
+
+          {/* 已登录提示 */}
+          {alreadyLoggedIn && (
+            <div className="glass-card p-8 text-center mb-6">
+              <div className="w-12 h-12 rounded-xl bg-green-500/20 border border-green-500/30 flex items-center justify-center mx-auto mb-4">
+                <span className="text-green-400 text-xl">✓</span>
+              </div>
+              <h2 className="text-white font-bold text-lg mb-2">您已登录</h2>
+              <p className="text-white/50 text-sm mb-6">该账号已注册并登录，无需重复注册</p>
+              <button
+                onClick={() => router.push('/canvas')}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold transition-all"
+              >
+                进入画布
+              </button>
+              <Link href="/" className="block mt-3 text-white/30 hover:text-white/50 text-sm transition-colors">
+                返回首页
+              </Link>
+            </div>
+          )}
+
+          {/* 未登录时显示表单 */}
+          {!alreadyLoggedIn && (
+          <>
           <div className="glass-card p-8">
             {/* Mode Toggle */}
             <div className="flex gap-2 mb-8">
@@ -476,6 +508,9 @@ export default function AuthPage() {
               ← 返回首页 / Back to Home
             </Link>
           </div>
+          </>
+          )}
+
         </div>
       </main>
     </div>

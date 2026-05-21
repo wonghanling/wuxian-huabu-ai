@@ -65,18 +65,22 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
     if (tab === 'orders') loadOrders();
   }, [tab]);
 
-  // 切到 history tab 时订阅实时更新
+  // 余额变化时自动刷新消费记录（生成扣费后余额会变）
   useEffect(() => {
-    if (tab !== 'history') return;
+    if (tab === 'history') loadTransactions();
+  }, [balance]);
+
+  // 弹窗打开时订阅 transactions 实时更新
+  useEffect(() => {
     const supabase = createClient();
     const channel = supabase
-      .channel('transactions-realtime')
+      .channel(`tx-modal-${Date.now()}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'transactions' }, () => {
         loadTransactions();
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [tab]);
+  }, []);
 
   const loadTransactions = async () => {
     setTxLoading(true);
