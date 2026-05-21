@@ -12,7 +12,7 @@ interface AccountModalProps {
   memberExpiresAt?: string | null;
 }
 
-type Tab = 'membership' | 'recharge' | 'promo' | 'history';
+type Tab = 'membership' | 'recharge' | 'promo' | 'history' | 'orders';
 
 interface Transaction {
   id: string;
@@ -21,6 +21,17 @@ interface Transaction {
   balance_after: number;
   created_at: string;
   metadata?: Record<string, unknown>;
+}
+
+interface Order {
+  id: string;
+  order_no: string;
+  order_type: 'recharge' | 'membership';
+  amount_rmb: number;
+  status: 'pending' | 'paid' | 'cancelled' | 'refunded';
+  trade_no: string | null;
+  paid_at: string | null;
+  created_at: string;
 }
 
 const TYPE_LABEL: Record<string, { label: string; color: string }> = {
@@ -39,6 +50,8 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
   const [promoMsg, setPromoMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [txLoading, setTxLoading] = useState(false);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
 
   useEffect(() => {
@@ -49,6 +62,7 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
 
   useEffect(() => {
     if (tab === 'history') loadTransactions();
+    if (tab === 'orders') loadOrders();
   }, [tab]);
 
   const loadTransactions = async () => {
@@ -65,6 +79,23 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
       setTransactions(data ?? []);
     } finally {
       setTxLoading(false);
+    }
+  };
+
+  const loadOrders = async () => {
+    setOrdersLoading(true);
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data } = await supabase
+        .from('payment_orders')
+        .select('id, order_no, order_type, amount_rmb, status, trade_no, paid_at, created_at')
+        .order('created_at', { ascending: false })
+        .limit(50);
+      setOrders(data ?? []);
+    } finally {
+      setOrdersLoading(false);
     }
   };
 
@@ -135,6 +166,7 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
             { id: 'membership', icon: '✦', label: '会员订阅' },
             { id: 'recharge',   icon: '◈', label: '充值余额' },
             { id: 'promo',      icon: '◎', label: '兑换码' },
+            { id: 'orders',     icon: '◻', label: '我的订单' },
             { id: 'history',    icon: '≡', label: '消费记录' },
           ] as { id: Tab; icon: string; label: string }[]).map(item => (
             <button
@@ -292,6 +324,57 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
                     注册账号后可在个人中心领取首月免费体验码，也可关注官方渠道获取最新活动码。
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* 订单记录 */}
+            {tab === 'orders' && (
+              <div>
+                <h2 className="text-white font-semibold text-lg mb-1">我的订单</h2>
+                <p className="text-white/40 text-sm mb-5">充值和会员购买记录</p>
+
+                {ordersLoading ? (
+                  <div className="flex items-center justify-center py-12 text-white/30 text-sm">加载中…</div>
+                ) : orders.length === 0 ? (
+                  <div className="flex items-center justify-center py-12 text-white/30 text-sm">暂无订单记录</div>
+                ) : (
+                  <div className="space-y-2">
+                    {orders.map(order => {
+                      const statusMap: Record<string, { text: string; color: string }> = {
+                        pending:   { text: '待支付', color: 'text-yellow-400' },
+                        paid:      { text: '已支付', color: 'text-green-400' },
+                        cancelled: { text: '已取消', color: 'text-white/30' },
+                        refunded:  { text: '已退款', color: 'text-red-400' },
+                      };
+                      const typeMap: Record<string, string> = {
+                        membership: '开通会员',
+                        recharge:   '余额充值',
+                      };
+                      const status = statusMap[order.status] ?? { text: order.status, color: 'text-white/40' };
+                      return (
+                        <div key={order.id} className="flex items-center justify-between px-4 py-3 rounded-xl bg-white/3 border border-white/6">
+                          <div>
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <span className="text-white text-sm font-medium">{typeMap[order.order_type] ?? order.order_type}</span>
+                              <span className={`text-xs ${status.color}`}>{status.text}</span>
+                            </div>
+                            <div className="text-white/25 text-xs">
+                              {new Date(order.created_at).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-white font-semibold">¥{order.amount_rmb}</div>
+                            {order.paid_at && (
+                              <div className="text-white/25 text-xs">
+                                {new Date(order.paid_at).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 
