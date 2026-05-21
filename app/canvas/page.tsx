@@ -75,11 +75,11 @@ function WelcomeModal({ onClose, onRefresh }: { onClose: () => void; onRefresh: 
           onPointerDown={e => e.stopPropagation()}
         >✕</button>
 
-        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-violet-500/30">
-          <span className="text-2xl">🎁</span>
+        <div className="w-12 h-12 rounded-xl bg-violet-500/20 border border-violet-500/30 flex items-center justify-center mx-auto mb-5">
+          <img src="/Boluolab_logo.svg" alt="Boluolab" className="w-7 h-7" />
         </div>
 
-        <h2 className="text-white font-bold text-xl mb-2">欢迎加入 Aura Canvas</h2>
+        <h2 className="text-white font-bold text-xl mb-2">欢迎加入 Boluolab</h2>
         <p className="text-white/50 text-sm mb-6">注册即送 30 天会员，解锁全部 AI 创作功能</p>
 
         {!claimed ? (
@@ -96,11 +96,12 @@ function WelcomeModal({ onClose, onRefresh }: { onClose: () => void; onRefresh: 
               onClick={handleClaim}
               disabled={loading}
               onPointerDown={e => e.stopPropagation()}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:opacity-50 text-white font-semibold transition-all shadow-lg shadow-violet-500/20"
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:opacity-50 text-white font-semibold transition-all"
             >
               {loading ? '领取中…' : '立即领取 30 天会员'}
             </button>
-            <button onClick={onClose} onPointerDown={e => e.stopPropagation()} className="mt-3 text-white/30 text-xs hover:text-white/50 transition-colors">
+            <p className="mt-3 text-white/25 text-xs">稍后可在账户中心 → 兑换码 里领取</p>
+            <button onClick={onClose} onPointerDown={e => e.stopPropagation()} className="mt-2 text-white/30 text-xs hover:text-white/50 transition-colors">
               稍后再说
             </button>
           </>
@@ -129,27 +130,30 @@ const MINIMIZABLE_TYPES = ['custom-card', 'seedance-card', 'camera-control-card'
 function ZoomControlsExternal({ editor }: { editor: Editor }) {
   const [zoom, setZoom] = useState(100);
 
+  const COLLAPSIBLE_TYPES = new Set(['custom-card', 'seedance-card', 'camera-control-card', 'gem-step4-card']);
+
   const collapseAllCards = () => {
     const shapes = editor.getCurrentPageShapes();
-    const updates = shapes
+    shapes
       .filter((s) => MINIMIZABLE_TYPES.includes((s as any).type))
-      .map((s) => {
+      .forEach((s) => {
         const type = (s as any).type;
         const w = type === 'camera-control-card' ? 160 : 150;
         const h = type === 'camera-control-card' ? 60 : 80;
-        return { id: s.id, type, props: { ...(s as any).props, isMinimized: true, isCollapsed: false, w, h } };
+        const patch: Record<string, unknown> = { w, h, isMinimized: true };
+        if (COLLAPSIBLE_TYPES.has(type)) patch.isCollapsed = false;
+        editor.updateShape({ id: s.id, type, props: patch });
       });
-    if (updates.length > 0) editor.updateShapes(updates as any);
   };
 
   const foldAllCards = () => {
     const shapes = editor.getCurrentPageShapes();
-    const updates = shapes
-      .filter((s) => MINIMIZABLE_TYPES.includes((s as any).type))
-      .map((s) => {
-        return { id: s.id, type: (s as any).type, props: { ...(s as any).props, isCollapsed: true, isMinimized: false, w: 150, h: 80 } };
+    shapes
+      .filter((s) => COLLAPSIBLE_TYPES.has((s as any).type))
+      .forEach((s) => {
+        const type = (s as any).type;
+        editor.updateShape({ id: s.id, type, props: { w: 150, h: 80, isCollapsed: true, isMinimized: false } });
       });
-    if (updates.length > 0) editor.updateShapes(updates as any);
   };
 
   // 用 store.listen 替代 setInterval，避免标签页切回时积压回调卡顿
