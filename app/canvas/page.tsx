@@ -22,14 +22,40 @@ import { SeedanceCardUtil } from './SeedanceCard';
 import { MediaUploadCardUtil } from './MediaUploadCard';
 import TutorialOverlay from './TutorialOverlay';
 import { SaveTemplateModal } from './SaveTemplateModal';
+import AccountModal from './AccountModal';
 import { createClient } from '@/lib/supabase/client';
 import { getOrCreateCanvas, loadSnapshot as loadCanvasSnapshot, saveSnapshot } from '@/lib/canvas-storage';
 import { useMembership } from '@/lib/useMembership';
 import { MEMBERSHIP_PRICE } from '@/lib/pricing';
 
 // 自定义缩放控制器组件 - 外部版本
+const MINIMIZABLE_TYPES = ['custom-card', 'seedance-card', 'camera-control-card', 'shot-card', 'audio-card', 'prompt-optimizer-card', 'gem-step0-card', 'gem-step1-card', 'gem-step2-card', 'gem-step3-card', 'gem-step4-card'];
+
 function ZoomControlsExternal({ editor }: { editor: Editor }) {
   const [zoom, setZoom] = useState(100);
+
+  const collapseAllCards = () => {
+    const shapes = editor.getCurrentPageShapes();
+    const updates = shapes
+      .filter((s) => MINIMIZABLE_TYPES.includes((s as any).type))
+      .map((s) => {
+        const type = (s as any).type;
+        const w = type === 'camera-control-card' ? 160 : 150;
+        const h = type === 'camera-control-card' ? 60 : 80;
+        return { id: s.id, type, props: { ...(s as any).props, isMinimized: true, isCollapsed: false, w, h } };
+      });
+    if (updates.length > 0) editor.updateShapes(updates as any);
+  };
+
+  const foldAllCards = () => {
+    const shapes = editor.getCurrentPageShapes();
+    const updates = shapes
+      .filter((s) => MINIMIZABLE_TYPES.includes((s as any).type))
+      .map((s) => {
+        return { id: s.id, type: (s as any).type, props: { ...(s as any).props, isCollapsed: true, isMinimized: false, w: 150, h: 80 } };
+      });
+    if (updates.length > 0) editor.updateShapes(updates as any);
+  };
 
   // 用 store.listen 替代 setInterval，避免标签页切回时积压回调卡顿
   useEffect(() => {
@@ -141,6 +167,27 @@ function ZoomControlsExternal({ editor }: { editor: Editor }) {
         {zoom}%
       </div>
 
+      {/* 分隔线 */}
+      <div className="w-px h-4 bg-white/20 mx-0.5"></div>
+
+      {/* 全部折叠（-号操作） */}
+      <button
+        onClick={collapseAllCards}
+        className="w-6 h-6 hover:bg-white/10 rounded-md flex items-center justify-center text-white text-sm font-bold transition-all"
+        title="全部折叠卡片（隐藏浮板）"
+      >
+        −
+      </button>
+
+      {/* 全部收起（▲操作，浮板保留） */}
+      <button
+        onClick={foldAllCards}
+        className="w-6 h-6 hover:bg-white/10 rounded-md flex items-center justify-center text-white text-xs transition-all"
+        title="全部收起卡片（浮板保留）"
+      >
+        ▲
+      </button>
+
       <style jsx>{`
         .zoom-slider::-webkit-slider-thumb {
           appearance: none;
@@ -179,21 +226,6 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
   const [isExpanded, setIsExpanded] = useState(true);
   const [showShotTypePanel, setShowShotTypePanel] = useState(false);
   const [showVideoMenu, setShowVideoMenu] = useState(false);
-
-  const minimizableTypes = ['custom-card', 'seedance-card', 'camera-control-card', 'shot-card', 'audio-card', 'prompt-optimizer-card', 'gem-step0-card', 'gem-step1-card', 'gem-step2-card', 'gem-step3-card', 'gem-step4-card'];
-
-  const collapseAllCards = () => {
-    const shapes = editor.getCurrentPageShapes();
-    const updates = shapes
-      .filter((s) => minimizableTypes.includes((s as any).type))
-      .map((s) => {
-        const type = (s as any).type;
-        const w = type === 'camera-control-card' ? 160 : 150;
-        const h = type === 'camera-control-card' ? 60 : 80;
-        return { id: s.id, type: type, props: { ...(s as any).props, isMinimized: true, isCollapsed: false, w, h } };
-      });
-    if (updates.length > 0) editor.updateShapes(updates as any);
-  };
 
   const createTextCard = () => {
     console.log('点击文本生成按钮');
@@ -816,21 +848,6 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
           <div className="flex flex-col items-start">
             <span className="text-sm text-gray-300 whitespace-nowrap">Image Split</span>
             <span className="text-xs text-gray-500 whitespace-nowrap">图片切割</span>
-          </div>
-        </button>
-
-        {/* 全部折叠按钮 */}
-        <button
-          onClick={collapseAllCards}
-          className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-all group"
-          title="全部折叠卡片"
-        >
-          <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
-            <span className="text-gray-400 text-base font-bold leading-none">−</span>
-          </div>
-          <div className="flex flex-col items-start">
-            <span className="text-sm text-gray-300 whitespace-nowrap">Collapse</span>
-            <span className="text-xs text-gray-500 whitespace-nowrap">全部折叠</span>
           </div>
         </button>
 
@@ -1710,11 +1727,11 @@ function CanvasPageContent() {
   const [showAssetPanel, setShowAssetPanel] = useState(false);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
-  const [showRechargeModal, setShowRechargeModal] = useState(false);
+  const [showAccountModal, setShowAccountModal] = useState(false);
   const [showImageSplitModal, setShowImageSplitModal] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [floatingMenu, setFloatingMenu] = useState<{ x: number; y: number; shapeId: string; type: 'image-card' | 'step2-card' | 'media-upload-card' | 'image-output' | 'video-output' } | null>(null);
-  const { isMember, balance, refresh: refreshMembership } = useMembership();
+  const { isMember, balance, memberExpiresAt, refresh: refreshMembership } = useMembership();
 
   // 暴露给所有扣费卡片调用，用于生成成功后立即刷新余额
   useEffect(() => {
@@ -2226,11 +2243,11 @@ function CanvasPageContent() {
               {/* 余额 + 会员状态 */}
               <div className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-zinc-900/80 backdrop-blur-md border border-white/10 text-gray-300">
                 {isMember ? (
-                  <span className="text-violet-400 font-semibold">会员</span>
+                  <span className="text-violet-400 font-semibold cursor-pointer hover:text-violet-300 transition-colors" onClick={() => setShowAccountModal(true)}>会员</span>
                 ) : (
                   <button
                     className="text-yellow-400 hover:text-yellow-300 transition-colors"
-                    onClick={() => handlePay('membership', MEMBERSHIP_PRICE)}
+                    onClick={() => setShowAccountModal(true)}
                   >
                     开通会员
                   </button>
@@ -2239,7 +2256,7 @@ function CanvasPageContent() {
                 <span className="text-white/60">¥{balance.toFixed(2)}</span>
                 <button
                   className="text-blue-400 hover:text-blue-300 transition-colors ml-0.5"
-                  onClick={() => setShowRechargeModal(true)}
+                  onClick={() => setShowAccountModal(true)}
                 >
                   充值
                 </button>
@@ -3098,38 +3115,15 @@ function CanvasPageContent() {
         <SaveTemplateModal editor={editorInstance} onClose={() => setShowSaveTemplateModal(false)} />
       )}
 
-      {/* 充值弹窗 */}
-      {showRechargeModal && (
-        <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
-          onClick={() => setShowRechargeModal(false)}
-        >
-          <div
-            className="relative w-[360px] rounded-2xl bg-zinc-900 border border-white/10 p-8 shadow-2xl"
-            onClick={e => e.stopPropagation()}
-          >
-            <button
-              className="absolute top-4 right-4 text-white/40 hover:text-white/80 transition-colors"
-              onClick={() => setShowRechargeModal(false)}
-            >✕</button>
-            <h2 className="text-center text-xl font-semibold text-white mb-6">选择充值金额</h2>
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { amount: 50, label: '¥50' },
-                { amount: 100, label: '¥100' },
-                { amount: 1000, label: '¥1000' },
-                { amount: 10000, label: '¥10000' },
-              ].map(({ amount, label }) => (
-                <button
-                  key={amount}
-                  className="py-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-white font-semibold text-lg transition-all"
-                  onClick={() => { setShowRechargeModal(false); handlePay('recharge', amount); }}
-                >{label}</button>
-              ))}
-            </div>
-            <p className="text-center text-xs text-white/30 mt-4">充值后余额可用于图片和视频生成</p>
-          </div>
-        </div>
+      {/* 账户中心弹窗 */}
+      {showAccountModal && (
+        <AccountModal
+          onClose={() => setShowAccountModal(false)}
+          onPay={handlePay}
+          balance={balance}
+          isMember={isMember}
+          memberExpiresAt={memberExpiresAt}
+        />
       )}
     </div>
   );

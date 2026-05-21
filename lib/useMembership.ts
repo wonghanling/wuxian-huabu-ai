@@ -8,6 +8,7 @@ interface MembershipState {
   isMember: boolean;
   balance: number;
   userId: string | null;
+  memberExpiresAt: string | null;
 }
 
 export function useMembership() {
@@ -16,6 +17,7 @@ export function useMembership() {
     isMember: false,
     balance: 0,
     userId: null,
+    memberExpiresAt: null,
   });
 
   const refresh = useCallback(async () => {
@@ -23,7 +25,7 @@ export function useMembership() {
     if (!supabase) { setState(s => ({ ...s, loading: false })); return; }
 
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setState({ loading: false, isMember: false, balance: 0, userId: null }); return; }
+    if (!user) { setState({ loading: false, isMember: false, balance: 0, userId: null, memberExpiresAt: null }); return; }
 
     const { data } = await supabase
       .from('users')
@@ -42,6 +44,7 @@ export function useMembership() {
       isMember,
       balance: data?.balance ?? 0,
       userId: user.id,
+      memberExpiresAt: data?.member_expires_at ?? null,
     });
   }, []);
 
@@ -79,6 +82,7 @@ export function useMembership() {
               ...s,
               isMember,
               balance: row?.balance ?? s.balance,
+              memberExpiresAt: row?.member_expires_at ?? s.memberExpiresAt,
             }));
           }
         )
