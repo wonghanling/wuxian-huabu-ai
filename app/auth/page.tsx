@@ -106,7 +106,7 @@ export default function AuthPage() {
       if (updateError) throw updateError;
 
       setMessage('注册成功！正在跳转...');
-      setTimeout(() => router.push('/canvas'), 1500);
+      setTimeout(() => router.push('/canvas?welcome=1'), 1500);
     } catch (error: any) {
       setMessage(error.message || '注册失败');
     } finally {

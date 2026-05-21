@@ -131,3 +131,27 @@ create policy "用户只能读自己的订单" on public.payment_orders
 create index if not exists idx_payment_orders_user_id on public.payment_orders(user_id);
 create index if not exists idx_payment_orders_order_no on public.payment_orders(order_no);
 create index if not exists idx_payment_orders_status on public.payment_orders(status);
+
+-- ============================================================
+-- 优惠码表
+-- ============================================================
+create table if not exists public.promo_codes (
+  id uuid primary key default gen_random_uuid(),
+  code text not null unique,
+  type text not null default 'membership' check (type in ('membership')),
+  days integer not null default 30,
+  created_for_user_id uuid references public.users(id) on delete set null,
+  used_by_user_id uuid references public.users(id) on delete set null,
+  used_at timestamptz,
+  expires_at timestamptz,                        -- 码本身的有效期（null=永不过期）
+  created_at timestamptz not null default now()
+);
+
+alter table public.promo_codes enable row level security;
+-- 用户只能读自己领取的码（created_for_user_id = auth.uid()）
+create policy "用户只能读自己的优惠码" on public.promo_codes
+  for select using (auth.uid() = created_for_user_id or auth.uid() = used_by_user_id);
+-- 写入只允许 service_role（后端）
+
+create index if not exists idx_promo_codes_code on public.promo_codes(code);
+create index if not exists idx_promo_codes_created_for on public.promo_codes(created_for_user_id);

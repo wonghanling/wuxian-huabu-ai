@@ -28,6 +28,101 @@ import { getOrCreateCanvas, loadSnapshot as loadCanvasSnapshot, saveSnapshot } f
 import { useMembership } from '@/lib/useMembership';
 import { MEMBERSHIP_PRICE } from '@/lib/pricing';
 
+function WelcomeModal({ onClose, onRefresh }: { onClose: () => void; onRefresh: () => void }) {
+  const [loading, setLoading] = useState(false);
+  const [claimed, setClaimed] = useState(false);
+  const [msg, setMsg] = useState('');
+
+  const handleClaim = async () => {
+    setLoading(true);
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { setMsg('请先登录'); return; }
+      const res = await fetch('/api/promo/claim', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${session.access_token}` },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setClaimed(true);
+        setMsg(data.message);
+        onRefresh();
+      } else {
+        setMsg(data.error ?? '领取失败，请重试');
+      }
+    } catch {
+      setMsg('网络错误，请重试');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm"
+      onClick={onClose}
+      onPointerDown={e => e.stopPropagation()}
+    >
+      <div
+        className="relative w-[400px] rounded-2xl bg-zinc-900 border border-white/10 p-8 shadow-2xl text-center"
+        onClick={e => e.stopPropagation()}
+        onPointerDown={e => e.stopPropagation()}
+      >
+        <button
+          className="absolute top-4 right-4 w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/10 transition-all"
+          onClick={onClose}
+          onPointerDown={e => e.stopPropagation()}
+        >✕</button>
+
+        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-violet-500/30">
+          <span className="text-2xl">🎁</span>
+        </div>
+
+        <h2 className="text-white font-bold text-xl mb-2">欢迎加入 Aura Canvas</h2>
+        <p className="text-white/50 text-sm mb-6">注册即送 30 天会员，解锁全部 AI 创作功能</p>
+
+        {!claimed ? (
+          <>
+            <div className="rounded-xl bg-white/5 border border-white/10 p-4 mb-6 text-left space-y-2">
+              {['无限文本生成（大模型）', '角色设计 & Prompt 优化', '视频生成每秒省 ¥0.2', '优先体验新功能'].map(item => (
+                <div key={item} className="flex items-center gap-2 text-sm text-white/70">
+                  <span className="text-violet-400">✓</span> {item}
+                </div>
+              ))}
+            </div>
+            {msg && <p className="text-red-400 text-sm mb-4">{msg}</p>}
+            <button
+              onClick={handleClaim}
+              disabled={loading}
+              onPointerDown={e => e.stopPropagation()}
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 disabled:opacity-50 text-white font-semibold transition-all shadow-lg shadow-violet-500/20"
+            >
+              {loading ? '领取中…' : '立即领取 30 天会员'}
+            </button>
+            <button onClick={onClose} onPointerDown={e => e.stopPropagation()} className="mt-3 text-white/30 text-xs hover:text-white/50 transition-colors">
+              稍后再说
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="rounded-xl bg-green-500/10 border border-green-500/20 p-4 mb-6 text-green-400 text-sm">
+              {msg}
+            </div>
+            <button
+              onClick={onClose}
+              onPointerDown={e => e.stopPropagation()}
+              className="w-full py-3 rounded-xl bg-white/10 hover:bg-white/15 text-white font-semibold transition-all"
+            >
+              开始创作
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // 自定义缩放控制器组件 - 外部版本
 const MINIMIZABLE_TYPES = ['custom-card', 'seedance-card', 'camera-control-card', 'shot-card', 'audio-card', 'prompt-optimizer-card', 'gem-step0-card', 'gem-step1-card', 'gem-step2-card', 'gem-step3-card', 'gem-step4-card'];
 
@@ -1712,6 +1807,7 @@ function CanvasPageContent() {
   const searchParams = useSearchParams();
   const isTutorial = searchParams.get('tutorial') === 'true';
   const templateId = searchParams.get('templateId');
+  const isWelcome = searchParams.get('welcome') === '1';
 
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
   const [cameraZoom, setCameraZoom] = useState(1);
@@ -1728,6 +1824,7 @@ function CanvasPageContent() {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [showAccountModal, setShowAccountModal] = useState(false);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(isWelcome);
   const [showImageSplitModal, setShowImageSplitModal] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [floatingMenu, setFloatingMenu] = useState<{ x: number; y: number; shapeId: string; type: 'image-card' | 'step2-card' | 'media-upload-card' | 'image-output' | 'video-output' } | null>(null);
@@ -3124,6 +3221,11 @@ function CanvasPageContent() {
           isMember={isMember}
           memberExpiresAt={memberExpiresAt}
         />
+      )}
+
+      {/* 注册欢迎弹窗 */}
+      {showWelcomeModal && (
+        <WelcomeModal onClose={() => setShowWelcomeModal(false)} onRefresh={refreshMembership} />
       )}
     </div>
   );
