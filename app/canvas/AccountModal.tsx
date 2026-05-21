@@ -65,6 +65,19 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
     if (tab === 'orders') loadOrders();
   }, [tab]);
 
+  // 切到 history tab 时订阅实时更新
+  useEffect(() => {
+    if (tab !== 'history') return;
+    const supabase = createClient();
+    const channel = supabase
+      .channel('transactions-realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'transactions' }, () => {
+        loadTransactions();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [tab]);
+
   const loadTransactions = async () => {
     setTxLoading(true);
     try {
@@ -127,12 +140,12 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
   };
 
   const rechargeAmounts = [
-    { amount: 50,    bonus: null,    label: '¥50' },
-    { amount: 100,   bonus: null,    label: '¥100' },
-    { amount: 500,   bonus: '赠¥20', label: '¥500' },
-    { amount: 1000,  bonus: '赠¥80', label: '¥1000' },
-    { amount: 3000,  bonus: '赠¥300',label: '¥3000' },
-    { amount: 10000, bonus: '赠¥1500',label: '¥10000' },
+    { amount: 10,    label: '¥10' },
+    { amount: 30,    label: '¥30' },
+    { amount: 50,    label: '¥50' },
+    { amount: 100,   label: '¥100' },
+    { amount: 500,   label: '¥500' },
+    { amount: 1000,  label: '¥1000' },
   ];
 
   const memberExpireText = memberExpiresAt
@@ -146,7 +159,7 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
       onPointerDown={e => e.stopPropagation()}
     >
       <div
-        className="relative flex w-[680px] max-h-[560px] rounded-2xl bg-zinc-900 border border-white/10 shadow-2xl overflow-hidden"
+        className="relative flex w-[820px] max-h-[640px] rounded-2xl bg-zinc-900 border border-white/10 shadow-2xl overflow-hidden"
         onClick={e => e.stopPropagation()}
         onPointerDown={e => e.stopPropagation()}
       >
@@ -221,7 +234,7 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
                   <div className="grid grid-cols-2 gap-2 mb-5">
                     {[
                       '无限文本生成（大模型）',
-                      '角色设计 & Prompt 优化',
+                      '角色设计 & 导演引擎功能',
                       '视频生成每秒省 ¥0.2',
                       '优先体验新功能',
                     ].map(item => (
@@ -250,7 +263,7 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
                 <p className="text-white/40 text-sm mb-6">余额用于图片和视频生成消耗</p>
 
                 <div className="grid grid-cols-3 gap-3 mb-6">
-                  {rechargeAmounts.map(({ amount, bonus, label }) => (
+                  {rechargeAmounts.map(({ amount, label }) => (
                     <button
                       key={amount}
                       onClick={() => setSelectedAmount(amount)}
@@ -262,9 +275,6 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
                       }`}
                     >
                       <span className="font-bold text-lg">{label}</span>
-                      {bonus && (
-                        <span className="text-xs text-green-400">{bonus}</span>
-                      )}
                     </button>
                   ))}
                 </div>
@@ -381,7 +391,14 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
             {/* 消费记录 */}
             {tab === 'history' && (
               <div>
-                <h2 className="text-white font-semibold text-lg mb-1">消费记录</h2>
+                <div className="flex items-center justify-between mb-1">
+                  <h2 className="text-white font-semibold text-lg">消费记录</h2>
+                  <button
+                    onClick={loadTransactions}
+                    onPointerDown={e => e.stopPropagation()}
+                    className="text-xs text-white/40 hover:text-white/70 px-2 py-1 rounded-lg hover:bg-white/5 transition-all"
+                  >↻ 刷新</button>
+                </div>
                 <p className="text-white/40 text-sm mb-5">最近 50 条记录</p>
 
                 {txLoading ? (

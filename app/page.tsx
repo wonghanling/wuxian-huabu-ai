@@ -10,6 +10,7 @@ import { TemplateGallery } from './_components/TemplateGallery';
 export default function Home() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showPromoModal, setShowPromoModal] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
@@ -44,6 +45,12 @@ export default function Home() {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
       setLoading(false);
+
+      // 未登录用户首次访问自动弹出活动弹窗
+      if (!user && !sessionStorage.getItem('promo-modal-shown')) {
+        setTimeout(() => setShowPromoModal(true), 800);
+        sessionStorage.setItem('promo-modal-shown', '1');
+      }
     };
 
     checkUser();
@@ -67,6 +74,80 @@ export default function Home() {
 
   return (
     <div className="relative bg-[#09090b] text-white overflow-hidden">
+
+      {/* 活动弹窗 - 未登录用户自动弹出 */}
+      {showPromoModal && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowPromoModal(false)}
+        >
+          <div
+            className="relative w-[600px] rounded-3xl overflow-hidden shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* 背景图 */}
+            <img
+              src="/huodongchuangkou1.png"
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            {/* 底部渐变遮罩，让按钮区域可读 */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+            {/* 关闭按钮 */}
+            <button
+              onClick={() => setShowPromoModal(false)}
+              className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 flex items-center justify-center text-white/70 hover:text-white transition-all"
+            >✕</button>
+
+            {/* 内容叠在图片上，贴底部 */}
+            <div className="relative z-10 px-8 pb-8 pt-48">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/30 border border-violet-400/40 text-violet-200 text-xs font-medium mb-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-violet-300 animate-pulse" />
+                新用户专属
+              </div>
+              <h2 className="text-white font-bold text-2xl mb-1">注册领取一个月会员</h2>
+              <p className="text-white/60 text-sm mb-4">免费解锁全部 AI 创作功能</p>
+
+              {/* 权益 */}
+              <div className="grid grid-cols-2 gap-2 mb-6">
+                {[
+                  '无限文本大模型',
+                  '角色设计功能',
+                  '导演引擎功能',
+                  '视频生成会员折扣',
+                ].map(item => (
+                  <div key={item} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 border border-white/10 backdrop-blur-sm">
+                    <span className="text-violet-300 text-xs flex-shrink-0">✓</span>
+                    <span className="text-white/80 text-xs">{item}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* 按钮 */}
+              <button
+                onClick={() => {
+                  setShowPromoModal(false);
+                  if (user) {
+                    router.push('/canvas');
+                  } else {
+                    router.push('/auth');
+                  }
+                }}
+                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold text-base transition-all shadow-lg shadow-violet-500/30"
+              >
+                {user ? '进入画布' : '立即体验 · 免费注册'}
+              </button>
+              <button
+                onClick={() => setShowPromoModal(false)}
+                className="mt-2 w-full py-2 text-white/30 hover:text-white/50 text-sm transition-colors"
+              >
+                稍后再说
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Animated Grid Background */}
       <div className="infinite-grid absolute inset-0 opacity-50" />
 
@@ -177,21 +258,8 @@ export default function Home() {
             </Link>
           </div>
 
-          {/* 注册送会员横幅 */}
-          {!user && (
-            <Link href="/auth">
-              <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-gradient-to-r from-violet-600/20 to-indigo-600/20 border border-violet-500/30 hover:border-violet-400/50 hover:from-violet-600/30 hover:to-indigo-600/30 transition-all cursor-pointer mb-16 group">
-                <span className="text-lg">🎁</span>
-                <div className="text-left">
-                  <span className="text-violet-300 font-semibold text-sm">注册即送 30 天会员</span>
-                  <span className="text-white/40 text-sm"> · 免费体验全部 AI 功能</span>
-                </div>
-                <svg className="w-4 h-4 text-violet-400 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
-            </Link>
-          )}
+          {/* 注册送会员横幅已移至弹窗 */}
+
 
           {/* Dashboard Preview */}
           <div className="text-center mb-6">
@@ -322,7 +390,9 @@ export default function Home() {
       </main>
 
       {/* Workflow Templates Gallery */}
-      <TemplateGallery />
+      <div id="workflow-templates">
+        <TemplateGallery />
+      </div>
 
       {/* Features Section */}
       <section className="py-32 relative z-10">

@@ -80,12 +80,12 @@ function WelcomeModal({ onClose, onRefresh }: { onClose: () => void; onRefresh: 
         </div>
 
         <h2 className="text-white font-bold text-xl mb-2">欢迎加入 Boluolab</h2>
-        <p className="text-white/50 text-sm mb-6">注册即送 30 天会员，解锁全部 AI 创作功能</p>
+        <p className="text-white/50 text-sm mb-6">新用户注册领取一个月会员，解锁全部 AI 创作功能</p>
 
         {!claimed ? (
           <>
             <div className="rounded-xl bg-white/5 border border-white/10 p-4 mb-6 text-left space-y-2">
-              {['无限文本生成（大模型）', '角色设计 & Prompt 优化', '视频生成每秒省 ¥0.2', '优先体验新功能'].map(item => (
+              {['无限文本生成（大模型）', '角色设计 & 导演引擎功能', '视频生成每秒省 ¥0.2', '优先体验新功能'].map(item => (
                 <div key={item} className="flex items-center gap-2 text-sm text-white/70">
                   <span className="text-violet-400">✓</span> {item}
                 </div>
@@ -100,9 +100,8 @@ function WelcomeModal({ onClose, onRefresh }: { onClose: () => void; onRefresh: 
             >
               {loading ? '领取中…' : '立即领取 30 天会员'}
             </button>
-            <p className="mt-3 text-white/25 text-xs">稍后可在账户中心 → 兑换码 里领取</p>
-            <button onClick={onClose} onPointerDown={e => e.stopPropagation()} className="mt-2 text-white/30 text-xs hover:text-white/50 transition-colors">
-              稍后再说
+            <button onClick={onClose} onPointerDown={e => e.stopPropagation()} className="mt-3 text-white/30 text-xs hover:text-white/50 transition-colors">
+              稍后领取
             </button>
           </>
         ) : (
@@ -1828,11 +1827,30 @@ function CanvasPageContent() {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [showAccountModal, setShowAccountModal] = useState(false);
-  const [showWelcomeModal, setShowWelcomeModal] = useState(isWelcome);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [showImageSplitModal, setShowImageSplitModal] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [floatingMenu, setFloatingMenu] = useState<{ x: number; y: number; shapeId: string; type: 'image-card' | 'step2-card' | 'media-upload-card' | 'image-output' | 'video-output' } | null>(null);
   const { isMember, balance, memberExpiresAt, refresh: refreshMembership } = useMembership();
+
+  // 检查是否需要弹出领取会员弹窗（未领取过的用户每次进画布都弹）
+  useEffect(() => {
+    const checkWelcome = async () => {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data } = await supabase
+        .from('promo_codes')
+        .select('id, used_by_user_id')
+        .eq('created_for_user_id', session.user.id)
+        .single();
+      // 没有记录（从未领取）或有记录但未使用，都弹出
+      if (!data || !data.used_by_user_id) {
+        setTimeout(() => setShowWelcomeModal(true), 1000);
+      }
+    };
+    checkWelcome();
+  }, []);
 
   // 暴露给所有扣费卡片调用，用于生成成功后立即刷新余额
   useEffect(() => {

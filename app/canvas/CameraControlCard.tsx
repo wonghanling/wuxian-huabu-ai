@@ -257,7 +257,28 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) { alert('请先登录'); update({ isGenerating: false }); return; }
 
-        const cameraPrompt = `${prompt} [Camera: vertical ${cameraVertical >= 0 ? '+' : ''}${cameraVertical}°, horizontal ${cameraHorizontal >= 0 ? '+' : ''}${cameraHorizontal}°]`;
+        // 把角度转换成自然语言描述
+        const getHorizontalDesc = (deg: number): string => {
+          const abs = Math.abs(deg);
+          if (abs <= 15) return 'front view';
+          if (abs <= 60) return deg > 0 ? 'front-right 3/4 view' : 'front-left 3/4 view';
+          if (abs <= 120) return deg > 0 ? 'right side view' : 'left side view';
+          if (abs <= 165) return deg > 0 ? 'rear-right 3/4 view' : 'rear-left 3/4 view';
+          return 'back view';
+        };
+        const getVerticalDesc = (deg: number): string => {
+          if (deg > 60) return 'top-down view';
+          if (deg > 30) return 'high angle, looking down';
+          if (deg > 10) return 'slightly high angle';
+          if (deg < -60) return 'bottom-up view';
+          if (deg < -30) return 'low angle, looking up';
+          if (deg < -10) return 'slightly low angle';
+          return 'eye level';
+        };
+        const hDesc = getHorizontalDesc(cameraHorizontal);
+        const vDesc = getVerticalDesc(cameraVertical);
+        const angleDesc = vDesc === 'eye level' ? hDesc : `${hDesc}, ${vDesc}`;
+        const cameraPrompt = `${prompt}, photographed from ${angleDesc}`;
 
         const isBase64 = sourceImage.startsWith('data:');
         const currentModel = model || 'nano-banana-pro';
