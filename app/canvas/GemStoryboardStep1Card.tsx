@@ -5,6 +5,7 @@ import {
   RecordProps,
   T,
   useEditor,
+  useValue,
   Rectangle2d,
 } from 'tldraw';
 import { useState } from 'react';
@@ -67,6 +68,16 @@ export class GemStep1CardUtil extends BaseBoxShapeUtil<GemStep1CardShape> {
     const [images, setImages] = useState<string[]>([]);
     const [copied, setCopied] = useState(false);
     const [copiedHint, setCopiedHint] = useState(false);
+    // 视口检测（所有 hooks 之后）
+    const isInViewport = useValue('inViewport', () => {
+      const vp = editor.getViewportPageBounds();
+      const sb = editor.getShapePageBounds(shape.id);
+      if (!sb) return true;
+      return !(sb.maxX < vp.minX || sb.minX > vp.maxX || sb.maxY < vp.minY || sb.minY > vp.maxY);
+    }, [editor, shape.id]);
+    if (!isInViewport && !isGenerating) {
+      return <HTMLContainer><div style={{ width: w, height: h, background: '#18181b', borderRadius: 12, border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>GEM 角色提取</span></div></HTMLContainer>;
+    }
 
     const update = (props: Partial<GemStep1CardShape['props']>) => {
       editor.updateShape({ id: shape.id, type: 'gem-step1-card' as any, props: { ...shape.props, ...props } });

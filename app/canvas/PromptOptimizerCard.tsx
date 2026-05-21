@@ -5,6 +5,7 @@ import {
   RecordProps,
   T,
   useEditor,
+  useValue,
   Rectangle2d,
 } from 'tldraw';
 import { useState } from 'react';
@@ -77,6 +78,16 @@ export class PromptOptimizerCardUtil extends BaseBoxShapeUtil<PromptOptimizerCar
     const editor = useEditor();
     const { isMember, loading: memberLoading } = useMembership();
     const [showMemberModal, setShowMemberModal] = useState(false);
+    // 视口检测（所有 hooks 之后）
+    const isInViewport = useValue('inViewport', () => {
+      const vp = editor.getViewportPageBounds();
+      const sb = editor.getShapePageBounds(shape.id);
+      if (!sb) return true;
+      return !(sb.maxX < vp.minX || sb.minX > vp.maxX || sb.maxY < vp.minY || sb.minY > vp.maxY);
+    }, [editor, shape.id]);
+    if (!isInViewport && !isGenerating) {
+      return <HTMLContainer><div style={{ width: w, height: h, background: '#18181b', borderRadius: 12, border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>Prompt 优化</span></div></HTMLContainer>;
+    }
 
     const handlePay = async (plan: 'membership' | 'recharge', amount: number) => {
       const supabase = createClient();

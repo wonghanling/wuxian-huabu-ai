@@ -5,6 +5,7 @@ import {
   RecordProps,
   T,
   useEditor,
+  useValue,
   Rectangle2d,
 } from 'tldraw';
 import { createClient } from '@/lib/supabase/client';
@@ -56,6 +57,16 @@ export class GemStep0CardUtil extends BaseBoxShapeUtil<GemStep0CardShape> {
   component(shape: GemStep0CardShape) {
     const { w, h, story, result, isGenerating, isMinimized } = shape.props;
     const editor = useEditor();
+    // 视口检测
+    const isInViewport = useValue('inViewport', () => {
+      const vp = editor.getViewportPageBounds();
+      const sb = editor.getShapePageBounds(shape.id);
+      if (!sb) return true;
+      return !(sb.maxX < vp.minX || sb.minX > vp.maxX || sb.maxY < vp.minY || sb.minY > vp.maxY);
+    }, [editor, shape.id]);
+    if (!isInViewport && !isGenerating) {
+      return <HTMLContainer><div style={{ width: w, height: h, background: '#18181b', borderRadius: 12, border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>GEM 故事输入</span></div></HTMLContainer>;
+    }
 
     const update = (props: Partial<GemStep0CardShape['props']>) => {
       editor.updateShape({ id: shape.id, type: 'gem-step0-card' as any, props: { ...shape.props, ...props } });

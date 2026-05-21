@@ -5,6 +5,7 @@ import {
   RecordProps,
   T,
   useEditor,
+  useValue,
   Rectangle2d,
 } from 'tldraw';
 import { useState, useRef } from 'react';
@@ -191,6 +192,17 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
     const { w, h, sourceShapeId, cameraVertical, cameraHorizontal, generatedImage, isGenerating, isMinimized, model, prompt, aspectRatio, imageQuality, showSettingsPanel, showOutputPanel, isCollapsed } = shape.props;
     const editor = useEditor();
     const [lightbox, setLightbox] = useState(false);
+    // 视口检测（必须在所有 hooks 之后）
+    const isInViewport = useValue('inViewport', () => {
+      const vp = editor.getViewportPageBounds();
+      const sb = editor.getShapePageBounds(shape.id);
+      if (!sb) return true;
+      return !(sb.maxX < vp.minX || sb.minX > vp.maxX || sb.maxY < vp.minY || sb.minY > vp.maxY);
+    }, [editor, shape.id]);
+    const hasActiveTask = !!(isGenerating || showSettingsPanel || showOutputPanel);
+    if (!isInViewport && !hasActiveTask) {
+      return <HTMLContainer><div style={{ width: w, height: h, background: '#18181b', borderRadius: 12, border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>时空镜头延展</span></div></HTMLContainer>;
+    }
 
     const update = (props: Partial<CameraControlCardShape['props']>) =>
       editor.updateShape({ id: shape.id, type: 'camera-control-card' as any, props: { ...shape.props, ...props } });

@@ -6,6 +6,7 @@ import {
   T,
   TLBaseShape,
   useEditor,
+  useValue,
   createShapeId,
   Editor,
 } from 'tldraw';
@@ -530,8 +531,6 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
     const [uploadedImgRatios, setUploadedImgRatios] = useState<Record<number, '16/9' | '9/16'>>({});
     const [isUploadingKlingVideo, setIsUploadingKlingVideo] = useState(false);
     const [lightboxVideo, setLightboxVideo] = useState<string | null>(null);
-
-    // 本地 state 做显示层，防抖写 tldraw store，避免输入法冲突
     const [localPrompt, setLocalPrompt] = useState(shape.props.prompt ?? '');
     const [showImageStyles, setShowImageStyles] = useState(false);
     const [localCharacterAnchorJson, setLocalCharacterAnchorJson] = useState(shape.props.characterAnchorJson ?? '');
@@ -539,7 +538,6 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
     const [localKlingVideoUrl, setLocalKlingVideoUrl] = useState(shape.props.klingVideoUrl ?? '');
     const [localKlingLipSyncFaceId, setLocalKlingLipSyncFaceId] = useState(shape.props.klingLipSyncFaceId ?? '');
     const isComposing = useRef(false);
-
     const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const updateShapeDebounced = useCallback((props: Partial<CustomCardShape['props']>) => {
       if (debounceTimer.current) clearTimeout(debounceTimer.current);
@@ -547,6 +545,19 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
         editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, ...props } });
       }, 300);
     }, [editor, shape.id, shape.props]);
+
+    // 视口检测（所有 hooks 之后）
+    const isInViewport = useValue('inViewport', () => {
+      const vp = editor.getViewportPageBounds();
+      const sb = editor.getShapePageBounds(shape.id);
+      if (!sb) return true;
+      return !(sb.maxX < vp.minX || sb.minX > vp.maxX || sb.maxY < vp.minY || sb.minY > vp.maxY);
+    }, [editor, shape.id]);
+    const hasActiveTask = !!(isGenerating || showPromptPanel || showImageOutput || showVideoOutput || showCharacterOutput || showImageSettingsPanel || showRefImagePanel || showVideoModePanel || showPresetPanel || showAnalyzePanel || showThreeViewJsonPanel || showGeneratePanel || klingShowSettingsPanel);
+    if (!isInViewport && !hasActiveTask) {
+      const labelMap: Record<string, string> = { image: '图片生成', video: '视频生成', character: '角色设计', kling: 'Kling 配音', text: '文本生成' };
+      return <HTMLContainer><div style={{ width: w, height: h, background: '#18181b', borderRadius: 12, border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>{labelMap[cardType] ?? '卡片'}</span></div></HTMLContainer>;
+    }
 
     // 上传图片到 Supabase Storage 返回 URL（用于减轻 snapshot，避免 base64）
     // 强制转换为 JPEG 格式避免 HEIC/BMP 等非主流格式导致 fal 拒绝

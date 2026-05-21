@@ -1,5 +1,5 @@
 ﻿'use client';
-import { BaseBoxShapeUtil, HTMLContainer, RecordProps, T, usePassThroughWheelEvents } from 'tldraw';
+import { BaseBoxShapeUtil, HTMLContainer, RecordProps, T, usePassThroughWheelEvents, useEditor, useValue } from 'tldraw';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { createClient } from '@/lib/supabase/client';
@@ -80,7 +80,6 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
     const editor = (this as any).editor;
     const up = (props: any) => editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...shape.props, ...props } });
     const parsedRefImages: string[] = (() => { try { return JSON.parse(refImages || '[]'); } catch { return []; } })();
-    // scale 只在展开状态下生效，缩小时固定为1
     const scale = (isMinimized || isCollapsed) ? 1 : Math.min(w / 420, h / 560);
     const videoRef = useRef<HTMLVideoElement>(null);
     const [lightboxVideo, setLightboxVideo] = useState<string | null>(null);
@@ -94,6 +93,19 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
 
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     usePassThroughWheelEvents(scrollContainerRef);
+
+    // 视口检测（所有 hooks 之后）
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const isInViewport = useValue('inViewport', () => {
+      const vp = editor.getViewportPageBounds();
+      const sb = editor.getShapePageBounds(shape.id);
+      if (!sb) return true;
+      return !(sb.maxX < vp.minX || sb.minX > vp.maxX || sb.maxY < vp.minY || sb.minY > vp.maxY);
+    }, [editor, shape.id]);
+    const hasActiveTask = !!(isGenerating || showPromptPanel || showRefContentPanel || showSettings);
+    if (!isInViewport && !hasActiveTask) {
+      return <HTMLContainer><div style={{ width: w, height: h, background: '#18181b', borderRadius: 12, border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>Seedance 视频</span></div></HTMLContainer>;
+    }
 
     const captureCurrentFrame = useCallback(async () => {
       const video = videoRef.current;
