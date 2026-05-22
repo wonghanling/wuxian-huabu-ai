@@ -82,46 +82,40 @@ export default function Home() {
           onClick={() => setShowPromoModal(false)}
         >
           <div
-            className="relative w-[640px] rounded-3xl overflow-hidden shadow-2xl"
-            style={{ aspectRatio: '16/9' }}
+            className="relative w-[600px] rounded-3xl overflow-hidden shadow-2xl bg-zinc-900"
             onClick={e => e.stopPropagation()}
           >
-            {/* 背景图 WebP */}
-            <img
-              src="/huodongchuangkou1.webp"
-              alt=""
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-            {/* 底部渐变遮罩 */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
-
             {/* 关闭按钮 */}
             <button
               onClick={() => setShowPromoModal(false)}
               className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 flex items-center justify-center text-white/70 hover:text-white transition-all"
             >✕</button>
 
-            {/* 内容贴底部 */}
-            <div className="absolute bottom-0 left-0 right-0 z-10 px-8 pb-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/30 border border-violet-400/40 text-violet-200 text-xs font-medium mb-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-violet-300 animate-pulse" />
-                新用户专属
-              </div>
-              <h2 className="text-white font-bold text-xl mb-1">注册领取一个月会员</h2>
-              <p className="text-white/60 text-sm mb-3">免费解锁全部 AI 创作功能 · 无限文本 · 角色设计 · 导演引擎 · 视频折扣</p>
+            {/* 图片区域 - 独立展示不叠加文字 */}
+            <img
+              src="/huodongchuangkou1.webp"
+              alt="活动"
+              className="w-full"
+              style={{ aspectRatio: '16/9', objectFit: 'cover' }}
+            />
 
+            {/* 按钮区域 - 图片下方 */}
+            <div className="px-6 py-5">
               <div className="flex gap-3">
                 <button
                   onClick={() => { setShowPromoModal(false); router.push('/auth'); }}
-                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold text-sm transition-all shadow-lg shadow-violet-500/30"
+                  className="flex-1 py-3.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold text-sm transition-all shadow-lg shadow-violet-500/20"
                 >
-                  立即体验 · 免费注册
+                  立即体验
                 </button>
                 <button
-                  onClick={() => setShowPromoModal(false)}
-                  className="px-5 py-3 rounded-xl bg-white/10 hover:bg-white/15 text-white/60 hover:text-white text-sm transition-all"
+                  onClick={() => {
+                    setShowPromoModal(false);
+                    document.getElementById('workflow-templates')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="flex-1 py-3.5 rounded-xl bg-white/10 hover:bg-white/15 text-white/70 hover:text-white text-sm font-medium transition-all"
                 >
-                  稍后
+                  查看示例
                 </button>
               </div>
             </div>

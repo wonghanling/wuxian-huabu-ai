@@ -90,7 +90,7 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
       if (!session) return;
       const { data, error } = await supabase
         .from('transactions')
-        .select('id, type, amount, balance_after, created_at, metadata')
+        .select('id, type, amount, balance_after, created_at, description')
         .eq('user_id', session.user.id)
         .order('created_at', { ascending: false })
         .limit(50);
