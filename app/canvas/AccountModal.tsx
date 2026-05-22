@@ -88,11 +88,13 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
       const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('transactions')
         .select('id, type, amount, balance_after, created_at, metadata')
+        .eq('user_id', session.user.id)
         .order('created_at', { ascending: false })
         .limit(50);
+      if (error) console.error('transactions query error:', error);
       setTransactions(data ?? []);
     } finally {
       setTxLoading(false);
@@ -105,11 +107,13 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
       const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('payment_orders')
         .select('id, order_no, order_type, amount_rmb, status, trade_no, paid_at, created_at')
+        .eq('user_id', session.user.id)
         .order('created_at', { ascending: false })
         .limit(50);
+      if (error) console.error('orders query error:', error);
       setOrders(data ?? []);
     } finally {
       setOrdersLoading(false);

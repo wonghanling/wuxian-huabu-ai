@@ -56,6 +56,8 @@ export class MediaUploadCardUtil extends BaseBoxShapeUtil<MediaUploadCardShape> 
   component(shape: MediaUploadCardShape) {
     const { w, h, mediaType, imageData, videoUrl, videoName, isUploading } = shape.props;
     const editor = useEditor();
+    const imgInputRef = useRef<HTMLInputElement>(null);
+    const vidInputRef = useRef<HTMLInputElement>(null);
 
     const isInViewport = useValue('inViewport', () => {
       const vp = editor.getViewportPageBounds();
@@ -66,9 +68,6 @@ export class MediaUploadCardUtil extends BaseBoxShapeUtil<MediaUploadCardShape> 
     if (!isInViewport && !isUploading) {
       return <HTMLContainer><div style={{ width: w, height: h, background: '#18181b', borderRadius: 12, border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>媒体</span></div></HTMLContainer>;
     }
-
-    const imgInputRef = useRef<HTMLInputElement>(null);
-    const vidInputRef = useRef<HTMLInputElement>(null);
 
     const up = (props: Partial<MediaUploadCardShape['props']>) =>
       editor.updateShape({ id: shape.id, type: 'media-upload-card' as any, props: { ...shape.props, ...props } });
