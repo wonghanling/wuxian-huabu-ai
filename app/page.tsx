@@ -101,12 +101,16 @@ export default function Home() {
 
             {/* 按钮区域 - 图片下方 */}
             <div className="px-6 py-5">
+              <div className="text-center mb-3">
+                <div className="text-white font-semibold text-base mb-0.5">🎁 新用户注册即送 1 个月会员</div>
+                <div className="text-white/50 text-xs">注册成功后进入画布即可领取，限时活动</div>
+              </div>
               <div className="flex gap-3">
                 <button
                   onClick={() => { setShowPromoModal(false); router.push('/auth'); }}
                   className="flex-1 py-3.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold text-sm transition-all shadow-lg shadow-violet-500/20"
                 >
-                  立即体验
+                  立即注册领取
                 </button>
                 <button
                   onClick={() => {
@@ -118,6 +122,7 @@ export default function Home() {
                   查看示例
                 </button>
               </div>
+              <p className="text-center text-white/25 text-xs mt-3">已有账号？<button onClick={() => { setShowPromoModal(false); router.push('/auth'); }} className="text-violet-400 hover:text-violet-300 transition-colors">直接登录进入画布</button></p>
             </div>
           </div>
         </div>
