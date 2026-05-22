@@ -247,7 +247,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
       return '';
     };
 
-    const sourceImage = getSourceImage();
+    const sourceImage = useValue('sourceImage', () => getSourceImage(), [editor, shape.id]);
 
     const generate = async () => {
       if (!sourceImage) { alert('请先连接图片卡片'); return; }

@@ -204,7 +204,7 @@ export class GemStep2CardUtil extends BaseBoxShapeUtil<GemStep2CardShape> {
       return imgs;
     };
 
-    const connectedImages = getConnectedImages();
+    const connectedImages = useValue('connectedImages', () => getConnectedImages(), [editor, shape.id]);
     const allImages = [...connectedImages, ...localImages];
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

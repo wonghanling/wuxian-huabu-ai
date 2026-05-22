@@ -137,7 +137,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
       return '';
     };
 
-    const connectedImage = getConnectedImage();
+    const connectedImage = useValue('connectedImage', () => getConnectedImage(), [editor, shape.id]);
     const displayImage = connectedImage || image;
 
     const APPEND_SUFFIX = '\nAvoid sudden state changes without intermediate motion. Always describe transitional movement between states.\nno grid, no panels, no borders, no collage layout, maintain scene continuity, follow visible continuity, if scene change exists follow it, if no scene change do not add one, do not describe frame numbers.';
@@ -196,7 +196,8 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
       const progressTimer = setInterval(() => {
         progress = Math.min(progress + 3, 90);
         const ls = editor.getShape(shape.id) as any;
-        if (ls) editor.updateShape({ id: shape.id, type: 'gem-step4-card' as any, props: { ...ls.props, generationProgress: progress } });
+        if (!ls) { clearInterval(progressTimer); return; }
+        editor.updateShape({ id: shape.id, type: 'gem-step4-card' as any, props: { ...ls.props, generationProgress: progress } });
       }, 3000);
 
       try {
@@ -279,6 +280,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
           let attempts = 0;
           const poll = async (): Promise<void> => {
             attempts++;
+            if (!editor.getShape(shape.id)) { clearInterval(progressTimer); return; }
             await new Promise(r => setTimeout(r, 3000));
             try {
               const prog = Math.min(20 + attempts * 5, 90);

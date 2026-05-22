@@ -193,7 +193,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
     };
 
     // 实时读取连接的图片用于 UI 显示
-    const connectedInputs = getConnectedInputs();
+    const connectedInputs = useValue('seedance-connections', () => getConnectedInputs(), [editor, shape.id]);
     const connFirstFrame = connectedInputs.imageUrls[0] || '';
     const connLastFrame = connectedInputs.imageUrls[1] || '';
 
@@ -300,6 +300,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
         let attempts = 0;
         const poll = async () => {
           attempts++;
+          if (!editor.getShape(shape.id)) return;
           try {
             const qRes = await fetch('/api/seedance/query?taskId=' + taskId);
             const qData = await qRes.json();

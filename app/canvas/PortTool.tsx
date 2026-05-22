@@ -108,6 +108,10 @@ export class PortTool extends StateNode {
       const bounds = this.editor.getShapePageBounds(shape);
       if (!bounds) continue;
 
+      // 快速距离过滤
+      if (pagePoint.x < bounds.minX - 150 || pagePoint.x > bounds.maxX + 150 ||
+          pagePoint.y < bounds.minY - 150 || pagePoint.y > bounds.maxY + 150) continue;
+
       // 检查时间轴
       if (shapeType === 'timeline') {
         const { duration, zoom, w } = (shape as any).props;

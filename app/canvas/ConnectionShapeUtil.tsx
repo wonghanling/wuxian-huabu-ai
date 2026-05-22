@@ -162,6 +162,10 @@ export class ConnectionShapeUtil extends ShapeUtil<ConnectionShape> {
       const bounds = this.editor.getShapePageBounds(shape);
       if (!bounds) continue;
 
+      // 快速距离过滤：跳过距离点太远的 shapes（150px 阈值）
+      if (point.x < bounds.minX - 150 || point.x > bounds.maxX + 150 ||
+          point.y < bounds.minY - 150 || point.y > bounds.maxY + 150) continue;
+
       const shapeType = (shape as any).type;
 
       // Check for timeline shape - 大幅扩展检测范围

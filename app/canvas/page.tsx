@@ -1813,8 +1813,9 @@ function CanvasPageContent() {
   const isWelcome = searchParams.get('welcome') === '1';
 
   const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
-  const [cameraZoom, setCameraZoom] = useState(1);
-  const [cameraPos, setCameraPos] = useState({ x: 0, y: 0 });
+  const cameraZoomRef = useRef(1);
+  const cameraPosRef = useRef({ x: 0, y: 0 });
+  const gridBgRef = useRef<HTMLStyleElement | null>(null);
   const [showIntro, setShowIntro] = useState(true);
   const [showTutorial, setShowTutorial] = useState(isTutorial);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'unsaved'>('unsaved');
@@ -2182,15 +2183,21 @@ function CanvasPageContent() {
     };
     (window as any).saveCanvasNow = saveCanvasNow;
 
-    // 监听相机变化，更新缩放级别和位置（RAF 节流，避免 store 批量更新时主线程卡顿）
+    // 监听相机变化，直接更新 DOM 样式（避免 React 重渲染）
     let rafId: number | null = null;
     const updateCamera = () => {
       if (rafId !== null) return;
       rafId = requestAnimationFrame(() => {
         rafId = null;
         const camera = editor.getCamera();
-        setCameraZoom(camera.z);
-        setCameraPos({ x: camera.x, y: camera.y });
+        cameraZoomRef.current = camera.z;
+        cameraPosRef.current = { x: camera.x, y: camera.y };
+        const bgEl = document.querySelector('.tl-background') as HTMLElement | null;
+        if (bgEl) {
+          const size = 60 * camera.z;
+          bgEl.style.backgroundSize = `${size}px ${size}px`;
+          bgEl.style.backgroundPosition = `${-camera.x * camera.z}px ${-camera.y * camera.z}px`;
+        }
       });
     };
     updateCamera();
@@ -2999,8 +3006,8 @@ function CanvasPageContent() {
         .tl-background {
           background-color: #000000 !important;
           background-image: radial-gradient(circle, rgba(120, 120, 120, 0.35) 1px, transparent 1px);
-          background-size: ${60 * cameraZoom}px ${60 * cameraZoom}px;
-          background-position: ${-cameraPos.x * cameraZoom}px ${-cameraPos.y * cameraZoom}px;
+          background-size: 60px 60px;
+          background-position: 0px 0px;
         }
 
         /* 网格颜色 */

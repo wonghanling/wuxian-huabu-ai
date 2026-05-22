@@ -826,13 +826,13 @@ export class CustomCardShapeUtil extends BaseBoxShapeUtil<CustomCardShape> {
     };
 
     // 视频卡片连接图片
-    const connectedVideoImages = cardType === 'video' ? getConnectedImages(2) : [];
+    const connectedVideoImages = useValue('connected-video-images', () => cardType === 'video' ? getConnectedImages(2) : [], [editor, shape.id, cardType]);
     const connFirstFrame = connectedVideoImages[0] || '';
     const connLastFrame = connectedVideoImages[1] || '';
 
     // 图片卡片多图连接（按模型限制数量）
     const imageCardMaxConn = model === 'nano-banana-pro-multi' ? 10 : model === 'gpt-image-2-all' ? 10 : model === 'nano-banana' ? 2 : model === 'nano-banana-pro' ? 2 : 1;
-    const connectedImageCardImages = cardType === 'image' ? getConnectedImages(imageCardMaxConn) : [];
+    const connectedImageCardImages = useValue('connected-image-card-images', () => cardType === 'image' ? getConnectedImages(imageCardMaxConn) : [], [editor, shape.id, cardType, imageCardMaxConn]);
 
     const toggleMinimize = (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -2591,6 +2591,7 @@ Maintain strong visual consistency in every panel.`;
                                 let pollAttempts = 0;
                                 const poll = async (): Promise<string> => {
                                   pollAttempts++;
+                                  if (!editor.getShape(shape.id)) return '';
                                   await new Promise(r => setTimeout(r, 3000));
                                   try {
                                     const qRes = await fetch(`/api/image/fal-query?requestId=${encodeURIComponent(data.requestId)}&endpoint=${encodeURIComponent(endpoint)}`);
@@ -3376,6 +3377,7 @@ Maintain strong visual consistency in every panel.`;
                         const falEndpoint = data.endpoint || 'openai/gpt-image-2/edit';
                         const poll = async (): Promise<string> => {
                           pollAttempts++;
+                          if (!editor.getShape(shape.id)) return '';
                           await new Promise(r => setTimeout(r, 3000));
                           const progress = Math.min(20 + pollAttempts * 5, 90);
                           const currentShape = editor.getShape(shape.id) as any;
@@ -3691,6 +3693,7 @@ Maintain strong visual consistency in every panel.`;
                     let attempts = 0;
 
                     const poll = async (): Promise<void> => {
+                      if (!editor.getShape(shape.id)) return;
                       if (attempts >= maxAttempts) {
                         throw new Error('视频生成超时，请稍后重试');
                       }
@@ -3998,6 +4001,7 @@ Maintain strong visual consistency in every panel.`;
                         let attempts = 0;
                         const poll = async () => {
                           attempts++;
+                          if (!editor.getShape(shape.id)) return;
                           try {
                             const qRes = await fetch(`/api/kling/query?taskId=${taskId}&mode=lip-sync`);
                             const qData = await qRes.json();

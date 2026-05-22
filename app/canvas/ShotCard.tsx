@@ -5,6 +5,7 @@ import {
   T,
   TLBaseShape,
   useEditor,
+  useValue,
   Rectangle2d,
 } from 'tldraw';
 import { useState } from 'react';
@@ -67,6 +68,17 @@ export class ShotCardShapeUtil extends BaseBoxShapeUtil<ShotCardShape> {
   component(shape: ShotCardShape) {
     const { w, h, shotType, cameraMovement, directorThinking, composition, subjectScale, spaceType, timeFeeling, lighting, motionSource, semantic, isMinimized } = shape.props;
     const editor = useEditor();
+
+    const isInViewport = useValue('inViewport', () => {
+      const vp = editor.getViewportPageBounds();
+      const sb = editor.getShapePageBounds(shape.id);
+      if (!sb) return true;
+      return !(sb.maxX < vp.minX || sb.minX > vp.maxX || sb.maxY < vp.minY || sb.minY > vp.maxY);
+    }, [editor, shape.id]);
+    if (!isInViewport) {
+      return <HTMLContainer><div style={{ width: w, height: h, background: '#18181b', borderRadius: 12, border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>镜头卡</span></div></HTMLContainer>;
+    }
+
     const [showCameraMovementPanel, setShowCameraMovementPanel] = useState(false);
     const [showDirectorThinkingPanel, setShowDirectorThinkingPanel] = useState(false);
     const [showDirectorThinkingSubPanel, setShowDirectorThinkingSubPanel] = useState(false);

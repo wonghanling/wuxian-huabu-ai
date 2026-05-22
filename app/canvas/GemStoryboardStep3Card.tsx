@@ -120,7 +120,7 @@ export class GemStep3CardUtil extends BaseBoxShapeUtil<GemStep3CardShape> {
       return imgs;
     };
 
-    const connectedImages = getConnectedImages();
+    const connectedImages = useValue('connectedImages', () => getConnectedImages(), [editor, shape.id]);
     const displayStart = connectedImages[0] || startImage;
     const displayEnd = connectedImages[1] || endImage;
 

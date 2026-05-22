@@ -368,19 +368,26 @@ export class PromptOptimizerCardUtil extends BaseBoxShapeUtil<PromptOptimizerCar
                     className="w-full text-xs text-gray-400 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-600/50 file:text-white hover:file:bg-gray-600/70 file:cursor-pointer"
                     onClick={(e) => e.stopPropagation()}
                     onPointerDown={(e) => e.stopPropagation()}
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const file = e.target.files?.[0];
                       if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (event) => {
-                          const imageData = event.target?.result as string;
+                        try {
+                          const supabase = createClient();
+                          const { data: { user } } = await supabase.auth.getUser();
+                          if (!user) { alert('请先登录'); return; }
+                          const ext = file.name.split('.').pop() || 'jpg';
+                          const path = `ref-images/${user.id}/${Date.now()}.${ext}`;
+                          const { error } = await supabase.storage.from('images').upload(path, file, { upsert: true });
+                          if (error) throw error;
+                          const { data: urlData } = supabase.storage.from('images').getPublicUrl(path);
                           editor.updateShape({
                             id: shape.id,
                             type: 'prompt-optimizer-card' as any,
-                            props: { ...shape.props, uploadedImage: imageData },
+                            props: { ...shape.props, uploadedImage: urlData.publicUrl },
                           });
-                        };
-                        reader.readAsDataURL(file);
+                        } catch (err: any) {
+                          alert('图片上传失败: ' + (err.message || ''));
+                        }
                       }
                     }}
                   />

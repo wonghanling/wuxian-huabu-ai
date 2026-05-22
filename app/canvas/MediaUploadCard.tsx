@@ -1,5 +1,5 @@
 'use client';
-import { BaseBoxShapeUtil, TLBaseShape, HTMLContainer, RecordProps, T, useEditor, Rectangle2d } from 'tldraw';
+import { BaseBoxShapeUtil, TLBaseShape, HTMLContainer, RecordProps, T, useEditor, useValue, Rectangle2d } from 'tldraw';
 import { useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -56,6 +56,17 @@ export class MediaUploadCardUtil extends BaseBoxShapeUtil<MediaUploadCardShape> 
   component(shape: MediaUploadCardShape) {
     const { w, h, mediaType, imageData, videoUrl, videoName, isUploading } = shape.props;
     const editor = useEditor();
+
+    const isInViewport = useValue('inViewport', () => {
+      const vp = editor.getViewportPageBounds();
+      const sb = editor.getShapePageBounds(shape.id);
+      if (!sb) return true;
+      return !(sb.maxX < vp.minX || sb.minX > vp.maxX || sb.maxY < vp.minY || sb.minY > vp.maxY);
+    }, [editor, shape.id]);
+    if (!isInViewport && !isUploading) {
+      return <HTMLContainer><div style={{ width: w, height: h, background: '#18181b', borderRadius: 12, border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>媒体</span></div></HTMLContainer>;
+    }
+
     const imgInputRef = useRef<HTMLInputElement>(null);
     const vidInputRef = useRef<HTMLInputElement>(null);
 
@@ -129,6 +140,7 @@ export class MediaUploadCardUtil extends BaseBoxShapeUtil<MediaUploadCardShape> 
           const ratio = video.videoWidth / video.videoHeight;
           const newW = 320;
           const newH = Math.round(newW / ratio);
+          URL.revokeObjectURL(video.src);
           editor.updateShape({
             id: shape.id, type: 'media-upload-card' as any,
             props: { ...shape.props, mediaType: 'video', videoUrl: urlData.publicUrl, videoName: file.name, isUploading: false, w: newW, h: newH + 48 },
