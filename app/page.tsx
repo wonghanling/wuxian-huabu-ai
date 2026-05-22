@@ -42,12 +42,13 @@ export default function Home() {
         return;
       }
 
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
+      // 先读本地 session（瞬间返回，不发网络请求）
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
       setLoading(false);
 
       // 未登录用户首次访问自动弹出活动弹窗
-      if (!user && !sessionStorage.getItem('promo-modal-shown')) {
+      if (!session?.user && !sessionStorage.getItem('promo-modal-shown')) {
         setTimeout(() => setShowPromoModal(true), 800);
         sessionStorage.setItem('promo-modal-shown', '1');
       }
