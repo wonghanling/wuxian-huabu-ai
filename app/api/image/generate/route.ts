@@ -350,10 +350,13 @@ export async function POST(req: NextRequest) {
 
     } else if (modelConfig.apiType === 'midjourney') {
       const base64Array = imageBase64 ? [imageBase64] : [];
+      // MJ 通过 --ar 参数控制比例，转换格式（1:1 → --ar 1:1）
+      const arParam = aspectRatio && aspectRatio !== '1:1' ? ` --ar ${aspectRatio}` : '';
+      const mjPrompt = `${prompt}${arParam}`;
       const response = await fetchWithN1nPool(`${YUNWU_BASE_URL}/mj/submit/imagine`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ botType: 'MID_JOURNEY', prompt, base64Array, notifyHook: '', state: '' }),
+        body: JSON.stringify({ botType: 'MID_JOURNEY', prompt: mjPrompt, base64Array, notifyHook: '', state: '' }),
       });
       if (!response.ok) throw new Error(`API 错误: ${response.status}`);
       const data = await response.json();
