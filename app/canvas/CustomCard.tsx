@@ -1123,7 +1123,17 @@ Maintain strong visual consistency in every panel.`;
                     onPointerDown={(e) => e.stopPropagation()}
                     className="text-[10px] px-2.5 py-1.5 rounded-lg bg-purple-600/30 border border-purple-500/50 text-purple-200 hover:bg-purple-600/50 hover:border-purple-500/70 hover:text-white transition-all font-medium"
                   >角色设计</button>
-                </div>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const noGrainPrompt = `clean illustration, smooth shading, soft lighting, controlled details, minimal texture, high clarity, refined edges, smooth gradients --no noise, grain, artifacts, high frequency detail, dirty texture, oversharpen, blotchy, chaotic details`;
+                      setLocalPrompt(noGrainPrompt);
+                      editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, prompt: noGrainPrompt } });
+                    }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    className="text-[10px] px-2.5 py-1.5 rounded-lg bg-blue-600/30 border border-blue-500/50 text-blue-200 hover:bg-blue-600/50 hover:border-blue-500/70 hover:text-white transition-all font-medium"
+                  >ChatGPT Image 2 - 无颗粒</button>
                 <div className="text-[9px] text-gray-500 mt-1.5 leading-relaxed">
                   点击"角色设计"会覆盖当前 Prompt，生成专业角色设定板（基于上传的参考图）
                 </div>

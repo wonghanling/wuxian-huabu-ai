@@ -16,7 +16,9 @@ export const IMAGE_PRICING: Record<string, number> = {
   'flux-kontext':         0.6,
   'flux-kontext-max':     1.0,
   'midjourney':           0.6,
+  'mj_imagine':           0.6,
   'doubao-seedream':      0.3,
+  'doubao-seedream-4-5-251128': 0.3,
   'nano-banana-pro-multi-2k': 1.5,
   'nano-banana-pro-multi-4k': 2.5,
   // GPT Image 2 medium
@@ -145,10 +147,10 @@ export const VIDEO_PRICING: Record<string, VideoModelPrice> = {
   'wan2.6-i2v-flash': {
     audioVariants: true,
     resolutions: {
-      '720P':        tier(0.15), // 无声
-      '720P_audio':  tier(0.30), // 有声
-      '1080P':       tier(0.25), // 无声
-      '1080P_audio': tier(0.50), // 有声
+      '720P':        tier(0.15), // 无声 会员0.55/普通0.75
+      '720P_audio':  tier(0.30), // 有声 会员0.70/普通0.90
+      '1080P':       tier(0.25), // 无声 会员0.65/普通0.85
+      '1080P_audio': tier(0.50), // 有声 会员0.90/普通1.10
     },
   },
 
@@ -156,9 +158,9 @@ export const VIDEO_PRICING: Record<string, VideoModelPrice> = {
   'wan2.2-kf2v-flash': {
     fixedSeconds: 5,
     resolutions: {
-      '480P':  tier(0.10),
-      '720P':  tier(0.20),
-      '1080P': tier(0.48),
+      '480P':  tier(0.10), // 会员5s¥2.50 / 普通5s¥3.50
+      '720P':  tier(0.20), // 会员5s¥3.00 / 普通5s¥4.00
+      '1080P': tier(0.48), // 会员5s¥4.40 / 普通5s¥5.40
     },
   },
 
@@ -171,8 +173,8 @@ export const VIDEO_PRICING: Record<string, VideoModelPrice> = {
       '480p_audio':  tierSeedance(0.71), // 会员 0.91 / 普通 1.11
       '720p':        tierSeedance(1.09), // 会员 1.29 / 普通 1.49
       '720p_audio':  tierSeedance(1.29), // 会员 1.49 / 普通 1.69
-      '1080p':       tierSeedance(2.71), // 会员 2.91 / 普通 3.11
-      '1080p_audio': tierSeedance(2.91), // 会员 3.11 / 普通 3.31
+      '1080p':       tierSeedance(2.61), // 会员 2.81 / 普通 3.01
+      '1080p_audio': tierSeedance(2.81), // 会员 3.01 / 普通 3.21
     },
   },
   // ── Seedance 2.0 Fast（新规则）────────────────────────────
