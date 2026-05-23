@@ -94,7 +94,7 @@ export default function Home() {
 
             {/* 图片区域 - 独立展示不叠加文字 */}
             <img
-              src="/huodongchuangkou1.webp"
+              src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/boluolab.com/huodongchuangkou1.webp"
               alt="活动"
               className="w-full"
               style={{ aspectRatio: '16/9', objectFit: 'cover' }}
@@ -605,7 +605,7 @@ export default function Home() {
                 loop
                 playsInline
                 className="absolute inset-0 w-full h-full object-cover opacity-60"
-                src="/hero.mp4"
+                src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/boluolab.com/hero.mp4"
               />
               {/* 内容叠在视频上 */}
               <div className="relative z-10">
