@@ -1134,6 +1134,7 @@ Maintain strong visual consistency in every panel.`;
                     onPointerDown={(e) => e.stopPropagation()}
                     className="text-[10px] px-2.5 py-1.5 rounded-lg bg-blue-600/30 border border-blue-500/50 text-blue-200 hover:bg-blue-600/50 hover:border-blue-500/70 hover:text-white transition-all font-medium"
                   >ChatGPT Image 2 - 无颗粒</button>
+                </div>
                 <div className="text-[9px] text-gray-500 mt-1.5 leading-relaxed">
                   点击"角色设计"会覆盖当前 Prompt，生成专业角色设定板（基于上传的参考图）
                 </div>
