@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { isAdmin } from '@/lib/admin';
 
 export const dynamic = 'force-dynamic';
-
-const ADMIN_EMAIL = '1825221780@qq.com';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,7 +16,7 @@ async function requireAdmin(req: NextRequest): Promise<{ ok: true } | { ok: fals
   const token = authHeader.replace('Bearer ', '');
   const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
   if (authError || !user) return { ok: false, res: NextResponse.json({ error: '无效认证' }, { status: 401 }) };
-  if (user.email !== ADMIN_EMAIL) return { ok: false, res: NextResponse.json({ error: '无权限' }, { status: 403 }) };
+  if (!isAdmin(user.email)) return { ok: false, res: NextResponse.json({ error: '无权限' }, { status: 403 }) };
   return { ok: true };
 }
 

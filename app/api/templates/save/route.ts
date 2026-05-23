@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { isAdmin } from '@/lib/admin';
 
 export const maxDuration = 30;
-
-const ADMIN_EMAIL = '1825221780@qq.com';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,7 +17,7 @@ export async function POST(req: NextRequest) {
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     if (authError || !user) return NextResponse.json({ error: '无效认证' }, { status: 401 });
-    if (user.email !== ADMIN_EMAIL) return NextResponse.json({ error: '无权限：仅管理员可保存模板' }, { status: 403 });
+    if (!isAdmin(user.email)) return NextResponse.json({ error: '无权限：仅管理员可保存模板' }, { status: 403 });
 
     // 2. 解析 JSON（前端已直传 Storage，这里只收 URL）
     const body = await req.json();

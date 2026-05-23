@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-
-const ADMIN_EMAIL = '1825221780@qq.com';
+import { isAdmin } from '@/lib/admin';
 
 const PROVIDERS = [
   { value: 'n1n', label: 'n1n (Yunwu)', desc: 'MJ/豆包/Flux/文本/Kling/MiniMax' },
@@ -51,7 +50,7 @@ export default function ApiPoolAdminPage() {
         router.replace('/auth');
         return;
       }
-      if (session.user.email !== ADMIN_EMAIL) {
+      if (!isAdmin(session.user.email)) {
         router.replace('/');
         return;
       }
@@ -138,7 +137,7 @@ export default function ApiPoolAdminPage() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold">API 账号池管理</h1>
-            <p className="text-sm text-zinc-400 mt-1">仅管理员 {ADMIN_EMAIL} 可访问</p>
+            <p className="text-sm text-zinc-400 mt-1">仅管理员可访问</p>
           </div>
           <div className="flex gap-2">
             <a

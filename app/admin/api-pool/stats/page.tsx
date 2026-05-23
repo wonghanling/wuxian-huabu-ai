@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-
-const ADMIN_EMAIL = '1825221780@qq.com';
+import { isAdmin } from '@/lib/admin';
 
 interface ProviderStat {
   total: number;
@@ -81,7 +80,7 @@ export default function ApiPoolStatsPage() {
       const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.replace('/auth'); return; }
-      if (session.user.email !== ADMIN_EMAIL) { router.replace('/'); return; }
+      if (!isAdmin(session.user.email)) { router.replace('/'); return; }
       setToken(session.access_token);
       setAuthorized(true);
       setLoading(false);
