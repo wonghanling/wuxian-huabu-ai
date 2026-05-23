@@ -108,7 +108,7 @@ export default function Home() {
               </div>
               <div className="flex gap-3">
                 <button
-                  onClick={() => { setShowPromoModal(false); router.push('/auth'); }}
+                  onClick={() => { setShowPromoModal(false); window.location.href = '/auth'; }}
                   className="flex-1 py-3.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold text-sm transition-all shadow-lg shadow-violet-500/20"
                 >
                   立即注册领取
@@ -123,7 +123,7 @@ export default function Home() {
                   查看示例
                 </button>
               </div>
-              <p className="text-center text-white/25 text-xs mt-3">已有账号？<button onClick={() => { setShowPromoModal(false); router.push('/auth'); }} className="text-violet-400 hover:text-violet-300 transition-colors">直接登录进入画布</button></p>
+              <p className="text-center text-white/25 text-xs mt-3">已有账号？<button onClick={() => { setShowPromoModal(false); window.location.href = '/auth'; }} className="text-violet-400 hover:text-violet-300 transition-colors">直接登录进入画布</button></p>
             </div>
           </div>
         </div>
@@ -187,18 +187,14 @@ export default function Home() {
               </>
             ) : (
               <>
-                <Link href="/auth">
-                  <button className="text-sm font-medium text-zinc-400 hover:text-white transition-colors flex flex-col items-center">
-                    <span>Log in</span>
-                    <span className="text-xs text-zinc-500">登录</span>
-                  </button>
-                </Link>
-                <Link href="/auth">
-                  <button className="px-4 py-2 text-sm font-semibold rounded-full btn-primary flex flex-col items-center">
-                    <span>Sign up</span>
-                    <span className="text-xs">注册</span>
-                  </button>
-                </Link>
+                <a href="/auth" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors flex flex-col items-center">
+                  <span>Log in</span>
+                  <span className="text-xs text-zinc-500">登录</span>
+                </a>
+                <a href="/auth" className="px-4 py-2 text-sm font-semibold rounded-full btn-primary flex flex-col items-center">
+                  <span>Sign up</span>
+                  <span className="text-xs">注册</span>
+                </a>
               </>
             )}
           </div>

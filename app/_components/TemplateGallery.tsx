@@ -55,21 +55,42 @@ export function TemplateGallery() {
 
 function TemplateCard({ template }: { template: Template }) {
   const [hovered, setHovered] = useState(false);
+  const [videoSrc, setVideoSrc] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  // 只有卡片进入视口才加载视频 src
+  useEffect(() => {
+    if (!template.preview_video_url) return;
+    const el = cardRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVideoSrc(template.preview_video_url);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '200px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [template.preview_video_url]);
 
   useEffect(() => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || !videoSrc) return;
     if (hovered) {
       video.currentTime = 0;
       video.play().catch(() => {});
     } else {
       video.pause();
     }
-  }, [hovered]);
+  }, [hovered, videoSrc]);
 
   return (
     <div
+      ref={cardRef}
       className="glass-card overflow-hidden group hover:border-purple-500/40 transition-all duration-300"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -85,10 +106,10 @@ function TemplateCard({ template }: { template: Template }) {
             loading="lazy"
           />
         )}
-        {template.preview_video_url && (
+        {videoSrc && (
           <video
             ref={videoRef}
-            src={template.preview_video_url}
+            src={videoSrc}
             muted
             loop
             playsInline

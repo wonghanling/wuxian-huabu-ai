@@ -530,12 +530,12 @@ export default function AuthPage() {
 
           {/* Back to Home */}
           <div className="text-center mt-6">
-            <Link
+            <a
               href="/"
               className="text-sm text-zinc-400 hover:text-white transition-colors"
             >
               ← 返回首页 / Back to Home
-            </Link>
+            </a>
           </div>
           </>
           )}
