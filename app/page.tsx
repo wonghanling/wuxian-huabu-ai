@@ -9,7 +9,7 @@ import { TemplateGallery } from './_components/TemplateGallery';
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [showPromoModal, setShowPromoModal] = useState(false);
   const router = useRouter();
   const supabase = createClient();
