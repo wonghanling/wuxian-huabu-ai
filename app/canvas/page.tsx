@@ -2389,7 +2389,7 @@ function CanvasPageContent() {
               </div>
 
               {/* 保存为模板（仅管理员） */}
-              {userEmail === '1825221780@qq.com' && editorInstance && (
+              {['1825221780@qq.com', '3866855423@qq.com'].includes(userEmail || '') && editorInstance && (
                 <button
                   onClick={() => setShowSaveTemplateModal(true)}
                   className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-purple-600/30 backdrop-blur-md border border-purple-500/40 text-purple-200 hover:bg-purple-600/50 hover:border-purple-500/60 transition-all"
