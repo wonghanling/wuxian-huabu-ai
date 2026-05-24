@@ -2413,19 +2413,22 @@ Maintain strong visual consistency in every panel.`;
                             <label className="text-gray-400 text-xs mb-1 block">尺寸</label>
                             <div className="flex gap-1 flex-wrap">
                               {[
-                                { value: '1920x1080', label: '16:9 1080p' },
-                                { value: '1080x1920', label: '9:16 1080p' },
-                                { value: '1080x1080', label: '1:1 1080p' },
-                                { value: '2048x1152', label: '16:9 2K' },
-                                { value: '2048x2048', label: '1:1 2K' },
-                                { value: '3840x2160', label: '16:9 4K' },
-                                { value: '2160x3840', label: '9:16 4K' },
-                              ].map(({ value, label }) => (
+                                { value: '1920x1080', label: '16:9 1080p', priceMedium: '¥0.5', priceHigh: '¥1.2' },
+                                { value: '1080x1920', label: '9:16 1080p', priceMedium: '¥0.5', priceHigh: '¥1.2' },
+                                { value: '1080x1080', label: '1:1 1080p', priceMedium: '¥0.5', priceHigh: '¥1.2' },
+                                { value: '2048x1152', label: '16:9 2K', priceMedium: '¥0.4', priceHigh: '¥1.2' },
+                                { value: '2048x2048', label: '1:1 2K', priceMedium: '¥0.5', priceHigh: '¥1.7' },
+                                { value: '3840x2160', label: '16:9 4K', priceMedium: '¥0.9', priceHigh: '¥3.1' },
+                                { value: '2160x3840', label: '9:16 4K', priceMedium: '¥0.9', priceHigh: '¥3.1' },
+                              ].map(({ value, label, priceMedium, priceHigh }) => (
                                 <button key={value}
                                   onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, aspectRatio: value } }); }}
                                   onPointerDown={(e) => e.stopPropagation()}
                                   className={`flex-1 py-1.5 rounded-lg border text-[10px] font-medium transition-all ${(aspectRatio ?? '2048x1152') === value ? 'bg-blue-500/20 border-blue-500/50 text-blue-400' : 'bg-black/30 border-white/8 text-gray-400 hover:border-white/20'}`}
-                                >{label}</button>
+                                >
+                                  <div>{label}</div>
+                                  <div className="text-[10px] opacity-70">{(imageQuality ?? 'medium') === 'high' ? priceHigh : priceMedium}</div>
+                                </button>
                               ))}
                             </div>
                           </div>
