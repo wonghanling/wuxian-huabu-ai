@@ -177,7 +177,8 @@ export async function POST(req: NextRequest) {
         const hasImages = imageUrlArray && Array.isArray(imageUrlArray) && imageUrlArray.length > 0;
         const actualEndpoint = hasImages ? 'fal-ai/nano-banana-2/edit' : 'fal-ai/nano-banana-2';
         input.resolution = imageQuality === '4k' ? '4K' : '2K';
-        delete input.aspect_ratio;
+        // 有图时保留 aspect_ratio，让出图比例跟用户选的一致
+        if (!hasImages) delete input.aspect_ratio;
         delete input.num_images;
         delete input.output_format;
         delete input.safety_tolerance;
@@ -197,6 +198,9 @@ export async function POST(req: NextRequest) {
 
         // 尺寸：把 "2048x1152" 转成 {width, height}
         const sizeMap: Record<string, {width: number, height: number}> = {
+          '1920x1080': { width: 1920, height: 1080 },
+          '1080x1920': { width: 1080, height: 1920 },
+          '1080x1080': { width: 1080, height: 1080 },
           '2048x1152': { width: 2048, height: 1152 },
           '3840x2160': { width: 3840, height: 2160 },
           '2160x3840': { width: 2160, height: 3840 },

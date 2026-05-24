@@ -9,7 +9,11 @@ export const maxDuration = 300;
 // 回退保险
 falSingleton.config({ credentials: process.env.FAL_KEY! });
 
-const STEP4_PRICE = 1.5; // 固定 ¥1.5/次
+const STEP4_PRICE: Record<string, number> = {
+  '2048x1152': 1.2, // high 16:9 2K 成本¥1.09
+  '2048x2048': 1.7, // high 1:1 2K 成本¥1.58
+  '2160x3840': 3.1, // high 9:16 4K 成本¥2.97
+};
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,8 +27,9 @@ export async function POST(req: NextRequest) {
       const isMember = await checkMembership(userId);
       if (!isMember) return NextResponse.json({ error: '需要开通会员才能使用导演引擎' }, { status: 402 });
 
-      // 扣费 ¥1.5
-      const deduct = await deductBalance(userId, STEP4_PRICE, 'image_deduct', 'GEM Step4 分镜图生成（GPT Image 2）', { model: 'gpt-image-2', aspectRatio });
+      const price = STEP4_PRICE[aspectRatio] ?? 1.2;
+      // 扣费
+      const deduct = await deductBalance(userId, price, 'image_deduct', 'GEM Step4 分镜图生成（GPT Image 2）', { model: 'gpt-image-2', aspectRatio });
       if (!deduct.success) {
         return NextResponse.json({ error: deduct.error || '余额不足，请充值' }, { status: 402 });
       }
@@ -79,7 +84,8 @@ export async function POST(req: NextRequest) {
       caughtErr = err;
       // 失败退款
       if (userId) {
-        await refundBalance(userId, STEP4_PRICE, 'GEM Step4 分镜图生成失败退款', { model: 'gpt-image-2', aspectRatio });
+        const price = STEP4_PRICE[aspectRatio] ?? 1.2;
+        await refundBalance(userId, price, 'GEM Step4 分镜图生成失败退款', { model: 'gpt-image-2', aspectRatio });
       }
       throw err;
     } finally {

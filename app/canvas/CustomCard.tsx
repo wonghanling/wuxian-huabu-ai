@@ -1544,10 +1544,13 @@ Maintain strong visual consistency in every panel.`;
                       <label className="text-gray-400 text-xs mb-1 block">尺寸</label>
                       <div className="flex gap-1 flex-wrap">
                         {[
-                          { value: '2048x1152', label: '16:9 2K', priceMedium: '¥0.7', priceHigh: '¥0.7' },
-                          { value: '3840x2160', label: '16:9 4K', priceMedium: '¥1.5', priceHigh: '¥2.0' },
-                          { value: '2160x3840', label: '9:16 4K', priceMedium: '¥1.5', priceHigh: '¥2.0' },
-                          { value: '2048x2048', label: '1:1 2K', priceMedium: '¥0.7', priceHigh: '¥1.0' },
+                          { value: '1920x1080', label: '16:9 1080p', priceMedium: '¥0.5', priceHigh: '¥1.2' },
+                          { value: '1080x1920', label: '9:16 1080p', priceMedium: '¥0.5', priceHigh: '¥1.2' },
+                          { value: '1080x1080', label: '1:1 1080p', priceMedium: '¥0.5', priceHigh: '¥1.2' },
+                          { value: '2048x1152', label: '16:9 2K', priceMedium: '¥0.4', priceHigh: '¥1.2' },
+                          { value: '2048x2048', label: '1:1 2K', priceMedium: '¥0.5', priceHigh: '¥1.7' },
+                          { value: '3840x2160', label: '16:9 4K', priceMedium: '¥0.9', priceHigh: '¥3.1' },
+                          { value: '2160x3840', label: '9:16 4K', priceMedium: '¥0.9', priceHigh: '¥3.1' },
                         ].map(({ value, label, priceMedium, priceHigh }) => (
                           <button key={value}
                             onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, aspectRatio: value } }); }}
@@ -2410,10 +2413,13 @@ Maintain strong visual consistency in every panel.`;
                             <label className="text-gray-400 text-xs mb-1 block">尺寸</label>
                             <div className="flex gap-1 flex-wrap">
                               {[
+                                { value: '1920x1080', label: '16:9 1080p' },
+                                { value: '1080x1920', label: '9:16 1080p' },
+                                { value: '1080x1080', label: '1:1 1080p' },
                                 { value: '2048x1152', label: '16:9 2K' },
+                                { value: '2048x2048', label: '1:1 2K' },
                                 { value: '3840x2160', label: '16:9 4K' },
                                 { value: '2160x3840', label: '9:16 4K' },
-                                { value: '2048x2048', label: '1:1 2K' },
                               ].map(({ value, label }) => (
                                 <button key={value}
                                   onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, aspectRatio: value } }); }}

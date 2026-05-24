@@ -137,7 +137,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
       return '';
     };
 
-    const connectedImage = useValue('connectedImage', () => getConnectedImage(), [editor, shape.id]);
+    const connectedImage = useValue('connectedImage', () => getConnectedImage(), [editor, shape.id, inputType]);
     const displayImage = connectedImage || image;
 
     const APPEND_SUFFIX = '\nAvoid sudden state changes without intermediate motion. Always describe transitional movement between states.\nno grid, no panels, no borders, no collage layout, maintain scene continuity, follow visible continuity, if scene change exists follow it, if no scene change do not add one, do not describe frame numbers.';
