@@ -13,17 +13,19 @@ interface DeductResult {
 
 // 检查用户是否是有效会员
 export async function checkMembership(userId: string): Promise<boolean> {
-  const { data } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from('users')
     .select('is_member, member_expires_at')
     .eq('id', userId)
     .single();
 
-  return !!(
+  const result = !!(
     data?.is_member &&
     data?.member_expires_at &&
     new Date(data.member_expires_at) > new Date()
   );
+  console.log('[checkMembership]', userId, { is_member: data?.is_member, expires: data?.member_expires_at, error, result });
+  return result;
 }
 
 // 预扣余额（生成前调用）

@@ -1832,7 +1832,7 @@ function CanvasPageContent() {
   const [showImageSplitModal, setShowImageSplitModal] = useState(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [floatingMenu, setFloatingMenu] = useState<{ x: number; y: number; shapeId: string; type: 'image-card' | 'step2-card' | 'media-upload-card' | 'image-output' | 'video-output' } | null>(null);
-  const { isMember, balance, memberExpiresAt, refresh: refreshMembership } = useMembership();
+  const { isMember, balance, memberExpiresAt, refresh: refreshMembership, loading: memberLoading } = useMembership();
 
   // 检查是否需要弹出领取会员弹窗（未领取过的用户每次进画布都弹）
   useEffect(() => {
@@ -2368,7 +2368,9 @@ function CanvasPageContent() {
 
               {/* 余额 + 会员状态 */}
               <div className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-zinc-900/80 backdrop-blur-md border border-white/10 text-gray-300">
-                {isMember ? (
+                {memberLoading ? (
+                  <span className="text-white/30">···</span>
+                ) : isMember ? (
                   <span className="text-violet-400 font-semibold cursor-pointer hover:text-violet-300 transition-colors" onClick={() => setShowAccountModal(true)}>会员</span>
                 ) : (
                   <button
