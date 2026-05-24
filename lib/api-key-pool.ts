@@ -81,6 +81,28 @@ function getAdminClient() {
 }
 
 // ============================================================================
+// pickKeyById: 用指定 keyId 取 key（用于查询时保证与生成用同一个 key）
+// ============================================================================
+export async function pickKeyById(keyId: string, provider: ApiProvider): Promise<KeyInfo> {
+  const startedAt = Date.now();
+  try {
+    const admin = getAdminClient();
+    const { data, error } = await admin
+      .from('api_keys')
+      .select('id, key_value, secondary_value')
+      .eq('id', keyId)
+      .single();
+    if (!error && data) {
+      return { keyId: data.id, keyValue: data.key_value, secondaryValue: data.secondary_value ?? undefined, provider, startedAt };
+    }
+  } catch (err) {
+    console.warn('[api-key-pool] pickKeyById error, fallback to pickKey:', err);
+  }
+  // 找不到指定 key 时回退到随机取一个
+  return pickKey(provider);
+}
+
+// ============================================================================
 // pickKey: 取一个 key（优先从池，空池回退 env）
 // ============================================================================
 export async function pickKey(provider: ApiProvider): Promise<KeyInfo> {

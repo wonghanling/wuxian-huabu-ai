@@ -192,7 +192,7 @@ export async function POST(req: NextRequest) {
     const taskId = data.id;
     if (!taskId) throw new Error('未返回任务ID');
 
-    return NextResponse.json({ success: true, taskId });
+    return NextResponse.json({ success: true, taskId, arkKeyId: keyInfo.keyId });
 
   } catch (error: any) {
     console.error('Seedance 生成错误:', error);

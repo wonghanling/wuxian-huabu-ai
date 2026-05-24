@@ -298,12 +298,13 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
         const data = await res.json();
         if (!res.ok) throw new Error(data?.error || '提交失败');
         const taskId = data.taskId;
+        const arkKeyId = data.arkKeyId || '';
         let attempts = 0;
         const poll = async () => {
           attempts++;
           if (!editor.getShape(shape.id)) return;
           try {
-            const qRes = await fetch('/api/seedance/query?taskId=' + taskId);
+            const qRes = await fetch('/api/seedance/query?taskId=' + taskId + (arkKeyId ? '&arkKeyId=' + arkKeyId : ''));
             const qData = await qRes.json();
             const ls = editor.getShape(shape.id);
             const lp = ls ? (ls as any).props : shape.props;

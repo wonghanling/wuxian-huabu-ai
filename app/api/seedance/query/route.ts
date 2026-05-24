@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
+import { pickKey, pickKeyById, releaseKey, categorizeError } from '@/lib/api-key-pool';
 
 const ARK_API_KEY = process.env.ARK_API_KEY!;
 const ARK_QUERY_URL = 'https://ark.cn-beijing.volces.com/api/v3/contents/generations/tasks/';
@@ -31,14 +31,15 @@ async function uploadVideoToStorage(sourceUrl: string): Promise<string> {
 export async function GET(request: NextRequest) {
   try {
     const taskId = request.nextUrl.searchParams.get('taskId');
+    const arkKeyId = request.nextUrl.searchParams.get('arkKeyId');
     if (!taskId) return NextResponse.json({ error: '缺少 taskId' }, { status: 400 });
 
     if (!ARK_API_KEY) {
       return NextResponse.json({ error: '未配置 ARK_API_KEY' }, { status: 500 });
     }
 
-    // 账号池
-    const arkQKeyInfo = await pickKey('ark');
+    // 用指定 key 查询，避免多 key 时任务 ID 找不到
+    const arkQKeyInfo = arkKeyId ? await pickKeyById(arkKeyId, 'ark') : await pickKey('ark');
     let arkQSuccess = false;
     let arkQErr: any = null;
     let res: Response;
