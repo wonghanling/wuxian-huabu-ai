@@ -1498,9 +1498,9 @@ Maintain strong visual consistency in every panel.`;
                       onChange={(e) => editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, model: e.target.value } })}
                     >
                       <optgroup label="Gemini">
-                        <option value="nano-banana-pro">Nano Banana 2（2K ¥1.2 / 4K ¥1.5）</option>
+                        <option value="nano-banana-pro">Nano Banana 2（2K ¥1.0 / 4K ¥1.2）</option>
                         <option value="nano-banana">Nano Banana — ¥0.5/次</option>
-                        <option value="nano-banana-pro-multi">多图融合 Nano Banana Pro（2K ¥1.5 / 4K ¥2.5）</option>
+                        <option value="nano-banana-pro-multi">多图融合 Nano Banana Pro（2K ¥1.1 / 4K ¥2.2）</option>
                       </optgroup>
                       <optgroup label="GPT Image">
                         <option value="gpt-image-2">GPT Image 2 — ¥0.5~0.8/次</option>
@@ -1585,8 +1585,8 @@ Maintain strong visual consistency in every panel.`;
                       <label className="text-gray-400 text-xs mb-1 block">清晰度</label>
                       <div className="flex gap-1">
                         {[
-                          { value: '2k', label: model === 'nano-banana-pro-multi' ? '2K — ¥1.5/次' : '2K — ¥1.2/次' },
-                          { value: '4k', label: model === 'nano-banana-pro-multi' ? '4K — ¥2.5/次' : '4K — ¥1.5/次' },
+                          { value: '2k', label: model === 'nano-banana-pro-multi' ? '2K — ¥1.1/次' : '2K — ¥1.0/次' },
+                          { value: '4k', label: model === 'nano-banana-pro-multi' ? '4K — ¥2.2/次' : '4K — ¥1.2/次' },
                         ].map(({ value, label }) => (
                           <button key={value}
                             onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, imageQuality: value } }); }}
@@ -2381,7 +2381,7 @@ Maintain strong visual consistency in every panel.`;
                           <div className="flex-1">
                             <label className="text-gray-400 text-xs mb-1 block">清晰度</label>
                             <div className="flex gap-1">
-                              {[{ value: '2k', label: '2K ¥1.2' }, { value: '4k', label: '4K ¥1.5' }].map(({ value, label }) => (
+                              {[{ value: '2k', label: '2K ¥1.0' }, { value: '4k', label: '4K ¥1.2' }].map(({ value, label }) => (
                                 <button
                                   key={value}
                                   onClick={(e) => { e.stopPropagation(); editor.updateShape({ id: shape.id, type: 'custom-card' as any, props: { ...shape.props, imageQuality: value } }); }}
