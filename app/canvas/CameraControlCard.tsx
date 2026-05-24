@@ -291,7 +291,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
           const raw = isBase64 ? sourceImage : await fetch(sourceImage).then(r => r.blob()).then(b => new Promise<string>(res => { const rd = new FileReader(); rd.onload = () => res(rd.result as string); rd.readAsDataURL(b); }));
           const compressed = await compressImage(raw);
           // 兼容：如果 aspectRatio/imageQuality 是 nano-banana 的值，转成 GPT Image 2 的合法值
-          const gptAspect = ['2048x1152', '3840x2160', '2160x3840', '2048x2048'].includes(aspectRatio) ? aspectRatio : '2048x1152';
+          const gptAspect = ['1920x1080','1080x1920','1080x1080','2048x1152', '3840x2160', '2160x3840', '2048x2048'].includes(aspectRatio) ? aspectRatio : '2048x1152';
           const gptQuality = ['medium', 'high'].includes(imageQuality) ? imageQuality : 'medium';
           const res = await fetch('/api/image/generate', {
             method: 'POST',
@@ -492,7 +492,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
                       onPointerDown={(e) => e.stopPropagation()}
                       onChange={(e) => update({ model: e.target.value })}
                     >
-                      <option value="nano-banana-pro">Nano Banana 2（2K ¥1.2 / 4K ¥1.5）</option>
+                      <option value="nano-banana-pro">Nano Banana 2（2K ¥1.0 / 4K ¥1.2）</option>
                       <option value="nano-banana">Nano Banana — ¥0.5/次</option>
                       <option value="gpt-image-2">GPT Image 2 — ¥0.5~0.8/次</option>
                       <option value="flux-kontext">Flux Kontext — ¥0.6/次</option>
@@ -505,7 +505,7 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
                       <div className="flex-1">
                         <label className="text-gray-400 text-xs mb-1 block">清晰度</label>
                         <div className="flex gap-1">
-                          {[{ value: '2k', label: '2K ¥1.2' }, { value: '4k', label: '4K ¥1.5' }].map(({ value, label }) => (
+                          {[{ value: '2k', label: '2K ¥1.0' }, { value: '4k', label: '4K ¥1.2' }].map(({ value, label }) => (
                             <button key={value}
                               onClick={(e) => { e.stopPropagation(); update({ imageQuality: value }); }}
                               onPointerDown={(e) => e.stopPropagation()}
@@ -535,10 +535,13 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
                         <label className="text-gray-400 text-xs mb-1 block">尺寸</label>
                         <div className="flex gap-1 flex-wrap">
                           {[
-                            { value: '2048x1152', label: '16:9 2K', priceMedium: '¥0.7', priceHigh: '¥0.7' },
-                            { value: '3840x2160', label: '16:9 4K', priceMedium: '¥1.5', priceHigh: '¥2.0' },
-                            { value: '2160x3840', label: '9:16 4K', priceMedium: '¥1.5', priceHigh: '¥2.0' },
-                            { value: '2048x2048', label: '1:1 2K', priceMedium: '¥0.7', priceHigh: '¥1.0' },
+                            { value: '1920x1080', label: '16:9 1080p', priceMedium: '¥0.5', priceHigh: '¥1.2' },
+                            { value: '1080x1920', label: '9:16 1080p', priceMedium: '¥0.5', priceHigh: '¥1.2' },
+                            { value: '1080x1080', label: '1:1 1080p', priceMedium: '¥0.5', priceHigh: '¥1.2' },
+                            { value: '2048x1152', label: '16:9 2K', priceMedium: '¥0.4', priceHigh: '¥1.2' },
+                            { value: '2048x2048', label: '1:1 2K', priceMedium: '¥0.5', priceHigh: '¥1.7' },
+                            { value: '3840x2160', label: '16:9 4K', priceMedium: '¥0.9', priceHigh: '¥3.1' },
+                            { value: '2160x3840', label: '9:16 4K', priceMedium: '¥0.9', priceHigh: '¥3.1' },
                           ].map(({ value, label, priceMedium, priceHigh }) => (
                             <button key={value}
                               onClick={(e) => { e.stopPropagation(); update({ aspectRatio: value }); }}
@@ -846,10 +849,13 @@ export class CameraControlCardUtil extends BaseBoxShapeUtil<CameraControlCardSha
                     <label className="text-gray-400 text-xs mb-1 block">尺寸</label>
                     <div className="flex gap-1 flex-wrap">
                       {[
+                        { value: '1920x1080', label: '16:9 1080p' },
+                        { value: '1080x1920', label: '9:16 1080p' },
+                        { value: '1080x1080', label: '1:1 1080p' },
                         { value: '2048x1152', label: '16:9 2K' },
+                        { value: '2048x2048', label: '1:1 2K' },
                         { value: '3840x2160', label: '16:9 4K' },
                         { value: '2160x3840', label: '9:16 4K' },
-                        { value: '2048x2048', label: '1:1 2K' },
                       ].map(({ value, label }) => (
                         <button key={value}
                           onClick={(e) => { e.stopPropagation(); update({ aspectRatio: value }); }}

@@ -634,7 +634,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
                   onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
                   onChange={(e) => up({ model: e.target.value })}
                 >
-                  <option value="doubao-seedance-2-0-260128">Seedance 2.0 — 480P 会员¥0.71/普通¥0.91，720P 会员¥1.29/普通¥1.49，1080P 会员¥2.91/普通¥3.11（有声各+¥0.2/秒）</option>
+                  <option value="doubao-seedance-2-0-260128">Seedance 2.0 — 480P 会员¥0.71/普通¥0.91，720P 会员¥1.29/普通¥1.49，1080P 会员¥2.81/普通¥3.01（有声各+¥0.2/秒）</option>
                   <option value="doubao-seedance-2-0-fast-260128">Seedance 2.0 Fast — 480P 会员¥0.60/普通¥0.80，720P 会员¥1.06/普通¥1.26（有声各+¥0.2/秒）</option>
                 </select>
               </div>

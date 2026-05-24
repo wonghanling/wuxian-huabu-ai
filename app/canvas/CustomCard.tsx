@@ -2476,7 +2476,7 @@ Maintain strong visual consistency in every panel.`;
                             });
                           }}
                         >
-                          <option value="nano-banana-pro">Nano Banana 2（2K ¥1.2 / 4K ¥1.5）</option>
+                          <option value="nano-banana-pro">Nano Banana 2（2K ¥1.0 / 4K ¥1.2）</option>
                           <option value="nano-banana">Nano Banana — ¥0.5/次</option>
                           <option value="gpt-image-2">GPT Image 2 — ¥0.5~0.8/次</option>
                           <option value="flux-kontext">Flux Kontext — ¥0.6/次</option>
