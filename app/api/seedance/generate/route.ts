@@ -15,21 +15,15 @@ const supabaseAdmin = createClient(
 
 // Seedance 定价（用户侧价格，会员/普通）
 const SEEDANCE_PRICE: Record<string, { member: number; normal: number }> = {
-  'doubao-seedance-2-0-260128_480p_silent':  { member: 0.71, normal: 0.91 },
-  'doubao-seedance-2-0-260128_480p_audio':   { member: 0.91, normal: 1.11 },
-  'doubao-seedance-2-0-260128_720p_silent':  { member: 1.29, normal: 1.49 },
-  'doubao-seedance-2-0-260128_720p_audio':   { member: 1.49, normal: 1.69 },
-  'doubao-seedance-2-0-260128_1080p_silent': { member: 2.81, normal: 3.01 },
-  'doubao-seedance-2-0-260128_1080p_audio':  { member: 3.01, normal: 3.21 },
-  'doubao-seedance-2-0-fast-260128_480p_silent': { member: 0.60, normal: 0.80 },
-  'doubao-seedance-2-0-fast-260128_480p_audio':  { member: 0.80, normal: 1.00 },
-  'doubao-seedance-2-0-fast-260128_720p_silent': { member: 1.06, normal: 1.26 },
-  'doubao-seedance-2-0-fast-260128_720p_audio':  { member: 1.26, normal: 1.46 },
+  'doubao-seedance-2-0-260128_480p':  { member: 0.71, normal: 0.91 },
+  'doubao-seedance-2-0-260128_720p':  { member: 1.29, normal: 1.49 },
+  'doubao-seedance-2-0-260128_1080p': { member: 2.81, normal: 3.01 },
+  'doubao-seedance-2-0-fast-260128_480p': { member: 0.60, normal: 0.80 },
+  'doubao-seedance-2-0-fast-260128_720p': { member: 1.06, normal: 1.26 },
 };
 
 function getSeedanceCharge(model: string, resolution: string, generateAudio: boolean, duration: number, isMember: boolean) {
-  const audioKey = generateAudio ? 'audio' : 'silent';
-  const key = `${model}_${resolution}_${audioKey}`;
+  const key = `${model}_${resolution}`;
   const price = SEEDANCE_PRICE[key];
   if (!price) return 0;
   const perSec = isMember ? price.member : price.normal;
