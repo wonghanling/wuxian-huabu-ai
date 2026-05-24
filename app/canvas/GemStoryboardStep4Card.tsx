@@ -109,7 +109,7 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
       if (!sb) return true;
       return !(sb.maxX < vp.minX || sb.minX > vp.maxX || sb.maxY < vp.minY || sb.minY > vp.maxY);
     }, [editor, shape.id]);
-    const hasActiveTask = !!(isGenerating || showSettingsPanel || showImageOutput);
+    const hasActiveTask = !!(isGenerating || showSettingsPanel || showImageOutput || isMinimized);
     if (!isInViewport && !hasActiveTask) {
       return <HTMLContainer><div style={{ width: w, height: h, background: '#18181b', borderRadius: 12, border: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>GEM 分镜图片</span></div></HTMLContainer>;
     }
