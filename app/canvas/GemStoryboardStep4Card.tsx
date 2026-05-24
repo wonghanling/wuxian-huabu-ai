@@ -404,13 +404,14 @@ export class GemStep4CardUtil extends BaseBoxShapeUtil<GemStep4CardShape> {
                   <div className="flex flex-col gap-1">
                     <label className="text-[10px] text-gray-400">输出比例</label>
                     <div className="flex gap-1">
-                      {([['16:9', '16:9', '1536×1024'], ['9:16', '9:16', '1024×1536'], ['1:1', '1:1', '1024×1024']] as const).map(([val, label, res]) => (
+                      {([['16:9', '16:9 2K', '2048×1152', '¥1.2'], ['9:16', '9:16 4K', '2160×3840', '¥3.1'], ['1:1', '1:1 2K', '2048×2048', '¥1.7']] as const).map(([val, label, res, price]) => (
                         <button key={val}
                           onClick={(e) => { e.stopPropagation(); update({ ratio: val }); }}
                           onPointerDown={(e) => e.stopPropagation()}
                           className={`flex-1 py-1 rounded-lg text-[10px] font-medium transition-all flex flex-col items-center ${ratio === val ? 'bg-sky-600 text-white' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
                           <span>{label}</span>
                           <span className={`text-[8px] ${ratio === val ? 'text-sky-200' : 'text-gray-600'}`}>{res}</span>
+                          <span className={`text-[8px] ${ratio === val ? 'text-sky-100' : 'text-gray-500'}`}>{price}</span>
                         </button>
                       ))}
                     </div>
