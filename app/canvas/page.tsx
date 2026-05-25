@@ -1835,20 +1835,16 @@ function CanvasPageContent() {
   const { isMember, balance, memberExpiresAt, refresh: refreshMembership, loading: memberLoading } = useMembership();
 
   // 检查是否需要弹出领取会员弹窗（未领取过的用户每次进画布都弹）
-  // 禁用右键菜单 + 拦截右键导致的浏览器手势返回
+  // 拦截浏览器右键手势返回（Edge 用户可以关闭手势用右键拖动，否则用中键拖动）
   useEffect(() => {
     const onContextMenu = (e: MouseEvent) => e.preventDefault();
-    const onMouseUp = (e: MouseEvent) => { if (e.button === 2) e.preventDefault(); };
-    // 拦截浏览器手势返回 / 前进
     const blockHistory = () => { history.pushState(null, '', location.href); };
     blockHistory();
     const onPopState = () => { blockHistory(); };
     window.addEventListener('contextmenu', onContextMenu);
-    window.addEventListener('mouseup', onMouseUp);
     window.addEventListener('popstate', onPopState);
     return () => {
       window.removeEventListener('contextmenu', onContextMenu);
-      window.removeEventListener('mouseup', onMouseUp);
       window.removeEventListener('popstate', onPopState);
     };
   }, []);
