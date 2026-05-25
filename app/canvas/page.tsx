@@ -1838,8 +1838,19 @@ function CanvasPageContent() {
   // 禁用右键菜单 + 拦截右键导致的浏览器手势返回
   useEffect(() => {
     const onContextMenu = (e: MouseEvent) => e.preventDefault();
+    const onMouseUp = (e: MouseEvent) => { if (e.button === 2) e.preventDefault(); };
+    // 拦截浏览器手势返回 / 前进
+    const blockHistory = () => { history.pushState(null, '', location.href); };
+    blockHistory();
+    const onPopState = () => { blockHistory(); };
     window.addEventListener('contextmenu', onContextMenu);
-    return () => window.removeEventListener('contextmenu', onContextMenu);
+    window.addEventListener('mouseup', onMouseUp);
+    window.addEventListener('popstate', onPopState);
+    return () => {
+      window.removeEventListener('contextmenu', onContextMenu);
+      window.removeEventListener('mouseup', onMouseUp);
+      window.removeEventListener('popstate', onPopState);
+    };
   }, []);
 
   useEffect(() => {
