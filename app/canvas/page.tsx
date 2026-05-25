@@ -324,6 +324,7 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
   const [isExpanded, setIsExpanded] = useState(true);
   const [showShotTypePanel, setShowShotTypePanel] = useState(false);
   const [showVideoMenu, setShowVideoMenu] = useState(false);
+  const [showDirectorMenu, setShowDirectorMenu] = useState(false);
 
   const createTextCard = () => {
     console.log('点击文本生成按钮');
@@ -655,6 +656,20 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
     }
   };
 
+  const createSingleGemCard = (stepType: 'gem-step0-card' | 'gem-step2-card' | 'gem-step3-card' | 'gem-step4-card') => {
+    try {
+      const viewportPageBounds = editor.getViewportPageBounds();
+      const centerX = viewportPageBounds.center.x;
+      const centerY = viewportPageBounds.center.y;
+      const id = createShapeId();
+      editor.createShape({ id, type: stepType as any, x: centerX - 200, y: centerY - 260, props: { w: 400, h: 520 } });
+      editor.select(id);
+      editor.setCurrentTool('select');
+    } catch (error) {
+      console.error('创建' + stepType + '失败:', error);
+    }
+  };
+
   const createGemStoryboardCards = () => {
     try {
       const viewportPageBounds = editor.getViewportPageBounds();
@@ -870,18 +885,54 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
           </div>
         </button>
 
-        {/* 导演引擎按钮 */}
-        <button
-          onClick={createGemDirectorCard}
-          className="flex items-center justify-center p-1.5 rounded-xl hover:bg-white/5 transition-all group"
-          title="导演引擎 — 视频过渡指令"
-        >
-          <div className="w-7 h-7 flex items-center justify-center flex-shrink-0">
-            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
-            </svg>
-          </div>
-        </button>
+        {/* 导演引擎按钮 - 下拉菜单 */}
+        <div className="relative">
+          <button
+            onClick={() => setShowDirectorMenu(!showDirectorMenu)}
+            className="flex items-center justify-center p-1.5 rounded-xl hover:bg-white/5 transition-all group"
+            title="导演引擎"
+          >
+            <div className="w-7 h-7 flex items-center justify-center flex-shrink-0">
+              <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
+              </svg>
+            </div>
+          </button>
+          {showDirectorMenu && (
+            <div className="absolute left-full top-0 ml-1 flex flex-col gap-1 bg-zinc-900/95 backdrop-blur-md border border-white/10 rounded-xl p-1 shadow-xl">
+              <button
+                onClick={() => { createGemDirectorCard(); setShowDirectorMenu(false); }}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all"
+              >
+                <span className="text-xs text-gray-300 whitespace-nowrap">全部创建（4张）</span>
+              </button>
+              <button
+                onClick={() => { createSingleGemCard('gem-step0-card'); setShowDirectorMenu(false); }}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all"
+              >
+                <span className="text-xs text-gray-300 whitespace-nowrap">剧本生成</span>
+              </button>
+              <button
+                onClick={() => { createSingleGemCard('gem-step2-card'); setShowDirectorMenu(false); }}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all"
+              >
+                <span className="text-xs text-gray-300 whitespace-nowrap">分镜设计</span>
+              </button>
+              <button
+                onClick={() => { createSingleGemCard('gem-step3-card'); setShowDirectorMenu(false); }}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all"
+              >
+                <span className="text-xs text-gray-300 whitespace-nowrap">视频过渡指令</span>
+              </button>
+              <button
+                onClick={() => { createSingleGemCard('gem-step4-card'); setShowDirectorMenu(false); }}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all"
+              >
+                <span className="text-xs text-gray-300 whitespace-nowrap">分镜图片生成</span>
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* 语音生成按钮 */}
         <button
