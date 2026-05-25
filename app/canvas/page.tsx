@@ -1835,6 +1835,13 @@ function CanvasPageContent() {
   const { isMember, balance, memberExpiresAt, refresh: refreshMembership, loading: memberLoading } = useMembership();
 
   // 检查是否需要弹出领取会员弹窗（未领取过的用户每次进画布都弹）
+  // 禁用右键菜单 + 拦截右键导致的浏览器手势返回
+  useEffect(() => {
+    const onContextMenu = (e: MouseEvent) => e.preventDefault();
+    window.addEventListener('contextmenu', onContextMenu);
+    return () => window.removeEventListener('contextmenu', onContextMenu);
+  }, []);
+
   useEffect(() => {
     const checkWelcome = async () => {
       const supabase = createClient();
