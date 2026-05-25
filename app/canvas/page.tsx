@@ -716,34 +716,26 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
         {/* 文本生成按钮 */}
         <button
           onClick={createTextCard}
-          className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-all group"
-          title="Text Generation"
+          className="flex items-center justify-center p-1.5 rounded-xl hover:bg-white/5 transition-all group"
+          title="文本生成"
           data-tutorial="text-button"
         >
-          <div className="w-7 h-7 rounded-lg bg-gray-500/20 flex items-center justify-center group-hover:bg-gray-500/30 transition-all flex-shrink-0">
+          <div className="w-7 h-7 flex items-center justify-center flex-shrink-0">
             <span className="text-gray-300 text-sm font-bold">T</span>
-          </div>
-          <div className="flex flex-col items-start">
-            <span className="text-sm text-gray-300 whitespace-nowrap">Text</span>
-            <span className="text-xs text-gray-500 whitespace-nowrap">文本生成</span>
           </div>
         </button>
 
         {/* 图片生成按钮 */}
         <button
           onClick={createImageCard}
-          className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-all group"
-          title="Image Generation"
+          className="flex items-center justify-center p-1.5 rounded-xl hover:bg-white/5 transition-all group"
+          title="图片生成"
           data-tutorial="image-button"
         >
-          <div className="w-7 h-7 rounded-lg bg-gray-600/20 flex items-center justify-center group-hover:bg-gray-600/30 transition-all flex-shrink-0">
+          <div className="w-7 h-7 flex items-center justify-center flex-shrink-0">
             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-          </div>
-          <div className="flex flex-col items-start">
-            <span className="text-sm text-gray-300 whitespace-nowrap">Image</span>
-            <span className="text-xs text-gray-500 whitespace-nowrap">图片生成</span>
           </div>
         </button>
 
@@ -751,40 +743,45 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
         <div className="relative" data-tutorial="video-button">
           <button
             onClick={() => setShowVideoMenu(!showVideoMenu)}
-            className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-all group w-full"
-            title="Video Generation"
+            className="flex items-center justify-center p-1.5 rounded-xl hover:bg-white/5 transition-all group w-full"
+            title="视频生成"
           >
-            <div className="w-7 h-7 rounded-lg bg-gray-700/20 flex items-center justify-center group-hover:bg-gray-700/30 transition-all flex-shrink-0">
-              <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="w-7 h-7 flex items-center justify-center flex-shrink-0">
+              <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
             </div>
-            <div className="flex flex-col items-start flex-1">
-              <span className="text-sm text-gray-300 whitespace-nowrap">Video</span>
-              <span className="text-xs text-gray-500 whitespace-nowrap">视频生成</span>
-            </div>
-            <svg className={`w-3 h-3 text-gray-500 transition-transform ${showVideoMenu ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
           </button>
           {showVideoMenu && (
-            <div className="ml-11 mt-1 flex flex-col gap-1">
+            <div className="absolute left-full top-0 ml-1 flex flex-col gap-1 bg-zinc-900/95 backdrop-blur-md border border-white/10 rounded-xl p-1 shadow-xl">
               <button
                 onClick={() => { createVideoCard(); setShowVideoMenu(false); }}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all text-left"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all"
+                title="通用视频"
               >
+                <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
                 <span className="text-xs text-gray-300 whitespace-nowrap">通用视频</span>
               </button>
               <button
                 onClick={() => { createKlingCard(); setShowVideoMenu(false); }}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all text-left"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all"
+                title="Kling 视频配音"
               >
+                <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3zm12-3c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3z" />
+                </svg>
                 <span className="text-xs text-gray-300 whitespace-nowrap">Kling 视频配音</span>
               </button>
               <button
                 onClick={() => { createSeedanceCard(); setShowVideoMenu(false); }}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all text-left"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-white/5 transition-all"
+                title="Seedance 2.0"
               >
+                <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
                 <span className="text-xs text-gray-300 whitespace-nowrap">Seedance 2.0</span>
               </button>
             </div>
@@ -794,17 +791,13 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
         {/* 角色设计按钮 */}
         <button
           onClick={createCharacterCard}
-          className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-all group"
-          title="Character Design"
+          className="flex items-center justify-center p-1.5 rounded-xl hover:bg-white/5 transition-all group"
+          title="角色设计"
         >
-          <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
+          <div className="w-7 h-7 flex items-center justify-center flex-shrink-0">
             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
-          </div>
-          <div className="flex flex-col items-start">
-            <span className="text-sm text-gray-300 whitespace-nowrap">Character Design</span>
-            <span className="text-xs text-gray-500 whitespace-nowrap">角色设计</span>
           </div>
         </button>
 
@@ -812,17 +805,13 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
         {false && (
         <button
           onClick={createAssetCard}
-          className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-all group"
-          title="Assets"
+          className="flex items-center justify-center p-1.5 rounded-xl hover:bg-white/5 transition-all group"
+          title="资产库"
         >
-          <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
+          <div className="w-7 h-7 flex items-center justify-center flex-shrink-0">
             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
-          </div>
-          <div className="flex flex-col items-start">
-            <span className="text-sm text-gray-300 whitespace-nowrap">Assets</span>
-            <span className="text-xs text-gray-500 whitespace-nowrap">资产库</span>
           </div>
         </button>
         )}
@@ -830,122 +819,94 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
         {/* 导演流程按钮 */}
         <button
           onClick={createDirectorTimeline}
-          className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-all group"
-          title="Director Timeline"
+          className="flex items-center justify-center p-1.5 rounded-xl hover:bg-white/5 transition-all group"
+          title="导演流程"
           data-tutorial="director-button"
         >
-          <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
+          <div className="w-7 h-7 flex items-center justify-center flex-shrink-0">
             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
-          </div>
-          <div className="flex flex-col items-start">
-            <span className="text-sm text-gray-300 whitespace-nowrap">Director Timeline</span>
-            <span className="text-xs text-gray-500 whitespace-nowrap">导演流程</span>
           </div>
         </button>
 
         {/* 电影控制器按钮 */}
         <button
           onMouseEnter={() => setShowShotTypePanel(true)}
-          className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-all group"
-          title="Film Controller"
+          className="flex items-center justify-center p-1.5 rounded-xl hover:bg-white/5 transition-all group"
+          title="电影控制器"
           data-tutorial="film-controller-button"
         >
-          <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
+          <div className="w-7 h-7 flex items-center justify-center flex-shrink-0">
             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
             </svg>
-          </div>
-          <div className="flex flex-col items-start">
-            <span className="text-sm text-gray-300 whitespace-nowrap">Film Controller</span>
-            <span className="text-xs text-gray-500 whitespace-nowrap">电影控制器</span>
           </div>
         </button>
 
         {/* Prompt按钮 */}
         <button
           onClick={createPromptOptimizerCard}
-          className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-all group"
-          title="Prompt"
+          className="flex items-center justify-center p-1.5 rounded-xl hover:bg-white/5 transition-all group"
+          title="Prompt — 快速编译视频生成词"
         >
-          <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
+          <div className="w-7 h-7 flex items-center justify-center flex-shrink-0">
             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
-          </div>
-          <div className="flex flex-col items-start">
-            <span className="text-sm text-gray-300 whitespace-nowrap">Prompt</span>
-            <span className="text-xs text-gray-500 whitespace-nowrap">快速编译视频生成词</span>
           </div>
         </button>
 
         {/* GEM分镜设计按钮 */}
         <button
           onClick={createGemStoryboardCards}
-          className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-all group"
-          title="GEM分镜设计"
+          className="flex items-center justify-center p-1.5 rounded-xl hover:bg-white/5 transition-all group"
+          title="GEM 分镜设计 — 25格分镜生成"
         >
-          <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
+          <div className="w-7 h-7 flex items-center justify-center flex-shrink-0">
             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
             </svg>
-          </div>
-          <div className="flex flex-col items-start">
-            <span className="text-sm text-gray-300 whitespace-nowrap">GEM 分镜设计</span>
-            <span className="text-xs text-gray-500 whitespace-nowrap">25格分镜生成</span>
           </div>
         </button>
 
         {/* 导演引擎按钮 */}
         <button
           onClick={createGemDirectorCard}
-          className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-all group"
-          title="导演引擎"
+          className="flex items-center justify-center p-1.5 rounded-xl hover:bg-white/5 transition-all group"
+          title="导演引擎 — 视频过渡指令"
         >
-          <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
+          <div className="w-7 h-7 flex items-center justify-center flex-shrink-0">
             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
             </svg>
-          </div>
-          <div className="flex flex-col items-start">
-            <span className="text-sm text-gray-300 whitespace-nowrap">导演引擎</span>
-            <span className="text-xs text-gray-500 whitespace-nowrap">视频过渡指令</span>
           </div>
         </button>
 
         {/* 语音生成按钮 */}
         <button
           onClick={createAudioCard}
-          className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-all group"
-          title="语音生成"
+          className="flex items-center justify-center p-1.5 rounded-xl hover:bg-white/5 transition-all group"
+          title="语音生成 — MiniMax TTS"
         >
-          <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
+          <div className="w-7 h-7 flex items-center justify-center flex-shrink-0">
             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
             </svg>
-          </div>
-          <div className="flex flex-col items-start">
-            <span className="text-sm text-gray-300 whitespace-nowrap">语音生成</span>
-            <span className="text-xs text-gray-500 whitespace-nowrap">MiniMax TTS</span>
           </div>
         </button>
 
         {/* 图片切割按钮 */}
         <button
           onClick={onOpenImageSplit}
-          className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-all group"
-          title="Image Split"
+          className="flex items-center justify-center p-1.5 rounded-xl hover:bg-white/5 transition-all group"
+          title="图片切割"
         >
-          <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
+          <div className="w-7 h-7 flex items-center justify-center flex-shrink-0">
             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 4v16M12 4v16M18 4v16" />
             </svg>
-          </div>
-          <div className="flex flex-col items-start">
-            <span className="text-sm text-gray-300 whitespace-nowrap">Image Split</span>
-            <span className="text-xs text-gray-500 whitespace-nowrap">图片切割</span>
           </div>
         </button>
 
@@ -954,15 +915,14 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
 
         {/* 更多按钮 */}
         <button
-          className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-white/5 transition-all group"
-          title="More Options"
+          className="flex items-center justify-center p-1.5 rounded-xl hover:bg-white/5 transition-all group"
+          title="更多"
         >
-          <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-all flex-shrink-0">
+          <div className="w-7 h-7 flex items-center justify-center flex-shrink-0">
             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
             </svg>
           </div>
-          <span className="text-sm text-gray-400 whitespace-nowrap">More</span>
         </button>
         </div>
 
@@ -1835,19 +1795,6 @@ function CanvasPageContent() {
   const { isMember, balance, memberExpiresAt, refresh: refreshMembership, loading: memberLoading } = useMembership();
 
   // 检查是否需要弹出领取会员弹窗（未领取过的用户每次进画布都弹）
-  // 拦截浏览器右键手势返回（Edge 用户可以关闭手势用右键拖动，否则用中键拖动）
-  useEffect(() => {
-    const onContextMenu = (e: MouseEvent) => e.preventDefault();
-    const blockHistory = () => { history.pushState(null, '', location.href); };
-    blockHistory();
-    const onPopState = () => { blockHistory(); };
-    window.addEventListener('contextmenu', onContextMenu);
-    window.addEventListener('popstate', onPopState);
-    return () => {
-      window.removeEventListener('contextmenu', onContextMenu);
-      window.removeEventListener('popstate', onPopState);
-    };
-  }, []);
 
   useEffect(() => {
     const checkWelcome = async () => {
