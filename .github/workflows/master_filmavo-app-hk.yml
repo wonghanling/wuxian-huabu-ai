@@ -34,6 +34,14 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          # 下面这些是 build-time 占位值，仅为绕过 SDK 模块加载时的校验
+          # 真实值在 Azure App Service 的环境变量中，运行时 Azure 会覆盖
+          ALIPAY_APP_ID: dummy_for_build
+          ALIPAY_PRIVATE_KEY: dummy_for_build
+          ALIPAY_PUBLIC_KEY: dummy_for_build
+          VOLC_ACCESS_KEY_ID: dummy_for_build
+          VOLC_SECRET_ACCESS_KEY: dummy_for_build
+          FAL_KEY: dummy_for_build
 
       - name: Zip artifact for deployment
         run: zip -r release.zip . -x "node_modules/.cache/*" ".git/*" ".github/*" "*.local"
