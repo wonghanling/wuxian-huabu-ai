@@ -214,11 +214,12 @@ export default function AuthPage() {
       </nav>
 
       {/* Main - 左右分栏 */}
-      <main className="relative pt-16 min-h-screen flex flex-col lg:flex-row">
+      <main className="relative pt-16 min-h-screen flex items-center justify-center">
+        <div className="w-full max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-12 lg:gap-24 px-6 py-12">
 
         {/* 左侧 - 品牌 + 卖点（lg 以上显示） */}
-        <div className="hidden lg:flex lg:w-1/2 flex-col justify-center px-16 py-12 relative z-10">
-          <div className="max-w-md">
+        <div className="hidden lg:flex flex-1 flex-col relative z-10">
+          <div>
             <div className="text-xs tracking-[0.4em] text-violet-300 font-semibold mb-6 uppercase">
               FILMAVO &nbsp;·&nbsp; BOLUOLAB
             </div>
@@ -253,8 +254,8 @@ export default function AuthPage() {
         </div>
 
         {/* 右侧 - 表单 */}
-        <div className="w-full lg:w-1/2 flex items-center justify-center px-6 py-12 lg:py-0 relative z-10">
-          <div className="w-full max-w-md">
+        <div className="w-full lg:w-[420px] flex-shrink-0 relative z-10">
+          <div className="w-full">
 
             {/* 移动端 title（lg 以下显示） */}
             <div className="lg:hidden text-center mb-8">
@@ -590,6 +591,7 @@ export default function AuthPage() {
           </div>
         </div>
 
+        </div>
       </main>
     </div>
   );
