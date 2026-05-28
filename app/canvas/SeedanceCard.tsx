@@ -561,7 +561,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
             onClick={(e) => {
               e.stopPropagation();
               const newMinimized = !isMinimized;
-              editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...shape.props, isMinimized: newMinimized, w: newMinimized ? 150 : 380, h: newMinimized ? 80 : 380 } });
+              editor.updateShape({ id: shape.id, type: 'seedance-card' as any, props: { ...shape.props, isMinimized: newMinimized, w: newMinimized ? 150 : 420, h: newMinimized ? 80 : 480 } });
             }}
             onPointerDown={(e) => e.stopPropagation()}
             className="absolute top-2 right-2 w-7 h-7 bg-zinc-800/90 hover:bg-zinc-700/90 border border-white/20 rounded flex items-center justify-center text-white text-lg z-10"
@@ -571,7 +571,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
           {/* 折叠按钮（缩小按钮左边） */}
           {!isMinimized && (
             <button
-              onClick={(e) => { e.stopPropagation(); up({ isCollapsed: !isCollapsed, w: isCollapsed ? 420 : 150, h: isCollapsed ? 560 : 80 }); }}
+              onClick={(e) => { e.stopPropagation(); up({ isCollapsed: !isCollapsed, w: isCollapsed ? 420 : 150, h: isCollapsed ? 480 : 80 }); }}
               onPointerDown={(e) => e.stopPropagation()}
               className="absolute top-2 right-11 w-7 h-7 bg-zinc-800/90 hover:bg-zinc-700/90 border border-white/20 rounded flex items-center justify-center text-white text-xs z-10"
               style={{ transform: `scale(${1 / scale})`, transformOrigin: 'center' }}

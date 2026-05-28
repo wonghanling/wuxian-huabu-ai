@@ -457,7 +457,7 @@ function BottomToolbarExternal({ editor, onOpenAssetPanel, onOpenImageSplit }: {
         type: 'seedance-card' as any,
         x: centerX - 210,
         y: centerY - 280,
-        props: { w: 420, h: 560 },
+        props: { w: 420, h: 480 },
       });
       editor.select(id);
       editor.setCurrentTool('select');
