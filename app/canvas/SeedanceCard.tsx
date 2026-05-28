@@ -571,7 +571,7 @@ export class SeedanceCardUtil extends BaseBoxShapeUtil<SeedanceCardShape> {
           {/* 折叠按钮（缩小按钮左边） */}
           {!isMinimized && (
             <button
-              onClick={(e) => { e.stopPropagation(); up({ isCollapsed: !isCollapsed, w: isCollapsed ? 380 : 150, h: isCollapsed ? 380 : 80 }); }}
+              onClick={(e) => { e.stopPropagation(); up({ isCollapsed: !isCollapsed, w: isCollapsed ? 420 : 150, h: isCollapsed ? 560 : 80 }); }}
               onPointerDown={(e) => e.stopPropagation()}
               className="absolute top-2 right-11 w-7 h-7 bg-zinc-800/90 hover:bg-zinc-700/90 border border-white/20 rounded flex items-center justify-center text-white text-xs z-10"
               style={{ transform: `scale(${1 / scale})`, transformOrigin: 'center' }}
