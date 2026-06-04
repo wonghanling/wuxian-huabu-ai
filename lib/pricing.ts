@@ -65,24 +65,22 @@ export interface VideoModelPrice {
   audioVariants?: boolean; // true = 有声/无声分开定价，key 用 "720P_audio" / "720P"
 }
 
-const MEMBER_MARKUP = 0.4;
-const NORMAL_MARKUP = 0.6;
+// 统一加价规则：会员 = 成本 + 0.2/秒，普通 = 成本 + 0.4/秒
+// （即梦 / Wan / Veo / Seedance 全部统一，方便计算）
+const MEMBER_MARKUP = 0.2;
+const NORMAL_MARKUP = 0.4;
 
 function tier(costPerSec: number): VideoTierPrice {
   return {
     costPerSec,
-    memberPerSec: costPerSec + MEMBER_MARKUP,
-    normalPerSec: costPerSec + NORMAL_MARKUP,
+    memberPerSec: Math.round((costPerSec + MEMBER_MARKUP) * 100) / 100,
+    normalPerSec: Math.round((costPerSec + NORMAL_MARKUP) * 100) / 100,
   };
 }
 
-// Seedance 用更低加价（成本+0.2 会员 / 成本+0.4 普通），保持会员每秒省 0.2
+// Seedance 历史别名：与 tier 同规则（+0.2 会员 / +0.4 普通），保留以兼容旧引用
 function tierSeedance(costPerSec: number): VideoTierPrice {
-  return {
-    costPerSec,
-    memberPerSec: Math.round((costPerSec + 0.2) * 100) / 100,
-    normalPerSec: Math.round((costPerSec + 0.4) * 100) / 100,
-  };
+  return tier(costPerSec);
 }
 
 export const VIDEO_PRICING: Record<string, VideoModelPrice> = {
@@ -135,20 +133,21 @@ export const VIDEO_PRICING: Record<string, VideoModelPrice> = {
   },
 
   // ── Wan 2.6 ───────────────────────────────────────────────
+  // 成本来自阿里云百炼官方价(无音频选项)
   'wan2.6-t2v': {
     resolutions: {
-      '720P':  tier(0.60),
-      '1080P': tier(1.00),
+      '720P':  tier(0.70), // 会员1.10 / 普通1.30
+      '1080P': tier(1.10), // 会员1.50 / 普通1.70
     },
   },
   'wan2.6-i2v': {
     resolutions: {
-      '720P':  tier(0.60),
-      '1080P': tier(1.00),
+      '720P':  tier(0.60), // 会员1.00 / 普通1.20
+      '1080P': tier(1.00), // 会员1.40 / 普通1.60
     },
   },
 
-  // ── Wan 2.6 Flash（有声/无声分开）────────────────────────
+  // ── Wan 2.6 Flash（仅此型号有有声/无声之分）──────────────
   // key 规则：分辨率 + "_audio" 表示有声版
   'wan2.6-i2v-flash': {
     audioVariants: true,
@@ -208,60 +207,63 @@ export const VIDEO_PRICING: Record<string, VideoModelPrice> = {
     resolutions: { '1080p': tier(1.5) }, // 2.1/秒
   },
 
-  // ── Veo 3.1 系列（有声/无声分开）────────────────────────
+  // ── Veo 3.1 系列（成本来自官方,有声/无声分开;720p与1080p同价,4K单独）──
+  // 标准版:720/1080 无声1.35 有声2.71;4K 无声2.71 有声4.06
   'veo3.1-t2v': {
     audioVariants: true,
     resolutions: {
-      '720P':        tier(1.38),
-      '1080P':       tier(1.38),
-      '720P_audio':  tier(2.76),
-      '1080P_audio': tier(2.76),
-      '4K':          tier(2.76),
-      '4K_audio':    tier(4.14),
+      '720P':        tier(1.35),
+      '1080P':       tier(1.35),
+      '720P_audio':  tier(2.71),
+      '1080P_audio': tier(2.71),
+      '4K':          tier(2.71),
+      '4K_audio':    tier(4.06),
     },
   },
   'veo3.1-i2v': {
     audioVariants: true,
     resolutions: {
-      '720P':        tier(1.38),
-      '1080P':       tier(1.38),
-      '720P_audio':  tier(2.76),
-      '1080P_audio': tier(2.76),
-      '4K':          tier(2.76),
-      '4K_audio':    tier(4.14),
+      '720P':        tier(1.35),
+      '1080P':       tier(1.35),
+      '720P_audio':  tier(2.71),
+      '1080P_audio': tier(2.71),
+      '4K':          tier(2.71),
+      '4K_audio':    tier(4.06),
     },
   },
+  // Fast 版:720/1080 无声0.68 有声1.02;4K 无声2.03 有声2.37
   'veo3.1-fast-t2v': {
     audioVariants: true,
     resolutions: {
-      '720P':        tier(0.69),
-      '1080P':       tier(0.69),
-      '720P_audio':  tier(1.035),
-      '1080P_audio': tier(1.035),
-      '4K':          tier(2.07),
-      '4K_audio':    tier(2.415),
+      '720P':        tier(0.68),
+      '1080P':       tier(0.68),
+      '720P_audio':  tier(1.02),
+      '1080P_audio': tier(1.02),
+      '4K':          tier(2.03),
+      '4K_audio':    tier(2.37),
     },
   },
   'veo3.1-fast-i2v': {
     audioVariants: true,
     resolutions: {
-      '720P':        tier(0.69),
-      '1080P':       tier(0.69),
-      '720P_audio':  tier(1.035),
-      '1080P_audio': tier(1.035),
-      '4K':          tier(2.07),
-      '4K_audio':    tier(2.415),
+      '720P':        tier(0.68),
+      '1080P':       tier(0.68),
+      '720P_audio':  tier(1.02),
+      '1080P_audio': tier(1.02),
+      '4K':          tier(2.03),
+      '4K_audio':    tier(2.37),
     },
   },
+  // 首尾帧:价格与标准版完全一样(不是 Fast)
   'veo3.1-first-last': {
     audioVariants: true,
     resolutions: {
-      '720P':        tier(0.69),
-      '1080P':       tier(0.69),
-      '720P_audio':  tier(1.035),
-      '1080P_audio': tier(1.035),
-      '4K':          tier(2.07),
-      '4K_audio':    tier(2.415),
+      '720P':        tier(1.35),
+      '1080P':       tier(1.35),
+      '720P_audio':  tier(2.71),
+      '1080P_audio': tier(2.71),
+      '4K':          tier(2.71),
+      '4K_audio':    tier(4.06),
     },
   },
 };
