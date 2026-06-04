@@ -14,6 +14,7 @@ import '@xyflow/react/dist/style.css';
 
 import { useCanvasStore, type CardNode } from './store';
 import { CardDispatch } from './nodes/CardDispatch';
+import { useCanvasPersistence } from './lib/usePersistence';
 import { DEFAULT_TEXT_MODEL } from './models';
 import { DEFAULT_IMAGE_MODEL } from './imageModels';
 import { DEFAULT_VIDEO_MODEL } from './videoModels';
@@ -175,17 +176,30 @@ export default function CanvasV2Page() {
 
   const [seq, setSeq] = useState(10);
 
-  // 初始放 Seedance 卡(本阶段做 Seedance 卡片)
+  // 画布持久化:加载历史快照 / 自动保存 / 空画布保护(完整复刻原网)
+  const { status: saveStatus, loading: canvasLoading } = useCanvasPersistence();
+
+  // 加载完成后,若画布为空(无历史)才放演示卡;有历史则不动
   useEffect(() => {
-    useCanvasStore.setState({
-      nodes: [
-        makeSeedanceNode(0, 80, 120),
-        makeVideoNode(1, 600, 120),
-      ],
-      edges: [],
-      selectedId: null,
-    });
-  }, []);
+    if (canvasLoading) return;
+    const cur = useCanvasStore.getState().nodes;
+    if (cur.length === 0) {
+      useCanvasStore.setState({
+        nodes: [
+          makeSeedanceNode(0, 80, 120),
+          makeVideoNode(1, 600, 120),
+        ],
+        edges: [],
+        selectedId: null,
+      });
+    }
+  }, [canvasLoading]);
+
+  // 节点/连线变化 → 触发节流保存(加载完成后才生效,空画布保护在 hook 内)
+  useEffect(() => {
+    if (canvasLoading) return;
+    (window as any).saveCanvasV2Now?.();
+  }, [nodes, edges, canvasLoading]);
 
   const addImageCard = useCallback(() => {
     const n = makeImageNode(seq, 80 + (seq % 4) * 380, 120 + Math.floor(seq / 4) * 360);

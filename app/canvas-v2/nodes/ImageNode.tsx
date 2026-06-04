@@ -12,7 +12,7 @@ import { IconImage, IconModel, IconExpand, IconShrink, IconMinus, IconPlus } fro
 import { SpawnMenu } from './SpawnMenu';
 import { RefThumb } from './RefThumb';
 import { PromptTools } from './PromptTools';
-import { uploadImageToStorage, generateImage, getUserId, softCompressImage } from '../lib/api';
+import { uploadImageToStorage, generateImage, getUserId, softCompressImage, mirrorOutput } from '../lib/api';
 
 // ============================================================
 // 图片卡片 · 超现代高端风格(与文本卡同框架)
@@ -99,26 +99,15 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     try {
       const userId = await getUserId();
       const refs = data.config.refImages ?? [];
-      // 参考图:已是 storage URL,直接走 imageUrlArray;
-      // gpt-image-2 系列走 base64(softCompress)
-      const useBase64 = model.useSizeNotRatio; // gpt-image-2 系列
-      let imageUrlArray: string[] | undefined;
-      let imageBase64Array: string[] | undefined;
-      if (refs.length > 0) {
-        if (useBase64) {
-          imageBase64Array = await Promise.all(
-            refs.map(async (u) => {
-              const blob = await fetch(u).then((r) => r.blob());
-              const dataUrl = await new Promise<string>((res) => {
-                const rd = new FileReader();
-                rd.onload = () => res(rd.result as string);
-                rd.readAsDataURL(blob);
-              });
-              return softCompressImage(dataUrl);
-            })
-          );
+      // 照原网最新逻辑:全部优先 URL(瘦身,避免 Vercel 4.5MB 限制)
+      // base64 只在遇到 data: 老数据时兜底。canvas-v2 上传存的是 storage URL,几乎只走 URL
+      const imageUrlArray: string[] = [];
+      const imageBase64Array: string[] = [];
+      for (const u of refs) {
+        if (u.startsWith('data:')) {
+          imageBase64Array.push(await softCompressImage(u));
         } else {
-          imageUrlArray = refs;
+          imageUrlArray.push(u);
         }
       }
 
@@ -127,17 +116,25 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
         prompt: data.config.prompt,
         aspectRatio: ratio,
         imageQuality: data.config.imageQuality ?? (model.useSizeNotRatio ? 'medium' : '2k'),
-        imageUrlArray,
-        imageBase64Array,
+        imageUrlArray: imageUrlArray.length > 0 ? imageUrlArray : undefined,
+        imageBase64Array: imageBase64Array.length > 0 ? imageBase64Array : undefined,
         userId,
       });
 
       clearInterval(timer);
-      // 读真实尺寸设置卡片比例
+      // 读真实尺寸设置卡片比例,先显示原图
       const probe = new Image();
       probe.onload = () => updateCard(id, { status: 'done', progress: 100, outputUrl: imageUrl, aspectW: probe.naturalWidth, aspectH: probe.naturalHeight });
       probe.onerror = () => updateCard(id, { status: 'done', progress: 100, outputUrl: imageUrl });
       probe.src = imageUrl;
+
+      // 后台异步 mirror 成永久 URL(照原网:失败保留原 URL),完成后触发保存
+      mirrorOutput(imageUrl, 'image').then((permanentUrl) => {
+        if (permanentUrl && permanentUrl !== imageUrl) {
+          updateCard(id, { outputUrl: permanentUrl });
+        }
+        (window as any).saveCanvasV2Now?.();
+      });
     } catch (err: any) {
       clearInterval(timer);
       updateCard(id, { status: 'error', progress: 0 });

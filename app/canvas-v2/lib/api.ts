@@ -1,6 +1,7 @@
 'use client';
 
 import { createClient } from '@/lib/supabase/client';
+import { mirrorUrlToStorage } from '@/lib/canvas-storage';
 
 // ============================================================
 // canvas-v2 后端集成工具 — 1:1 复刻原网 app/canvas 的调用方式
@@ -153,4 +154,19 @@ export async function generateImage(params: ImageGenParams): Promise<string> {
   }
 
   throw new Error('未获取到图片');
+}
+
+// ============ 输出 mirror 转存 ============
+// 第三方生成 URL 会过期,转存到自己 Supabase 拿永久 URL(照原网 mirrorUrlToStorage)
+// 失败保留原 URL 兜底,不阻塞
+export async function mirrorOutput(url: string, type: 'image' | 'video'): Promise<string> {
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || !url) return url;
+    return await mirrorUrlToStorage(user.id, url, type);
+  } catch (err) {
+    console.warn('mirror 转存失败,保留原 URL:', err);
+    return url;
+  }
 }
