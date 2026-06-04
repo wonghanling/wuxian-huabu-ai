@@ -411,3 +411,169 @@ export async function generateKlingLipSync(
   };
   return poll();
 }
+
+// ============ 工具:URL → base64(GEM Step3/Step4 后端要 base64) ============
+export async function urlToBase64(url: string): Promise<string> {
+  if (url.startsWith('data:')) return url;
+  const blob = await fetch(url).then((r) => r.blob());
+  return new Promise<string>((resolve, reject) => {
+    const rd = new FileReader();
+    rd.onload = () => resolve(rd.result as string);
+    rd.onerror = reject;
+    rd.readAsDataURL(blob);
+  });
+}
+
+// ============ GEM 分镜 Step2(文案输出) ============
+export async function generateGemStoryboard(params: {
+  images?: string[]; script: string; gridSize: string; mode: string; userId?: string;
+}): Promise<string> {
+  const res = await fetch('/api/gem/generate-storyboard', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      images: params.images && params.images.length > 0 ? params.images : undefined,
+      script: params.script, gridSize: params.gridSize, mode: params.mode,
+      userId: params.userId || undefined,
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || '请求失败');
+  return data.result as string;
+}
+
+// ============ GEM 导演引擎 Step3(过渡指令文案) ============
+export async function generateGemTransitions(params: {
+  startImage: string; endImage: string; characterHint?: string; actionSuggestion?: string; userId?: string;
+}): Promise<string> {
+  const startB64 = await urlToBase64(params.startImage);
+  const endB64 = await urlToBase64(params.endImage);
+  const res = await fetch('/api/gem/generate-transitions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      startImage: startB64, endImage: endB64,
+      characterHint: params.characterHint || '', actionSuggestion: params.actionSuggestion || '',
+      userId: params.userId || undefined,
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || '请求失败');
+  return (data.prompt ?? data.result) as string;
+}
+
+// ============ GEM 导演引擎 Step4(分镜图片) ============
+const GEM4_TEMPLATE: Record<string, string> = {
+  'single': '/fenjingmuban2x2.jpg', '2x2': '/fenjingmuban2x2.jpg', '3x3': '/fenjingmuban3X3.jpg',
+};
+const GEM4_SIZE: Record<string, string> = {
+  '16:9': '2048x1152', '9:16': '2160x3840', '1:1': '2048x2048',
+};
+
+export async function generateGemStoryboardImage(params: {
+  inputType: 'single' | '2x2' | '3x3';
+  scriptMode?: 'normal' | 'detail';
+  duration: number; ratio: string; actionSuggestion?: string;
+  userImages: string[]; userId?: string;
+}, onProgress?: (p: number) => void): Promise<string> {
+  const action = params.actionSuggestion || '';
+  let prompt = '';
+  if (params.inputType === 'single') {
+    prompt = `图1是人物三视角参考图，用于保持角色外观、服装、比例的一致性。图2是剧情首帧，定义起始场景、构图、光线和氛围。根据这两张参考图，设计4个连续电影级分镜画面：第1格严格还原首帧构图，第2-4格按剧情发展推进动作。把4个画面嵌入分镜脚本模板的4个空白画面框里，同时只在模板说明栏填写镜头号、时间轴、景别、运镜、动作说明、音效，不覆盖画面框。整体为一个${params.duration}s电影级镜头，时间轴按动作节奏分配。${action}`;
+  } else {
+    const shotCount = params.inputType === '2x2' ? 4 : 9;
+    const gridLabel = shotCount === 9 ? '9宫格' : '4宫格';
+    prompt = params.scriptMode === 'detail'
+      ? `把${gridLabel}分镜图的画面嵌入分镜脚本模板的空白画面框里，同时只在模板原本说明栏填写镜头号、时间轴、景别、运镜、动作说明、音效。不覆盖分镜画面。写一个${params.duration}s电影级细化动作分镜脚本，这${shotCount}个宫格是细化动作分解，整体为一个${params.duration}s镜头，可以跳过重复帧，时间轴按实际动作节奏分配。${action}`
+      : `把${gridLabel}分镜图的画面嵌入分镜脚本模板的空白画面框里，同时只在模板原本说明栏填写镜头号、时间轴、景别、运镜、动作说明、音效。不覆盖分镜画面。写一个${params.duration}s电影级分镜脚本。${action}`;
+  }
+
+  const templateUrl = GEM4_TEMPLATE[params.inputType];
+  const templateBlob = await fetch(`${templateUrl}?v=${Math.random()}`, { cache: 'no-store' }).then((r) => {
+    if (!r.ok) throw new Error('模板图加载失败');
+    return r.blob();
+  });
+  const templateB64 = await new Promise<string>((resolve, reject) => {
+    const rd = new FileReader();
+    rd.onload = () => resolve(rd.result as string);
+    rd.onerror = reject;
+    rd.readAsDataURL(templateBlob);
+  });
+
+  const userB64 = await Promise.all(params.userImages.map((u) => urlToBase64(u)));
+  const imageBase64Array = params.inputType === 'single'
+    ? [...userB64, templateB64]
+    : [userB64[0], templateB64];
+
+  onProgress?.(10);
+  const res = await fetch('/api/gem/generate-storyboard-image', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      prompt, aspectRatio: GEM4_SIZE[params.ratio] || '2048x1152',
+      imageBase64Array, userId: params.userId || undefined,
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || '请求失败');
+  if (data.imageUrl && !data.pending) return data.imageUrl;
+  if (data.pending && data.requestId) {
+    const endpoint = data.endpoint || 'fal-ai/nano-banana-2/edit';
+    let attempts = 0;
+    const poll = async (): Promise<string> => {
+      attempts++;
+      await new Promise((r) => setTimeout(r, 3000));
+      const qRes = await fetch(`/api/image/fal-query?requestId=${encodeURIComponent(data.requestId)}&endpoint=${encodeURIComponent(endpoint)}`);
+      const qData = await qRes.json();
+      if (qData.success && qData.imageUrl) return qData.imageUrl;
+      if (qData.error) throw new Error(qData.error);
+      if (attempts > 60) throw new Error('生成超时');
+      onProgress?.(Math.min(90, 10 + attempts * 2));
+      return poll();
+    };
+    return poll();
+  }
+  throw new Error('未获取到分镜图');
+}
+
+// ============ 文本卡:普通文本生成 ============
+// POST /api/chat 返回 data.content
+export async function generateText(params: {
+  model: string; prompt: string; imageUrl?: string; userId?: string;
+}): Promise<string> {
+  const res = await fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: params.model,
+      prompt: params.prompt,
+      imageUrl: params.imageUrl || undefined,
+      stream: false,
+      userId: params.userId || undefined,
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || '生成失败');
+  return data.content as string;
+}
+
+// ============ 文本卡:提示词优化模式 ============
+// POST /api/optimize-prompt 返回 data.optimizedPrompt(会员每日100次额度)
+export async function optimizePrompt(params: {
+  userInput: string; duration?: string; ratio?: string; uploadedImage?: string; userId?: string;
+}): Promise<string> {
+  const res = await fetch('/api/optimize-prompt', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      userInput: params.userInput,
+      duration: params.duration || '13-15秒',
+      ratio: params.ratio || '16:9',
+      uploadedImage: params.uploadedImage || undefined,
+      userId: params.userId || undefined,
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || '优化失败');
+  return data.optimizedPrompt as string;
+}

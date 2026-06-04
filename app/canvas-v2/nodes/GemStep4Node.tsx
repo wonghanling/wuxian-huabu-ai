@@ -8,6 +8,7 @@ import { IconExpand, IconShrink, IconMinus, IconPlus } from './icons';
 import { SpawnMenu } from './SpawnMenu';
 import { HoverZoomImg } from './RefThumb';
 import { PromptTools } from './PromptTools';
+import { uploadImageToStorage, generateGemStoryboardImage, mirrorOutput, getUserId } from '../lib/api';
 
 // ============================================================
 // GEM 导演引擎 Step4 · 分镜图片生成
@@ -69,10 +70,11 @@ function GemStep4NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     updateCard(id, { collapsed: !collapsed });
   };
 
-  const uploadImg = (index: number, fileList: FileList | null) => {
+  const uploadImg = async (index: number, fileList: FileList | null) => {
     const f = fileList?.[0];
     if (!f) return;
-    const url = URL.createObjectURL(f);
+    const url = await uploadImageToStorage(f);
+    if (!url) return;
     const cur = [...(data.config.refImages ?? [])];
     cur[index] = url;
     updateConfig(id, { refImages: cur });
@@ -86,22 +88,36 @@ function GemStep4NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
   const canGenerate = inputType === 'single' ? !!(img1 && img2) : !!img1;
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!canGenerate) return;
     updateCard(id, { status: 'generating', progress: 10 });
-    let p = 10;
-    const timer = setInterval(() => {
-      p += 10;
-      if (p >= 100) {
-        clearInterval(timer);
-        const wh = ratioToWH(ratio, 640);
-        updateCard(id, {
-          status: 'done', progress: 100,
-          outputUrl: `https://picsum.photos/seed/s4${id}/${wh.w}/${wh.h}`,
-          aspectW: wh.w, aspectH: wh.h,
-        });
-      } else updateCard(id, { progress: p });
-    }, 300);
+    try {
+      const userId = await getUserId();
+      const userImages = inputType === 'single' ? [img1, img2] : [img1];
+      const imageUrl = await generateGemStoryboardImage(
+        {
+          inputType,
+          scriptMode,
+          duration: Number(duration),
+          ratio,
+          actionSuggestion,
+          userImages,
+          userId,
+        },
+        (progress) => updateCard(id, { progress }),
+      );
+      const probe = new Image();
+      probe.onload = () => updateCard(id, { status: 'done', progress: 100, outputUrl: imageUrl, aspectW: probe.naturalWidth, aspectH: probe.naturalHeight });
+      probe.onerror = () => updateCard(id, { status: 'done', progress: 100, outputUrl: imageUrl });
+      probe.src = imageUrl;
+      mirrorOutput(imageUrl, 'image').then((permUrl) => {
+        if (permUrl && permUrl !== imageUrl) updateCard(id, { outputUrl: permUrl });
+        (window as any).saveCanvasV2Now?.();
+      });
+    } catch (err: any) {
+      updateCard(id, { status: 'error', progress: 0 });
+      alert('分镜图生成失败: ' + (err?.message || err));
+    }
   };
 
   // ===== 收起态 =====

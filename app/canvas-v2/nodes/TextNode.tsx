@@ -8,6 +8,7 @@ import { IconText, IconModel, IconExpand, IconShrink, IconSplit, IconMinus, Icon
 import { SpawnMenu } from './SpawnMenu';
 import { RefThumb } from './RefThumb';
 import { PromptTools } from './PromptTools';
+import { uploadImageToStorage, generateText, optimizePrompt, getUserId } from '../lib/api';
 
 // ============================================================
 // 文本卡片 · 超现代高端风格
@@ -40,7 +41,7 @@ function TextNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const currentModel = TEXT_MODELS.find((m) => m.id === data.config.model) ?? TEXT_MODELS[0];
   // 模式:普通文本 / 提示词优化(用 preset 字段存)
   const optimizeMode = data.config.preset === 'optimize';
-  const duration = data.config.duration ?? '13-15秒';
+  const duration = data.config.textDuration ?? '13-15秒';
   const refImages = data.config.refImages ?? [];
   const TEXT_REF_MAX = 9;
   const DURATIONS = ['4-8秒', '9-12秒', '13-15秒', '>15秒'];
@@ -58,13 +59,19 @@ function TextNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     updateCard(id, { collapsed: !collapsed });
   };
 
-  // 参考图上传(最多 9 张,给模型看图写文案)
-  const addRefImages = (fileList: FileList | null) => {
+  // 参考图上传(最多 9 张,给模型看图写文案,真实上传)
+  const addRefImages = async (fileList: FileList | null) => {
     if (!fileList) return;
     const cur = data.config.refImages ?? [];
     const room = Math.max(0, TEXT_REF_MAX - cur.length);
-    const urls = Array.from(fileList).slice(0, room).map((f) => URL.createObjectURL(f));
-    if (urls.length) updateConfig(id, { refImages: [...cur, ...urls] });
+    const files = Array.from(fileList).slice(0, room);
+    for (const f of files) {
+      const url = await uploadImageToStorage(f);
+      if (url) {
+        const latest = useCanvasStore.getState().nodes.find((n) => n.id === id)?.data.config.refImages ?? [];
+        updateConfig(id, { refImages: [...latest, url] });
+      }
+    }
   };
   const removeRefImage = (i: number) => {
     const cur = [...(data.config.refImages ?? [])];
@@ -72,21 +79,40 @@ function TextNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     updateConfig(id, { refImages: cur });
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!data.config.prompt.trim()) return;
     updateCard(id, { status: 'generating', progress: 20 });
     let p = 20;
-    const timer = setInterval(() => {
-      p += 40;
-      if (p >= 100) {
-        clearInterval(timer);
-        updateCard(id, {
-          status: 'done',
-          progress: 100,
-          text: `【${currentModel.label}】\n\n${data.config.prompt}`,
+    const timer = setInterval(() => { p = Math.min(90, p + 10); updateCard(id, { progress: p }); }, 600);
+    try {
+      const userId = await getUserId();
+      const firstRef = refImages[0];   // 参考图(给模型看图,storage URL)
+      let result: string;
+      if (optimizeMode) {
+        // 提示词优化模式
+        result = await optimizePrompt({
+          userInput: data.config.prompt,
+          duration,
+          uploadedImage: firstRef,
+          userId,
         });
-      } else updateCard(id, { progress: p });
-    }, 320);
+      } else {
+        // 普通文本生成
+        result = await generateText({
+          model: currentModel.id,
+          prompt: data.config.prompt,
+          imageUrl: firstRef,
+          userId,
+        });
+      }
+      clearInterval(timer);
+      updateCard(id, { status: 'done', progress: 100, text: result });
+      (window as any).saveCanvasV2Now?.();
+    } catch (err: any) {
+      clearInterval(timer);
+      updateCard(id, { status: 'error', progress: 0 });
+      alert((optimizeMode ? '提示词优化' : '文本生成') + '失败: ' + (err?.message || err));
+    }
   };
 
   // ===== 收起态：居中带标题副标题的小卡片 =====

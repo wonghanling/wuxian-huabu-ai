@@ -7,6 +7,7 @@ import { IconExpand, IconShrink, IconMinus, IconPlus } from './icons';
 import { SpawnMenu } from './SpawnMenu';
 import { HoverZoomImg } from './RefThumb';
 import { PromptTools } from './PromptTools';
+import { uploadImageToStorage, generateGemTransitions, getUserId } from '../lib/api';
 
 // ============================================================
 // GEM 导演引擎 Step3 · 视频过渡指令
@@ -49,29 +50,34 @@ function GemStep3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     updateCard(id, { collapsed: !collapsed });
   };
 
-  const uploadFrame = (index: 0 | 1, fileList: FileList | null) => {
+  const uploadFrame = async (index: 0 | 1, fileList: FileList | null) => {
     const f = fileList?.[0];
     if (!f) return;
-    const url = URL.createObjectURL(f);
+    const url = await uploadImageToStorage(f);
+    if (!url) return;
     const cur = [...(data.config.refImages ?? [])];
     cur[index] = url;
     updateConfig(id, { refImages: cur });
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!startImage || !endImage) return;
     updateCard(id, { status: 'generating', progress: 10 });
     let p = 10;
-    const timer = setInterval(() => {
-      p += 12;
-      if (p >= 100) {
-        clearInterval(timer);
-        updateCard(id, {
-          status: 'done', progress: 100,
-          text: `【视频过渡指令 JSON 占位】\n\n角色: ${characterHint || '未指定'}\n动作: ${actionSuggestion || '未指定'}\n\n(接入后端后替换为真实过渡指令)`,
-        });
-      } else updateCard(id, { progress: p });
-    }, 300);
+    const timer = setInterval(() => { p = Math.min(90, p + 8); updateCard(id, { progress: p }); }, 600);
+    try {
+      const userId = await getUserId();
+      const result = await generateGemTransitions({
+        startImage, endImage, characterHint, actionSuggestion, userId,
+      });
+      clearInterval(timer);
+      updateCard(id, { status: 'done', progress: 100, text: result });
+      (window as any).saveCanvasV2Now?.();
+    } catch (err: any) {
+      clearInterval(timer);
+      updateCard(id, { status: 'error', progress: 0 });
+      alert('过渡指令生成失败: ' + (err?.message || err));
+    }
   };
 
   // ===== 收起态 =====

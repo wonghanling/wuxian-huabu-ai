@@ -7,6 +7,7 @@ import { IconExpand, IconShrink, IconMinus, IconPlus } from './icons';
 import { SpawnMenu } from './SpawnMenu';
 import { RefThumb } from './RefThumb';
 import { PromptTools } from './PromptTools';
+import { uploadImageToStorage, generateGemStoryboard, getUserId } from '../lib/api';
 
 // ============================================================
 // GEM 分镜设计卡片 (Step2)
@@ -81,28 +82,44 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     updateCard(id, { collapsed: !collapsed });
   };
 
-  const addRefImages = (fileList: FileList | null) => {
+  const addRefImages = async (fileList: FileList | null) => {
     if (!fileList) return;
     const cur = data.config.refImages ?? [];
     const room = Math.max(0, REF_MAX - cur.length);
-    const urls = Array.from(fileList).slice(0, room).map((f) => URL.createObjectURL(f));
-    if (urls.length) updateConfig(id, { refImages: [...cur, ...urls] });
+    const files = Array.from(fileList).slice(0, room);
+    for (const f of files) {
+      const url = await uploadImageToStorage(f);
+      if (url) {
+        const latest = useCanvasStore.getState().nodes.find((n) => n.id === id)?.data.config.refImages ?? [];
+        updateConfig(id, { refImages: [...latest, url] });
+      }
+    }
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!data.config.prompt.trim()) return;
     updateCard(id, { status: 'generating', progress: 10 });
     let p = 10;
-    const timer = setInterval(() => {
-      p += 12;
-      if (p >= 100) {
-        clearInterval(timer);
-        updateCard(id, {
-          status: 'done', progress: 100,
-          text: `【分镜 JSON 占位】\n模式:${mode === 'story' ? '故事' : '时空'} · ${selectedGrid.desc} · 风格:${styleLabel || '默认'}\n\n剧本:${data.config.prompt.slice(0, 50)}...\n\n(接入后端后替换为真实 JSON)`,
-        });
-      } else updateCard(id, { progress: p });
-    }, 300);
+    const timer = setInterval(() => { p = Math.min(90, p + 8); updateCard(id, { progress: p }); }, 600);
+    try {
+      const userId = await getUserId();
+      // 风格 prompt 拼在剧本前(照原网),refImages 已是 storage URL
+      const script = style ? `${style}\n${data.config.prompt}` : data.config.prompt;
+      const result = await generateGemStoryboard({
+        images: refImages.length > 0 ? refImages : undefined,
+        script,
+        gridSize,
+        mode,   // 'story' | 'cinematic'
+        userId,
+      });
+      clearInterval(timer);
+      updateCard(id, { status: 'done', progress: 100, text: result });
+      (window as any).saveCanvasV2Now?.();
+    } catch (err: any) {
+      clearInterval(timer);
+      updateCard(id, { status: 'error', progress: 0 });
+      alert('分镜生成失败: ' + (err?.message || err));
+    }
   };
 
   // 卡片框尺寸固定 360×320

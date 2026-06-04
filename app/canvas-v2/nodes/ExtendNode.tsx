@@ -7,6 +7,7 @@ import { ratioToWH, SIZE_OPTIONS, QUALITY_OPTIONS } from '../imageModels';
 import { IconExpand, IconShrink, IconMinus, IconPlus } from './icons';
 import { SpawnMenu } from './SpawnMenu';
 import { PromptTools } from './PromptTools';
+import { generateImage, mirrorOutput, getUserId, softCompressImage } from '../lib/api';
 
 // ============================================================
 // 时空镜头延展卡片
@@ -207,17 +208,44 @@ function ExtendNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     updateCard(id, { collapsed: !collapsed });
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
+    // 源图:连线传参填入的 refImages[0](连线做好后自动有)
+    const sourceImg = data.config.refImages?.[0];
+    if (!sourceImg) { alert('请连接图片卡片作为源图'); return; }
     updateCard(id, { status: 'generating', progress: 10 });
     let p = 10;
-    const timer = setInterval(() => {
-      p += 15;
-      if (p >= 100) {
-        clearInterval(timer);
-        const wh = ratioToWH(ratio, 640);
-        updateCard(id, { status: 'done', progress: 100, outputUrl: `https://picsum.photos/seed/ext${id}/${wh.w}/${wh.h}`, aspectW: wh.w, aspectH: wh.h });
-      } else updateCard(id, { progress: p });
-    }, 280);
+    const timer = setInterval(() => { p = Math.min(90, p + 6); updateCard(id, { progress: p }); }, 800);
+    try {
+      const userId = await getUserId();
+      // 源图传 URL(后端自适应);gpt-image-2 等若需 base64,data: 才转
+      const imageUrlArray: string[] = [];
+      const imageBase64Array: string[] = [];
+      if (sourceImg.startsWith('data:')) imageBase64Array.push(await softCompressImage(sourceImg));
+      else imageUrlArray.push(sourceImg);
+
+      const imageUrl = await generateImage({
+        model: modelId,
+        prompt: cameraPrompt,   // 摄像机角度 prompt(含数值+语义)
+        aspectRatio: ratio,
+        imageQuality: data.config.imageQuality ?? (model.useSizeNotRatio ? 'medium' : '2k'),
+        imageUrlArray: imageUrlArray.length > 0 ? imageUrlArray : undefined,
+        imageBase64Array: imageBase64Array.length > 0 ? imageBase64Array : undefined,
+        userId,
+      });
+      clearInterval(timer);
+      const probe = new Image();
+      probe.onload = () => updateCard(id, { status: 'done', progress: 100, outputUrl: imageUrl, aspectW: probe.naturalWidth, aspectH: probe.naturalHeight });
+      probe.onerror = () => updateCard(id, { status: 'done', progress: 100, outputUrl: imageUrl });
+      probe.src = imageUrl;
+      mirrorOutput(imageUrl, 'image').then((permUrl) => {
+        if (permUrl && permUrl !== imageUrl) updateCard(id, { outputUrl: permUrl });
+        (window as any).saveCanvasV2Now?.();
+      });
+    } catch (err: any) {
+      clearInterval(timer);
+      updateCard(id, { status: 'error', progress: 0 });
+      alert('镜头延展生成失败: ' + (err?.message || err));
+    }
   };
 
   // ===== 收起态 =====
