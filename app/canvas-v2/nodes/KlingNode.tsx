@@ -8,6 +8,7 @@ import { ratioToWH } from '../imageModels';
 import { IconVideo, IconExpand, IconShrink, IconMinus, IconPlus, IconUpload, IconScissors } from './icons';
 import { SpawnMenu } from './SpawnMenu';
 import { PromptTools } from './PromptTools';
+import { uploadFileToStorage, generateKlingLipSync, mirrorOutput } from '../lib/api';
 
 // ============================================================
 // Kling 对口型卡片 · 矩形框
@@ -48,16 +49,18 @@ function KlingNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
   const toggleCollapse = (e: React.MouseEvent) => { e.stopPropagation(); updateCard(id, { collapsed: !collapsed }); };
 
-  // 上传源视频(参考输入,不进卡片框)
-  const uploadSrcVideo = (fileList: FileList | null) => {
+  // 上传源视频(真实上传到 storage,拿 URL)
+  const uploadSrcVideo = async (fileList: FileList | null) => {
     const f = fileList?.[0];
     if (!f) return;
-    updateConfig(id, { refVideos: [URL.createObjectURL(f)], refVideoNames: [f.name] });
+    const url = await uploadFileToStorage(f, 'video');
+    if (url) updateConfig(id, { refVideos: [url], refVideoNames: [f.name] });
   };
-  const uploadAudio = (fileList: FileList | null) => {
+  const uploadAudio = async (fileList: FileList | null) => {
     const f = fileList?.[0];
     if (!f) return;
-    updateConfig(id, { refAudio: URL.createObjectURL(f), refAudioName: f.name });
+    const url = await uploadFileToStorage(f, 'audio');
+    if (url) updateConfig(id, { refAudio: url, refAudioName: f.name });
   };
   // 顶部上传:成品视频(进卡片框)
   const uploadResult = (fileList: FileList | null) => {
@@ -66,18 +69,23 @@ function KlingNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     updateCard(id, { status: 'done', outputUrl: URL.createObjectURL(f) });
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!srcVideo || !data.config.refAudio) return;  // 需要视频+音频
-    updateCard(id, { status: 'generating', progress: 12 });
-    let p = 12;
-    const timer = setInterval(() => {
-      p += 22;
-      if (p >= 100) {
-        clearInterval(timer);
-        const wh = ratioToWH('16:9', 640);
-        updateCard(id, { status: 'done', progress: 100, outputUrl: `https://picsum.photos/seed/kling${id}/${wh.w}/${wh.h}` });
-      } else updateCard(id, { progress: p });
-    }, 320);
+    updateCard(id, { status: 'generating', progress: 5 });
+    try {
+      const videoUrl = await generateKlingLipSync(
+        { videoUrl: srcVideo, audioUrl: data.config.refAudio },
+        (progress) => updateCard(id, { progress }),
+      );
+      updateCard(id, { status: 'done', progress: 100, outputUrl: videoUrl });
+      mirrorOutput(videoUrl, 'video').then((permUrl) => {
+        if (permUrl && permUrl !== videoUrl) updateCard(id, { outputUrl: permUrl });
+        (window as any).saveCanvasV2Now?.();
+      });
+    } catch (err: any) {
+      updateCard(id, { status: 'error', progress: 0 });
+      alert('对口型生成失败: ' + (err?.message || err));
+    }
   };
 
   // ===== 收起态 =====

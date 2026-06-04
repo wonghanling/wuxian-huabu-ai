@@ -7,6 +7,7 @@ import { ratioToWH, SIZE_OPTIONS, QUALITY_OPTIONS } from '../imageModels';
 import { IconExpand, IconShrink, IconMinus, IconPlus } from './icons';
 import { SpawnMenu } from './SpawnMenu';
 import { HoverZoomImg } from './RefThumb';
+import { uploadImageToStorage, generateImage, mirrorOutput, getUserId } from '../lib/api';
 
 // ============================================================
 // 角色设计卡片 · 矩形框
@@ -63,28 +64,44 @@ function CharacterNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     updateCard(id, { collapsed: !collapsed });
   };
 
-  const uploadRef = (fileList: FileList | null) => {
+  const uploadRef = async (fileList: FileList | null) => {
     const f = fileList?.[0];
     if (!f) return;
-    updateConfig(id, { refImages: [URL.createObjectURL(f)] });
+    const url = await uploadImageToStorage(f);
+    if (url) updateConfig(id, { refImages: [url] });
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!refImage) return;
     updateCard(id, { status: 'generating', progress: 10 });
     let p = 10;
-    const timer = setInterval(() => {
-      p += 15;
-      if (p >= 100) {
-        clearInterval(timer);
-        const wh = ratioToWH(ratio, 640);
-        updateCard(id, {
-          status: 'done', progress: 100,
-          outputUrl: `https://picsum.photos/seed/char${id}/${wh.w}/${wh.h}`,
-          aspectW: wh.w, aspectH: wh.h,
-        });
-      } else updateCard(id, { progress: p });
-    }, 300);
+    const timer = setInterval(() => { p = Math.min(90, p + 6); updateCard(id, { progress: p }); }, 800);
+    try {
+      const userId = await getUserId();
+      // 参考图传 URL(后端自适应);内置三视角 prompt
+      const imageUrl = await generateImage({
+        model: modelId,
+        prompt: CHARACTER_PROMPT,
+        aspectRatio: ratio,
+        imageQuality: data.config.imageQuality ?? (model.useSizeNotRatio ? 'medium' : '2k'),
+        imageUrlArray: refImage && !refImage.startsWith('data:') ? [refImage] : undefined,
+        imageBase64Array: refImage && refImage.startsWith('data:') ? [refImage] : undefined,
+        userId,
+      });
+      clearInterval(timer);
+      const probe = new Image();
+      probe.onload = () => updateCard(id, { status: 'done', progress: 100, outputUrl: imageUrl, aspectW: probe.naturalWidth, aspectH: probe.naturalHeight });
+      probe.onerror = () => updateCard(id, { status: 'done', progress: 100, outputUrl: imageUrl });
+      probe.src = imageUrl;
+      mirrorOutput(imageUrl, 'image').then((permUrl) => {
+        if (permUrl && permUrl !== imageUrl) updateCard(id, { outputUrl: permUrl });
+        (window as any).saveCanvasV2Now?.();
+      });
+    } catch (err: any) {
+      clearInterval(timer);
+      updateCard(id, { status: 'error', progress: 0 });
+      alert('角色三视图生成失败: ' + (err?.message || err));
+    }
   };
 
   // ===== 收起态 =====

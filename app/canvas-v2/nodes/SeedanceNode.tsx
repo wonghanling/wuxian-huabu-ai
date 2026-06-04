@@ -15,6 +15,7 @@ import { IconVideo, IconModel, IconExpand, IconShrink, IconMinus, IconPlus, Icon
 import { SpawnMenu } from './SpawnMenu';
 import { RefThumb, HoverZoomImg } from './RefThumb';
 import { PromptTools } from './PromptTools';
+import { uploadImageToStorage, uploadFileToStorage, generateSeedance, mirrorOutput, getUserId } from '../lib/api';
 
 // ============================================================
 // Seedance 2.0 卡片 · 矩形框
@@ -70,33 +71,43 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
   const toggleCollapse = (e: React.MouseEvent) => { e.stopPropagation(); updateCard(id, { collapsed: !collapsed }); };
 
-  // 上传首帧/尾帧
-  const uploadFrame = (which: 'firstFrame' | 'lastFrame', fileList: FileList | null) => {
+  // 上传首帧/尾帧(真实上传到 storage)
+  const uploadFrame = async (which: 'firstFrame' | 'lastFrame', fileList: FileList | null) => {
     const f = fileList?.[0];
     if (!f) return;
-    updateConfig(id, { [which]: URL.createObjectURL(f) } as any);
+    const url = await uploadImageToStorage(f);
+    if (url) updateConfig(id, { [which]: url } as any);
   };
-  // 多模态:加参考图(尊重 9 张 + 总 12 上限)
-  const addRefImages = (fileList: FileList | null) => {
+  // 多模态:加参考图(尊重 9 张 + 总 12 上限,真实上传)
+  const addRefImages = async (fileList: FileList | null) => {
     if (!fileList) return;
     const cur = data.config.refImages ?? [];
     const room = Math.min(MULTIMODAL_MAX_IMAGES - cur.length, MULTIMODAL_MAX_TOTAL - counts.total);
     if (room <= 0) return;
-    const urls = Array.from(fileList).slice(0, room).map((f) => URL.createObjectURL(f));
-    updateConfig(id, { refImages: [...cur, ...urls] });
+    const files = Array.from(fileList).slice(0, room);
+    for (const f of files) {
+      const url = await uploadImageToStorage(f);
+      if (url) {
+        const latest = useCanvasStore.getState().nodes.find((n) => n.id === id)?.data.config.refImages ?? [];
+        updateConfig(id, { refImages: [...latest, url] });
+      }
+    }
   };
   const removeRefImage = (i: number) => {
     const cur = [...(data.config.refImages ?? [])];
     cur.splice(i, 1);
     updateConfig(id, { refImages: cur });
   };
-  // 多模态:加参考视频(尊重 3 个 + 总 12 上限)
-  const addRefVideo = (fileList: FileList | null) => {
+  // 多模态:加参考视频(尊重 3 个 + 总 12 上限,真实上传)
+  const addRefVideo = async (fileList: FileList | null) => {
     const f = fileList?.[0];
     if (!f || !counts.canAddVideo) return;
-    const curV = data.config.refVideos ?? [];
-    const curN = data.config.refVideoNames ?? [];
-    updateConfig(id, { refVideos: [...curV, URL.createObjectURL(f)], refVideoNames: [...curN, f.name] });
+    const url = await uploadFileToStorage(f, 'video');
+    if (url) {
+      const curV = data.config.refVideos ?? [];
+      const curN = data.config.refVideoNames ?? [];
+      updateConfig(id, { refVideos: [...curV, url], refVideoNames: [...curN, f.name] });
+    }
   };
   const removeRefVideo = (i: number) => {
     const curV = [...(data.config.refVideos ?? [])];
@@ -104,11 +115,12 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     curV.splice(i, 1); curN.splice(i, 1);
     updateConfig(id, { refVideos: curV, refVideoNames: curN });
   };
-  // 多模态:加参考音频(总 12 上限,单个)
-  const addRefAudio = (fileList: FileList | null) => {
+  // 多模态:加参考音频(总 12 上限,单个,真实上传)
+  const addRefAudio = async (fileList: FileList | null) => {
     const f = fileList?.[0];
     if (!f || !counts.canAddAudio) return;
-    updateConfig(id, { refAudio: URL.createObjectURL(f), refAudioName: f.name });
+    const url = await uploadFileToStorage(f, 'audio');
+    if (url) updateConfig(id, { refAudio: url, refAudioName: f.name });
   };
 
   const uploadVideo = (fileList: FileList | null) => {
@@ -117,22 +129,42 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     updateCard(id, { status: 'done', outputUrl: URL.createObjectURL(f) });
   };
 
-  const handleGenerate = () => {
-    // 简单校验(照搬原网规则)
+  const handleGenerate = async () => {
+    // 校验(照搬原网规则)
     if (mode === 't2v' && !data.config.prompt.trim()) return;
     if ((mode === 'i2v' || mode === 'first-last') && !data.config.firstFrame) return;
     if (mode === 'first-last' && !data.config.lastFrame) return;
     if (mode === 'multimodal' && refImages.length === 0 && refVideos.length === 0) return;
     updateCard(id, { status: 'generating', progress: 12 });
-    let p = 12;
-    const timer = setInterval(() => {
-      p += 22;
-      if (p >= 100) {
-        clearInterval(timer);
-        const wh = ratioToWH(ratio === 'adaptive' ? '16:9' : ratio, 640);
-        updateCard(id, { status: 'done', progress: 100, outputUrl: `https://picsum.photos/seed/sd${id}/${wh.w}/${wh.h}` });
-      } else updateCard(id, { progress: p });
-    }, 320);
+    try {
+      const userId = await getUserId();
+      const videoUrl = await generateSeedance(
+        {
+          mode,
+          model: model.id,
+          prompt: data.config.prompt,
+          ratio,
+          duration: duration === '-1' ? -1 : Number(duration),
+          resolution,
+          generateAudio: !!data.config.audio,
+          firstFrameImage: data.config.firstFrame,
+          lastFrameImage: data.config.lastFrame,
+          refImages: mode === 'multimodal' ? refImages : undefined,
+          refVideoUrl: mode === 'multimodal' ? (data.config.refVideos?.[0]) : undefined,
+          refAudioUrl: mode === 'multimodal' ? data.config.refAudio : undefined,
+          userId,
+        },
+        (progress) => updateCard(id, { progress }),
+      );
+      updateCard(id, { status: 'done', progress: 100, outputUrl: videoUrl });
+      mirrorOutput(videoUrl, 'video').then((permUrl) => {
+        if (permUrl && permUrl !== videoUrl) updateCard(id, { outputUrl: permUrl });
+        (window as any).saveCanvasV2Now?.();
+      });
+    } catch (err: any) {
+      updateCard(id, { status: 'error', progress: 0 });
+      alert('Seedance 生成失败: ' + (err?.message || err));
+    }
   };
 
   const setMode = (m: SeedanceMode) => updateConfig(id, { preset: m });

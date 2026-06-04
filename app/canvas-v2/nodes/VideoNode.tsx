@@ -9,6 +9,7 @@ import { IconVideo, IconModel, IconExpand, IconShrink, IconMinus, IconPlus, Icon
 import { SpawnMenu } from './SpawnMenu';
 import { HoverZoomImg } from './RefThumb';
 import { PromptTools } from './PromptTools';
+import { uploadImageToStorage, generateVideo, mirrorOutput, getUserId } from '../lib/api';
 
 // ============================================================
 // 视频卡片 · 矩形框(默认 16:9)
@@ -55,10 +56,11 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
   const toggleCollapse = (e: React.MouseEvent) => { e.stopPropagation(); updateCard(id, { collapsed: !collapsed }); };
 
-  const uploadFrame = (which: 'firstFrame' | 'lastFrame', fileList: FileList | null) => {
+  const uploadFrame = async (which: 'firstFrame' | 'lastFrame', fileList: FileList | null) => {
     const f = fileList?.[0];
     if (!f) return;
-    updateConfig(id, { [which]: URL.createObjectURL(f) } as any);
+    const url = await uploadImageToStorage(f);
+    if (url) updateConfig(id, { [which]: url } as any);
   };
 
   // 上传视频:直接作为卡片画面(done 状态)
@@ -68,22 +70,35 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     updateCard(id, { status: 'done', outputUrl: URL.createObjectURL(f) });
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!data.config.prompt.trim() && need.first && !data.config.firstFrame) return;
     updateCard(id, { status: 'generating', progress: 12 });
-    let p = 12;
-    const timer = setInterval(() => {
-      p += 22;
-      if (p >= 100) {
-        clearInterval(timer);
-        const wh = ratioToWH(ratio || '16:9', 640);
-        updateCard(id, {
-          status: 'done', progress: 100,
-          // 模拟:用占位图当封面(真实环境是视频 URL)
-          outputUrl: `https://picsum.photos/seed/vid${id}/${wh.w}/${wh.h}`,
-        });
-      } else updateCard(id, { progress: p });
-    }, 320);
+    try {
+      const userId = await getUserId();
+      const videoUrl = await generateVideo(
+        {
+          prompt: data.config.prompt,
+          model: model.id,
+          aspectRatio: ratio,
+          duration,
+          resolution,
+          generateAudio: !!data.config.audio,
+          startFrameImage: need.first ? data.config.firstFrame : undefined,
+          endFrameImage: need.last ? data.config.lastFrame : undefined,
+          userId,
+        },
+        (progress) => updateCard(id, { progress }),
+      );
+      updateCard(id, { status: 'done', progress: 100, outputUrl: videoUrl });
+      // 后台 mirror 成永久 URL,完成后保存
+      mirrorOutput(videoUrl, 'video').then((permUrl) => {
+        if (permUrl && permUrl !== videoUrl) updateCard(id, { outputUrl: permUrl });
+        (window as any).saveCanvasV2Now?.();
+      });
+    } catch (err: any) {
+      updateCard(id, { status: 'error', progress: 0 });
+      alert('视频生成失败: ' + (err?.message || err));
+    }
   };
 
   // ===== 收起态 =====

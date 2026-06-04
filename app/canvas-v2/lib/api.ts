@@ -56,6 +56,27 @@ export async function uploadImageToStorage(file: File): Promise<string | null> {
   }
 }
 
+// 上传任意文件(视频/音频)到 Supabase storage,原始文件不转码(照原网)
+// type 决定路径前缀:video→videos/ audio→audio/
+export async function uploadFileToStorage(file: File, type: 'video' | 'audio'): Promise<string | null> {
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { alert('请先登录'); return null; }
+    const dotExt = file.name.includes('.') ? file.name.slice(file.name.lastIndexOf('.')) : (type === 'video' ? '.mp4' : '.mp3');
+    const prefix = type === 'video' ? 'videos' : 'audio';
+    const filename = `${prefix}/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}${dotExt}`;
+    const contentType = file.type || (type === 'video' ? 'video/mp4' : 'audio/mpeg');
+    const { error } = await supabase.storage.from('assets').upload(filename, file, { contentType, upsert: false });
+    if (error) throw new Error(`上传失败: ${error.message}`);
+    const { data: urlData } = supabase.storage.from('assets').getPublicUrl(filename);
+    return urlData.publicUrl;
+  } catch (err: any) {
+    alert((type === 'video' ? '视频' : '音频') + '上传失败: ' + err.message);
+    return null;
+  }
+}
+
 // softCompress:最长边 2048,转 JPEG base64(照搬原网)
 export function softCompressImage(dataUrl: string): Promise<string> {
   return new Promise((resolve) => {
@@ -169,4 +190,224 @@ export async function mirrorOutput(url: string, type: 'image' | 'video'): Promis
     console.warn('mirror 转存失败,保留原 URL:', err);
     return url;
   }
+}
+
+// ============ 视频生成 ============
+// 照原网契约:POST /api/video/generate 返回 {taskId, endpoint},轮询 /api/video/query
+export interface VideoGenParams {
+  prompt: string;
+  model: string;
+  aspectRatio?: string;
+  duration?: number;
+  resolution?: string;
+  generateAudio?: boolean;
+  startFrameImage?: string;   // 首帧(URL 或 base64)
+  endFrameImage?: string;     // 尾帧
+  cameraTemplate?: string;    // jimeng-camera 专用
+  cameraStrength?: string;
+  userId?: string;
+}
+
+// 返回最终视频 URL;onProgress 可选回调更新进度/状态
+export async function generateVideo(
+  params: VideoGenParams,
+  onProgress?: (progress: number, status: string) => void
+): Promise<string> {
+  const supabase = createClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  const authToken = session?.access_token || '';
+
+  const res = await fetch('/api/video/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      prompt: params.prompt,
+      model: params.model,
+      aspectRatio: params.aspectRatio || '16:9',
+      duration: params.duration ?? 5,
+      resolution: params.resolution ?? '720p',
+      generateAudio: params.generateAudio ?? false,
+      startFrameImage: params.startFrameImage,
+      endFrameImage: params.endFrameImage,
+      cameraTemplate: params.cameraTemplate,
+      cameraStrength: params.cameraStrength,
+      userId: params.userId || undefined,
+    }),
+  });
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    throw new Error(e.error || '视频生成请求失败');
+  }
+  const data = await res.json();
+  const taskId = data.taskId;
+  const endpoint = data.endpoint;
+  if (!taskId) throw new Error('未返回 taskId');
+
+  // 轮询(5秒间隔,60次超时,照原网)
+  let attempts = 0;
+  const poll = async (): Promise<string> => {
+    if (attempts >= 60) throw new Error('视频生成超时,请稍后重试');
+    attempts++;
+    await new Promise((r) => setTimeout(r, 5000));
+    const qRes = await fetch(`/api/video/query?taskId=${encodeURIComponent(taskId)}&endpoint=${encodeURIComponent(endpoint || '')}`, {
+      headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
+    });
+    if (!qRes.ok) return poll();
+    const qData = await qRes.json();
+    const progress = qData.progress || 30;
+    const statusText = qData.status === 'pending' ? '排队中...' : qData.status === 'processing' ? '生成中...' : '处理中...';
+    onProgress?.(progress, statusText);
+    if (qData.status === 'completed' && qData.videoUrl) return qData.videoUrl;
+    if (qData.status === 'failed') throw new Error(qData.error || '视频生成失败');
+    return poll();
+  };
+  return poll();
+}
+
+// ============ Seedance 生成 ============
+// 照原网契约:POST /api/seedance/generate 返回 {taskId, arkKeyId},轮询 /api/seedance/query
+// 首帧/尾帧/参考图/参考视频/参考音频 全部传 storage URL(后端自适应:data:转URL,http直接用)
+// 注意:refAudioBase64 字段名是历史遗留,实际存的是音频 URL(原网已全URL化)
+export interface SeedanceGenParams {
+  mode: string;               // t2v / i2v / first-last / multimodal
+  model: string;
+  prompt: string;
+  ratio?: string;
+  duration?: number;          // -1=智能
+  resolution?: string;
+  generateAudio?: boolean;
+  firstFrameImage?: string;
+  lastFrameImage?: string;
+  refImages?: string[];       // 多模态参考图(URL 数组)
+  refVideoUrl?: string;       // 参考视频 URL
+  refAudioUrl?: string;       // 参考音频 URL(后端字段叫 refAudioBase64,但传URL)
+  userId?: string;
+}
+
+export async function generateSeedance(
+  params: SeedanceGenParams,
+  onProgress?: (progress: number, status: string) => void
+): Promise<string> {
+  const res = await fetch('/api/seedance/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      mode: params.mode,
+      model: params.model,
+      prompt: params.prompt,
+      ratio: params.ratio || '16:9',
+      duration: params.duration ?? 5,
+      resolution: params.resolution || '720p',
+      generateAudio: params.generateAudio ?? true,
+      firstFrameImage: params.firstFrameImage || undefined,
+      lastFrameImage: params.lastFrameImage || undefined,
+      refImages: params.refImages && params.refImages.length > 0 ? params.refImages : undefined,
+      refVideoUrl: params.refVideoUrl || undefined,
+      refAudioBase64: params.refAudioUrl || undefined,  // 后端字段名,实际传 URL
+      userId: params.userId || undefined,
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error || '提交失败');
+  const taskId = data.taskId;
+  const arkKeyId = data.arkKeyId || '';
+  if (!taskId) throw new Error('未返回 taskId');
+
+  let attempts = 0;
+  const poll = async (): Promise<string> => {
+    attempts++;
+    await new Promise((r) => setTimeout(r, 5000));
+    try {
+      const qRes = await fetch('/api/seedance/query?taskId=' + taskId + (arkKeyId ? '&arkKeyId=' + arkKeyId : ''));
+      const qData = await qRes.json();
+      if (qData.status === 'completed' && qData.videoUrl) return qData.videoUrl;
+      if (qData.status === 'failed') throw new Error(qData.error || 'Seedance 生成失败');
+      if (attempts >= 120) throw new Error('生成超时');
+      const prog = qData.status === 'queued' ? 10 : Math.min(90, 10 + attempts * 1.5);
+      onProgress?.(prog, qData.status === 'queued' ? '排队中...' : '生成中...');
+      return poll();
+    } catch (e: any) {
+      if (e?.message && (e.message.includes('超时') || e.message.includes('失败'))) throw e;
+      if (attempts >= 120) throw new Error('生成超时');
+      onProgress?.(50, '网络重试中...');
+      await new Promise((r) => setTimeout(r, 8000));
+      return poll();
+    }
+  };
+  return poll();
+}
+
+// ============ Kling 对口型 ============
+// 两步:① identify-face 识别人脸拿 session_id/face_id ② advanced-lip-sync 生成 → 轮询
+// 视频/音频都传 storage URL(后端要求非 data: 的真实 URL)
+export interface KlingLipSyncParams {
+  videoUrl: string;           // 源视频 URL
+  audioUrl: string;           // 音频 URL
+  soundStart?: number;
+  soundEnd?: number;
+  soundInsert?: number;
+  soundVolume?: number;
+  originalVolume?: number;
+}
+
+export async function generateKlingLipSync(
+  params: KlingLipSyncParams,
+  onProgress?: (progress: number, status: string) => void
+): Promise<string> {
+  // ① 人脸识别
+  onProgress?.(5, '识别人脸中...');
+  const faceRes = await fetch('/api/kling/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mode: 'identify-face', video_url: params.videoUrl }),
+  });
+  const faceData = await faceRes.json();
+  if (!faceRes.ok) throw new Error(`人脸识别失败: ${faceData?.error || ''}`);
+  const sessionId = faceData.sessionId;
+  const faceId = faceData.faceId || '-1';
+
+  // ② 提交对口型
+  onProgress?.(20, '提交生成中...');
+  const res = await fetch('/api/kling/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      mode: 'advanced-lip-sync',
+      session_id: sessionId,
+      face_id: faceId,
+      sound_file: params.audioUrl,
+      sound_start_time: params.soundStart ?? 0,
+      sound_end_time: params.soundEnd ?? 5000,
+      sound_insert_time: params.soundInsert ?? 0,
+      sound_volume: params.soundVolume ?? 1,
+      original_audio_volume: params.originalVolume ?? 1,
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(`生成失败: ${data?.error || ''}`);
+  const taskId = data.taskId;
+  if (!taskId) throw new Error('未返回 taskId');
+
+  // ③ 轮询(5秒间隔,60次超时,照原网)
+  let attempts = 0;
+  const poll = async (): Promise<string> => {
+    attempts++;
+    await new Promise((r) => setTimeout(r, 5000));
+    try {
+      const qRes = await fetch(`/api/kling/query?taskId=${taskId}&mode=lip-sync`);
+      const qData = await qRes.json();
+      if (qData.status === 'completed' && qData.videoUrl) return qData.videoUrl;
+      if (qData.status === 'failed') throw new Error(qData.error || '生成失败');
+      if (attempts >= 60) throw new Error('生成超时');
+      onProgress?.(Math.min(90, 20 + attempts * 2), '生成中...');
+      return poll();
+    } catch (e: any) {
+      if (e?.message && (e.message.includes('超时') || e.message.includes('失败'))) throw e;
+      if (attempts >= 60) throw new Error('生成超时');
+      onProgress?.(50, '网络重试中...');
+      await new Promise((r) => setTimeout(r, 8000));
+      return poll();
+    }
+  };
+  return poll();
 }
