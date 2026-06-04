@@ -8,6 +8,7 @@ import { IconExpand, IconShrink, IconMinus, IconPlus } from './icons';
 import { SpawnMenu } from './SpawnMenu';
 import { HoverZoomImg } from './RefThumb';
 import { uploadImageToStorage, generateImage, mirrorOutput, getUserId } from '../lib/api';
+import { getUpstreamOutputs } from '../lib/connections';
 
 // ============================================================
 // 角色设计卡片 · 矩形框
@@ -72,7 +73,10 @@ function CharacterNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   };
 
   const handleGenerate = async () => {
-    if (!refImage) return;
+    // 连线传参:参考图优先上游图,其次本地
+    const upstream = getUpstreamOutputs(id);
+    const effRef = refImage || upstream.images[0];
+    if (!effRef) return;
     updateCard(id, { status: 'generating', progress: 10 });
     let p = 10;
     const timer = setInterval(() => { p = Math.min(90, p + 6); updateCard(id, { progress: p }); }, 800);
@@ -84,8 +88,8 @@ function CharacterNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
         prompt: CHARACTER_PROMPT,
         aspectRatio: ratio,
         imageQuality: data.config.imageQuality ?? (model.useSizeNotRatio ? 'medium' : '2k'),
-        imageUrlArray: refImage && !refImage.startsWith('data:') ? [refImage] : undefined,
-        imageBase64Array: refImage && refImage.startsWith('data:') ? [refImage] : undefined,
+        imageUrlArray: effRef && !effRef.startsWith('data:') ? [effRef] : undefined,
+        imageBase64Array: effRef && effRef.startsWith('data:') ? [effRef] : undefined,
         userId,
       });
       clearInterval(timer);

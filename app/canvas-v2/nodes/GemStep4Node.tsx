@@ -9,6 +9,7 @@ import { SpawnMenu } from './SpawnMenu';
 import { HoverZoomImg } from './RefThumb';
 import { PromptTools } from './PromptTools';
 import { uploadImageToStorage, generateGemStoryboardImage, mirrorOutput, getUserId } from '../lib/api';
+import { getUpstreamOutputs } from '../lib/connections';
 
 // ============================================================
 // GEM 导演引擎 Step4 · 分镜图片生成
@@ -86,14 +87,17 @@ function GemStep4NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     updateConfig(id, { refImages: cur });
   };
 
-  const canGenerate = inputType === 'single' ? !!(img1 && img2) : !!img1;
+  // 连线传参:单图模式手动上传(不接连线);4/9宫格可连接上游图
+  const upstreamImg = inputType !== 'single' ? getUpstreamOutputs(id).images[0] : undefined;
+  const effImg1 = img1 || upstreamImg;
+  const canGenerate = inputType === 'single' ? !!(img1 && img2) : !!effImg1;
 
   const handleGenerate = async () => {
     if (!canGenerate) return;
     updateCard(id, { status: 'generating', progress: 10 });
     try {
       const userId = await getUserId();
-      const userImages = inputType === 'single' ? [img1, img2] : [img1];
+      const userImages = inputType === 'single' ? [img1, img2] : [effImg1!];
       const imageUrl = await generateGemStoryboardImage(
         {
           inputType,

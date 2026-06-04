@@ -10,6 +10,7 @@ import { SpawnMenu } from './SpawnMenu';
 import { HoverZoomImg } from './RefThumb';
 import { PromptTools } from './PromptTools';
 import { uploadImageToStorage, generateVideo, mirrorOutput, getUserId } from '../lib/api';
+import { getUpstreamOutputs } from '../lib/connections';
 
 // ============================================================
 // 视频卡片 · 矩形框(默认 16:9)
@@ -71,20 +72,27 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   };
 
   const handleGenerate = async () => {
-    if (!data.config.prompt.trim() && need.first && !data.config.firstFrame) return;
+    // 连线传参:上游图片→首帧/尾帧,上游文案→prompt 前缀
+    const upstream = getUpstreamOutputs(id);
+    const effFirst = need.first ? (data.config.firstFrame || upstream.images[0]) : undefined;
+    const effLast = need.last ? (data.config.lastFrame || upstream.images[1] || upstream.images[0]) : undefined;
+    const effPrompt = upstream.texts.length > 0
+      ? `${upstream.texts.join('\n')}\n${data.config.prompt}`.trim()
+      : data.config.prompt;
+    if (!effPrompt.trim() && need.first && !effFirst) return;
     updateCard(id, { status: 'generating', progress: 12 });
     try {
       const userId = await getUserId();
       const videoUrl = await generateVideo(
         {
-          prompt: data.config.prompt,
+          prompt: effPrompt,
           model: model.id,
           aspectRatio: ratio,
           duration,
           resolution,
           generateAudio: !!data.config.audio,
-          startFrameImage: need.first ? data.config.firstFrame : undefined,
-          endFrameImage: need.last ? data.config.lastFrame : undefined,
+          startFrameImage: effFirst,
+          endFrameImage: effLast,
           userId,
         },
         (progress) => updateCard(id, { progress }),

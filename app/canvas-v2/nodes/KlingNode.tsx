@@ -9,6 +9,7 @@ import { IconVideo, IconExpand, IconShrink, IconMinus, IconPlus, IconUpload, Ico
 import { SpawnMenu } from './SpawnMenu';
 import { PromptTools } from './PromptTools';
 import { uploadFileToStorage, generateKlingLipSync, mirrorOutput } from '../lib/api';
+import { getUpstreamOutputs } from '../lib/connections';
 
 // ============================================================
 // Kling 对口型卡片 · 矩形框
@@ -70,11 +71,15 @@ function KlingNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   };
 
   const handleGenerate = async () => {
-    if (!srcVideo || !data.config.refAudio) return;  // 需要视频+音频
+    // 连线传参:上游视频→源视频,上游音频→音频
+    const upstream = getUpstreamOutputs(id);
+    const effVideo = srcVideo || upstream.videos[0];
+    const effAudio = data.config.refAudio || upstream.audios[0];
+    if (!effVideo || !effAudio) return;  // 需要视频+音频
     updateCard(id, { status: 'generating', progress: 5 });
     try {
       const videoUrl = await generateKlingLipSync(
-        { videoUrl: srcVideo, audioUrl: data.config.refAudio },
+        { videoUrl: effVideo, audioUrl: effAudio },
         (progress) => updateCard(id, { progress }),
       );
       updateCard(id, { status: 'done', progress: 100, outputUrl: videoUrl });

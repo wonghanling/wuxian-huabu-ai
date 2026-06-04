@@ -8,6 +8,7 @@ import { IconExpand, IconShrink, IconMinus, IconPlus } from './icons';
 import { SpawnMenu } from './SpawnMenu';
 import { PromptTools } from './PromptTools';
 import { generateImage, mirrorOutput, getUserId, softCompressImage } from '../lib/api';
+import { getUpstreamOutputs } from '../lib/connections';
 
 // ============================================================
 // 时空镜头延展卡片
@@ -209,8 +210,9 @@ function ExtendNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   };
 
   const handleGenerate = async () => {
-    // 源图:连线传参填入的 refImages[0](连线做好后自动有)
-    const sourceImg = data.config.refImages?.[0];
+    // 源图:优先上游连接的图片(连线传参),其次本地 refImages[0]
+    const upstream = getUpstreamOutputs(id);
+    const sourceImg = upstream.images[0] || data.config.refImages?.[0];
     if (!sourceImg) { alert('请连接图片卡片作为源图'); return; }
     updateCard(id, { status: 'generating', progress: 10 });
     let p = 10;

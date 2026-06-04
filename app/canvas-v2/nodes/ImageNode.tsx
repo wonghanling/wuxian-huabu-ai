@@ -13,6 +13,7 @@ import { SpawnMenu } from './SpawnMenu';
 import { RefThumb } from './RefThumb';
 import { PromptTools } from './PromptTools';
 import { uploadImageToStorage, generateImage, getUserId, softCompressImage, mirrorOutput } from '../lib/api';
+import { getUpstreamOutputs } from '../lib/connections';
 
 // ============================================================
 // 图片卡片 · 超现代高端风格(与文本卡同框架)
@@ -87,7 +88,12 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   };
 
   const handleGenerate = async () => {
-    if (!data.config.prompt.trim()) return;
+    // 连线传参:上游文案→prompt 前缀,上游图→参考图
+    const upstream = getUpstreamOutputs(id);
+    const effPrompt = upstream.texts.length > 0
+      ? `${upstream.texts.join('\n')}\n${data.config.prompt}`.trim()
+      : data.config.prompt;
+    if (!effPrompt.trim() && upstream.images.length === 0) return;
     updateCard(id, { status: 'generating', progress: 15 });
     // 进度条动画(真实任务无确切进度,用渐进动画到 90% 等结果)
     let p = 15;
@@ -98,7 +104,8 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
     try {
       const userId = await getUserId();
-      const refs = data.config.refImages ?? [];
+      // 本地参考图 + 上游连接的图,合并(去重)
+      const refs = [...(data.config.refImages ?? []), ...upstream.images.filter((u) => !(data.config.refImages ?? []).includes(u))];
       // 照原网最新逻辑:全部优先 URL(瘦身,避免 Vercel 4.5MB 限制)
       // base64 只在遇到 data: 老数据时兜底。canvas-v2 上传存的是 storage URL,几乎只走 URL
       const imageUrlArray: string[] = [];
@@ -113,7 +120,7 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
       const imageUrl = await generateImage({
         model: model.id,
-        prompt: data.config.prompt,
+        prompt: effPrompt,
         aspectRatio: ratio,
         imageQuality: data.config.imageQuality ?? (model.useSizeNotRatio ? 'medium' : '2k'),
         imageUrlArray: imageUrlArray.length > 0 ? imageUrlArray : undefined,

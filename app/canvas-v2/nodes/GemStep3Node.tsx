@@ -8,6 +8,7 @@ import { SpawnMenu } from './SpawnMenu';
 import { HoverZoomImg } from './RefThumb';
 import { PromptTools } from './PromptTools';
 import { uploadImageToStorage, generateGemTransitions, getUserId } from '../lib/api';
+import { getUpstreamOutputs } from '../lib/connections';
 
 // ============================================================
 // GEM 导演引擎 Step3 · 视频过渡指令
@@ -61,14 +62,18 @@ function GemStep3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   };
 
   const handleGenerate = async () => {
-    if (!startImage || !endImage) return;
+    // 连线传参:首帧/尾帧优先上游图
+    const upstream = getUpstreamOutputs(id);
+    const effStart = startImage || upstream.images[0];
+    const effEnd = endImage || upstream.images[1];
+    if (!effStart || !effEnd) return;
     updateCard(id, { status: 'generating', progress: 10 });
     let p = 10;
     const timer = setInterval(() => { p = Math.min(90, p + 8); updateCard(id, { progress: p }); }, 600);
     try {
       const userId = await getUserId();
       const result = await generateGemTransitions({
-        startImage, endImage, characterHint, actionSuggestion, userId,
+        startImage: effStart, endImage: effEnd, characterHint, actionSuggestion, userId,
       });
       clearInterval(timer);
       updateCard(id, { status: 'done', progress: 100, text: result });

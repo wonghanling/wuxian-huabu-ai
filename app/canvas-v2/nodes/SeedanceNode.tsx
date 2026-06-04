@@ -16,6 +16,7 @@ import { SpawnMenu } from './SpawnMenu';
 import { RefThumb, HoverZoomImg } from './RefThumb';
 import { PromptTools } from './PromptTools';
 import { uploadImageToStorage, uploadFileToStorage, generateSeedance, mirrorOutput, getUserId } from '../lib/api';
+import { getUpstreamOutputs } from '../lib/connections';
 
 // ============================================================
 // Seedance 2.0 卡片 · 矩形框
@@ -130,11 +131,23 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   };
 
   const handleGenerate = async () => {
+    // 连线传参:上游图→首帧/参考图,上游视频→refVideo,上游文案→prompt前缀
+    const upstream = getUpstreamOutputs(id);
+    const effPrompt = upstream.texts.length > 0
+      ? `${upstream.texts.join('\n')}\n${data.config.prompt}`.trim()
+      : data.config.prompt;
+    const effFirst = data.config.firstFrame || upstream.images[0];
+    const effLast = data.config.lastFrame || upstream.images[1];
+    const effRefImages = mode === 'multimodal'
+      ? [...refImages, ...upstream.images.filter((u) => !refImages.includes(u))]
+      : undefined;
+    const effRefVideo = mode === 'multimodal' ? (data.config.refVideos?.[0] || upstream.videos[0]) : undefined;
+    const effRefAudio = mode === 'multimodal' ? (data.config.refAudio || upstream.audios[0]) : undefined;
     // 校验(照搬原网规则)
-    if (mode === 't2v' && !data.config.prompt.trim()) return;
-    if ((mode === 'i2v' || mode === 'first-last') && !data.config.firstFrame) return;
-    if (mode === 'first-last' && !data.config.lastFrame) return;
-    if (mode === 'multimodal' && refImages.length === 0 && refVideos.length === 0) return;
+    if (mode === 't2v' && !effPrompt.trim()) return;
+    if ((mode === 'i2v' || mode === 'first-last') && !effFirst) return;
+    if (mode === 'first-last' && !effLast) return;
+    if (mode === 'multimodal' && (effRefImages?.length ?? 0) === 0 && !effRefVideo) return;
     updateCard(id, { status: 'generating', progress: 12 });
     try {
       const userId = await getUserId();
@@ -142,16 +155,16 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
         {
           mode,
           model: model.id,
-          prompt: data.config.prompt,
+          prompt: effPrompt,
           ratio,
           duration: duration === '-1' ? -1 : Number(duration),
           resolution,
           generateAudio: !!data.config.audio,
-          firstFrameImage: data.config.firstFrame,
-          lastFrameImage: data.config.lastFrame,
-          refImages: mode === 'multimodal' ? refImages : undefined,
-          refVideoUrl: mode === 'multimodal' ? (data.config.refVideos?.[0]) : undefined,
-          refAudioUrl: mode === 'multimodal' ? data.config.refAudio : undefined,
+          firstFrameImage: effFirst,
+          lastFrameImage: effLast,
+          refImages: effRefImages,
+          refVideoUrl: effRefVideo,
+          refAudioUrl: effRefAudio,
           userId,
         },
         (progress) => updateCard(id, { progress }),
