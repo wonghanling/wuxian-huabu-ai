@@ -44,6 +44,15 @@ export function getUpstreamOutputs(nodeId: string): UpstreamOutputs {
       case 'kling':
         if (d.outputUrl) out.videos.push(d.outputUrl);
         break;
+      case 'upload':     // 素材上传卡:按 mediaType 归类到图/视频
+        if (d.outputUrl) {
+          if ((d.config as any)?.mediaType === 'video') out.videos.push(d.outputUrl);
+          else out.images.push(d.outputUrl);
+        }
+        break;
+      case 'audio':      // 语音合成卡:输出音频 → 连 Seedance/Kling 配音
+        if (d.outputUrl) out.audios.push(d.outputUrl);
+        break;
       case 'text':
       case 'gem':        // GEM分镜 输出文案
       case 'gem3':       // 导演引擎Step3 输出过渡指令
@@ -83,6 +92,15 @@ export function useUpstream(nodeId: string): UpstreamOutputs {
           break;
         case 'video': case 'seedance': case 'kling':
           if (d.outputUrl) out.videos.push(d.outputUrl);
+          break;
+        case 'upload':   // 素材卡:按 mediaType 归类
+          if (d.outputUrl) {
+            if ((d.config as any)?.mediaType === 'video') out.videos.push(d.outputUrl);
+            else out.images.push(d.outputUrl);
+          }
+          break;
+        case 'audio':    // 语音合成卡:输出音频
+          if (d.outputUrl) out.audios.push(d.outputUrl);
           break;
         case 'text': case 'gem': case 'gem3':
           if (d.text) out.texts.push(d.text);

@@ -13,7 +13,7 @@ import {
 } from '@xyflow/react';
 
 // ============ 节点数据模型 ============
-export type NodeKind = 'image' | 'video' | 'text' | 'seedance' | 'kling' | 'character' | 'gem' | 'extend' | 'gem3' | 'gem4';
+export type NodeKind = 'image' | 'video' | 'text' | 'seedance' | 'kling' | 'character' | 'gem' | 'extend' | 'gem3' | 'gem4' | 'upload' | 'audio';
 export type NodeStatus = 'empty' | 'generating' | 'done' | 'error';
 
 // 端口加号菜单功能(照原网"继续创建下游卡片")
@@ -53,6 +53,7 @@ const SPAWN_RULES: Record<NodeKind, SpawnAction[]> = {
   image:     IMAGE_OUTPUT_ACTIONS,
   character: IMAGE_OUTPUT_ACTIONS,
   extend:    IMAGE_OUTPUT_ACTIONS,
+  upload:    IMAGE_OUTPUT_ACTIONS,   // 素材上传卡=图片卡菜单(照原网 mediaUploadCardOptions)
   video:     VIDEO_OUTPUT_ACTIONS,
   seedance:  VIDEO_OUTPUT_ACTIONS,
   kling:     VIDEO_OUTPUT_ACTIONS,
@@ -60,6 +61,7 @@ const SPAWN_RULES: Record<NodeKind, SpawnAction[]> = {
   gem3:      [],                     // Step3 原网无加号
   gem4:      [],                     // Step4 原网无加号(输出图,但只能手动拖线连)
   text:      [],                     // 文本卡原网无加号
+  audio:     VIDEO_OUTPUT_ACTIONS,   // 语音卡输出音频→连 Seedance/Kling 配音
 };
 
 // 取某源卡片类型可创建的下游菜单项(空数组 = 不显示加号)
@@ -122,6 +124,8 @@ interface CanvasState {
   setSelected: (id: string | null) => void;
   updateConfig: (id: string, patch: Partial<CardData['config']>) => void;
   updateCard: (id: string, patch: Partial<CardData>) => void;
+  // 一键收起/展开所有卡片
+  collapseAll: (collapsed: boolean) => void;
   // 剧情分段：基于某文本卡的故事，新建一个自动连接的下游文本卡
   splitStory: (sourceId: string) => void;
   // 端口加号菜单：从某节点引用生成下游卡片
@@ -160,6 +164,13 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       nodes: get().nodes.map((n) =>
         n.id === id ? { ...n, data: { ...n.data, ...patch } } : n
       ),
+    });
+  },
+
+  // 一键收起/展开所有卡片(画布放大器:全部缩成小卡片)
+  collapseAll: (collapsed) => {
+    set({
+      nodes: get().nodes.map((n) => ({ ...n, data: { ...n.data, collapsed } })),
     });
   },
 

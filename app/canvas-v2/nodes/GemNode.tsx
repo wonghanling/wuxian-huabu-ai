@@ -8,6 +8,7 @@ import { SpawnMenu } from './SpawnMenu';
 import { RefThumb } from './RefThumb';
 import { PromptTools } from './PromptTools';
 import { uploadImageToStorage, generateGemStoryboard, getUserId } from '../lib/api';
+import { useUpstream } from '../lib/connections';
 
 // ============================================================
 // GEM 分镜设计卡片 (Step2)
@@ -76,6 +77,8 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const style = data.config.ratio ?? '';              // 复用 ratio 存风格 prompt
   const styleLabel = STYLE_OPTIONS.find((s) => s.prompt === style)?.label ?? '';
   const refImages = data.config.refImages ?? [];
+  // 连线实时:上游图(连接进来的,实时显示+生成时合并)
+  const connImages = useUpstream(id).images.filter((u) => !refImages.includes(u));
   const gridOptions = mode === 'story' ? STORY_GRIDS : CINEMATIC_GRIDS;
   const selectedGrid = gridOptions.find((g) => g.value === gridSize) ?? gridOptions[1];
 
@@ -111,10 +114,11 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     const timer = setInterval(() => { p = Math.min(90, p + 8); updateCard(id, { progress: p }); }, 600);
     try {
       const userId = await getUserId();
-      // 风格 prompt 拼在剧本前(照原网),refImages 已是 storage URL
+      // 风格 prompt 拼在剧本前(照原网),refImages 已是 storage URL;合并连接进来的上游图
       const script = style ? `${style}\n${data.config.prompt}` : data.config.prompt;
+      const allImages = [...refImages, ...connImages];
       const result = await generateGemStoryboard({
-        images: refImages.length > 0 ? refImages : undefined,
+        images: allImages.length > 0 ? allImages : undefined,
         script,
         gridSize,
         mode,   // 'story' | 'cinematic'
@@ -272,8 +276,8 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               ))}
             </ParamTag>
 
-            {/* 参考图(可选,最多9张) */}
-            <ParamTag label={<>参考图{refImages.length > 0 ? ` ${refImages.length}` : ' 可选'}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</>} open={sub === 'ref'} onToggle={() => setSub(sub === 'ref' ? null : 'ref')} width={300}>
+            {/* 参考图(可选,最多9张;含连接进来的上游图) */}
+            <ParamTag label={<>参考图{refImages.length > 0 ? ` ${refImages.length}` : ' 可选'}{connImages.length > 0 && <span style={{ marginLeft: 4, color: '#a78bfa' }}>+{connImages.length}连</span>}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</>} open={sub === 'ref'} onToggle={() => setSub(sub === 'ref' ? null : 'ref')} width={300}>
               <label style={{ ...uploadBtn, ...(uploading ? { opacity: 0.6, pointerEvents: 'none' } : {}) }}>
                 <IconPlus size={13} /> <span>{uploading ? '上传中…' : `上传图片（还能传 ${REF_MAX - refImages.length} 张）`}</span>
                 <input type="file" accept="image/*" multiple disabled={uploading} style={{ display: 'none' }} onChange={(e) => { addRefImages(e.target.files); e.currentTarget.value = ''; }} />
@@ -286,6 +290,17 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                       onRemove={() => updateConfig(id, { refImages: refImages.filter((_, j) => j !== i) })} />
                   ))}
                 </div>
+              )}
+              {/* 来自连接的上游图(实时,不可删) */}
+              {connImages.length > 0 && (
+                <>
+                  <div style={{ fontSize: 10, color: '#a78bfa', margin: '6px 0 4px' }}>来自连接 · {connImages.length} 张</div>
+                  <div style={refGrid}>
+                    {connImages.map((url, i) => (
+                      <RefThumb key={`c${i}`} url={url} index={i} onRemove={() => {}} />
+                    ))}
+                  </div>
+                </>
               )}
             </ParamTag>
           </div>

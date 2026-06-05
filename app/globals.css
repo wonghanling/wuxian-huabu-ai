@@ -148,21 +148,32 @@ body::-webkit-scrollbar {
 }
 
 /* canvas-v2 统一灰色滚动条(卡片文案区 + 弹窗) */
-.cv2-scroll {
-  scrollbar-width: thin;                              /* Firefox */
-  scrollbar-color: rgba(160,160,160,0.5) transparent;
+/* 用 !important + 容器兜底,防止 React Flow / 浏览器默认滚动条样式覆盖导致变白 */
+.cv2-scroll,
+.react-flow textarea,
+.react-flow pre {
+  scrollbar-width: thin !important;                              /* Firefox */
+  scrollbar-color: rgba(160,160,160,0.5) transparent !important;
 }
-.cv2-scroll::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+.cv2-scroll::-webkit-scrollbar,
+.react-flow textarea::-webkit-scrollbar,
+.react-flow pre::-webkit-scrollbar {
+  width: 8px !important;
+  height: 8px !important;
 }
-.cv2-scroll::-webkit-scrollbar-track {
-  background: transparent;
+.cv2-scroll::-webkit-scrollbar-track,
+.react-flow textarea::-webkit-scrollbar-track,
+.react-flow pre::-webkit-scrollbar-track {
+  background: transparent !important;
 }
-.cv2-scroll::-webkit-scrollbar-thumb {
-  background: rgba(160,160,160,0.45);
-  border-radius: 99px;
+.cv2-scroll::-webkit-scrollbar-thumb,
+.react-flow textarea::-webkit-scrollbar-thumb,
+.react-flow pre::-webkit-scrollbar-thumb {
+  background: rgba(160,160,160,0.45) !important;
+  border-radius: 99px !important;
 }
-.cv2-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(190,190,190,0.7);
+.cv2-scroll::-webkit-scrollbar-thumb:hover,
+.react-flow textarea::-webkit-scrollbar-thumb:hover,
+.react-flow pre::-webkit-scrollbar-thumb:hover {
+  background: rgba(190,190,190,0.7) !important;
 }
