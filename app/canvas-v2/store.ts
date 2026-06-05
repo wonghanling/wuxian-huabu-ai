@@ -13,27 +13,59 @@ import {
 } from '@xyflow/react';
 
 // ============ 节点数据模型 ============
-export type NodeKind = 'image' | 'video' | 'text' | 'seedance' | 'kling' | 'character' | 'gem' | 'extend' | 'gem3' | 'gem4' | 'gem3';
+export type NodeKind = 'image' | 'video' | 'text' | 'seedance' | 'kling' | 'character' | 'gem' | 'extend' | 'gem3' | 'gem4';
 export type NodeStatus = 'empty' | 'generating' | 'done' | 'error';
 
-// 端口加号菜单的 6 项功能（我们自己的功能，非 TapNow）
+// 端口加号菜单功能(照原网"继续创建下游卡片")
 export type SpawnAction =
   | 'image'        // 图片生成
   | 'video'        // 视频生成
-  | 'seedance'     // Seedance 视频
+  | 'seedance'     // Seedance 视频(图生/多模态)
+  | 'seedanceMM'   // Seedance 多模态(视频输出连接用)
+  | 'kling'        // Kling 视频配音(视频输出连接用)
   | 'character'    // 角色设计
   | 'gem'          // GEM 分镜设计
   | 'extend';      // 时空镜头延展
 
-// 每项菜单 → 输出哪种卡片 + 该卡的预设模型/模式
-export const SPAWN_MENU: { action: SpawnAction; label: string; kind: NodeKind; icon: string }[] = [
-  { action: 'image', label: '图片生成', kind: 'image', icon: 'image' },
-  { action: 'video', label: '视频生成', kind: 'video', icon: 'video' },
-  { action: 'seedance', label: 'Seedance 视频', kind: 'video', icon: 'video' },
-  { action: 'character', label: '角色设计', kind: 'character', icon: 'image' },
-  { action: 'gem', label: 'GEM 分镜设计', kind: 'gem', icon: 'split' },
-  { action: 'extend', label: '时空镜头延展', kind: 'extend', icon: 'image' },
-];
+// 单个菜单项定义
+export interface SpawnItem { action: SpawnAction; label: string; kind: NodeKind; icon: string }
+
+// 全量菜单项(供规则表引用)
+const SPAWN_ITEMS: Record<SpawnAction, SpawnItem> = {
+  image:     { action: 'image',     label: '图片生成',      kind: 'image',     icon: 'image' },
+  video:     { action: 'video',     label: '视频生成',      kind: 'video',     icon: 'video' },
+  seedance:  { action: 'seedance',  label: 'Seedance 视频', kind: 'seedance',  icon: 'video' },
+  seedanceMM:{ action: 'seedanceMM',label: 'Seedance 多模态',kind: 'seedance', icon: 'video' },
+  kling:     { action: 'kling',     label: 'Kling 视频配音', kind: 'kling',     icon: 'video' },
+  character: { action: 'character', label: '角色设计',      kind: 'character', icon: 'image' },
+  gem:       { action: 'gem',       label: 'GEM 分镜设计',  kind: 'gem',       icon: 'split' },
+  extend:    { action: 'extend',    label: '时空镜头延展',  kind: 'extend',    icon: 'image' },
+};
+
+// 连接规则表(照原网"+"号菜单,按源卡片类型决定可创建的下游):
+// - 图片类(图片/角色/时空延展/Step4):6 项(图/视频/Seedance/角色/GEM/时空延展)
+// - 视频类(视频/Seedance/Kling):2 项(Seedance 多模态 / Kling 配音)
+// - Step2(gem):仅图片生成卡片
+// - Step3/文本(gem3/text):原网无"+"号菜单 → 空(不显示加号)
+const IMAGE_OUTPUT_ACTIONS: SpawnAction[] = ['image', 'video', 'seedance', 'character', 'gem', 'extend'];
+const VIDEO_OUTPUT_ACTIONS: SpawnAction[] = ['seedanceMM', 'kling'];
+const SPAWN_RULES: Record<NodeKind, SpawnAction[]> = {
+  image:     IMAGE_OUTPUT_ACTIONS,
+  character: IMAGE_OUTPUT_ACTIONS,
+  extend:    IMAGE_OUTPUT_ACTIONS,
+  video:     VIDEO_OUTPUT_ACTIONS,
+  seedance:  VIDEO_OUTPUT_ACTIONS,
+  kling:     VIDEO_OUTPUT_ACTIONS,
+  gem:       ['image'],              // Step2 仅连图片生成卡片
+  gem3:      [],                     // Step3 原网无加号
+  gem4:      [],                     // Step4 原网无加号(输出图,但只能手动拖线连)
+  text:      [],                     // 文本卡原网无加号
+};
+
+// 取某源卡片类型可创建的下游菜单项(空数组 = 不显示加号)
+export function getSpawnItems(kind: NodeKind): SpawnItem[] {
+  return (SPAWN_RULES[kind] ?? []).map((a) => SPAWN_ITEMS[a]);
+}
 
 export interface CardData extends Record<string, unknown> {
   kind: NodeKind;
@@ -166,22 +198,30 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     });
   },
 
-  // 端口加号菜单：从某节点引用生成下游卡片（6 项功能）
-  // 输出卡片类型由 SPAWN_MENU 决定，自动连线
+  // 端口加号菜单:从某节点引用生成下游卡片(按 SPAWN_RULES 分类型)
+  // 输出卡片类型由 action 决定,自动连线
   spawnFrom: (sourceId, action) => {
     const src = get().nodes.find((n) => n.id === sourceId);
     if (!src) return;
-    const menu = SPAWN_MENU.find((m) => m.action === action);
+    const menu = SPAWN_ITEMS[action];
     if (!menu) return;
     const newId = `${menu.kind[0]}${Date.now()}`;
     const modelMap: Record<SpawnAction, string> = {
       image: 'nano-banana-pro',
       video: 'jimeng-i2v',
       seedance: 'doubao-seedance-2-0-260128',
+      seedanceMM: 'doubao-seedance-2-0-260128',
+      kling: '',
       character: 'nano-banana-pro',
       gem: 'nano-banana-pro',
       extend: 'nano-banana-pro',
     };
+    // 各类型卡片的初始 config(Seedance 多模态预设 multimodal 模式)
+    const baseConfig: any = { model: modelMap[action], prompt: '' };
+    if (action === 'seedance') baseConfig.preset = 't2v';
+    if (action === 'seedanceMM') baseConfig.preset = 'multimodal';
+    if (menu.kind === 'kling') { baseConfig.refVideos = []; baseConfig.refVideoNames = []; }
+    if (menu.kind !== 'text' && menu.kind !== 'kling') baseConfig.ratio = '1:1';
     const newNode: CardNode = {
       id: newId,
       type: 'card',
@@ -191,11 +231,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         status: 'empty',
         outputUrl: null,
         text: '',
-        config: {
-          model: modelMap[action],
-          prompt: '',
-          ...(menu.kind !== 'text' ? { ratio: '1:1' } : {}),
-        },
+        config: baseConfig,
       },
     };
     set({

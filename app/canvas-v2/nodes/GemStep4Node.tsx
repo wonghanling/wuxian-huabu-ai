@@ -322,12 +322,9 @@ function GemStep4NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     return (
       <>
         <Handle type="target" position={Position.Left} className="rf-port" style={{ ...portCircle(INPUT_PORT), left: -16 }} />
+        {/* Step4 照原网无"+"号下游菜单,仅可拖线连接 */}
         <Handle type="source" position={Position.Right} className="rf-port rf-port-out"
-          style={{ ...portCircle(OUTPUT_PORT), right: -16 }}
-          onClick={(e) => { e.stopPropagation(); setSpawnOpen((v) => !v); }}>
-          <span style={portPlusIcon}><IconPlus size={11} /></span>
-        </Handle>
-        {spawnOpen && <SpawnMenu sourceId={id} onClose={() => setSpawnOpen(false)} />}
+          style={{ ...portCircle(OUTPUT_PORT), right: -16 }} />
       </>
     );
   }

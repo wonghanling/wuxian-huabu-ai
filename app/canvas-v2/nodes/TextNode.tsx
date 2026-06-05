@@ -351,18 +351,13 @@ function TextNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           style={{ ...portCircle(INPUT_PORT), left: -16 }}
         />
 
-        {/* 输出端口(右,灰)—— 单击弹菜单,拖拽拉线 */}
+        {/* 输出端口(右,灰)—— 文本卡照原网无"+"号下游菜单,仅可拖线连接 */}
         <Handle
           type="source"
           position={Position.Right}
           className="rf-port rf-port-out"
           style={{ ...portCircle(OUTPUT_PORT), right: -16 }}
-          onClick={(e) => { e.stopPropagation(); setSpawnOpen((v) => !v); }}
-        >
-          <span style={portPlusIcon}><IconPlus size={11} /></span>
-        </Handle>
-
-        {spawnOpen && <SpawnMenu sourceId={id} onClose={() => setSpawnOpen(false)} />}
+        />
       </>
     );
   }

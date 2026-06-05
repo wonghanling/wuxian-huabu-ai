@@ -1,10 +1,10 @@
 'use client';
 
-import { useCanvasStore, SPAWN_MENU, type SpawnAction } from '../store';
+import { useCanvasStore, getSpawnItems, type SpawnAction } from '../store';
 import { IconImage, IconVideo, IconSplit } from './icons';
 
 // ============ 端口加号菜单(引用该节点生成) ============
-// 端口圆圈里的 + 点击 → 弹出这个菜单(6 项我们自己的功能)
+// 端口圆圈里的 + 点击 → 弹出菜单(按源卡片类型决定可创建的下游,照原网规则)
 // 选一项 → 自动新建对应卡片 + 自动连线
 
 function menuIcon(icon: string) {
@@ -15,6 +15,20 @@ function menuIcon(icon: string) {
 
 export function SpawnMenu({ sourceId, onClose }: { sourceId: string; onClose: () => void }) {
   const spawnFrom = useCanvasStore((s) => s.spawnFrom);
+  const srcNode = useCanvasStore((s) => s.nodes.find((n) => n.id === sourceId));
+  const items = srcNode ? getSpawnItems(srcNode.data.kind) : [];
+
+  // 该类型卡片不允许创建下游(如文本卡/Step3)→ 不弹菜单
+  if (items.length === 0) {
+    return (
+      <>
+        <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 90 }} />
+        <div style={menuBox} onClick={(e) => e.stopPropagation()}>
+          <div style={menuTitle}>该卡片无下游可创建</div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -25,7 +39,7 @@ export function SpawnMenu({ sourceId, onClose }: { sourceId: string; onClose: ()
       />
       <div style={menuBox} onClick={(e) => e.stopPropagation()}>
         <div style={menuTitle}>引用该节点生成</div>
-        {SPAWN_MENU.map((m) => (
+        {items.map((m) => (
           <button
             key={m.action}
             onClick={() => { spawnFrom(sourceId, m.action as SpawnAction); onClose(); }}
