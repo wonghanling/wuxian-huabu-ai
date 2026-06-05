@@ -70,6 +70,7 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const lastFromConn = !data.config.lastFrame && !!upstreamLive.images[1];
   // 多模态:本地参考图之外,连接进来的图(去重)
   const connImages = upstreamLive.images.filter((u) => !refImages.includes(u));
+  const connectedTexts = upstreamLive.texts;   // 来自连接的文案(实时,自动拼入生成)
 
   // 卡片框:矩形,按比例(adaptive 用 16:9)
   // 卡片框只显示成品(outputUrl);参考图/首帧绝不进卡片框
@@ -270,6 +271,13 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
       <NodeToolbar isVisible={selected && !editing && !spawnOpen && !hasVideo} position={Position.Bottom} offset={16}>
         <div className="nodrag nopan" style={promptBar} onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
           <PromptTools value={data.config.prompt} onPaste={(t) => updateConfig(id, { prompt: t })} />
+          {/* 来自连接的上游文案(实时,自动拼入生成) */}
+          {connectedTexts.length > 0 && (
+            <div style={{ fontSize: 10, color: '#a78bfa', background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.3)', borderRadius: 8, padding: '5px 8px', marginBottom: 6, maxHeight: 60, overflow: 'auto' }}>
+              <div style={{ opacity: 0.8, marginBottom: 2 }}>来自连接的文案(将自动拼入生成)</div>
+              {connectedTexts.join('\n')}
+            </div>
+          )}
 
           {/* 模式选择(从按钮正上方弹出)+ 宫格快捷按钮 同一行 */}
           <div style={topRow}>

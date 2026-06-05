@@ -32,9 +32,12 @@ export function getUpstreamOutputs(nodeId: string): UpstreamOutputs {
     switch (d.kind) {
       case 'image':
       case 'character':
-      case 'gem4':       // 导演引擎Step4 输出分镜图
       case 'extend':     // 时空镜头延展 输出图
         if (d.outputUrl) out.images.push(d.outputUrl);
+        break;
+      case 'gem4':       // 导演引擎Step4:既输出分镜图,也输出文案(result)
+        if (d.outputUrl) out.images.push(d.outputUrl);
+        if (d.text) out.texts.push(d.text);
         break;
       case 'video':
       case 'seedance':
@@ -71,8 +74,12 @@ export function useUpstream(nodeId: string): UpstreamOutputs {
       const d = up.data;
       if (d.status !== 'done') continue;
       switch (d.kind) {
-        case 'image': case 'character': case 'gem4': case 'extend':
+        case 'image': case 'character': case 'extend':
           if (d.outputUrl) out.images.push(d.outputUrl);
+          break;
+        case 'gem4':   // Step4:既出图也出文案
+          if (d.outputUrl) out.images.push(d.outputUrl);
+          if (d.text) out.texts.push(d.text);
           break;
         case 'video': case 'seedance': case 'kling':
           if (d.outputUrl) out.videos.push(d.outputUrl);
