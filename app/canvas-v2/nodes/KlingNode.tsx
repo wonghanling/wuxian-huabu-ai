@@ -9,7 +9,7 @@ import { IconVideo, IconExpand, IconShrink, IconMinus, IconPlus, IconUpload, Ico
 import { SpawnMenu } from './SpawnMenu';
 import { PromptTools } from './PromptTools';
 import { uploadFileToStorage, generateKlingLipSync, mirrorOutput } from '../lib/api';
-import { getUpstreamOutputs } from '../lib/connections';
+import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 
 // ============================================================
 // Kling 对口型卡片 · 矩形框
@@ -41,6 +41,11 @@ function KlingNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
   const srcVideo = data.config.refVideos?.[0];
   const srcVideoName = data.config.refVideoNames?.[0];
+  // 连线实时:上游视频→源视频,上游音频→音频(照原网渲染时实时读)
+  const upstreamLive = useUpstream(id);
+  const connVideo = upstreamLive.videos[0];
+  const dispVideo = srcVideo || connVideo;
+  const videoFromConn = !srcVideo && !!connVideo;
   const audioName = data.config.refAudioName;
 
   // 卡片框:矩形(默认 16:9),只显示成品
@@ -173,18 +178,23 @@ function KlingNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
           {/* 参数标签行:源视频 + 音频(各自从按钮正上方弹出) */}
           <div style={tagsRow}>
-            <ParamTag label={<>源视频{srcVideo && <span style={greenDot} />}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</>} open={sub === 'video'} onToggle={() => setSub(sub === 'video' ? null : 'video')} width={260}>
+            <ParamTag label={<>源视频{dispVideo && <span style={greenDot} />}{videoFromConn && <span style={{ marginLeft: 4, color: '#a78bfa' }}>来自连接</span>}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</>} open={sub === 'video'} onToggle={() => setSub(sub === 'video' ? null : 'video')} width={260}>
               <label style={{ ...uploadBtn, ...(uploading ? { opacity: 0.6, pointerEvents: 'none' } : {}) }}>
                 <IconUpload size={13} /> <span>{uploading ? '上传中…' : KLING_VIDEO_HINT}</span>
                 <input type="file" accept="video/mp4,video/quicktime" disabled={uploading} style={{ display: 'none' }} onChange={(e) => { uploadSrcVideo(e.target.files); e.currentTarget.value = ''; }} />
               </label>
-              {srcVideo && (
+              {srcVideo ? (
                 <div style={fileRow}>
                   <IconVideo size={13} />
                   <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{srcVideoName || '源视频'}</span>
                   <button style={fileDel} onClick={() => updateConfig(id, { refVideos: [], refVideoNames: [] })}>×</button>
                 </div>
-              )}
+              ) : videoFromConn ? (
+                <div style={fileRow}>
+                  <IconVideo size={13} />
+                  <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#a78bfa' }}>来自连接的视频</span>
+                </div>
+              ) : null}
             </ParamTag>
 
             <ParamTag label={<>音频{data.config.refAudio && <span style={greenDot} />}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</>} open={sub === 'audio'} onToggle={() => setSub(sub === 'audio' ? null : 'audio')} width={260}>

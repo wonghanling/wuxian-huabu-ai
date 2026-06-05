@@ -13,7 +13,7 @@ import { SpawnMenu } from './SpawnMenu';
 import { RefThumb } from './RefThumb';
 import { PromptTools } from './PromptTools';
 import { uploadImageToStorage, generateImage, getUserId, softCompressImage, mirrorOutput } from '../lib/api';
-import { getUpstreamOutputs } from '../lib/connections';
+import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 
 // ============================================================
 // 图片卡片 · 超现代高端风格(与文本卡同框架)
@@ -46,6 +46,10 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
   const model = IMAGE_MODELS.find((m) => m.id === data.config.model) ?? IMAGE_MODELS[0];
   const ratio = data.config.ratio ?? '1:1';
+  // 连线实时:上游图→参考图(照原网 getConnectedGeneratedImage 渲染时实时读),上游文案→prompt
+  const upstreamLive = useUpstream(id);
+  const connectedImages = upstreamLive.images;        // 来自连接的图(实时)
+  const connectedTexts = upstreamLive.texts;          // 来自连接的文案(实时)
   // 卡片框只显示成品(outputUrl);参考图绝不进卡片框(参考图只在底部弹窗参考区)
   const displayImg = hasImage ? data.outputUrl! : null;
 
@@ -254,7 +258,7 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               </div>
             </ParamTag>
             {model.supportsImage && (
-              <ParamTag label={<>参考图 {(data.config.refImages?.length ?? 0)}/{refImageMax(model.id)}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</>} open={sub === 'ref'} onToggle={() => setSub(sub === 'ref' ? null : 'ref')} width={300}>
+              <ParamTag label={<>参考图 {(data.config.refImages?.length ?? 0)}/{refImageMax(model.id)}{connectedImages.length > 0 && <span style={{ marginLeft: 4, color: '#a78bfa' }}>+{connectedImages.length}连</span>}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</>} open={sub === 'ref'} onToggle={() => setSub(sub === 'ref' ? null : 'ref')} width={300}>
                 <label style={{ ...uploadBtn, ...(uploading ? { opacity: 0.6, pointerEvents: 'none' } : {}) }}>
                   <IconPlus size={13} />
                   <span>{uploading ? '上传中…' : `上传图片（还能传 ${Math.max(0, refImageMax(model.id) - (data.config.refImages?.length ?? 0))} 张）`}</span>
@@ -267,6 +271,17 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                         onRemove={() => updateConfig(id, { refImages: data.config.refImages!.filter((_, j) => j !== i) })} />
                     ))}
                   </div>
+                )}
+                {/* 来自连接的上游图(实时显示,照原网"来自连接";连线动态来,不可删) */}
+                {connectedImages.length > 0 && (
+                  <>
+                    <div style={{ fontSize: 10, color: '#a78bfa', padding: '6px 6px 4px' }}>来自连接 · {connectedImages.length} 张</div>
+                    <div style={refGrid}>
+                      {connectedImages.map((url, i) => (
+                        <RefThumb key={`c${i}`} url={url} index={i} onRemove={() => {}} />
+                      ))}
+                    </div>
+                  </>
                 )}
               </ParamTag>
             )}

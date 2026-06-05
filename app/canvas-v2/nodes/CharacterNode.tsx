@@ -8,7 +8,7 @@ import { IconExpand, IconShrink, IconMinus, IconPlus } from './icons';
 import { SpawnMenu } from './SpawnMenu';
 import { HoverZoomImg } from './RefThumb';
 import { uploadImageToStorage, generateImage, mirrorOutput, getUserId } from '../lib/api';
-import { getUpstreamOutputs } from '../lib/connections';
+import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 
 // ============================================================
 // 角色设计卡片 · 矩形框
@@ -55,6 +55,9 @@ function CharacterNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const ratio = data.config.ratio ?? '1:1';
   const quality = data.config.imageQuality ?? '2k';
   const refImage = data.config.refImages?.[0];
+  // 连线实时:上游图→参考图(照原网,角色设计参考图可来自连接)
+  const connectedImage = useUpstream(id).images[0];
+  const effRefDisplay = refImage || connectedImage;
   const isNanoPro = modelId === 'nano-banana-pro';
   const isGptImage2 = modelId === 'gpt-image-2';
 
@@ -211,19 +214,23 @@ function CharacterNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               </ParamTag>
             )}
 
-            {/* 参考图(1张必填) */}
+            {/* 参考图(1张必填,可来自连接) */}
             <ParamTag
-              label={<>参考图{refImage ? <span style={greenDot} /> : ' (必填)'}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</>}
+              label={<>参考图{effRefDisplay ? <span style={greenDot} /> : ' (必填)'}{!refImage && connectedImage && <span style={{ marginLeft: 4, color: '#a78bfa' }}>来自连接</span>}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</>}
               open={sub === 'ref'} onToggle={() => setSub(sub === 'ref' ? null : 'ref')} width={220}
             >
               <label style={{ ...uploadBtn, ...(uploading ? { opacity: 0.6, pointerEvents: 'none' } : {}) }}>
                 <IconPlus size={13} /> <span>{uploading ? '上传中…' : '上传参考图（1张）'}</span>
                 <input type="file" accept="image/*" disabled={uploading} style={{ display: 'none' }} onChange={(e) => { uploadRef(e.target.files); setSub(null); e.currentTarget.value = ''; }} />
               </label>
-              {refImage && (
+              {effRefDisplay && (
                 <div style={{ position: 'relative', width: '100%', aspectRatio: '1', borderRadius: 8, overflow: 'hidden', marginTop: 6 }}>
-                  <HoverZoomImg url={refImage} />
-                  <button style={refDel} onClick={() => updateConfig(id, { refImages: [] })}>×</button>
+                  <HoverZoomImg url={effRefDisplay} />
+                  {refImage ? (
+                    <button style={refDel} onClick={() => updateConfig(id, { refImages: [] })}>×</button>
+                  ) : (
+                    <span style={{ position: 'absolute', top: 4, left: 4, fontSize: 9, color: '#fff', background: 'rgba(124,58,237,0.85)', padding: '1px 6px', borderRadius: 99 }}>来自连接</span>
+                  )}
                 </div>
               )}
             </ParamTag>

@@ -16,7 +16,7 @@ import { SpawnMenu } from './SpawnMenu';
 import { RefThumb, HoverZoomImg } from './RefThumb';
 import { PromptTools } from './PromptTools';
 import { uploadImageToStorage, uploadFileToStorage, generateSeedance, mirrorOutput, getUserId } from '../lib/api';
-import { getUpstreamOutputs } from '../lib/connections';
+import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 
 // ============================================================
 // Seedance 2.0 卡片 · 矩形框
@@ -62,6 +62,14 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const refVideos = data.config.refVideos ?? [];
   const audioCount = data.config.refAudio ? 1 : 0;
   const counts = multimodalCount(refImages.length, refVideos.length, audioCount);
+  // 连线实时:上游图→首/尾帧/参考图(照原网渲染时实时读)
+  const upstreamLive = useUpstream(id);
+  const dispFirst = data.config.firstFrame || upstreamLive.images[0];
+  const dispLast = data.config.lastFrame || upstreamLive.images[1];
+  const firstFromConn = !data.config.firstFrame && !!upstreamLive.images[0];
+  const lastFromConn = !data.config.lastFrame && !!upstreamLive.images[1];
+  // 多模态:本地参考图之外,连接进来的图(去重)
+  const connImages = upstreamLive.images.filter((u) => !refImages.includes(u));
 
   // 卡片框:矩形,按比例(adaptive 用 16:9)
   // 卡片框只显示成品(outputUrl);参考图/首帧绝不进卡片框
@@ -360,16 +368,17 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                     <RefPanel
                       images={refImages} videos={refVideos} videoNames={data.config.refVideoNames ?? []}
                       audioName={data.config.refAudioName} counts={counts} uploading={uploading}
+                      connImages={connImages}
                       onAddImages={addRefImages} onRemoveImage={removeRefImage}
                       onAddVideo={addRefVideo} onRemoveVideo={removeRefVideo}
                       onAddAudio={addRefAudio} onRemoveAudio={() => updateConfig(id, { refAudio: undefined, refAudioName: undefined })}
                     />
                   ) : (
                     <div style={{ display: 'flex', gap: 8, padding: 4 }}>
-                      <FrameSlot label={mode === 'first-last' ? '首帧' : '参考图'} url={data.config.firstFrame} uploading={uploading}
+                      <FrameSlot label={firstFromConn ? (mode === 'first-last' ? '首帧·连接' : '参考图·连接') : (mode === 'first-last' ? '首帧' : '参考图')} url={dispFirst} uploading={uploading}
                         onUpload={(fl) => uploadFrame('firstFrame', fl)} onClear={() => updateConfig(id, { firstFrame: undefined })} />
                       {mode === 'first-last' && (
-                        <FrameSlot label="尾帧" url={data.config.lastFrame} uploading={uploading}
+                        <FrameSlot label={lastFromConn ? '尾帧·连接' : '尾帧'} url={dispLast} uploading={uploading}
                           onUpload={(fl) => uploadFrame('lastFrame', fl)} onClear={() => updateConfig(id, { lastFrame: undefined })} />
                       )}
                     </div>
@@ -434,10 +443,11 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 }
 
 // ===== 参考内容面板(多模态:图/视频/音频,总12上限) =====
-function RefPanel({ images, videos, videoNames, audioName, counts, uploading, onAddImages, onRemoveImage, onAddVideo, onRemoveVideo, onAddAudio, onRemoveAudio }: {
+function RefPanel({ images, videos, videoNames, audioName, counts, uploading, connImages, onAddImages, onRemoveImage, onAddVideo, onRemoveVideo, onAddAudio, onRemoveAudio }: {
   images: string[]; videos: string[]; videoNames: string[]; audioName?: string;
   counts: ReturnType<typeof multimodalCount>;
   uploading?: boolean;
+  connImages?: string[];
   onAddImages: (fl: FileList | null) => void; onRemoveImage: (i: number) => void;
   onAddVideo: (fl: FileList | null) => void; onRemoveVideo: (i: number) => void;
   onAddAudio: (fl: FileList | null) => void; onRemoveAudio: () => void;
@@ -470,6 +480,17 @@ function RefPanel({ images, videos, videoNames, audioName, counts, uploading, on
             <RefThumb key={i} url={img} index={i} onRemove={() => onRemoveImage(i)} />
           ))}
         </div>
+      )}
+      {/* 来自连接的图(实时,照原网"来自连接";连线动态来,不可删) */}
+      {connImages && connImages.length > 0 && (
+        <>
+          <div style={{ fontSize: 10, color: '#a78bfa', margin: '6px 0 4px' }}>来自连接 · {connImages.length} 张</div>
+          <div style={refGrid}>
+            {connImages.map((img, i) => (
+              <RefThumb key={`c${i}`} url={img} index={i} onRemove={() => {}} />
+            ))}
+          </div>
+        </>
       )}
       {/* 参考视频列表 */}
       {videos.map((_, i) => (

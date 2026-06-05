@@ -8,7 +8,7 @@ import { SpawnMenu } from './SpawnMenu';
 import { HoverZoomImg } from './RefThumb';
 import { PromptTools } from './PromptTools';
 import { uploadImageToStorage, generateGemTransitions, getUserId } from '../lib/api';
-import { getUpstreamOutputs } from '../lib/connections';
+import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 
 // ============================================================
 // GEM 导演引擎 Step3 · 视频过渡指令
@@ -38,6 +38,12 @@ function GemStep3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const refImages = data.config.refImages ?? [];
   const startImage = refImages[0];
   const endImage = refImages[1];
+  // 连线实时:首/尾帧可来自连接(照原网渲染时实时读)
+  const upstreamLive = useUpstream(id);
+  const dispStart = startImage || upstreamLive.images[0];
+  const dispEnd = endImage || upstreamLive.images[1];
+  const startFromConn = !startImage && !!upstreamLive.images[0];
+  const endFromConn = !endImage && !!upstreamLive.images[1];
 
   // 角色提示 存在 ratio 字段(复用), 剧情引导存在 preset 字段
   const characterHint = data.config.ratio ?? '';
@@ -173,19 +179,19 @@ function GemStep3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
             style={{ ...promptInput, borderTop: '1px solid rgba(255,255,255,0.06)' }}
           />
 
-          {/* 参数按钮行 — 参考图按钮(首帧+尾帧) */}
+          {/* 参数按钮行 — 参考图按钮(首帧+尾帧,可来自连接) */}
           <div style={tagsRow}>
             <ParamTag
-              label={<>参考图{(startImage || endImage) ? <span style={greenDot} /> : ' (首帧+尾帧)'}</>}
+              label={<>参考图{(dispStart || dispEnd) ? <span style={greenDot} /> : ' (首帧+尾帧)'}{(startFromConn || endFromConn) && <span style={{ marginLeft: 4, color: '#a78bfa' }}>来自连接</span>}</>}
               open={sub === 'ref'}
               onToggle={() => setSub(sub === 'ref' ? null : 'ref')}
               width={300}
             >
               <div style={{ display: 'flex', gap: 10, padding: 6 }}>
-                <FrameSlot label="首帧" url={startImage}
+                <FrameSlot label={startFromConn ? '首帧·连接' : '首帧'} url={dispStart}
                   onUpload={(fl) => uploadFrame(0, fl)} uploading={uploading}
                   onClear={() => { const cur = [...(data.config.refImages ?? [])]; cur[0] = ''; updateConfig(id, { refImages: cur }); }} />
-                <FrameSlot label="尾帧" url={endImage}
+                <FrameSlot label={endFromConn ? '尾帧·连接' : '尾帧'} url={dispEnd}
                   onUpload={(fl) => uploadFrame(1, fl)} uploading={uploading}
                   onClear={() => { const cur = [...(data.config.refImages ?? [])]; cur[1] = ''; updateConfig(id, { refImages: cur }); }} />
               </div>
@@ -195,8 +201,8 @@ function GemStep3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           {/* 底行 Generate */}
           <div style={{ display: 'flex', alignItems: 'center', padding: '4px 8px 8px' }}>
             <span style={{ fontSize: 12, color: '#71717a' }}>首帧 + 尾帧必填</span>
-            <button onClick={handleGenerate} disabled={!startImage || !endImage}
-              style={{ ...generateBtn, opacity: startImage && endImage ? 1 : 0.4 }}>
+            <button onClick={handleGenerate} disabled={!dispStart || !dispEnd}
+              style={{ ...generateBtn, opacity: dispStart && dispEnd ? 1 : 0.4 }}>
               Generate
             </button>
           </div>
