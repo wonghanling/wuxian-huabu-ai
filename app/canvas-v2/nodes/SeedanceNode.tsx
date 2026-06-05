@@ -271,13 +271,6 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
       <NodeToolbar isVisible={selected && !editing && !spawnOpen && !hasVideo} position={Position.Bottom} offset={16}>
         <div className="nodrag nopan" style={promptBar} onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
           <PromptTools value={data.config.prompt} onPaste={(t) => updateConfig(id, { prompt: t })} />
-          {/* 来自连接的上游文案(实时,自动拼入生成) */}
-          {connectedTexts.length > 0 && (
-            <div style={{ fontSize: 10, color: '#a78bfa', background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.3)', borderRadius: 8, padding: '5px 8px', marginBottom: 6, maxHeight: 60, overflow: 'auto' }}>
-              <div style={{ opacity: 0.8, marginBottom: 2 }}>来自连接的文案(将自动拼入生成)</div>
-              {connectedTexts.join('\n')}
-            </div>
-          )}
 
           {/* 模式选择(从按钮正上方弹出)+ 宫格快捷按钮 同一行 */}
           <div style={topRow}>
@@ -305,8 +298,12 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
           <textarea
             className="nodrag nopan nowheel"
-            value={data.config.prompt}
-            onChange={(e) => updateConfig(id, { prompt: e.target.value })}
+            value={connectedTexts.length > 0 ? `${connectedTexts.join('\n')}${data.config.prompt ? '\n' + data.config.prompt : ''}` : data.config.prompt}
+            onChange={(e) => {
+              const prefix = connectedTexts.length > 0 ? `${connectedTexts.join('\n')}\n` : '';
+              const v = e.target.value;
+              updateConfig(id, { prompt: prefix && v.startsWith(prefix) ? v.slice(prefix.length) : v });
+            }}
             onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleGenerate(); }}
             placeholder={mode === 't2v' ? '描述视频内容…（必填）' : '描述视频内容…（可选）'}
             rows={5}

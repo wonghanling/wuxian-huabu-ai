@@ -218,17 +218,15 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
       <NodeToolbar isVisible={selected && !editing && !spawnOpen && !displayImg} position={Position.Bottom} offset={16}>
         <div className="nodrag nopan" style={promptBar} onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
           <PromptTools value={data.config.prompt} onPaste={(t) => updateConfig(id, { prompt: t })} />
-          {/* 来自连接的上游文案(实时,照原网 getConnectedPrompt:上游 Step2/3/4 文案自动带入 prompt) */}
-          {connectedTexts.length > 0 && (
-            <div style={{ fontSize: 10, color: '#a78bfa', background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.3)', borderRadius: 8, padding: '5px 8px', marginBottom: 6, maxHeight: 60, overflow: 'auto' }}>
-              <div style={{ opacity: 0.8, marginBottom: 2 }}>来自连接的文案(将自动拼入生成)</div>
-              {connectedTexts.join('\n')}
-            </div>
-          )}
           <textarea
             className="nodrag nopan nowheel"
-            value={data.config.prompt}
-            onChange={(e) => updateConfig(id, { prompt: e.target.value })}
+            value={connectedTexts.length > 0 ? `${connectedTexts.join('\n')}${data.config.prompt ? '\n' + data.config.prompt : ''}` : data.config.prompt}
+            onChange={(e) => {
+              // 连接文案是只读前缀,用户编辑只改自己那部分
+              const prefix = connectedTexts.length > 0 ? `${connectedTexts.join('\n')}\n` : '';
+              const v = e.target.value;
+              updateConfig(id, { prompt: prefix && v.startsWith(prefix) ? v.slice(prefix.length) : v });
+            }}
             onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleGenerate(); }}
             placeholder="描述你想要的画面…"
             rows={4}
