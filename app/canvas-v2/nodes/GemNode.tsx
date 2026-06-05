@@ -68,6 +68,7 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [sub, setSub] = useState<SubPanel>(null);
   const [spawnOpen, setSpawnOpen] = useState(false);
   const [modeTooltip, setModeTooltip] = useState<GemMode | null>(null);
+  const [uploading, setUploading] = useState(false);   // 上传中指示(照原网)
 
   const mode: GemMode = (data.config.preset as GemMode) ?? 'story';
   const gridSize = data.config.textDuration ?? '9';   // 复用 textDuration 存格子数
@@ -87,12 +88,18 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     const cur = data.config.refImages ?? [];
     const room = Math.max(0, REF_MAX - cur.length);
     const files = Array.from(fileList).slice(0, room);
-    for (const f of files) {
-      const url = await uploadImageToStorage(f);
-      if (url) {
-        const latest = useCanvasStore.getState().nodes.find((n) => n.id === id)?.data.config.refImages ?? [];
-        updateConfig(id, { refImages: [...latest, url] });
+    if (!files.length) return;
+    setUploading(true);
+    try {
+      for (const f of files) {
+        const url = await uploadImageToStorage(f);
+        if (url) {
+          const latest = useCanvasStore.getState().nodes.find((n) => n.id === id)?.data.config.refImages ?? [];
+          updateConfig(id, { refImages: [...latest, url] });
+        }
       }
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -251,10 +258,10 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
             </ParamTag>
 
             {/* 参考图(可选,最多9张) */}
-            <ParamTag label={<>参考图{refImages.length > 0 ? ` ${refImages.length}` : ' 可选'}</>} open={sub === 'ref'} onToggle={() => setSub(sub === 'ref' ? null : 'ref')} width={300}>
-              <label style={uploadBtn}>
-                <IconPlus size={13} /> <span>上传图片（还能传 {REF_MAX - refImages.length} 张）</span>
-                <input type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={(e) => { addRefImages(e.target.files); e.currentTarget.value = ''; }} />
+            <ParamTag label={<>参考图{refImages.length > 0 ? ` ${refImages.length}` : ' 可选'}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</>} open={sub === 'ref'} onToggle={() => setSub(sub === 'ref' ? null : 'ref')} width={300}>
+              <label style={{ ...uploadBtn, ...(uploading ? { opacity: 0.6, pointerEvents: 'none' } : {}) }}>
+                <IconPlus size={13} /> <span>{uploading ? '上传中…' : `上传图片（还能传 ${REF_MAX - refImages.length} 张）`}</span>
+                <input type="file" accept="image/*" multiple disabled={uploading} style={{ display: 'none' }} onChange={(e) => { addRefImages(e.target.files); e.currentTarget.value = ''; }} />
               </label>
               <div style={{ fontSize: 10, color: '#71717a', marginBottom: 6 }}>AI 将参考图片风格生成分镜</div>
               {refImages.length > 0 && (

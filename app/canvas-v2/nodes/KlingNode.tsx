@@ -36,6 +36,7 @@ function KlingNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [editing, setEditing] = useState(false);
   const [spawnOpen, setSpawnOpen] = useState(false);
   const [sub, setSub] = useState<SubPanel>(null);
+  const [uploading, setUploading] = useState(false);   // 上传中指示(照原网)
   const editRef = useRef<HTMLTextAreaElement>(null);
 
   const srcVideo = data.config.refVideos?.[0];
@@ -54,14 +55,24 @@ function KlingNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const uploadSrcVideo = async (fileList: FileList | null) => {
     const f = fileList?.[0];
     if (!f) return;
-    const url = await uploadFileToStorage(f, 'video');
-    if (url) updateConfig(id, { refVideos: [url], refVideoNames: [f.name] });
+    setUploading(true);
+    try {
+      const url = await uploadFileToStorage(f, 'video');
+      if (url) updateConfig(id, { refVideos: [url], refVideoNames: [f.name] });
+    } finally {
+      setUploading(false);
+    }
   };
   const uploadAudio = async (fileList: FileList | null) => {
     const f = fileList?.[0];
     if (!f) return;
-    const url = await uploadFileToStorage(f, 'audio');
-    if (url) updateConfig(id, { refAudio: url, refAudioName: f.name });
+    setUploading(true);
+    try {
+      const url = await uploadFileToStorage(f, 'audio');
+      if (url) updateConfig(id, { refAudio: url, refAudioName: f.name });
+    } finally {
+      setUploading(false);
+    }
   };
   // 顶部上传:成品视频(进卡片框)
   const uploadResult = (fileList: FileList | null) => {
@@ -162,10 +173,10 @@ function KlingNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
           {/* 参数标签行:源视频 + 音频(各自从按钮正上方弹出) */}
           <div style={tagsRow}>
-            <ParamTag label={<>源视频{srcVideo && <span style={greenDot} />}</>} open={sub === 'video'} onToggle={() => setSub(sub === 'video' ? null : 'video')} width={260}>
-              <label style={uploadBtn}>
-                <IconUpload size={13} /> <span>{KLING_VIDEO_HINT}</span>
-                <input type="file" accept="video/mp4,video/quicktime" style={{ display: 'none' }} onChange={(e) => { uploadSrcVideo(e.target.files); e.currentTarget.value = ''; }} />
+            <ParamTag label={<>源视频{srcVideo && <span style={greenDot} />}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</>} open={sub === 'video'} onToggle={() => setSub(sub === 'video' ? null : 'video')} width={260}>
+              <label style={{ ...uploadBtn, ...(uploading ? { opacity: 0.6, pointerEvents: 'none' } : {}) }}>
+                <IconUpload size={13} /> <span>{uploading ? '上传中…' : KLING_VIDEO_HINT}</span>
+                <input type="file" accept="video/mp4,video/quicktime" disabled={uploading} style={{ display: 'none' }} onChange={(e) => { uploadSrcVideo(e.target.files); e.currentTarget.value = ''; }} />
               </label>
               {srcVideo && (
                 <div style={fileRow}>
@@ -176,10 +187,10 @@ function KlingNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               )}
             </ParamTag>
 
-            <ParamTag label={<>音频{data.config.refAudio && <span style={greenDot} />}</>} open={sub === 'audio'} onToggle={() => setSub(sub === 'audio' ? null : 'audio')} width={260}>
-              <label style={uploadBtn}>
-                <IconUpload size={13} /> <span>{KLING_AUDIO_HINT}</span>
-                <input type="file" accept="audio/*" style={{ display: 'none' }} onChange={(e) => { uploadAudio(e.target.files); e.currentTarget.value = ''; }} />
+            <ParamTag label={<>音频{data.config.refAudio && <span style={greenDot} />}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</>} open={sub === 'audio'} onToggle={() => setSub(sub === 'audio' ? null : 'audio')} width={260}>
+              <label style={{ ...uploadBtn, ...(uploading ? { opacity: 0.6, pointerEvents: 'none' } : {}) }}>
+                <IconUpload size={13} /> <span>{uploading ? '上传中…' : KLING_AUDIO_HINT}</span>
+                <input type="file" accept="audio/*" disabled={uploading} style={{ display: 'none' }} onChange={(e) => { uploadAudio(e.target.files); e.currentTarget.value = ''; }} />
               </label>
               {audioName && (
                 <div style={fileRow}>

@@ -8,7 +8,7 @@ import { IconExpand, IconShrink, IconMinus, IconPlus } from './icons';
 import { SpawnMenu } from './SpawnMenu';
 import { PromptTools } from './PromptTools';
 import { generateImage, mirrorOutput, getUserId, softCompressImage } from '../lib/api';
-import { getUpstreamOutputs } from '../lib/connections';
+import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 
 // ============================================================
 // 时空镜头延展卡片
@@ -162,6 +162,9 @@ function ExtendNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const modelId = data.config.model || 'nano-banana-pro';
   const model = EXTEND_MODELS.find((m) => m.id === modelId) ?? EXTEND_MODELS[0];
   const ratio = data.config.ratio ?? '16:9';
+  // 连线实时:上游图作源图(本地优先,否则上游)
+  const upstreamLive = useUpstream(id);
+  const dispSource = data.config.refImages?.[0] || upstreamLive.images[0];
   const cameraV = (data.config as any).cameraVertical ?? 0;
   const cameraH = (data.config as any).cameraHorizontal ?? 0;
 
@@ -235,9 +238,10 @@ function ExtendNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
         userId,
       });
       clearInterval(timer);
+      // 立即显示成品(不等大图下载完),宽高异步补上
+      updateCard(id, { status: 'done', progress: 100, outputUrl: imageUrl });
       const probe = new Image();
-      probe.onload = () => updateCard(id, { status: 'done', progress: 100, outputUrl: imageUrl, aspectW: probe.naturalWidth, aspectH: probe.naturalHeight });
-      probe.onerror = () => updateCard(id, { status: 'done', progress: 100, outputUrl: imageUrl });
+      probe.onload = () => updateCard(id, { aspectW: probe.naturalWidth, aspectH: probe.naturalHeight });
       probe.src = imageUrl;
       mirrorOutput(imageUrl, 'image').then((permUrl) => {
         if (permUrl && permUrl !== imageUrl) updateCard(id, { outputUrl: permUrl });

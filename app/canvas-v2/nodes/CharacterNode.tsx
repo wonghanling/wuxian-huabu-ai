@@ -48,6 +48,7 @@ function CharacterNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
   const [sub, setSub] = useState<SubPanel>(null);
   const [spawnOpen, setSpawnOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);   // 上传中指示(照原网)
 
   const modelId = data.config.model || 'nano-banana-pro';
   const model = CHAR_MODELS.find((m) => m.id === modelId) ?? CHAR_MODELS[0];
@@ -68,8 +69,13 @@ function CharacterNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const uploadRef = async (fileList: FileList | null) => {
     const f = fileList?.[0];
     if (!f) return;
-    const url = await uploadImageToStorage(f);
-    if (url) updateConfig(id, { refImages: [url] });
+    setUploading(true);
+    try {
+      const url = await uploadImageToStorage(f);
+      if (url) updateConfig(id, { refImages: [url] });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleGenerate = async () => {
@@ -93,9 +99,10 @@ function CharacterNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
         userId,
       });
       clearInterval(timer);
+      // 立即显示成品(不等大图下载完),宽高异步补上
+      updateCard(id, { status: 'done', progress: 100, outputUrl: imageUrl });
       const probe = new Image();
-      probe.onload = () => updateCard(id, { status: 'done', progress: 100, outputUrl: imageUrl, aspectW: probe.naturalWidth, aspectH: probe.naturalHeight });
-      probe.onerror = () => updateCard(id, { status: 'done', progress: 100, outputUrl: imageUrl });
+      probe.onload = () => updateCard(id, { aspectW: probe.naturalWidth, aspectH: probe.naturalHeight });
       probe.src = imageUrl;
       mirrorOutput(imageUrl, 'image').then((permUrl) => {
         if (permUrl && permUrl !== imageUrl) updateCard(id, { outputUrl: permUrl });
@@ -206,12 +213,12 @@ function CharacterNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
             {/* 参考图(1张必填) */}
             <ParamTag
-              label={<>参考图{refImage ? <span style={greenDot} /> : ' (必填)'}</>}
+              label={<>参考图{refImage ? <span style={greenDot} /> : ' (必填)'}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</>}
               open={sub === 'ref'} onToggle={() => setSub(sub === 'ref' ? null : 'ref')} width={220}
             >
-              <label style={uploadBtn}>
-                <IconPlus size={13} /> <span>上传参考图（1张）</span>
-                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { uploadRef(e.target.files); setSub(null); e.currentTarget.value = ''; }} />
+              <label style={{ ...uploadBtn, ...(uploading ? { opacity: 0.6, pointerEvents: 'none' } : {}) }}>
+                <IconPlus size={13} /> <span>{uploading ? '上传中…' : '上传参考图（1张）'}</span>
+                <input type="file" accept="image/*" disabled={uploading} style={{ display: 'none' }} onChange={(e) => { uploadRef(e.target.files); setSub(null); e.currentTarget.value = ''; }} />
               </label>
               {refImage && (
                 <div style={{ position: 'relative', width: '100%', aspectRatio: '1', borderRadius: 8, overflow: 'hidden', marginTop: 6 }}>

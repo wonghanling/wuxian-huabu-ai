@@ -46,10 +46,21 @@ export function useCanvasPersistence() {
         const snapshot = await loadSnapshot(canvasId);
         if (cancelled) return;
         if (snapshot && snapshot.nodes) {
+          // 历史数据去重保护:旧 bug 期可能存过撞 ID 的卡片,
+          // 同 ID 只保留第一个(React 用 id 做 key,重复会渲染错乱/顶掉)
+          const seen = new Set<string>();
+          const cleanNodes = (snapshot.nodes as CardNode[]).filter((n) => {
+            if (!n?.id || seen.has(n.id)) return false;
+            seen.add(n.id);
+            return true;
+          });
+          const cleanEdges = ((snapshot.edges ?? []) as Edge[]).filter(
+            (e) => seen.has(e.source) && seen.has(e.target)
+          );
           // 灌入 React Flow 数据
           useCanvasStore.setState({
-            nodes: snapshot.nodes as CardNode[],
-            edges: (snapshot.edges ?? []) as Edge[],
+            nodes: cleanNodes,
+            edges: cleanEdges,
             selectedId: null,
           });
         }

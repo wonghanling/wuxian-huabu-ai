@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import {
   ReactFlow,
   Background,
@@ -22,7 +22,15 @@ import { DEFAULT_SEEDANCE_MODEL } from './seedanceConfig';
 
 const nodeTypes: NodeTypes = { card: CardDispatch };
 
-function makeTextNode(i: number, x: number, y: number): CardNode {
+// 全局唯一 ID 生成器 — 防止与「从数据库加载回来的历史卡片」ID 冲突
+// (历史卡 id 可能已是 i10/v11 等,若新建卡再用固定 seq 会撞 ID,
+//  React 用 id 做 key,撞了会把已生成卡片在渲染上顶掉 → 看起来"消失")
+let __uidCounter = 0;
+function uid(): string {
+  return `${Date.now().toString(36)}${(__uidCounter++).toString(36)}`;
+}
+
+function makeTextNode(i: string | number, x: number, y: number): CardNode {
   return {
     id: `t${i}`,
     type: 'card',
@@ -37,7 +45,7 @@ function makeTextNode(i: number, x: number, y: number): CardNode {
   };
 }
 
-function makeImageNode(i: number, x: number, y: number): CardNode {
+function makeImageNode(i: string | number, x: number, y: number): CardNode {
   return {
     id: `i${i}`,
     type: 'card',
@@ -51,7 +59,7 @@ function makeImageNode(i: number, x: number, y: number): CardNode {
   };
 }
 
-function makeVideoNode(i: number, x: number, y: number): CardNode {
+function makeVideoNode(i: string | number, x: number, y: number): CardNode {
   return {
     id: `v${i}`,
     type: 'card',
@@ -65,7 +73,7 @@ function makeVideoNode(i: number, x: number, y: number): CardNode {
   };
 }
 
-function makeSeedanceNode(i: number, x: number, y: number): CardNode {
+function makeSeedanceNode(i: string | number, x: number, y: number): CardNode {
   return {
     id: `s${i}`,
     type: 'card',
@@ -80,7 +88,7 @@ function makeSeedanceNode(i: number, x: number, y: number): CardNode {
   };
 }
 
-function makeKlingNode(i: number, x: number, y: number): CardNode {
+function makeKlingNode(i: string | number, x: number, y: number): CardNode {
   return {
     id: `k${i}`,
     type: 'card',
@@ -94,7 +102,7 @@ function makeKlingNode(i: number, x: number, y: number): CardNode {
   };
 }
 
-function makeCharacterNode(i: number, x: number, y: number): CardNode {
+function makeCharacterNode(i: string | number, x: number, y: number): CardNode {
   return {
     id: 'ch' + i,
     type: 'card',
@@ -108,7 +116,7 @@ function makeCharacterNode(i: number, x: number, y: number): CardNode {
   };
 }
 
-function makeGemNode(i: number, x: number, y: number): CardNode {
+function makeGemNode(i: string | number, x: number, y: number): CardNode {
   return {
     id: 'g' + i,
     type: 'card',
@@ -123,7 +131,7 @@ function makeGemNode(i: number, x: number, y: number): CardNode {
   };
 }
 
-function makeExtendNode(i: number, x: number, y: number): CardNode {
+function makeExtendNode(i: string | number, x: number, y: number): CardNode {
   return {
     id: 'ex' + i,
     type: 'card',
@@ -137,7 +145,7 @@ function makeExtendNode(i: number, x: number, y: number): CardNode {
   };
 }
 
-function makeGem3Node(i: number, x: number, y: number): CardNode {
+function makeGem3Node(i: string | number, x: number, y: number): CardNode {
   return {
     id: 'g3' + i,
     type: 'card',
@@ -152,7 +160,7 @@ function makeGem3Node(i: number, x: number, y: number): CardNode {
   };
 }
 
-function makeGem4Node(i: number, x: number, y: number): CardNode {
+function makeGem4Node(i: string | number, x: number, y: number): CardNode {
   return {
     id: 'g4' + i,
     type: 'card',
@@ -174,7 +182,8 @@ export default function CanvasV2Page() {
   const onConnect = useCanvasStore((s) => s.onConnect);
   const setSelected = useCanvasStore((s) => s.setSelected);
 
-  const [seq, setSeq] = useState(10);
+  // 新建卡片的摆放位置计数器(只管错位摆放,不参与 ID 生成 → 不会撞 ID)
+  const placeRef = useRef(0);
 
   // 画布持久化:加载历史快照 / 自动保存 / 空画布保护(完整复刻原网)
   const { status: saveStatus, loading: canvasLoading } = useCanvasPersistence();
@@ -201,64 +210,23 @@ export default function CanvasV2Page() {
     (window as any).saveCanvasV2Now?.();
   }, [nodes, edges, canvasLoading]);
 
-  const addImageCard = useCallback(() => {
-    const n = makeImageNode(seq, 80 + (seq % 4) * 380, 120 + Math.floor(seq / 4) * 360);
+  // 通用新建:uid() 唯一 ID(不撞历史卡) + placeRef 错位摆放
+  const addCard = useCallback((make: (i: string, x: number, y: number) => CardNode) => {
+    const c = placeRef.current++;
+    const n = make(uid(), 80 + (c % 4) * 380, 120 + Math.floor(c / 4) * 360);
     useCanvasStore.setState((s) => ({ nodes: [...s.nodes, n] }));
-    setSeq((v) => v + 1);
-  }, [seq]);
+  }, []);
 
-  const addTextCard = useCallback(() => {
-    const n = makeTextNode(seq, 80 + (seq % 4) * 380, 120 + Math.floor(seq / 4) * 360);
-    useCanvasStore.setState((s) => ({ nodes: [...s.nodes, n] }));
-    setSeq((v) => v + 1);
-  }, [seq]);
-
-  const addVideoCard = useCallback(() => {
-    const n = makeVideoNode(seq, 80 + (seq % 4) * 380, 120 + Math.floor(seq / 4) * 360);
-    useCanvasStore.setState((s) => ({ nodes: [...s.nodes, n] }));
-    setSeq((v) => v + 1);
-  }, [seq]);
-
-  const addSeedanceCard = useCallback(() => {
-    const n = makeSeedanceNode(seq, 80 + (seq % 4) * 380, 120 + Math.floor(seq / 4) * 360);
-    useCanvasStore.setState((s) => ({ nodes: [...s.nodes, n] }));
-    setSeq((v) => v + 1);
-  }, [seq]);
-
-  const addGem3Card = useCallback(() => {
-    const n = makeGem3Node(seq, 80 + (seq % 4) * 380, 120 + Math.floor(seq / 4) * 360);
-    useCanvasStore.setState((s) => ({ nodes: [...s.nodes, n] }));
-    setSeq((v) => v + 1);
-  }, [seq]);
-
-  const addGem4Card = useCallback(() => {
-    const n = makeGem4Node(seq, 80 + (seq % 4) * 380, 120 + Math.floor(seq / 4) * 360);
-    useCanvasStore.setState((s) => ({ nodes: [...s.nodes, n] }));
-    setSeq((v) => v + 1);
-  }, [seq]);
-  const addExtendCard = useCallback(() => {
-    const n = makeExtendNode(seq, 80 + (seq % 4) * 380, 120 + Math.floor(seq / 4) * 360);
-    useCanvasStore.setState((s) => ({ nodes: [...s.nodes, n] }));
-    setSeq((v) => v + 1);
-  }, [seq]);
-
-  const addGemCard = useCallback(() => {
-    const n = makeGemNode(seq, 80 + (seq % 4) * 380, 120 + Math.floor(seq / 4) * 360);
-    useCanvasStore.setState((s) => ({ nodes: [...s.nodes, n] }));
-    setSeq((v) => v + 1);
-  }, [seq]);
-
-  const addCharacterCard = useCallback(() => {
-    const n = makeCharacterNode(seq, 80 + (seq % 4) * 380, 120 + Math.floor(seq / 4) * 360);
-    useCanvasStore.setState((s) => ({ nodes: [...s.nodes, n] }));
-    setSeq((v) => v + 1);
-  }, [seq]);
-
-  const addKlingCard = useCallback(() => {
-    const n = makeKlingNode(seq, 80 + (seq % 4) * 380, 120 + Math.floor(seq / 4) * 360);
-    useCanvasStore.setState((s) => ({ nodes: [...s.nodes, n] }));
-    setSeq((v) => v + 1);
-  }, [seq]);
+  const addImageCard = useCallback(() => addCard(makeImageNode), [addCard]);
+  const addTextCard = useCallback(() => addCard(makeTextNode), [addCard]);
+  const addVideoCard = useCallback(() => addCard(makeVideoNode), [addCard]);
+  const addSeedanceCard = useCallback(() => addCard(makeSeedanceNode), [addCard]);
+  const addGem3Card = useCallback(() => addCard(makeGem3Node), [addCard]);
+  const addGem4Card = useCallback(() => addCard(makeGem4Node), [addCard]);
+  const addExtendCard = useCallback(() => addCard(makeExtendNode), [addCard]);
+  const addGemCard = useCallback(() => addCard(makeGemNode), [addCard]);
+  const addCharacterCard = useCallback(() => addCard(makeCharacterNode), [addCard]);
+  const addKlingCard = useCallback(() => addCard(makeKlingNode), [addCard]);
 
   const onNodeClick: NodeMouseHandler<CardNode> = useCallback(
     (_, node) => setSelected(node.id),

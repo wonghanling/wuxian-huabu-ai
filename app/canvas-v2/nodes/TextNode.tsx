@@ -36,6 +36,7 @@ function TextNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [modelOpen, setModelOpen] = useState(false);
   const [spawnOpen, setSpawnOpen] = useState(false);
   const [sub, setSub] = useState<'duration' | 'ref' | null>(null);
+  const [uploading, setUploading] = useState(false);   // 上传中指示(照原网)
   const editRef = useRef<HTMLTextAreaElement>(null);
 
   const currentModel = TEXT_MODELS.find((m) => m.id === data.config.model) ?? TEXT_MODELS[0];
@@ -65,12 +66,18 @@ function TextNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     const cur = data.config.refImages ?? [];
     const room = Math.max(0, TEXT_REF_MAX - cur.length);
     const files = Array.from(fileList).slice(0, room);
-    for (const f of files) {
-      const url = await uploadImageToStorage(f);
-      if (url) {
-        const latest = useCanvasStore.getState().nodes.find((n) => n.id === id)?.data.config.refImages ?? [];
-        updateConfig(id, { refImages: [...latest, url] });
+    if (!files.length) return;
+    setUploading(true);
+    try {
+      for (const f of files) {
+        const url = await uploadImageToStorage(f);
+        if (url) {
+          const latest = useCanvasStore.getState().nodes.find((n) => n.id === id)?.data.config.refImages ?? [];
+          updateConfig(id, { refImages: [...latest, url] });
+        }
       }
+    } finally {
+      setUploading(false);
     }
   };
   const removeRefImage = (i: number) => {
@@ -256,10 +263,10 @@ function TextNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                 ))}
               </ParamTag>
             )}
-            <ParamTag label={<>参考图{refImages.length > 0 ? ` ${refImages.length}` : ''}</>} open={sub === 'ref'} onToggle={() => setSub(sub === 'ref' ? null : 'ref')} width={280}>
-              <label style={uploadBtn}>
-                <IconPlus size={13} /> <span>上传图片(还能传 {Math.max(0, TEXT_REF_MAX - refImages.length)} 张)</span>
-                <input type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={(e) => { addRefImages(e.target.files); e.currentTarget.value = ''; }} />
+            <ParamTag label={<>参考图{refImages.length > 0 ? ` ${refImages.length}` : ''}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</>} open={sub === 'ref'} onToggle={() => setSub(sub === 'ref' ? null : 'ref')} width={280}>
+              <label style={{ ...uploadBtn, ...(uploading ? { opacity: 0.6, pointerEvents: 'none' } : {}) }}>
+                <IconPlus size={13} /> <span>{uploading ? '上传中…' : `上传图片(还能传 ${Math.max(0, TEXT_REF_MAX - refImages.length)} 张)`}</span>
+                <input type="file" accept="image/*" multiple disabled={uploading} style={{ display: 'none' }} onChange={(e) => { addRefImages(e.target.files); e.currentTarget.value = ''; }} />
               </label>
               <div style={{ fontSize: 10, color: '#71717a', marginBottom: 6 }}>给模型看图写文案(最多9张)</div>
               {refImages.length > 0 && (

@@ -46,6 +46,7 @@ function GemStep4NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [sub, setSub] = useState<SubPanel>(null);
   const [spawnOpen, setSpawnOpen] = useState(false);
   const [modeTooltip, setModeTooltip] = useState<InputType | null>(null);
+  const [uploading, setUploading] = useState(false);   // 上传中指示(照原网)
 
   // 输入模式:存在 textDuration 字段里(复用)
   const inputType: InputType = (data.config.textDuration as InputType) ?? 'single';
@@ -74,11 +75,16 @@ function GemStep4NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const uploadImg = async (index: number, fileList: FileList | null) => {
     const f = fileList?.[0];
     if (!f) return;
-    const url = await uploadImageToStorage(f);
-    if (!url) return;
-    const cur = [...(data.config.refImages ?? [])];
-    cur[index] = url;
-    updateConfig(id, { refImages: cur });
+    setUploading(true);
+    try {
+      const url = await uploadImageToStorage(f);
+      if (!url) return;
+      const cur = [...(data.config.refImages ?? [])];
+      cur[index] = url;
+      updateConfig(id, { refImages: cur });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const clearImg = (index: number) => {
@@ -110,9 +116,10 @@ function GemStep4NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
         },
         (progress) => updateCard(id, { progress }),
       );
+      // 立即显示成品(不等大图下载完),宽高异步补上
+      updateCard(id, { status: 'done', progress: 100, outputUrl: imageUrl });
       const probe = new Image();
-      probe.onload = () => updateCard(id, { status: 'done', progress: 100, outputUrl: imageUrl, aspectW: probe.naturalWidth, aspectH: probe.naturalHeight });
-      probe.onerror = () => updateCard(id, { status: 'done', progress: 100, outputUrl: imageUrl });
+      probe.onload = () => updateCard(id, { aspectW: probe.naturalWidth, aspectH: probe.naturalHeight });
       probe.src = imageUrl;
       mirrorOutput(imageUrl, 'image').then((permUrl) => {
         if (permUrl && permUrl !== imageUrl) updateCard(id, { outputUrl: permUrl });
@@ -241,12 +248,12 @@ function GemStep4NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
             >
               {inputType === 'single' ? (
                 <div style={{ display: 'flex', gap: 10, padding: 6 }}>
-                  <ImgSlot label="人物三视角" url={img1} onUpload={(fl) => uploadImg(0, fl)} onClear={() => clearImg(0)} />
-                  <ImgSlot label="剧情首帧" url={img2} onUpload={(fl) => uploadImg(1, fl)} onClear={() => clearImg(1)} />
+                  <ImgSlot label="人物三视角" url={img1} onUpload={(fl) => uploadImg(0, fl)} onClear={() => clearImg(0)} uploading={uploading} />
+                  <ImgSlot label="剧情首帧" url={img2} onUpload={(fl) => uploadImg(1, fl)} onClear={() => clearImg(1)} uploading={uploading} />
                 </div>
               ) : (
                 <div style={{ padding: 6 }}>
-                  <ImgSlot label={`${inputType === '2x2' ? '4' : '9'}宫格分镜图`} url={img1} onUpload={(fl) => uploadImg(0, fl)} onClear={() => clearImg(0)} wide />
+                  <ImgSlot label={`${inputType === '2x2' ? '4' : '9'}宫格分镜图`} url={img1} onUpload={(fl) => uploadImg(0, fl)} onClear={() => clearImg(0)} wide uploading={uploading} />
                 </div>
               )}
             </ParamTag>
@@ -327,15 +334,16 @@ function GemStep4NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 }
 
 // ===== 图片上传槽 =====
-function ImgSlot({ label, url, onUpload, onClear, wide }: {
+function ImgSlot({ label, url, onUpload, onClear, wide, uploading }: {
   label: string; url?: string;
   onUpload: (fl: FileList | null) => void;
   onClear: () => void;
   wide?: boolean;
+  uploading?: boolean;
 }) {
   return (
     <div style={{ flex: wide ? 'unset' : 1, width: wide ? '100%' : undefined }}>
-      <div style={{ fontSize: 10, color: '#9ca3af', marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 10, color: '#9ca3af', marginBottom: 4 }}>{label}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</div>
       <div style={{ position: 'relative', width: '100%', aspectRatio: wide ? '16/9' : '1', borderRadius: 10, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.3)', minHeight: wide ? undefined : 80 }}>
         {url ? (
           <>
@@ -343,10 +351,10 @@ function ImgSlot({ label, url, onUpload, onClear, wide }: {
             <button style={imgDel} onClick={onClear}>×</button>
           </>
         ) : (
-          <label style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#6b7280', minHeight: 80 }}>
+          <label style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: uploading ? 'default' : 'pointer', color: '#6b7280', minHeight: 80, opacity: uploading ? 0.6 : 1, pointerEvents: uploading ? 'none' : 'auto' }}>
             <IconPlus size={16} />
-            <span style={{ fontSize: 10, marginTop: 3 }}>上传</span>
-            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { onUpload(e.target.files); e.currentTarget.value = ''; }} />
+            <span style={{ fontSize: 10, marginTop: 3 }}>{uploading ? '上传中…' : '上传'}</span>
+            <input type="file" accept="image/*" disabled={uploading} style={{ display: 'none' }} onChange={(e) => { onUpload(e.target.files); e.currentTarget.value = ''; }} />
           </label>
         )}
       </div>

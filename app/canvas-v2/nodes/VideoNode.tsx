@@ -10,7 +10,7 @@ import { SpawnMenu } from './SpawnMenu';
 import { HoverZoomImg } from './RefThumb';
 import { PromptTools } from './PromptTools';
 import { uploadImageToStorage, generateVideo, mirrorOutput, getUserId } from '../lib/api';
-import { getUpstreamOutputs } from '../lib/connections';
+import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 
 // ============================================================
 // 视频卡片 · 矩形框(默认 16:9)
@@ -37,12 +37,17 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [editing, setEditing] = useState(false);
   const [spawnOpen, setSpawnOpen] = useState(false);
   const [sub, setSub] = useState<SubPanel>(null);
+  const [uploading, setUploading] = useState(false);   // 上传中指示(照原网)
   const editRef = useRef<HTMLTextAreaElement>(null);
 
   const model = VIDEO_MODELS.find((m) => m.id === data.config.model) ?? VIDEO_MODELS[0];
   const ratio = data.config.ratio ?? (model.aspectRatios[0] ?? '16:9');
   const duration = data.config.duration ?? model.durations[0] ?? 5;
   const resolution = data.config.resolution ?? model.defaultResolution;
+  // 连线实时:上游图作首帧/尾帧显示(本地优先,否则用上游)
+  const upstreamLive = useUpstream(id);
+  const dispFirst = data.config.firstFrame || upstreamLive.images[0];
+  const dispLast = data.config.lastFrame || upstreamLive.images[1];
   const need = frameNeed(model.mode);
   // 实时价格(会员/普通总价 = 单价 × 时长,复用原网 calcVideoPrice)
   const price = videoPrice(model.id, resolution, duration, !!data.config.audio);
@@ -60,8 +65,13 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const uploadFrame = async (which: 'firstFrame' | 'lastFrame', fileList: FileList | null) => {
     const f = fileList?.[0];
     if (!f) return;
-    const url = await uploadImageToStorage(f);
-    if (url) updateConfig(id, { [which]: url } as any);
+    setUploading(true);
+    try {
+      const url = await uploadImageToStorage(f);
+      if (url) updateConfig(id, { [which]: url } as any);
+    } finally {
+      setUploading(false);
+    }
   };
 
   // 上传视频:直接作为卡片画面(done 状态)
@@ -206,18 +216,18 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               })}
             </ParamTag>
 
-            {/* 参考图(首帧/尾帧)弹窗:i2v 首帧, firstLastFrame 首帧+尾帧 */}
+            {/* 参考图(首帧/尾帧)弹窗:i2v 首帧, firstLastFrame 首帧+尾帧;连线上游图实时显示 */}
             {(need.first || need.last) && (() => {
-              const hasRef = !!data.config.firstFrame || (need.last && !!data.config.lastFrame);
+              const hasRef = !!dispFirst || (need.last && !!dispLast);
               return (
                 <ParamTag label={<>参考图{hasRef && <span style={greenDot} />}</>} open={sub === 'ref'} onToggle={() => setSub(sub === 'ref' ? null : 'ref')} width={need.last ? 200 : 120}>
                   <div style={{ display: 'flex', gap: 8, padding: 4 }}>
                     {need.first && (
-                      <FrameSlot label={need.last ? '首帧' : '参考图'} url={data.config.firstFrame}
+                      <FrameSlot label={need.last ? '首帧' : '参考图'} url={dispFirst} uploading={uploading}
                         onUpload={(fl) => uploadFrame('firstFrame', fl)} onClear={() => updateConfig(id, { firstFrame: undefined })} />
                     )}
                     {need.last && (
-                      <FrameSlot label="尾帧" url={data.config.lastFrame}
+                      <FrameSlot label="尾帧" url={dispLast} uploading={uploading}
                         onUpload={(fl) => uploadFrame('lastFrame', fl)} onClear={() => updateConfig(id, { lastFrame: undefined })} />
                     )}
                   </div>
@@ -324,7 +334,7 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 }
 
 // ===== 小组件 =====
-function FrameSlot({ label, url, onUpload, onClear }: { label: string; url?: string; onUpload: (fl: FileList | null) => void; onClear: () => void }) {
+function FrameSlot({ label, url, onUpload, onClear, uploading }: { label: string; url?: string; onUpload: (fl: FileList | null) => void; onClear: () => void; uploading?: boolean }) {
   return (
     <div style={frameSlot}>
       {url ? (
@@ -334,10 +344,10 @@ function FrameSlot({ label, url, onUpload, onClear }: { label: string; url?: str
           <span style={frameLabel}>{label}</span>
         </>
       ) : (
-        <label style={frameUpload}>
+        <label style={{ ...frameUpload, ...(uploading ? { opacity: 0.6, pointerEvents: 'none' } : {}) }}>
           <IconPlus size={14} />
-          <span style={{ fontSize: 10, marginTop: 2 }}>{label}</span>
-          <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => onUpload(e.target.files)} />
+          <span style={{ fontSize: 10, marginTop: 2 }}>{uploading ? '上传中…' : label}</span>
+          <input type="file" accept="image/*" disabled={uploading} style={{ display: 'none' }} onChange={(e) => onUpload(e.target.files)} />
         </label>
       )}
     </div>

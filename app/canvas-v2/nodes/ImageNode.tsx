@@ -41,6 +41,7 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [editing, setEditing] = useState(false);
   const [spawnOpen, setSpawnOpen] = useState(false);
   const [sub, setSub] = useState<SubPanel>(null);
+  const [uploading, setUploading] = useState(false);   // 上传中指示(照原网 setIsUploadingMulti)
   const editRef = useRef<HTMLTextAreaElement>(null);
 
   const model = IMAGE_MODELS.find((m) => m.id === data.config.model) ?? IMAGE_MODELS[0];
@@ -67,13 +68,19 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     const room = Math.max(0, max - cur.length);
     const toUpload = files.slice(0, room);
     if (!toUpload.length) return;
-    // 逐张真实上传
-    for (const f of toUpload) {
-      const url = await uploadImageToStorage(f);
-      if (url) {
-        const latest = useCanvasStore.getState().nodes.find((n) => n.id === id)?.data.config.refImages ?? [];
-        updateConfig(id, { refImages: [...latest, url] });
+    // 上传中指示(照原网 setIsUploadingMulti true...finally false)
+    setUploading(true);
+    try {
+      // 逐张真实上传
+      for (const f of toUpload) {
+        const url = await uploadImageToStorage(f);
+        if (url) {
+          const latest = useCanvasStore.getState().nodes.find((n) => n.id === id)?.data.config.refImages ?? [];
+          updateConfig(id, { refImages: [...latest, url] });
+        }
       }
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -129,10 +136,11 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
       });
 
       clearInterval(timer);
-      // 读真实尺寸设置卡片比例,先显示原图
+      // 立即显示成品(不等大图下载完)——避免生成完还卡在"生成中"进度条。
+      // <img> 自己渐进加载;真实宽高异步探测后补上(走浏览器缓存,near-instant)
+      updateCard(id, { status: 'done', progress: 100, outputUrl: imageUrl });
       const probe = new Image();
-      probe.onload = () => updateCard(id, { status: 'done', progress: 100, outputUrl: imageUrl, aspectW: probe.naturalWidth, aspectH: probe.naturalHeight });
-      probe.onerror = () => updateCard(id, { status: 'done', progress: 100, outputUrl: imageUrl });
+      probe.onload = () => updateCard(id, { aspectW: probe.naturalWidth, aspectH: probe.naturalHeight });
       probe.src = imageUrl;
 
       // 后台异步 mirror 成永久 URL(照原网:失败保留原 URL),完成后触发保存
@@ -246,11 +254,11 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               </div>
             </ParamTag>
             {model.supportsImage && (
-              <ParamTag label={<>参考图 {(data.config.refImages?.length ?? 0)}/{refImageMax(model.id)}</>} open={sub === 'ref'} onToggle={() => setSub(sub === 'ref' ? null : 'ref')} width={300}>
-                <label style={uploadBtn}>
+              <ParamTag label={<>参考图 {(data.config.refImages?.length ?? 0)}/{refImageMax(model.id)}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</>} open={sub === 'ref'} onToggle={() => setSub(sub === 'ref' ? null : 'ref')} width={300}>
+                <label style={{ ...uploadBtn, ...(uploading ? { opacity: 0.6, pointerEvents: 'none' } : {}) }}>
                   <IconPlus size={13} />
-                  <span>上传图片（还能传 {Math.max(0, refImageMax(model.id) - (data.config.refImages?.length ?? 0))} 张）</span>
-                  <input type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={(e) => handleUpload(e.target.files)} />
+                  <span>{uploading ? '上传中…' : `上传图片（还能传 ${Math.max(0, refImageMax(model.id) - (data.config.refImages?.length ?? 0))} 张）`}</span>
+                  <input type="file" accept="image/*" multiple disabled={uploading} style={{ display: 'none' }} onChange={(e) => handleUpload(e.target.files)} />
                 </label>
                 {(data.config.refImages?.length ?? 0) > 0 && (
                   <div style={refGrid}>

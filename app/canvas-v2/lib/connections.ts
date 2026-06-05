@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useCanvasStore, type CardNode } from '../store';
 
 // ============================================================
@@ -54,4 +55,33 @@ export function getUpstreamOutputs(nodeId: string): UpstreamOutputs {
 export function hasUpstream(nodeId: string): boolean {
   const { edges } = useCanvasStore.getState();
   return edges.some((e) => e.target === nodeId);
+}
+
+// 响应式 hook:订阅 nodes/edges 变化,连线/上游出图后实时返回上游输出
+// 卡片用它做"连上线立即显示上游图/文案"(像原网)
+export function useUpstream(nodeId: string): UpstreamOutputs {
+  const nodes = useCanvasStore((s) => s.nodes);
+  const edges = useCanvasStore((s) => s.edges);
+  return useMemo(() => {
+    const out: UpstreamOutputs = { images: [], videos: [], texts: [], audios: [] };
+    const upstreamIds = edges.filter((e) => e.target === nodeId).map((e) => e.source);
+    for (const upId of upstreamIds) {
+      const up = nodes.find((n) => n.id === upId);
+      if (!up) continue;
+      const d = up.data;
+      if (d.status !== 'done') continue;
+      switch (d.kind) {
+        case 'image': case 'character': case 'gem4': case 'extend':
+          if (d.outputUrl) out.images.push(d.outputUrl);
+          break;
+        case 'video': case 'seedance': case 'kling':
+          if (d.outputUrl) out.videos.push(d.outputUrl);
+          break;
+        case 'text': case 'gem': case 'gem3':
+          if (d.text) out.texts.push(d.text);
+          break;
+      }
+    }
+    return out;
+  }, [nodes, edges, nodeId]);
 }

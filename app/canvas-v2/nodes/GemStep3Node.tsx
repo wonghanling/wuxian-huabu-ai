@@ -32,6 +32,7 @@ function GemStep3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
   const [spawnOpen, setSpawnOpen] = useState(false);
   const [sub, setSub] = useState<'ref' | null>(null);
+  const [uploading, setUploading] = useState(false);   // 上传中指示(照原网)
 
   // 首帧/尾帧图 — 存在 refImages[0] 和 refImages[1]
   const refImages = data.config.refImages ?? [];
@@ -54,11 +55,16 @@ function GemStep3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const uploadFrame = async (index: 0 | 1, fileList: FileList | null) => {
     const f = fileList?.[0];
     if (!f) return;
-    const url = await uploadImageToStorage(f);
-    if (!url) return;
-    const cur = [...(data.config.refImages ?? [])];
-    cur[index] = url;
-    updateConfig(id, { refImages: cur });
+    setUploading(true);
+    try {
+      const url = await uploadImageToStorage(f);
+      if (!url) return;
+      const cur = [...(data.config.refImages ?? [])];
+      cur[index] = url;
+      updateConfig(id, { refImages: cur });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleGenerate = async () => {
@@ -177,10 +183,10 @@ function GemStep3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
             >
               <div style={{ display: 'flex', gap: 10, padding: 6 }}>
                 <FrameSlot label="首帧" url={startImage}
-                  onUpload={(fl) => uploadFrame(0, fl)}
+                  onUpload={(fl) => uploadFrame(0, fl)} uploading={uploading}
                   onClear={() => { const cur = [...(data.config.refImages ?? [])]; cur[0] = ''; updateConfig(id, { refImages: cur }); }} />
                 <FrameSlot label="尾帧" url={endImage}
-                  onUpload={(fl) => uploadFrame(1, fl)}
+                  onUpload={(fl) => uploadFrame(1, fl)} uploading={uploading}
                   onClear={() => { const cur = [...(data.config.refImages ?? [])]; cur[1] = ''; updateConfig(id, { refImages: cur }); }} />
               </div>
             </ParamTag>
@@ -227,14 +233,15 @@ function GemStep3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 }
 
 // ===== 首帧/尾帧上传槽 =====
-function FrameSlot({ label, url, onUpload, onClear }: {
+function FrameSlot({ label, url, onUpload, onClear, uploading }: {
   label: string; url?: string;
   onUpload: (fl: FileList | null) => void;
   onClear: () => void;
+  uploading?: boolean;
 }) {
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <div style={{ fontSize: 11, color: '#9ca3af' }}>{label}</div>
+      <div style={{ fontSize: 11, color: '#9ca3af' }}>{label}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</div>
       <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', borderRadius: 10, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.3)' }}>
         {url ? (
           <>
@@ -242,10 +249,10 @@ function FrameSlot({ label, url, onUpload, onClear }: {
             <button style={frameDel} onClick={onClear}>×</button>
           </>
         ) : (
-          <label style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#6b7280' }}>
+          <label style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: uploading ? 'default' : 'pointer', color: '#6b7280', opacity: uploading ? 0.6 : 1, pointerEvents: uploading ? 'none' : 'auto' }}>
             <IconPlus size={16} />
-            <span style={{ fontSize: 10, marginTop: 3 }}>上传{label}</span>
-            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { onUpload(e.target.files); e.currentTarget.value = ''; }} />
+            <span style={{ fontSize: 10, marginTop: 3 }}>{uploading ? '上传中…' : `上传${label}`}</span>
+            <input type="file" accept="image/*" disabled={uploading} style={{ display: 'none' }} onChange={(e) => { onUpload(e.target.files); e.currentTarget.value = ''; }} />
           </label>
         )}
       </div>

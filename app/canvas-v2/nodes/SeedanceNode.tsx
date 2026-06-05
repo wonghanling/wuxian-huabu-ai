@@ -44,6 +44,7 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [editing, setEditing] = useState(false);
   const [spawnOpen, setSpawnOpen] = useState(false);
   const [sub, setSub] = useState<SubPanel>(null);
+  const [uploading, setUploading] = useState(false);   // 上传中指示(照原网)
   const editRef = useRef<HTMLTextAreaElement>(null);
 
   const model = SEEDANCE_MODELS.find((m) => m.id === data.config.model) ?? SEEDANCE_MODELS[0];
@@ -76,8 +77,13 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const uploadFrame = async (which: 'firstFrame' | 'lastFrame', fileList: FileList | null) => {
     const f = fileList?.[0];
     if (!f) return;
-    const url = await uploadImageToStorage(f);
-    if (url) updateConfig(id, { [which]: url } as any);
+    setUploading(true);
+    try {
+      const url = await uploadImageToStorage(f);
+      if (url) updateConfig(id, { [which]: url } as any);
+    } finally {
+      setUploading(false);
+    }
   };
   // 多模态:加参考图(尊重 9 张 + 总 12 上限,真实上传)
   const addRefImages = async (fileList: FileList | null) => {
@@ -86,12 +92,18 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     const room = Math.min(MULTIMODAL_MAX_IMAGES - cur.length, MULTIMODAL_MAX_TOTAL - counts.total);
     if (room <= 0) return;
     const files = Array.from(fileList).slice(0, room);
-    for (const f of files) {
-      const url = await uploadImageToStorage(f);
-      if (url) {
-        const latest = useCanvasStore.getState().nodes.find((n) => n.id === id)?.data.config.refImages ?? [];
-        updateConfig(id, { refImages: [...latest, url] });
+    if (!files.length) return;
+    setUploading(true);
+    try {
+      for (const f of files) {
+        const url = await uploadImageToStorage(f);
+        if (url) {
+          const latest = useCanvasStore.getState().nodes.find((n) => n.id === id)?.data.config.refImages ?? [];
+          updateConfig(id, { refImages: [...latest, url] });
+        }
       }
+    } finally {
+      setUploading(false);
     }
   };
   const removeRefImage = (i: number) => {
@@ -103,11 +115,16 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const addRefVideo = async (fileList: FileList | null) => {
     const f = fileList?.[0];
     if (!f || !counts.canAddVideo) return;
-    const url = await uploadFileToStorage(f, 'video');
-    if (url) {
-      const curV = data.config.refVideos ?? [];
-      const curN = data.config.refVideoNames ?? [];
-      updateConfig(id, { refVideos: [...curV, url], refVideoNames: [...curN, f.name] });
+    setUploading(true);
+    try {
+      const url = await uploadFileToStorage(f, 'video');
+      if (url) {
+        const curV = data.config.refVideos ?? [];
+        const curN = data.config.refVideoNames ?? [];
+        updateConfig(id, { refVideos: [...curV, url], refVideoNames: [...curN, f.name] });
+      }
+    } finally {
+      setUploading(false);
     }
   };
   const removeRefVideo = (i: number) => {
@@ -120,8 +137,13 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const addRefAudio = async (fileList: FileList | null) => {
     const f = fileList?.[0];
     if (!f || !counts.canAddAudio) return;
-    const url = await uploadFileToStorage(f, 'audio');
-    if (url) updateConfig(id, { refAudio: url, refAudioName: f.name });
+    setUploading(true);
+    try {
+      const url = await uploadFileToStorage(f, 'audio');
+      if (url) updateConfig(id, { refAudio: url, refAudioName: f.name });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const uploadVideo = (fileList: FileList | null) => {
@@ -337,17 +359,17 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                   {mode === 'multimodal' ? (
                     <RefPanel
                       images={refImages} videos={refVideos} videoNames={data.config.refVideoNames ?? []}
-                      audioName={data.config.refAudioName} counts={counts}
+                      audioName={data.config.refAudioName} counts={counts} uploading={uploading}
                       onAddImages={addRefImages} onRemoveImage={removeRefImage}
                       onAddVideo={addRefVideo} onRemoveVideo={removeRefVideo}
                       onAddAudio={addRefAudio} onRemoveAudio={() => updateConfig(id, { refAudio: undefined, refAudioName: undefined })}
                     />
                   ) : (
                     <div style={{ display: 'flex', gap: 8, padding: 4 }}>
-                      <FrameSlot label={mode === 'first-last' ? '首帧' : '参考图'} url={data.config.firstFrame}
+                      <FrameSlot label={mode === 'first-last' ? '首帧' : '参考图'} url={data.config.firstFrame} uploading={uploading}
                         onUpload={(fl) => uploadFrame('firstFrame', fl)} onClear={() => updateConfig(id, { firstFrame: undefined })} />
                       {mode === 'first-last' && (
-                        <FrameSlot label="尾帧" url={data.config.lastFrame}
+                        <FrameSlot label="尾帧" url={data.config.lastFrame} uploading={uploading}
                           onUpload={(fl) => uploadFrame('lastFrame', fl)} onClear={() => updateConfig(id, { lastFrame: undefined })} />
                       )}
                     </div>
@@ -412,9 +434,10 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 }
 
 // ===== 参考内容面板(多模态:图/视频/音频,总12上限) =====
-function RefPanel({ images, videos, videoNames, audioName, counts, onAddImages, onRemoveImage, onAddVideo, onRemoveVideo, onAddAudio, onRemoveAudio }: {
+function RefPanel({ images, videos, videoNames, audioName, counts, uploading, onAddImages, onRemoveImage, onAddVideo, onRemoveVideo, onAddAudio, onRemoveAudio }: {
   images: string[]; videos: string[]; videoNames: string[]; audioName?: string;
   counts: ReturnType<typeof multimodalCount>;
+  uploading?: boolean;
   onAddImages: (fl: FileList | null) => void; onRemoveImage: (i: number) => void;
   onAddVideo: (fl: FileList | null) => void; onRemoveVideo: (i: number) => void;
   onAddAudio: (fl: FileList | null) => void; onRemoveAudio: () => void;
@@ -423,17 +446,17 @@ function RefPanel({ images, videos, videoNames, audioName, counts, onAddImages, 
     <div style={{ padding: 4 }}>
       {/* 上传按钮区 */}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
-        <label style={{ ...refUploadBtn, opacity: counts.canAddImage ? 1 : 0.4, pointerEvents: counts.canAddImage ? 'auto' : 'none' }}>
-          + 图片
-          <input type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={(e) => { onAddImages(e.target.files); e.currentTarget.value = ''; }} />
+        <label style={{ ...refUploadBtn, opacity: (counts.canAddImage && !uploading) ? 1 : 0.4, pointerEvents: (counts.canAddImage && !uploading) ? 'auto' : 'none' }}>
+          {uploading ? '上传中…' : '+ 图片'}
+          <input type="file" accept="image/*" multiple disabled={uploading} style={{ display: 'none' }} onChange={(e) => { onAddImages(e.target.files); e.currentTarget.value = ''; }} />
         </label>
-        <label style={{ ...refUploadBtn, opacity: counts.canAddVideo ? 1 : 0.4, pointerEvents: counts.canAddVideo ? 'auto' : 'none' }}>
-          + 视频
-          <input type="file" accept="video/*" style={{ display: 'none' }} onChange={(e) => { onAddVideo(e.target.files); e.currentTarget.value = ''; }} />
+        <label style={{ ...refUploadBtn, opacity: (counts.canAddVideo && !uploading) ? 1 : 0.4, pointerEvents: (counts.canAddVideo && !uploading) ? 'auto' : 'none' }}>
+          {uploading ? '上传中…' : '+ 视频'}
+          <input type="file" accept="video/*" disabled={uploading} style={{ display: 'none' }} onChange={(e) => { onAddVideo(e.target.files); e.currentTarget.value = ''; }} />
         </label>
-        <label style={{ ...refUploadBtn, opacity: (counts.canAddAudio && !audioName) ? 1 : 0.4, pointerEvents: (counts.canAddAudio && !audioName) ? 'auto' : 'none' }}>
-          + 音频
-          <input type="file" accept="audio/*" style={{ display: 'none' }} onChange={(e) => { onAddAudio(e.target.files); e.currentTarget.value = ''; }} />
+        <label style={{ ...refUploadBtn, opacity: (counts.canAddAudio && !audioName && !uploading) ? 1 : 0.4, pointerEvents: (counts.canAddAudio && !audioName && !uploading) ? 'auto' : 'none' }}>
+          {uploading ? '上传中…' : '+ 音频'}
+          <input type="file" accept="audio/*" disabled={uploading} style={{ display: 'none' }} onChange={(e) => { onAddAudio(e.target.files); e.currentTarget.value = ''; }} />
         </label>
       </div>
       <div style={{ fontSize: 10, color: '#71717a', marginBottom: 6 }}>
@@ -469,7 +492,7 @@ function RefPanel({ images, videos, videoNames, audioName, counts, onAddImages, 
 }
 
 // ===== 小组件 =====
-function FrameSlot({ label, url, onUpload, onClear }: { label: string; url?: string; onUpload: (fl: FileList | null) => void; onClear: () => void }) {
+function FrameSlot({ label, url, onUpload, onClear, uploading }: { label: string; url?: string; onUpload: (fl: FileList | null) => void; onClear: () => void; uploading?: boolean }) {
   return (
     <div style={frameSlot}>
       {url ? (
@@ -479,10 +502,10 @@ function FrameSlot({ label, url, onUpload, onClear }: { label: string; url?: str
           <span style={frameLabel}>{label}</span>
         </>
       ) : (
-        <label style={frameUpload}>
+        <label style={{ ...frameUpload, ...(uploading ? { opacity: 0.6, pointerEvents: 'none' } : {}) }}>
           <IconPlus size={14} />
-          <span style={{ fontSize: 10, marginTop: 2 }}>{label}</span>
-          <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => onUpload(e.target.files)} />
+          <span style={{ fontSize: 10, marginTop: 2 }}>{uploading ? '上传中…' : label}</span>
+          <input type="file" accept="image/*" disabled={uploading} style={{ display: 'none' }} onChange={(e) => onUpload(e.target.files)} />
         </label>
       )}
     </div>
