@@ -324,7 +324,7 @@ function ExtendNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
           {/* Prompt 输入(可选) */}
           <textarea
-            className="nodrag nopan nowheel"
+            className="nodrag nopan nowheel cv2-scroll"
             value={data.config.prompt}
             onChange={(e) => updateConfig(id, { prompt: e.target.value })}
             placeholder="补充描述（可选）…"

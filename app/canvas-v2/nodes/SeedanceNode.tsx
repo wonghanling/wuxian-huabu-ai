@@ -155,10 +155,16 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     }
   };
 
-  const uploadVideo = (fileList: FileList | null) => {
+  const uploadVideo = async (fileList: FileList | null) => {
     const f = fileList?.[0];
     if (!f) return;
-    updateCard(id, { status: 'done', outputUrl: URL.createObjectURL(f) });
+    setUploading(true);
+    try {
+      const url = await uploadFileToStorage(f, 'video');
+      if (url) updateCard(id, { status: 'done', outputUrl: url });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleGenerate = async () => {
@@ -297,7 +303,7 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           </div>
 
           <textarea
-            className="nodrag nopan nowheel"
+            className="nodrag nopan nowheel cv2-scroll"
             value={connectedTexts.length > 0 ? `${connectedTexts.join('\n')}${data.config.prompt ? '\n' + data.config.prompt : ''}` : data.config.prompt}
             onChange={(e) => {
               const prefix = connectedTexts.length > 0 ? `${connectedTexts.join('\n')}\n` : '';
@@ -309,6 +315,9 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
             rows={5}
             style={promptInput}
           />
+          {connectedTexts.length > 0 && (
+            <div style={{ fontSize: 10, color: '#a78bfa', marginTop: 2, marginBottom: 4 }}>· 来自连接卡片</div>
+          )}
 
           {/* 参数标签行(每个按钮各自弹窗,从按钮正上方弹出) */}
           <div style={tagsRow}>

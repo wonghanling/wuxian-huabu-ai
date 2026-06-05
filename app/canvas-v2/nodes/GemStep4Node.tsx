@@ -196,7 +196,7 @@ function GemStep4NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           {/* 剧情引导(大 prompt 区域) */}
           <PromptTools value={actionSuggestion} onPaste={(t) => updateConfig(id, { prompt: t })} />
           <textarea
-            className="nodrag nopan nowheel"
+            className="nodrag nopan nowheel cv2-scroll"
             value={actionSuggestion}
             onChange={(e) => updateConfig(id, { prompt: e.target.value })}
             placeholder="剧情引导（可选）：他很害怕然后逃跑、慢慢转身离开..."

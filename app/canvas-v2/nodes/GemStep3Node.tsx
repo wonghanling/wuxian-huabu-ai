@@ -33,6 +33,7 @@ function GemStep3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [spawnOpen, setSpawnOpen] = useState(false);
   const [sub, setSub] = useState<'ref' | null>(null);
   const [uploading, setUploading] = useState(false);   // 上传中指示(照原网)
+  const [editing, setEditing] = useState(false);        // 双击编辑结果文案(像文本卡)
 
   // 首帧/尾帧图 — 存在 refImages[0] 和 refImages[1]
   const refImages = data.config.refImages ?? [];
@@ -144,9 +145,23 @@ function GemStep3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               <div style={track}><div style={{ height: '100%', width: `${data.progress ?? 0}%`, background: 'linear-gradient(90deg,#a0a0a0,#fff)', borderRadius: 99, transition: 'width .3s' }} /></div>
             </div>
           ) : hasResult ? (
-            <pre style={{ fontSize: 11, color: '#e4e4e7', whiteSpace: 'pre-wrap', wordBreak: 'break-all', overflow: 'auto', maxHeight: '100%', width: '100%', margin: 0, fontFamily: 'monospace' }}>
-              {data.text}
-            </pre>
+            editing ? (
+              <textarea
+                className="nodrag nopan nowheel cv2-scroll"
+                autoFocus
+                value={data.text}
+                onChange={(e) => updateCard(id, { text: e.target.value })}
+                onBlur={() => { setEditing(false); (window as any).saveCanvasV2Now?.(); }}
+                onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+                style={{ width: '100%', height: '100%', background: 'transparent', border: 'none', outline: 'none', resize: 'none', fontSize: 11, color: '#e4e4e7', whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontFamily: 'monospace', lineHeight: 1.5 }}
+              />
+            ) : (
+              <pre className="cv2-scroll" onDoubleClick={(e) => { e.stopPropagation(); setEditing(true); }}
+                style={{ fontSize: 11, color: '#e4e4e7', whiteSpace: 'pre-wrap', wordBreak: 'break-all', overflow: 'auto', maxHeight: '100%', width: '100%', margin: 0, fontFamily: 'monospace', cursor: 'text' }}>
+                {data.text}
+              </pre>
+            )
           ) : (
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 12, color: '#71717a', marginBottom: 6 }}>GEM 导演引擎 · Step 3</div>
@@ -163,7 +178,7 @@ function GemStep3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
           {/* 角色提示 + 剧情引导(大 prompt 区域) */}
           <textarea
-            className="nodrag nopan nowheel"
+            className="nodrag nopan nowheel cv2-scroll"
             value={characterHint}
             onChange={(e) => updateConfig(id, { ratio: e.target.value })}
             placeholder="角色提示（可选）：silver-white hair, mechanical right arm..."
@@ -171,7 +186,7 @@ function GemStep3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
             style={promptInput}
           />
           <textarea
-            className="nodrag nopan nowheel"
+            className="nodrag nopan nowheel cv2-scroll"
             value={actionSuggestion}
             onChange={(e) => updateConfig(id, { preset: e.target.value })}
             placeholder="剧情引导（可选）：他很害怕然后逃跑、慢慢转身离开..."

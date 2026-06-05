@@ -212,7 +212,7 @@ function TextNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           ) : editing ? (
             <textarea
               ref={editRef}
-              className="nodrag nopan nowheel"
+              className="nodrag nopan nowheel cv2-scroll"
               value={data.text ?? ''}
               onChange={(e) => updateCard(id, { text: e.target.value })}
               onBlur={() => {
@@ -238,7 +238,7 @@ function TextNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
         <div className="nodrag nopan" style={promptBar} onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
           <PromptTools value={data.config.prompt} onPaste={(t) => updateConfig(id, { prompt: t })} />
           <textarea
-            className="nodrag nopan nowheel"
+            className="nodrag nopan nowheel cv2-scroll"
             value={data.config.prompt}
             onChange={(e) => updateConfig(id, { prompt: e.target.value })}
             onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleGenerate(); }}

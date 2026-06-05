@@ -9,7 +9,7 @@ import { IconVideo, IconModel, IconExpand, IconShrink, IconMinus, IconPlus, Icon
 import { SpawnMenu } from './SpawnMenu';
 import { HoverZoomImg } from './RefThumb';
 import { PromptTools } from './PromptTools';
-import { uploadImageToStorage, generateVideo, mirrorOutput, getUserId } from '../lib/api';
+import { uploadImageToStorage, uploadFileToStorage, generateVideo, mirrorOutput, getUserId } from '../lib/api';
 import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 
 // ============================================================
@@ -75,11 +75,17 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     }
   };
 
-  // 上传视频:直接作为卡片画面(done 状态)
-  const uploadVideo = (fileList: FileList | null) => {
+  // 上传视频:真实上传 Supabase 拿持久 URL(blob URL 刷新即失效)
+  const uploadVideo = async (fileList: FileList | null) => {
     const f = fileList?.[0];
     if (!f) return;
-    updateCard(id, { status: 'done', outputUrl: URL.createObjectURL(f) });
+    setUploading(true);
+    try {
+      const url = await uploadFileToStorage(f, 'video');
+      if (url) updateCard(id, { status: 'done', outputUrl: url });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleGenerate = async () => {
@@ -181,7 +187,7 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
         <div className="nodrag nopan" style={promptBar} onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
           <PromptTools value={data.config.prompt} onPaste={(t) => updateConfig(id, { prompt: t })} />
           <textarea
-            className="nodrag nopan nowheel"
+            className="nodrag nopan nowheel cv2-scroll"
             value={connectedTexts.length > 0 ? `${connectedTexts.join('\n')}${data.config.prompt ? '\n' + data.config.prompt : ''}` : data.config.prompt}
             onChange={(e) => {
               const prefix = connectedTexts.length > 0 ? `${connectedTexts.join('\n')}\n` : '';
@@ -193,6 +199,9 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
             rows={3}
             style={promptInput}
           />
+          {connectedTexts.length > 0 && (
+            <div style={{ fontSize: 10, color: '#a78bfa', marginTop: 2, marginBottom: 4 }}>· 来自连接卡片</div>
+          )}
 
           {/* 参数标签行(每个按钮各自弹窗,从按钮正上方弹出) */}
           <div style={tagsRow}>

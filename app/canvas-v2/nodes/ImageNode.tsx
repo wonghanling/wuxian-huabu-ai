@@ -88,14 +88,21 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     }
   };
 
-  // 顶部上传:成品图,直接显示在卡片框(与参考图完全无关)
-  const uploadResult = (fileList: FileList | null) => {
+  // 顶部上传:成品图,真实上传 Supabase 拿持久 URL(blob URL 刷新即失效)
+  const uploadResult = async (fileList: FileList | null) => {
     const f = fileList?.[0];
     if (!f) return;
-    const url = URL.createObjectURL(f);
-    const probe = new Image();
-    probe.onload = () => updateCard(id, { status: 'done', outputUrl: url, aspectW: probe.naturalWidth, aspectH: probe.naturalHeight });
-    probe.src = url;
+    setUploading(true);
+    try {
+      const url = await uploadImageToStorage(f);
+      if (!url) return;
+      updateCard(id, { status: 'done', outputUrl: url });
+      const probe = new Image();
+      probe.onload = () => updateCard(id, { aspectW: probe.naturalWidth, aspectH: probe.naturalHeight });
+      probe.src = url;
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleGenerate = async () => {
@@ -219,7 +226,7 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
         <div className="nodrag nopan" style={promptBar} onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
           <PromptTools value={data.config.prompt} onPaste={(t) => updateConfig(id, { prompt: t })} />
           <textarea
-            className="nodrag nopan nowheel"
+            className="nodrag nopan nowheel cv2-scroll"
             value={connectedTexts.length > 0 ? `${connectedTexts.join('\n')}${data.config.prompt ? '\n' + data.config.prompt : ''}` : data.config.prompt}
             onChange={(e) => {
               // 连接文案是只读前缀,用户编辑只改自己那部分
@@ -232,6 +239,9 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
             rows={4}
             style={promptInput}
           />
+          {connectedTexts.length > 0 && (
+            <div style={{ fontSize: 10, color: '#a78bfa', marginTop: 2, marginBottom: 4 }}>· 来自连接卡片</div>
+          )}
           <div style={tagsRow}>
             <ParamTag label={<><IconModel size={12} /> {model.label}</>} open={sub === 'model'} onToggle={() => setSub(sub === 'model' ? null : 'model')} width={280}>
               {IMAGE_MODELS.map((m) => (

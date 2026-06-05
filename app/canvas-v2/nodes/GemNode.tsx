@@ -67,6 +67,7 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
   const [sub, setSub] = useState<SubPanel>(null);
   const [spawnOpen, setSpawnOpen] = useState(false);
+  const [editing, setEditing] = useState(false);   // 双击编辑结果文案(像文本卡)
   const [modeTooltip, setModeTooltip] = useState<GemMode | null>(null);
   const [uploading, setUploading] = useState(false);   // 上传中指示(照原网)
 
@@ -182,9 +183,23 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               <div style={track}><div style={{ height: '100%', width: `${data.progress ?? 0}%`, background: 'linear-gradient(90deg,#a0a0a0,#fff)', borderRadius: 99, transition: 'width .3s' }} /></div>
             </div>
           ) : hasResult ? (
-            <pre style={{ fontSize: 11, color: '#e4e4e7', whiteSpace: 'pre-wrap', wordBreak: 'break-all', overflow: 'auto', maxHeight: '100%', width: '100%', margin: 0, fontFamily: 'monospace' }}>
-              {data.text}
-            </pre>
+            editing ? (
+              <textarea
+                className="nodrag nopan nowheel cv2-scroll"
+                autoFocus
+                value={data.text}
+                onChange={(e) => updateCard(id, { text: e.target.value })}
+                onBlur={() => { setEditing(false); (window as any).saveCanvasV2Now?.(); }}
+                onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+                style={{ width: '100%', height: '100%', background: 'transparent', border: 'none', outline: 'none', resize: 'none', fontSize: 11, color: '#e4e4e7', whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontFamily: 'monospace', lineHeight: 1.5 }}
+              />
+            ) : (
+              <pre className="cv2-scroll" onDoubleClick={(e) => { e.stopPropagation(); setEditing(true); }}
+                style={{ fontSize: 11, color: '#e4e4e7', whiteSpace: 'pre-wrap', wordBreak: 'break-all', overflow: 'auto', maxHeight: '100%', width: '100%', margin: 0, fontFamily: 'monospace', cursor: 'text' }}>
+                {data.text}
+              </pre>
+            )
           ) : (
             <span style={{ fontSize: 12, color: '#5a5a5f' }}>输入剧本 → 生成分镜 JSON</span>
           )}
@@ -198,7 +213,7 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
           {/* 剧本输入 */}
           <textarea
-            className="nodrag nopan nowheel"
+            className="nodrag nopan nowheel cv2-scroll"
             value={data.config.prompt}
             onChange={(e) => updateConfig(id, { prompt: e.target.value })}
             onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleGenerate(); }}

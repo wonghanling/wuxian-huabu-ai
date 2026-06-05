@@ -79,11 +79,17 @@ function KlingNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
       setUploading(false);
     }
   };
-  // 顶部上传:成品视频(进卡片框)
-  const uploadResult = (fileList: FileList | null) => {
+  // 顶部上传:成品视频(进卡片框)—— 真实上传 Supabase 拿持久 URL
+  const uploadResult = async (fileList: FileList | null) => {
     const f = fileList?.[0];
     if (!f) return;
-    updateCard(id, { status: 'done', outputUrl: URL.createObjectURL(f) });
+    setUploading(true);
+    try {
+      const url = await uploadFileToStorage(f, 'video');
+      if (url) updateCard(id, { status: 'done', outputUrl: url });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleGenerate = async () => {
@@ -168,7 +174,7 @@ function KlingNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
         <div className="nodrag nopan" style={promptBar} onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
           <PromptTools value={data.config.prompt} onPaste={(t) => updateConfig(id, { prompt: t })} />
           <textarea
-            className="nodrag nopan nowheel"
+            className="nodrag nopan nowheel cv2-scroll"
             value={data.config.prompt}
             onChange={(e) => updateConfig(id, { prompt: e.target.value })}
             placeholder="备注(可选)…"
