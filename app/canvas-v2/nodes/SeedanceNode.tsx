@@ -15,6 +15,7 @@ import { IconVideo, IconModel, IconExpand, IconShrink, IconMinus, IconPlus, Icon
 import { SpawnMenu } from './SpawnMenu';
 import { RefThumb, HoverZoomImg } from './RefThumb';
 import { PromptTools } from './PromptTools';
+import { PromptArea } from './PromptArea';
 import { uploadImageToStorage, uploadFileToStorage, generateSeedance, mirrorOutput, getUserId } from '../lib/api';
 import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 
@@ -302,22 +303,14 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
             <button style={miniTag} onClick={() => updateConfig(id, { prompt: GRID9_PROMPT })}>9宫格</button>
           </div>
 
-          <textarea
-            className="nodrag nopan nowheel cv2-scroll"
-            value={connectedTexts.length > 0 ? `${connectedTexts.join('\n')}${data.config.prompt ? '\n' + data.config.prompt : ''}` : data.config.prompt}
-            onChange={(e) => {
-              const prefix = connectedTexts.length > 0 ? `${connectedTexts.join('\n')}\n` : '';
-              const v = e.target.value;
-              updateConfig(id, { prompt: prefix && v.startsWith(prefix) ? v.slice(prefix.length) : v });
-            }}
-            onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleGenerate(); }}
+          <PromptArea
+            connectedText={connectedTexts.length > 0 ? connectedTexts.join('\n') : undefined}
+            value={data.config.prompt}
+            onChange={(v) => updateConfig(id, { prompt: v })}
+            onGenerate={handleGenerate}
             placeholder={mode === 't2v' ? '描述视频内容…（必填）' : '描述视频内容…（可选）'}
-            rows={5}
             style={promptInput}
           />
-          {connectedTexts.length > 0 && (
-            <div style={{ fontSize: 10, color: '#a78bfa', marginTop: 2, marginBottom: 4 }}>· 来自连接卡片</div>
-          )}
 
           {/* 参数标签行(每个按钮各自弹窗,从按钮正上方弹出) */}
           <div style={tagsRow}>

@@ -9,6 +9,7 @@ import { IconVideo, IconModel, IconExpand, IconShrink, IconMinus, IconPlus, Icon
 import { SpawnMenu } from './SpawnMenu';
 import { HoverZoomImg } from './RefThumb';
 import { PromptTools } from './PromptTools';
+import { PromptArea } from './PromptArea';
 import { uploadImageToStorage, uploadFileToStorage, generateVideo, mirrorOutput, getUserId } from '../lib/api';
 import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 
@@ -186,22 +187,14 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
       <NodeToolbar isVisible={selected && !editing && !spawnOpen && !hasVideo} position={Position.Bottom} offset={16}>
         <div className="nodrag nopan" style={promptBar} onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
           <PromptTools value={data.config.prompt} onPaste={(t) => updateConfig(id, { prompt: t })} />
-          <textarea
-            className="nodrag nopan nowheel cv2-scroll"
-            value={connectedTexts.length > 0 ? `${connectedTexts.join('\n')}${data.config.prompt ? '\n' + data.config.prompt : ''}` : data.config.prompt}
-            onChange={(e) => {
-              const prefix = connectedTexts.length > 0 ? `${connectedTexts.join('\n')}\n` : '';
-              const v = e.target.value;
-              updateConfig(id, { prompt: prefix && v.startsWith(prefix) ? v.slice(prefix.length) : v });
-            }}
-            onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleGenerate(); }}
+          <PromptArea
+            connectedText={connectedTexts.length > 0 ? connectedTexts.join('\n') : undefined}
+            value={data.config.prompt}
+            onChange={(v) => updateConfig(id, { prompt: v })}
+            onGenerate={handleGenerate}
             placeholder="描述你想要的视频画面…"
-            rows={3}
             style={promptInput}
           />
-          {connectedTexts.length > 0 && (
-            <div style={{ fontSize: 10, color: '#a78bfa', marginTop: 2, marginBottom: 4 }}>· 来自连接卡片</div>
-          )}
 
           {/* 参数标签行(每个按钮各自弹窗,从按钮正上方弹出) */}
           <div style={tagsRow}>

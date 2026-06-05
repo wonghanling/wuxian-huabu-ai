@@ -12,6 +12,7 @@ import { IconImage, IconModel, IconExpand, IconShrink, IconMinus, IconPlus } fro
 import { SpawnMenu } from './SpawnMenu';
 import { RefThumb } from './RefThumb';
 import { PromptTools } from './PromptTools';
+import { PromptArea } from './PromptArea';
 import { uploadImageToStorage, generateImage, getUserId, softCompressImage, mirrorOutput } from '../lib/api';
 import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 
@@ -225,23 +226,14 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
       <NodeToolbar isVisible={selected && !editing && !spawnOpen && !displayImg} position={Position.Bottom} offset={16}>
         <div className="nodrag nopan" style={promptBar} onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
           <PromptTools value={data.config.prompt} onPaste={(t) => updateConfig(id, { prompt: t })} />
-          <textarea
-            className="nodrag nopan nowheel cv2-scroll"
-            value={connectedTexts.length > 0 ? `${connectedTexts.join('\n')}${data.config.prompt ? '\n' + data.config.prompt : ''}` : data.config.prompt}
-            onChange={(e) => {
-              // 连接文案是只读前缀,用户编辑只改自己那部分
-              const prefix = connectedTexts.length > 0 ? `${connectedTexts.join('\n')}\n` : '';
-              const v = e.target.value;
-              updateConfig(id, { prompt: prefix && v.startsWith(prefix) ? v.slice(prefix.length) : v });
-            }}
-            onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleGenerate(); }}
+          <PromptArea
+            connectedText={connectedTexts.length > 0 ? connectedTexts.join('\n') : undefined}
+            value={data.config.prompt}
+            onChange={(v) => updateConfig(id, { prompt: v })}
+            onGenerate={handleGenerate}
             placeholder="描述你想要的画面…"
-            rows={4}
             style={promptInput}
           />
-          {connectedTexts.length > 0 && (
-            <div style={{ fontSize: 10, color: '#a78bfa', marginTop: 2, marginBottom: 4 }}>· 来自连接卡片</div>
-          )}
           <div style={tagsRow}>
             <ParamTag label={<><IconModel size={12} /> {model.label}</>} open={sub === 'model'} onToggle={() => setSub(sub === 'model' ? null : 'model')} width={280}>
               {IMAGE_MODELS.map((m) => (
