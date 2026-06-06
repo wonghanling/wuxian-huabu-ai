@@ -9,6 +9,7 @@ import { SpawnMenu } from './SpawnMenu';
 import { RefThumb } from './RefThumb';
 import { PromptTools } from './PromptTools';
 import { uploadImageToStorage, generateText, optimizePrompt, getUserId } from '../lib/api';
+import { useDebouncedField } from '../lib/useDebouncedField';
 
 // ============================================================
 // 文本卡片 · 超现代高端风格
@@ -38,6 +39,10 @@ function TextNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [sub, setSub] = useState<'duration' | 'ref' | null>(null);
   const [uploading, setUploading] = useState(false);   // 上传中指示(照原网)
   const editRef = useRef<HTMLTextAreaElement>(null);
+
+  // 输入框:本地 state + 防抖写全局 + 中文输入法兼容(避免按键打断 IME / 触发狂保存)
+  const textField = useDebouncedField(data.text ?? '', (v) => updateCard(id, { text: v }));
+  const promptField = useDebouncedField(data.config.prompt ?? '', (v) => updateConfig(id, { prompt: v }));
 
   const currentModel = TEXT_MODELS.find((m) => m.id === data.config.model) ?? TEXT_MODELS[0];
   // 模式:普通文本 / 提示词优化(用 preset 字段存)
@@ -213,12 +218,13 @@ function TextNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
             <textarea
               ref={editRef}
               className="nodrag nopan nowheel cv2-scroll"
-              value={data.text ?? ''}
-              onChange={(e) => updateCard(id, { text: e.target.value })}
+              value={textField.value}
+              {...textField.bind}
               onBlur={() => {
                 setEditing(false);
-                // 有文字则标记为已有内容(底部 prompt 不再出现);清空则回到空态
-                updateCard(id, { status: (data.text && data.text.trim()) ? 'done' : 'empty' });
+                // 失焦立即提交当前值(防抖可能还没写入全局)
+                const v = textField.value;
+                updateCard(id, { text: v, status: (v && v.trim()) ? 'done' : 'empty' });
               }}
               onWheelCapture={(e) => e.stopPropagation()}
               placeholder="输入文本…"
@@ -236,11 +242,11 @@ function TextNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
       <NodeToolbar isVisible={selected && !editing && !spawnOpen && !hasText} position={Position.Bottom} offset={16}>
         {/* 一体式输入框:文字在上,模型按钮+Generate 嵌在框内底部 */}
         <div className="nodrag nopan" style={promptBar} onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
-          <PromptTools value={data.config.prompt} onPaste={(t) => updateConfig(id, { prompt: t })} />
+          <PromptTools value={promptField.value} onPaste={(t) => updateConfig(id, { prompt: t })} />
           <textarea
             className="nodrag nopan nowheel cv2-scroll"
-            value={data.config.prompt}
-            onChange={(e) => updateConfig(id, { prompt: e.target.value })}
+            value={promptField.value}
+            {...promptField.bind}
             onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleGenerate(); }}
             placeholder={optimizeMode ? '简单描述你的想法,AI 帮你优化成专业提示词…' : '描述你想要的文本内容…'}
             rows={2}

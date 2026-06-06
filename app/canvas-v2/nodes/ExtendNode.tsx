@@ -9,6 +9,7 @@ import { SpawnMenu } from './SpawnMenu';
 import { PromptTools } from './PromptTools';
 import { generateImage, mirrorOutput, getUserId, softCompressImage } from '../lib/api';
 import { getUpstreamOutputs, useUpstream } from '../lib/connections';
+import { useDebouncedField } from '../lib/useDebouncedField';
 
 // ============================================================
 // 时空镜头延展卡片
@@ -158,6 +159,7 @@ function ExtendNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
   const [sub, setSub] = useState<SubPanel>(null);
   const [spawnOpen, setSpawnOpen] = useState(false);
+  const promptField = useDebouncedField(data.config.prompt ?? '', (v) => updateConfig(id, { prompt: v }));
 
   const modelId = data.config.model || 'nano-banana-pro';
   const model = EXTEND_MODELS.find((m) => m.id === modelId) ?? EXTEND_MODELS[0];
@@ -325,8 +327,8 @@ function ExtendNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           {/* Prompt 输入(可选) */}
           <textarea
             className="nodrag nopan nowheel cv2-scroll"
-            value={data.config.prompt}
-            onChange={(e) => updateConfig(id, { prompt: e.target.value })}
+            value={promptField.value}
+            {...promptField.bind}
             placeholder="补充描述（可选）…"
             rows={2}
             style={promptInput}

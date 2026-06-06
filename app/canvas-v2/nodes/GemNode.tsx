@@ -9,6 +9,7 @@ import { RefThumb } from './RefThumb';
 import { PromptTools } from './PromptTools';
 import { uploadImageToStorage, generateGemStoryboard, getUserId } from '../lib/api';
 import { useUpstream } from '../lib/connections';
+import { useDebouncedField } from '../lib/useDebouncedField';
 
 // ============================================================
 // GEM 分镜设计卡片 (Step2)
@@ -71,6 +72,9 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [editing, setEditing] = useState(false);   // 双击编辑结果文案(像文本卡)
   const [modeTooltip, setModeTooltip] = useState<GemMode | null>(null);
   const [uploading, setUploading] = useState(false);   // 上传中指示(照原网)
+  // 输入框本地state+防抖(中文输入不被打断)
+  const textField = useDebouncedField(data.text ?? '', (v) => updateCard(id, { text: v }));
+  const promptField = useDebouncedField(data.config.prompt ?? '', (v) => updateConfig(id, { prompt: v }));
 
   const mode: GemMode = (data.config.preset as GemMode) ?? 'story';
   const gridSize = data.config.textDuration ?? '9';   // 复用 textDuration 存格子数
@@ -191,9 +195,9 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               <textarea
                 className="nodrag nopan nowheel cv2-scroll"
                 autoFocus
-                value={data.text}
-                onChange={(e) => updateCard(id, { text: e.target.value })}
-                onBlur={() => { setEditing(false); (window as any).saveCanvasV2Now?.(); }}
+                value={textField.value}
+                {...textField.bind}
+                onBlur={() => { setEditing(false); updateCard(id, { text: textField.value }); (window as any).saveCanvasV2Now?.(); }}
                 onClick={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
                 style={{ width: '100%', height: '100%', background: 'transparent', border: 'none', outline: 'none', resize: 'none', fontSize: 11, color: '#e4e4e7', whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontFamily: 'monospace', lineHeight: 1.5 }}
@@ -218,8 +222,8 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           {/* 剧本输入 */}
           <textarea
             className="nodrag nopan nowheel cv2-scroll"
-            value={data.config.prompt}
-            onChange={(e) => updateConfig(id, { prompt: e.target.value })}
+            value={promptField.value}
+            {...promptField.bind}
             onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleGenerate(); }}
             placeholder="输入剧本或故事内容…"
             rows={4}

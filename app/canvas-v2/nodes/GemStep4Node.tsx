@@ -9,6 +9,7 @@ import { SpawnMenu } from './SpawnMenu';
 import { HoverZoomImg } from './RefThumb';
 import { PromptTools } from './PromptTools';
 import { uploadImageToStorage, generateGemStoryboardImage, mirrorOutput, getUserId } from '../lib/api';
+import { useDebouncedField } from '../lib/useDebouncedField';
 import { getUpstreamOutputs } from '../lib/connections';
 
 // ============================================================
@@ -47,6 +48,7 @@ function GemStep4NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [spawnOpen, setSpawnOpen] = useState(false);
   const [modeTooltip, setModeTooltip] = useState<InputType | null>(null);
   const [uploading, setUploading] = useState(false);   // 上传中指示(照原网)
+  const promptField = useDebouncedField(data.config.prompt ?? '', (v) => updateConfig(id, { prompt: v }));
 
   // 输入模式:存在 textDuration 字段里(复用)
   const inputType: InputType = (data.config.textDuration as InputType) ?? 'single';
@@ -197,8 +199,8 @@ function GemStep4NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           <PromptTools value={actionSuggestion} onPaste={(t) => updateConfig(id, { prompt: t })} />
           <textarea
             className="nodrag nopan nowheel cv2-scroll"
-            value={actionSuggestion}
-            onChange={(e) => updateConfig(id, { prompt: e.target.value })}
+            value={promptField.value}
+            {...promptField.bind}
             placeholder="剧情引导（可选）：他很害怕然后逃跑、慢慢转身离开..."
             rows={3}
             style={promptInput}

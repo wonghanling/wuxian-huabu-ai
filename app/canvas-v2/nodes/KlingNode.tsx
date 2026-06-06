@@ -9,6 +9,7 @@ import { IconVideo, IconExpand, IconShrink, IconMinus, IconPlus, IconUpload, Ico
 import { SpawnMenu } from './SpawnMenu';
 import { PromptTools } from './PromptTools';
 import { uploadFileToStorage, generateKlingLipSync, mirrorOutput } from '../lib/api';
+import { useDebouncedField } from '../lib/useDebouncedField';
 import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 
 // ============================================================
@@ -37,6 +38,7 @@ function KlingNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [spawnOpen, setSpawnOpen] = useState(false);
   const [sub, setSub] = useState<SubPanel>(null);
   const [uploading, setUploading] = useState(false);   // 上传中指示(照原网)
+  const promptField = useDebouncedField(data.config.prompt ?? '', (v) => updateConfig(id, { prompt: v }));
   const editRef = useRef<HTMLTextAreaElement>(null);
 
   const srcVideo = data.config.refVideos?.[0];
@@ -175,8 +177,8 @@ function KlingNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           <PromptTools value={data.config.prompt} onPaste={(t) => updateConfig(id, { prompt: t })} />
           <textarea
             className="nodrag nopan nowheel cv2-scroll"
-            value={data.config.prompt}
-            onChange={(e) => updateConfig(id, { prompt: e.target.value })}
+            value={promptField.value}
+            {...promptField.bind}
             placeholder="备注(可选)…"
             rows={2}
             style={promptInput}

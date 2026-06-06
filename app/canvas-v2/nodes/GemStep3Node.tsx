@@ -9,6 +9,7 @@ import { HoverZoomImg } from './RefThumb';
 import { PromptTools } from './PromptTools';
 import { uploadImageToStorage, generateGemTransitions, getUserId } from '../lib/api';
 import { getUpstreamOutputs, useUpstream } from '../lib/connections';
+import { useDebouncedField } from '../lib/useDebouncedField';
 
 // ============================================================
 // GEM 导演引擎 Step3 · 视频过渡指令
@@ -49,6 +50,10 @@ function GemStep3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   // 角色提示 存在 ratio 字段(复用), 剧情引导存在 preset 字段
   const characterHint = data.config.ratio ?? '';
   const actionSuggestion = data.config.preset ?? '';
+  // 输入框本地state+防抖(中文输入不被打断)
+  const textField = useDebouncedField(data.text ?? '', (v) => updateCard(id, { text: v }));
+  const hintField = useDebouncedField(characterHint, (v) => updateConfig(id, { ratio: v }));
+  const actionField = useDebouncedField(actionSuggestion, (v) => updateConfig(id, { preset: v }));
 
   const mult = enlarged ? 1.7 : 1;
   const W = 360 * mult;
@@ -149,9 +154,9 @@ function GemStep3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               <textarea
                 className="nodrag nopan nowheel cv2-scroll"
                 autoFocus
-                value={data.text}
-                onChange={(e) => updateCard(id, { text: e.target.value })}
-                onBlur={() => { setEditing(false); (window as any).saveCanvasV2Now?.(); }}
+                value={textField.value}
+                {...textField.bind}
+                onBlur={() => { setEditing(false); updateCard(id, { text: textField.value }); (window as any).saveCanvasV2Now?.(); }}
                 onClick={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
                 style={{ width: '100%', height: '100%', background: 'transparent', border: 'none', outline: 'none', resize: 'none', fontSize: 11, color: '#e4e4e7', whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontFamily: 'monospace', lineHeight: 1.5 }}
@@ -179,16 +184,16 @@ function GemStep3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           {/* 角色提示 + 剧情引导(大 prompt 区域) */}
           <textarea
             className="nodrag nopan nowheel cv2-scroll"
-            value={characterHint}
-            onChange={(e) => updateConfig(id, { ratio: e.target.value })}
+            value={hintField.value}
+            {...hintField.bind}
             placeholder="角色提示（可选）：silver-white hair, mechanical right arm..."
             rows={2}
             style={promptInput}
           />
           <textarea
             className="nodrag nopan nowheel cv2-scroll"
-            value={actionSuggestion}
-            onChange={(e) => updateConfig(id, { preset: e.target.value })}
+            value={actionField.value}
+            {...actionField.bind}
             placeholder="剧情引导（可选）：他很害怕然后逃跑、慢慢转身离开..."
             rows={2}
             style={{ ...promptInput, borderTop: '1px solid rgba(255,255,255,0.06)' }}
