@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useState } from 'react';
+import { memo, useState, useRef } from 'react';
 import { Handle, Position, NodeToolbar, type NodeProps } from '@xyflow/react';
 import { useCanvasStore, type CardNode } from '../store';
 import { IconExpand, IconShrink, IconMinus, IconPlus } from './icons';
@@ -69,6 +69,7 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [sub, setSub] = useState<SubPanel>(null);
   const [spawnOpen, setSpawnOpen] = useState(false);
   const [editing, setEditing] = useState(false);   // 双击编辑结果文案(像文本卡)
+  const composingRef = useRef(false);   // 中文输入法组合中(防打断拼音)
   const [modeTooltip, setModeTooltip] = useState<GemMode | null>(null);
   const [uploading, setUploading] = useState(false);   // 上传中指示(照原网)
 
@@ -192,7 +193,9 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                 className="nodrag nopan nowheel cv2-scroll"
                 autoFocus
                 value={data.text}
-                onChange={(e) => updateCard(id, { text: e.target.value })}
+                onChange={(e) => { if (composingRef.current) return; updateCard(id, { text: e.target.value }); }}
+                onCompositionStart={() => { composingRef.current = true; }}
+                onCompositionEnd={(e) => { composingRef.current = false; updateCard(id, { text: (e.target as HTMLTextAreaElement).value }); }}
                 onBlur={() => { setEditing(false); (window as any).saveCanvasV2Now?.(); }}
                 onClick={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
@@ -219,7 +222,9 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           <textarea
             className="nodrag nopan nowheel cv2-scroll"
             value={data.config.prompt}
-            onChange={(e) => updateConfig(id, { prompt: e.target.value })}
+            onChange={(e) => { if (composingRef.current) return; updateConfig(id, { prompt: e.target.value }); }}
+            onCompositionStart={() => { composingRef.current = true; }}
+            onCompositionEnd={(e) => { composingRef.current = false; updateConfig(id, { prompt: (e.target as HTMLTextAreaElement).value }); }}
             onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleGenerate(); }}
             placeholder="输入剧本或故事内容…"
             rows={4}

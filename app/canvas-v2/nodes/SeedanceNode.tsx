@@ -71,6 +71,8 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const lastFromConn = !data.config.lastFrame && !!upstreamLive.images[1];
   // 多模态:本地参考图之外,连接进来的图(去重)
   const connImages = upstreamLive.images.filter((u) => !refImages.includes(u));
+  const connVideos = upstreamLive.videos.filter((u) => !refVideos.includes(u));   // 连接进来的视频
+  const connAudio = upstreamLive.audios[0];                                        // 连接进来的音频
   const connectedTexts = upstreamLive.texts;   // 来自连接的文案(实时,自动拼入生成)
 
   // 卡片框:矩形,按比例(adaptive 用 16:9)
@@ -375,7 +377,7 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                     <RefPanel
                       images={refImages} videos={refVideos} videoNames={data.config.refVideoNames ?? []}
                       audioName={data.config.refAudioName} counts={counts} uploading={uploading}
-                      connImages={connImages}
+                      connImages={connImages} connVideos={connVideos} connAudio={connAudio}
                       onAddImages={addRefImages} onRemoveImage={removeRefImage}
                       onAddVideo={addRefVideo} onRemoveVideo={removeRefVideo}
                       onAddAudio={addRefAudio} onRemoveAudio={() => updateConfig(id, { refAudio: undefined, refAudioName: undefined })}
@@ -450,11 +452,13 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 }
 
 // ===== 参考内容面板(多模态:图/视频/音频,总12上限) =====
-function RefPanel({ images, videos, videoNames, audioName, counts, uploading, connImages, onAddImages, onRemoveImage, onAddVideo, onRemoveVideo, onAddAudio, onRemoveAudio }: {
+function RefPanel({ images, videos, videoNames, audioName, counts, uploading, connImages, connVideos, connAudio, onAddImages, onRemoveImage, onAddVideo, onRemoveVideo, onAddAudio, onRemoveAudio }: {
   images: string[]; videos: string[]; videoNames: string[]; audioName?: string;
   counts: ReturnType<typeof multimodalCount>;
   uploading?: boolean;
   connImages?: string[];
+  connVideos?: string[];
+  connAudio?: string;
   onAddImages: (fl: FileList | null) => void; onRemoveImage: (i: number) => void;
   onAddVideo: (fl: FileList | null) => void; onRemoveVideo: (i: number) => void;
   onAddAudio: (fl: FileList | null) => void; onRemoveAudio: () => void;
@@ -491,13 +495,26 @@ function RefPanel({ images, videos, videoNames, audioName, counts, uploading, co
       {/* 来自连接的图(实时,照原网"来自连接";连线动态来,不可删) */}
       {connImages && connImages.length > 0 && (
         <>
-          <div style={{ fontSize: 10, color: '#a78bfa', margin: '6px 0 4px' }}>来自连接 · {connImages.length} 张</div>
+          <div style={{ fontSize: 10, color: '#a78bfa', margin: '6px 0 4px' }}>来自连接 · {connImages.length} 张图</div>
           <div style={refGrid}>
             {connImages.map((img, i) => (
               <RefThumb key={`c${i}`} url={img} index={i} onRemove={() => {}} />
             ))}
           </div>
         </>
+      )}
+      {/* 来自连接的视频(视频卡/Seedance 连进来,实时显示) */}
+      {connVideos && connVideos.length > 0 && connVideos.map((v, i) => (
+        <div key={`cv${i}`} style={{ ...refFileRow, borderColor: 'rgba(124,58,237,0.4)' }}>
+          <IconVideo size={13} />
+          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#a78bfa' }}>来自连接的视频 {i + 1}</span>
+        </div>
+      ))}
+      {/* 来自连接的音频(语音卡连进来) */}
+      {connAudio && (
+        <div style={{ ...refFileRow, borderColor: 'rgba(124,58,237,0.4)' }}>
+          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#a78bfa' }}>🎙 来自连接的音频</span>
+        </div>
       )}
       {/* 参考视频列表 */}
       {videos.map((_, i) => (

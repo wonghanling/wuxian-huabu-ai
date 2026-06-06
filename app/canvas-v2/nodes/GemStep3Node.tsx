@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useState } from 'react';
+import { memo, useState, useRef } from 'react';
 import { Handle, Position, NodeToolbar, type NodeProps } from '@xyflow/react';
 import { useCanvasStore, type CardNode } from '../store';
 import { IconExpand, IconShrink, IconMinus, IconPlus } from './icons';
@@ -34,6 +34,7 @@ function GemStep3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [sub, setSub] = useState<'ref' | null>(null);
   const [uploading, setUploading] = useState(false);   // 上传中指示(照原网)
   const [editing, setEditing] = useState(false);        // 双击编辑结果文案(像文本卡)
+  const composingRef = useRef(false);   // 中文输入法组合中(防打断拼音)
 
   // 首帧/尾帧图 — 存在 refImages[0] 和 refImages[1]
   const refImages = data.config.refImages ?? [];
@@ -150,7 +151,9 @@ function GemStep3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                 className="nodrag nopan nowheel cv2-scroll"
                 autoFocus
                 value={data.text}
-                onChange={(e) => updateCard(id, { text: e.target.value })}
+                onChange={(e) => { if (composingRef.current) return; updateCard(id, { text: e.target.value }); }}
+                onCompositionStart={() => { composingRef.current = true; }}
+                onCompositionEnd={(e) => { composingRef.current = false; updateCard(id, { text: (e.target as HTMLTextAreaElement).value }); }}
                 onBlur={() => { setEditing(false); (window as any).saveCanvasV2Now?.(); }}
                 onClick={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
@@ -180,7 +183,9 @@ function GemStep3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           <textarea
             className="nodrag nopan nowheel cv2-scroll"
             value={characterHint}
-            onChange={(e) => updateConfig(id, { ratio: e.target.value })}
+            onChange={(e) => { if (composingRef.current) return; updateConfig(id, { ratio: e.target.value }); }}
+            onCompositionStart={() => { composingRef.current = true; }}
+            onCompositionEnd={(e) => { composingRef.current = false; updateConfig(id, { ratio: (e.target as HTMLTextAreaElement).value }); }}
             placeholder="角色提示（可选）：silver-white hair, mechanical right arm..."
             rows={2}
             style={promptInput}
@@ -188,7 +193,9 @@ function GemStep3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           <textarea
             className="nodrag nopan nowheel cv2-scroll"
             value={actionSuggestion}
-            onChange={(e) => updateConfig(id, { preset: e.target.value })}
+            onChange={(e) => { if (composingRef.current) return; updateConfig(id, { preset: e.target.value }); }}
+            onCompositionStart={() => { composingRef.current = true; }}
+            onCompositionEnd={(e) => { composingRef.current = false; updateConfig(id, { preset: (e.target as HTMLTextAreaElement).value }); }}
             placeholder="剧情引导（可选）：他很害怕然后逃跑、慢慢转身离开..."
             rows={2}
             style={{ ...promptInput, borderTop: '1px solid rgba(255,255,255,0.06)' }}

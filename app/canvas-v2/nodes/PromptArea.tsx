@@ -24,6 +24,7 @@ interface Props {
 export function PromptArea({ connectedText, value, onChange, onGenerate, placeholder, style }: Props) {
   const taRef = useRef<HTMLTextAreaElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const composingRef = useRef(false);   // 中文输入法组合中标志(组合期不提交,防打断拼音)
 
   const prefix = connectedText ? connectedText : '';
   // textarea 实际承载的全文 = 连接前缀 + 换行 + 用户输入
@@ -79,7 +80,18 @@ export function PromptArea({ connectedText, value, onChange, onGenerate, placeho
         value={fullValue}
         placeholder={placeholder}
         onScroll={syncScroll}
+        onCompositionStart={() => { composingRef.current = true; }}
+        onCompositionEnd={(e) => {
+          composingRef.current = false;
+          // 组合结束(选好字)才提交,避免拼音中途被打断
+          const full = (e.target as HTMLTextAreaElement).value;
+          const pre = prefix ? prefix + '\n' : '';
+          const userInput = pre && full.startsWith(pre) ? full.slice(pre.length) : (prefix && full.startsWith(prefix) ? full.slice(prefix.length) : full);
+          onChange(userInput);
+        }}
         onChange={(e) => {
+          // 组合中(拼音未选字)不提交,让输入法自己维护
+          if (composingRef.current) return;
           const full = e.target.value;
           const pre = prefix ? prefix + '\n' : '';
           // 连接前缀只读:用户编辑只改自己那部分

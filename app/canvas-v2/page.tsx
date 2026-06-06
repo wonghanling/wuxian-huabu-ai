@@ -19,6 +19,8 @@ import { useCanvasStore, type CardNode } from './store';
 import { CardDispatch } from './nodes/CardDispatch';
 import { DeletableEdge } from './nodes/DeletableEdge';
 import { ImageSplitModal } from './nodes/ImageSplitModal';
+import { ZoomControls } from './nodes/ZoomControls';
+import { TbText, TbImage, TbVideo, TbCharacter, TbTimeline, TbController, TbGem, TbDirector, TbAudio, TbExtend, TbScissors, TbChevron } from './nodes/ToolIcons';
 import { useCanvasPersistence } from './lib/usePersistence';
 import { DEFAULT_TEXT_MODEL } from './models';
 import { DEFAULT_IMAGE_MODEL } from './imageModels';
@@ -223,6 +225,8 @@ function CanvasV2Inner() {
   const [toolGroup, setToolGroup] = useState<'video' | 'gem' | null>(null);
   // 图片切割弹窗
   const [showSplit, setShowSplit] = useState(false);
+  // 工具栏展开/折叠(照原网抽屉式)
+  const [toolExpanded, setToolExpanded] = useState(true);
 
   // 画布持久化:加载历史快照 / 自动保存 / 空画布保护(完整复刻原网)
   const { status: saveStatus, loading: canvasLoading } = useCanvasPersistence();
@@ -322,73 +326,69 @@ function CanvasV2Inner() {
         proOptions={{ hideAttribution: true }}
       >
         <Background variant={BackgroundVariant.Dots} gap={28} size={1} color="#27272a" />
-        <Controls />
 
         <Panel position="bottom-left">
-          <div style={toolbarV} onMouseLeave={() => setToolGroup(null)}>
-            <div style={toolbarTitle}>FILMAVO</div>
-
-            {/* 1 文本 */}
-            <button onClick={addTextCard} style={toolBtnV} title="文本生成卡片">文本</button>
-            {/* 2 图片 */}
-            <button onClick={addImageCard} style={toolBtnV} title="图片生成卡片">图片</button>
-
-            {/* 3 视频分组(视频卡/Kling配音/Seedance2.0) */}
-            <div style={{ position: 'relative' }}>
-              <button onClick={() => setToolGroup(toolGroup === 'video' ? null : 'video')} style={toolBtnV} title="视频类卡片">视频 ▸</button>
-              {toolGroup === 'video' && (
-                <div style={toolFlyout}>
-                  <button onClick={() => { addVideoCard(); setToolGroup(null); }} style={flyItem}>视频卡片</button>
-                  <button onClick={() => { addKlingCard(); setToolGroup(null); }} style={flyItem}>Kling 视频配音</button>
-                  <button onClick={() => { addSeedanceCard(); setToolGroup(null); }} style={flyItem}>Seedance 2.0</button>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6 }} onMouseLeave={() => setToolGroup(null)}>
+            {/* 工具栏主体(可折叠) */}
+            {toolExpanded && (
+              <div style={toolbarV}>
+                <div style={toolbarTitle}>FILMAVO</div>
+                {/* 1 文本 */}
+                <button onClick={addTextCard} style={toolIconBtn} title="文本生成卡片"><TbText size={18} /></button>
+                {/* 2 图片 */}
+                <button onClick={addImageCard} style={toolIconBtn} title="图片生成卡片"><TbImage size={18} /></button>
+                {/* 3 视频分组 */}
+                <div style={{ position: 'relative' }}>
+                  <button onClick={() => setToolGroup(toolGroup === 'video' ? null : 'video')} style={{ ...toolIconBtn, ...(toolGroup === 'video' ? toolIconActive : {}) }} title="视频类(视频/Kling/Seedance)"><TbVideo size={18} /></button>
+                  {toolGroup === 'video' && (
+                    <div style={toolFlyout}>
+                      <button onClick={() => { addVideoCard(); setToolGroup(null); }} style={flyItem}>视频卡片</button>
+                      <button onClick={() => { addKlingCard(); setToolGroup(null); }} style={flyItem}>Kling 视频配音</button>
+                      <button onClick={() => { addSeedanceCard(); setToolGroup(null); }} style={flyItem}>Seedance 2.0</button>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-
-            {/* 4 角色设计 */}
-            <button onClick={addCharacterCard} style={toolBtnV} title="角色设计卡片">角色</button>
-
-            {/* 5 导演流程时间刻度条(待做) */}
-            <button style={toolBtnVDisabled} title="导演流程时间刻度条(开发中)" disabled>刻度条</button>
-
-            {/* 6 电影控制器(待做) */}
-            <button style={toolBtnVDisabled} title="电影控制器(开发中)" disabled>控制器</button>
-
-            {/* 8 GEM 分镜 Step2 */}
-            <button onClick={addGemCard} style={toolBtnV} title="GEM 分镜设计(Step2)">GEM</button>
-
-            {/* 9 导演引擎分组(全部/单独 Step2/Step3/Step4) */}
-            <div style={{ position: 'relative' }}>
-              <button onClick={() => setToolGroup(toolGroup === 'gem' ? null : 'gem')} style={toolBtnV} title="导演引擎">导演 ▸</button>
-              {toolGroup === 'gem' && (
-                <div style={toolFlyout}>
-                  <button onClick={() => { addGemCard(); addGem3Card(); addGem4Card(); setToolGroup(null); }} style={flyItem}>全部创建</button>
-                  <button onClick={() => { addGemCard(); setToolGroup(null); }} style={flyItem}>单独 Step2(分镜)</button>
-                  <button onClick={() => { addGem3Card(); setToolGroup(null); }} style={flyItem}>单独 Step3(过渡指令)</button>
-                  <button onClick={() => { addGem4Card(); setToolGroup(null); }} style={flyItem}>单独 Step4</button>
+                {/* 4 角色设计 */}
+                <button onClick={addCharacterCard} style={toolIconBtn} title="角色设计卡片"><TbCharacter size={18} /></button>
+                {/* 5 导演流程时间刻度条(待做) */}
+                <button style={toolIconBtnDisabled} title="导演流程时间刻度条(开发中)" disabled><TbTimeline size={18} /></button>
+                {/* 6 电影控制器(待做) */}
+                <button style={toolIconBtnDisabled} title="电影控制器(开发中)" disabled><TbController size={18} /></button>
+                {/* 8 GEM 分镜 Step2 */}
+                <button onClick={addGemCard} style={toolIconBtn} title="GEM 分镜设计"><TbGem size={18} /></button>
+                {/* 9 导演引擎分组 */}
+                <div style={{ position: 'relative' }}>
+                  <button onClick={() => setToolGroup(toolGroup === 'gem' ? null : 'gem')} style={{ ...toolIconBtn, ...(toolGroup === 'gem' ? toolIconActive : {}) }} title="导演引擎"><TbDirector size={18} /></button>
+                  {toolGroup === 'gem' && (
+                    <div style={toolFlyout}>
+                      <button onClick={() => { addGemCard(); addGem3Card(); addGem4Card(); setToolGroup(null); }} style={flyItem}>全部创建</button>
+                      <button onClick={() => { addGemCard(); setToolGroup(null); }} style={flyItem}>单独 Step2(分镜)</button>
+                      <button onClick={() => { addGem3Card(); setToolGroup(null); }} style={flyItem}>单独 Step3(过渡指令)</button>
+                      <button onClick={() => { addGem4Card(); setToolGroup(null); }} style={flyItem}>单独 Step4</button>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+                {/* 10 语音合成 */}
+                <button onClick={addAudioCard} style={toolIconBtn} title="语音合成卡片"><TbAudio size={18} /></button>
+                {/* 时空镜头延展 */}
+                <button onClick={addExtendCard} style={toolIconBtn} title="时空镜头延展"><TbExtend size={18} /></button>
+                <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '2px 0' }} />
+                {/* 11 图片切割 */}
+                <button onClick={() => setShowSplit(true)} style={toolIconBtn} title="图片切割(等分/切线/框选)"><TbScissors size={18} /></button>
+              </div>
+            )}
 
-            {/* 10 语音合成 */}
-            <button onClick={addAudioCard} style={toolBtnV} title="语音合成卡片(合成/音色设计/克隆)">语音</button>
-
-            {/* 时空镜头延展(原工具项,保留) */}
-            <button onClick={addExtendCard} style={toolBtnV} title="时空镜头延展">延展</button>
-
-            <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '2px 0' }} />
-
-            {/* 11 图片切割(画布功能,弹窗) */}
-            <button onClick={() => setShowSplit(true)} style={toolBtnV} title="图片切割(等分/切线/框选)">切割</button>
-
-            {/* 画布放大器:全局收起(−)/展开(+)所有卡片 */}
-            <div style={{ display: 'flex', gap: 4 }}>
-              <button onClick={() => collapseAll(true)} style={{ ...toolBtnV, flex: 1, fontSize: 18, padding: '4px 0', lineHeight: 1 }} title="所有卡片收起成小卡片">−</button>
-              <button onClick={() => collapseAll(false)} style={{ ...toolBtnV, flex: 1, fontSize: 18, padding: '4px 0', lineHeight: 1 }} title="所有卡片全部展开">+</button>
-            </div>
-
-            <div style={{ fontSize: 9, color: '#52525b', textAlign: 'center', padding: '2px 0' }}>双击画布<br/>=素材卡</div>
+            {/* 折叠手柄 + 画布缩放器(左下角,与折叠在一起) */}
+            {/* 折叠手柄(只留这个,缩放器独立放底部中间,不再被挡) */}
+            <button onClick={() => setToolExpanded((v) => !v)} style={toolHandle} title={toolExpanded ? '收起工具栏' : '展开工具栏'}>
+              <TbChevron size={16} open={!toolExpanded} />
+            </button>
           </div>
+        </Panel>
+
+        {/* 画布缩放器(照原网左下角胶囊条,独立放底部中间避免被工具栏挡) */}
+        <Panel position="bottom-center">
+          <ZoomControls />
         </Panel>
       </ReactFlow>
 
@@ -477,6 +477,28 @@ const toolBtnV: React.CSSProperties = {
 };
 const toolBtnVDisabled: React.CSSProperties = {
   ...toolBtnV, opacity: 0.35, cursor: 'not-allowed', color: '#a1a1aa',
+};
+// 图标按钮(照原网:正方形图标按钮,hover 浅底)
+const toolIconBtn: React.CSSProperties = {
+  width: 40, height: 40, borderRadius: 12, border: 'none',
+  background: 'transparent', color: '#9ca3af', cursor: 'pointer',
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  transition: 'background .15s, color .15s',
+};
+const toolIconActive: React.CSSProperties = { background: 'rgba(255,255,255,0.1)', color: '#fff' };
+const toolIconBtnDisabled: React.CSSProperties = { ...toolIconBtn, opacity: 0.3, cursor: 'not-allowed' };
+const toolHandle: React.CSSProperties = {
+  width: 40, height: 32, borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)',
+  background: 'rgba(18,18,22,0.92)', color: '#9ca3af', cursor: 'pointer',
+  display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(20px)',
+};
+const zoomBox: React.CSSProperties = {
+  display: 'flex', flexDirection: 'column', borderRadius: 10, overflow: 'hidden',
+  border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(18,18,22,0.92)', backdropFilter: 'blur(20px)',
+};
+const zoomBtn: React.CSSProperties = {
+  width: 40, height: 32, border: 'none', background: 'transparent', color: '#9ca3af',
+  cursor: 'pointer', fontSize: 18, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
 };
 const toolFlyout: React.CSSProperties = {
   position: 'absolute', left: 'calc(100% + 8px)', bottom: 0,

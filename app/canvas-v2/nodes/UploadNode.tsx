@@ -32,8 +32,16 @@ function UploadNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const mediaType = (data.config as any).mediaType as 'image' | 'video' | undefined;
   const hasMedia = !!data.outputUrl;
 
-  const baseW = enlarged ? 420 : 300;
-  const baseH = enlarged ? 420 : 300;
+  // 卡片按上传素材真实比例显示(无素材时正方形)
+  const baseSide = enlarged ? 420 : 300;
+  const aw = (data as any).aspectW as number | undefined;
+  const ah = (data as any).aspectH as number | undefined;
+  let baseW = baseSide, baseH = baseSide;
+  if (aw && ah && aw > 0 && ah > 0) {
+    const ratio = aw / ah;
+    if (ratio >= 1) { baseW = baseSide; baseH = Math.round(baseSide / ratio); }
+    else { baseH = baseSide; baseW = Math.round(baseSide * ratio); }
+  }
 
   const toggleCollapse = (e: React.MouseEvent) => { e.stopPropagation(); updateCard(id, { collapsed: !collapsed }); };
 
@@ -48,6 +56,16 @@ function UploadNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
       if (url) {
         updateConfig(id, { mediaType: isVideo ? 'video' : 'image' } as any);
         updateCard(id, { status: 'done', outputUrl: url });
+        // 探测真实尺寸,卡片按比例显示
+        if (isVideo) {
+          const v = document.createElement('video');
+          v.onloadedmetadata = () => updateCard(id, { aspectW: v.videoWidth, aspectH: v.videoHeight });
+          v.src = url;
+        } else {
+          const probe = new Image();
+          probe.onload = () => updateCard(id, { aspectW: probe.naturalWidth, aspectH: probe.naturalHeight });
+          probe.src = url;
+        }
         (window as any).saveCanvasV2Now?.();
       }
     } finally {
