@@ -20,6 +20,7 @@ import { CardDispatch } from './nodes/CardDispatch';
 import { DeletableEdge } from './nodes/DeletableEdge';
 import { ImageSplitModal } from './nodes/ImageSplitModal';
 import { ZoomControls } from './nodes/ZoomControls';
+import { TopBar } from './nodes/TopBar';
 import { TbText, TbImage, TbVideo, TbCharacter, TbTimeline, TbController, TbGem, TbDirector, TbAudio, TbExtend, TbScissors, TbChevron } from './nodes/ToolIcons';
 import { useCanvasPersistence } from './lib/usePersistence';
 import { DEFAULT_TEXT_MODEL } from './models';
@@ -210,6 +211,35 @@ function makeAudioNode(i: string | number, x: number, y: number): CardNode {
   };
 }
 
+function makeShotNode(i: string | number, x: number, y: number): CardNode {
+  return {
+    id: 'sh' + i,
+    type: 'card',
+    position: { x, y },
+    data: {
+      kind: 'shot',
+      status: 'empty',
+      outputUrl: null,
+      text: '',
+      config: { model: '', prompt: '', shotType: '全景', cameraMovement: 'Follow/Tracking' } as any,
+    },
+  };
+}
+
+function makeTimelineNode(i: string | number, x: number, y: number): CardNode {
+  return {
+    id: 'tl' + i,
+    type: 'card',
+    position: { x, y },
+    data: {
+      kind: 'timeline',
+      status: 'empty',
+      outputUrl: null,
+      config: { model: '', prompt: '', duration: 60 } as any,
+    },
+  };
+}
+
 function CanvasV2Inner() {
   const nodes = useCanvasStore((s) => s.nodes);
   const edges = useCanvasStore((s) => s.edges);
@@ -229,7 +259,7 @@ function CanvasV2Inner() {
   const [toolExpanded, setToolExpanded] = useState(true);
 
   // 画布持久化:加载历史快照 / 自动保存 / 空画布保护(完整复刻原网)
-  const { status: saveStatus, loading: canvasLoading } = useCanvasPersistence();
+  const { status: saveStatus, loading: canvasLoading, switchCanvas, getCurrentCanvasId } = useCanvasPersistence();
 
   // 加载完成后,若画布为空(无历史)才放演示卡;有历史则不动
   useEffect(() => {
@@ -271,6 +301,8 @@ function CanvasV2Inner() {
   const addCharacterCard = useCallback(() => addCard(makeCharacterNode), [addCard]);
   const addKlingCard = useCallback(() => addCard(makeKlingNode), [addCard]);
   const addAudioCard = useCallback(() => addCard(makeAudioNode), [addCard]);
+  const addShotCard = useCallback(() => addCard(makeShotNode), [addCard]);
+  const addTimelineCard = useCallback(() => addCard(makeTimelineNode), [addCard]);
 
   const onNodeClick: NodeMouseHandler<CardNode> = useCallback(
     (_, node) => setSelected(node.id),
@@ -315,7 +347,7 @@ function CanvasV2Inner() {
         nodeDragThreshold={2}
         elevateNodesOnSelect
         connectionRadius={48}
-        deleteKeyCode={null}
+        deleteKeyCode={['Delete']}
         zoomOnScroll={false}
         zoomOnDoubleClick={false}
         panOnScroll
@@ -327,8 +359,8 @@ function CanvasV2Inner() {
       >
         <Background variant={BackgroundVariant.Dots} gap={28} size={1} color="#27272a" />
 
-        <Panel position="bottom-left">
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6 }} onMouseLeave={() => setToolGroup(null)}>
+        <Panel position="top-left">
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }} onMouseLeave={() => setToolGroup(null)}>
             {/* 工具栏主体(可折叠) */}
             {toolExpanded && (
               <div style={toolbarV}>
@@ -350,10 +382,10 @@ function CanvasV2Inner() {
                 </div>
                 {/* 4 角色设计 */}
                 <button onClick={addCharacterCard} style={toolIconBtn} title="角色设计卡片"><TbCharacter size={18} /></button>
-                {/* 5 导演流程时间刻度条(待做) */}
-                <button style={toolIconBtnDisabled} title="导演流程时间刻度条(开发中)" disabled><TbTimeline size={18} /></button>
-                {/* 6 电影控制器(待做) */}
-                <button style={toolIconBtnDisabled} title="电影控制器(开发中)" disabled><TbController size={18} /></button>
+                {/* 5 导演流程时间刻度条 */}
+                <button onClick={addTimelineCard} style={toolIconBtn} title="导演流程时间刻度条"><TbTimeline size={18} /></button>
+                {/* 6 电影控制器 */}
+                <button onClick={addShotCard} style={toolIconBtn} title="电影控制器"><TbController size={18} /></button>
                 {/* 8 GEM 分镜 Step2 */}
                 <button onClick={addGemCard} style={toolIconBtn} title="GEM 分镜设计"><TbGem size={18} /></button>
                 {/* 9 导演引擎分组 */}
@@ -386,9 +418,14 @@ function CanvasV2Inner() {
           </div>
         </Panel>
 
-        {/* 画布缩放器(照原网左下角胶囊条,独立放底部中间避免被工具栏挡) */}
-        <Panel position="bottom-center">
+        {/* 画布缩放器(照原网左下角胶囊条) */}
+        <Panel position="bottom-left">
           <ZoomControls />
+        </Panel>
+
+        {/* 右上角状态栏:余额/会员/保存/主页 */}
+        <Panel position="top-right">
+          <TopBar saveStatus={saveStatus} switchCanvas={switchCanvas} getCurrentCanvasId={getCurrentCanvasId} />
         </Panel>
       </ReactFlow>
 
@@ -501,7 +538,7 @@ const zoomBtn: React.CSSProperties = {
   cursor: 'pointer', fontSize: 18, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
 };
 const toolFlyout: React.CSSProperties = {
-  position: 'absolute', left: 'calc(100% + 8px)', bottom: 0,
+  position: 'absolute', left: 'calc(100% + 8px)', top: 0,
   display: 'flex', flexDirection: 'column', gap: 4, width: 168,
   padding: 7, background: 'rgba(28,28,32,0.96)', backdropFilter: 'blur(24px)',
   border: '1px solid rgba(255,255,255,0.14)', borderRadius: 14,

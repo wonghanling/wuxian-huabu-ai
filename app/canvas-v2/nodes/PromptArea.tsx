@@ -3,113 +3,53 @@
 import { useRef, type CSSProperties } from 'react';
 
 // ============================================================
-// PromptArea — 连接文案紫色 + 用户输入白色的可编辑文本框
-// HTML textarea 无法分色,用叠层方案:
-//   底层 div 渲染彩色文字(连接文案紫/用户白)
-//   上层 textarea 文字透明、光标可见,接收输入
-//   两层 padding/fontSize/lineHeight 完全一致 + 滚动同步
-// connectedText:来自连接的只读前缀(紫色);value:用户可编辑部分(白色)
+// PromptArea — 连接文案 + 用户输入的可编辑文本框
+// 说明:HTML textarea 无法"部分文字紫色"且同时兼容中文输入法
+// (透明叠层方案会让 IME 组合中的拼音不可见)。
+// 故采用原网做法:文字正常可见 + 下方紫色"·来自连接卡片"标注。
+// 中文输入法安全:组合中不提交,组合结束才提交。
 // ============================================================
 
 interface Props {
-  connectedText?: string;          // 连接来的文案(紫色,只读)
-  value: string;                   // 用户输入(白色,可编辑)
+  connectedText?: string;
+  value: string;
   onChange: (v: string) => void;
-  onGenerate?: () => void;         // Cmd/Ctrl+Enter
+  onGenerate?: () => void;
   placeholder?: string;
   rows?: number;
-  style?: CSSProperties;           // 复用各卡片的 promptInput
+  style?: CSSProperties;
 }
 
 export function PromptArea({ connectedText, value, onChange, onGenerate, placeholder, style }: Props) {
-  const taRef = useRef<HTMLTextAreaElement>(null);
-  const overlayRef = useRef<HTMLDivElement>(null);
-  const composingRef = useRef(false);   // 中文输入法组合中标志(组合期不提交,防打断拼音)
+  const composingRef = useRef(false);
 
   const prefix = connectedText ? connectedText : '';
-  // textarea 实际承载的全文 = 连接前缀 + 换行 + 用户输入
+  // textarea 显示全文 = 连接前缀 + 用户输入
   const fullValue = prefix ? `${prefix}${value ? '\n' + value : ''}` : value;
 
-  // 共享排版(两层必须完全一致才能对齐)
-  const shared: CSSProperties = {
-    margin: 0,
-    padding: style?.padding ?? '18px 16px 10px',
-    fontSize: style?.fontSize ?? 15,
-    fontFamily: (style?.fontFamily as string) ?? 'inherit',
-    lineHeight: style?.lineHeight ?? 1.65,
-    letterSpacing: 'normal',
-    whiteSpace: 'pre-wrap',
-    wordBreak: 'break-word',
-    boxSizing: 'border-box',
-    width: '100%',
-    minHeight: style?.minHeight ?? 200,
-  };
-
-  const syncScroll = () => {
-    if (overlayRef.current && taRef.current) {
-      overlayRef.current.scrollTop = taRef.current.scrollTop;
-      overlayRef.current.scrollLeft = taRef.current.scrollLeft;
-    }
+  const commit = (full: string) => {
+    const pre = prefix ? prefix + '\n' : '';
+    const userInput = pre && full.startsWith(pre)
+      ? full.slice(pre.length)
+      : (prefix && full.startsWith(prefix) ? full.slice(prefix.length) : full);
+    onChange(userInput);
   };
 
   return (
-    <div style={{ position: 'relative', width: '100%' }}>
-      {/* 底层:彩色文字镜像(只读展示) */}
-      <div
-        ref={overlayRef}
-        aria-hidden
-        className="cv2-scroll"
-        style={{
-          ...shared,
-          position: 'absolute', inset: 0,
-          overflow: 'auto', pointerEvents: 'none',
-          color: '#e4e4e7',
-        }}
-      >
-        {prefix && <span style={{ color: '#a78bfa' }}>{prefix}</span>}
-        {prefix && value ? '\n' : ''}
-        <span style={{ color: '#e4e4e7' }}>{value}</span>
-        {/* 末尾占位,保证最后一行换行高度被计入 */}
-        {'​'}
-      </div>
-
-      {/* 上层:透明文字 textarea(承载光标 + 输入) */}
+    <>
       <textarea
-        ref={taRef}
         className="nodrag nopan nowheel cv2-scroll"
         value={fullValue}
         placeholder={placeholder}
-        onScroll={syncScroll}
         onCompositionStart={() => { composingRef.current = true; }}
-        onCompositionEnd={(e) => {
-          composingRef.current = false;
-          // 组合结束(选好字)才提交,避免拼音中途被打断
-          const full = (e.target as HTMLTextAreaElement).value;
-          const pre = prefix ? prefix + '\n' : '';
-          const userInput = pre && full.startsWith(pre) ? full.slice(pre.length) : (prefix && full.startsWith(prefix) ? full.slice(prefix.length) : full);
-          onChange(userInput);
-        }}
-        onChange={(e) => {
-          // 组合中(拼音未选字)不提交,让输入法自己维护
-          if (composingRef.current) return;
-          const full = e.target.value;
-          const pre = prefix ? prefix + '\n' : '';
-          // 连接前缀只读:用户编辑只改自己那部分
-          const userInput = pre && full.startsWith(pre)
-            ? full.slice(pre.length)
-            : (prefix && full.startsWith(prefix) ? full.slice(prefix.length) : full);
-          onChange(userInput);
-        }}
+        onCompositionEnd={(e) => { composingRef.current = false; commit((e.target as HTMLTextAreaElement).value); }}
+        onChange={(e) => { if (composingRef.current) return; commit(e.target.value); }}
         onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) onGenerate?.(); }}
-        style={{
-          ...shared,
-          position: 'relative',
-          background: 'transparent', border: 'none', outline: 'none', resize: 'none',
-          color: 'transparent', caretColor: '#fff',
-          overflow: 'auto',
-          WebkitTextFillColor: 'transparent',
-        }}
+        style={style}
       />
-    </div>
+      {prefix && (
+        <div style={{ fontSize: 10, color: '#a78bfa', marginTop: 2, marginBottom: 4 }}>· 开头文案来自连接卡片(将自动拼入生成)</div>
+      )}
+    </>
   );
 }

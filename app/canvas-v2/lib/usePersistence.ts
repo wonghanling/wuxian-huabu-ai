@@ -133,5 +133,35 @@ export function useCanvasPersistence() {
     return () => { if ((window as any).saveCanvasV2Now === saveNow) delete (window as any).saveCanvasV2Now; };
   });
 
-  return { status, loading, saveNow };
+  // ── 切换画布(多画布):先存当前,切 ID,重载目标快照 ──
+  const switchCanvas = async (targetId: string) => {
+    if (!targetId || targetId === canvasIdRef.current) return;
+    // 先保存当前画布(非空)
+    const cur = useCanvasStore.getState();
+    if (canvasIdRef.current && !isRestoringRef.current && cur.nodes.length > 0) {
+      try { await saveSnapshot(canvasIdRef.current, { nodes: cur.nodes, edges: cur.edges }); } catch {}
+    }
+    // 上锁,切 ID,重载
+    isRestoringRef.current = true;
+    setLoading(true);
+    canvasIdRef.current = targetId;
+    try {
+      const snapshot = await loadSnapshot(targetId);
+      const seen = new Set<string>();
+      const cleanNodes = ((snapshot?.nodes ?? []) as CardNode[]).filter((n) => {
+        if (!n?.id || seen.has(n.id)) return false; seen.add(n.id); return true;
+      });
+      const cleanEdges = ((snapshot?.edges ?? []) as Edge[]).filter((e) => seen.has(e.source) && seen.has(e.target));
+      useCanvasStore.setState({ nodes: cleanNodes, edges: cleanEdges, selectedId: null });
+    } catch (err) {
+      console.error('切换画布失败:', err);
+    } finally {
+      setLoading(false);
+      setTimeout(() => { isRestoringRef.current = false; }, 500);
+    }
+  };
+
+  const getCurrentCanvasId = () => canvasIdRef.current;
+
+  return { status, loading, saveNow, switchCanvas, getCurrentCanvasId };
 }

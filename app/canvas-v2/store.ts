@@ -13,7 +13,7 @@ import {
 } from '@xyflow/react';
 
 // ============ 节点数据模型 ============
-export type NodeKind = 'image' | 'video' | 'text' | 'seedance' | 'kling' | 'character' | 'gem' | 'extend' | 'gem3' | 'gem4' | 'upload' | 'audio';
+export type NodeKind = 'image' | 'video' | 'text' | 'seedance' | 'kling' | 'character' | 'gem' | 'extend' | 'gem3' | 'gem4' | 'upload' | 'audio' | 'shot' | 'timeline';
 export type NodeStatus = 'empty' | 'generating' | 'done' | 'error';
 
 // 端口加号菜单功能(照原网"继续创建下游卡片")
@@ -62,6 +62,8 @@ const SPAWN_RULES: Record<NodeKind, SpawnAction[]> = {
   gem4:      [],                     // Step4 原网无加号(输出图,但只能手动拖线连)
   text:      [],                     // 文本卡原网无加号
   audio:     VIDEO_OUTPUT_ACTIONS,   // 语音卡输出音频→连 Seedance/Kling 配音
+  shot:      VIDEO_OUTPUT_ACTIONS,   // 电影控制器输出指令→连视频/Seedance/Kling(照原网连视频卡)
+  timeline:  [],                     // 时间刻度条:形式上的,无下游菜单(仅手动拖线)
 };
 
 // 取某源卡片类型可创建的下游菜单项(空数组 = 不显示加号)

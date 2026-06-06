@@ -228,7 +228,7 @@ function TextNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               style={inlineEdit}
             />
           ) : hasText ? (
-            <p style={textContent}>{data.text}</p>
+            <p className="cv2-scroll" style={textContent}>{data.text}</p>
           ) : (
             <span style={{ fontSize: 12, color: '#5a5a5f' }}>双击编辑 · 或点击下方输入</span>
           )}

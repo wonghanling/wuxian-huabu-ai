@@ -56,6 +56,7 @@ export function getUpstreamOutputs(nodeId: string): UpstreamOutputs {
       case 'text':
       case 'gem':        // GEM分镜 输出文案
       case 'gem3':       // 导演引擎Step3 输出过渡指令
+      case 'shot':       // 电影控制器 输出镜头指令文本
         if (d.text) out.texts.push(d.text);
         break;
     }
@@ -102,7 +103,7 @@ export function useUpstream(nodeId: string): UpstreamOutputs {
         case 'audio':    // 语音合成卡:输出音频
           if (d.outputUrl) out.audios.push(d.outputUrl);
           break;
-        case 'text': case 'gem': case 'gem3':
+        case 'text': case 'gem': case 'gem3': case 'shot':
           if (d.text) out.texts.push(d.text);
           break;
       }

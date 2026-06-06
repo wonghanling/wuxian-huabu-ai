@@ -26,6 +26,42 @@ export async function getOrCreateCanvas(userId: string): Promise<string> {
   return created.id;
 }
 
+// 列出用户的所有画布(多画布管理)
+export async function listCanvases(userId: string): Promise<{ id: string; title: string; updated_at: string }[]> {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from('canvases')
+    .select('id, title, updated_at')
+    .eq('user_id', userId)
+    .order('updated_at', { ascending: false });
+  return data ?? [];
+}
+
+// 新建一个画布,返回 { id, title }
+export async function createCanvas(userId: string, title?: string): Promise<{ id: string; title: string } | null> {
+  const supabase = createClient();
+  const t = title || `画布 ${new Date().toLocaleDateString('zh-CN')}`;
+  const { data } = await supabase
+    .from('canvases')
+    .insert({ user_id: userId, title: t })
+    .select('id, title')
+    .single();
+  return data ?? null;
+}
+
+// 删除画布(及其快照由数据库级联或单独清理)
+export async function deleteCanvas(canvasId: string): Promise<void> {
+  const supabase = createClient();
+  await supabase.from('canvas_snapshots').delete().eq('canvas_id', canvasId);
+  await supabase.from('canvases').delete().eq('id', canvasId);
+}
+
+// 重命名画布
+export async function renameCanvas(canvasId: string, title: string): Promise<void> {
+  const supabase = createClient();
+  await supabase.from('canvases').update({ title }).eq('id', canvasId);
+}
+
 // 加载最新快照
 export async function loadSnapshot(canvasId: string): Promise<any | null> {
   const supabase = createClient();
