@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState, useEffect, useRef } from 'react';
+import { useCallback, useState, useEffect, useRef, useMemo } from 'react';
 import {
   ReactFlow,
   Background,
@@ -277,11 +277,20 @@ function CanvasV2Inner() {
     }
   }, [canvasLoading]);
 
-  // 节点/连线变化 → 触发节流保存(加载完成后才生效,空画布保护在 hook 内)
+  // 节点/连线变化 → 触发节流保存
+  // 用"内容指纹"过滤 React Flow 的内部 churn(selected/dragging/measured/尺寸等
+  // 会不断产生新 nodes 引用但不是真内容变化),只在真正持久化的内容变了才保存,
+  // 否则会"一直在保存"。
+  const contentFingerprint = useMemo(() => {
+    const n = nodes.map((x) => `${x.id}:${Math.round(x.position.x)},${Math.round(x.position.y)}:${JSON.stringify(x.data)}`).join('|');
+    const e = edges.map((x) => `${x.id}:${x.source}>${x.target}`).join('|');
+    return n + '#' + e;
+  }, [nodes, edges]);
+
   useEffect(() => {
     if (canvasLoading) return;
     (window as any).saveCanvasV2Now?.();
-  }, [nodes, edges, canvasLoading]);
+  }, [contentFingerprint, canvasLoading]);
 
   // 通用新建:uid() 唯一 ID(不撞历史卡) + placeRef 错位摆放
   const addCard = useCallback((make: (i: string, x: number, y: number) => CardNode) => {

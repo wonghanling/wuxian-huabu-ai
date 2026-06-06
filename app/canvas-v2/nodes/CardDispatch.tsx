@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { type NodeProps } from '@xyflow/react';
 import { type CardNode } from '../store';
 import { TextNode } from './TextNode';
@@ -37,4 +38,7 @@ function CardDispatchComponent(props: NodeProps<CardNode>) {
   return <TextNode {...props} />;
 }
 
-export const CardDispatch = CardDispatchComponent;
+// memo:React Flow 把所有节点放一个数组渲染,不 memo 的话任何一个节点变化
+// (甚至打一个字触发 onNodesChange)都会让所有卡片重渲染→打断正在输入的 IME。
+// memo 后卡片只在自己的 props(data/selected等)变化时重渲染。
+export const CardDispatch = memo(CardDispatchComponent);
