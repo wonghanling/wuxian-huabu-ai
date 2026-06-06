@@ -359,8 +359,8 @@ function CanvasV2Inner() {
       >
         <Background variant={BackgroundVariant.Dots} gap={28} size={1} color="#27272a" />
 
-        <Panel position="top-left">
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }} onMouseLeave={() => setToolGroup(null)}>
+        <Panel position="top-left" style={{ top: '50%', transform: 'translateY(-50%)', margin: 0, left: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }} onMouseLeave={() => setToolGroup(null)}>
             {/* 工具栏主体(可折叠) */}
             {toolExpanded && (
               <div style={toolbarV}>

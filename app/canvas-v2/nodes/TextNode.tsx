@@ -38,7 +38,6 @@ function TextNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [sub, setSub] = useState<'duration' | 'ref' | null>(null);
   const [uploading, setUploading] = useState(false);   // 上传中指示(照原网)
   const editRef = useRef<HTMLTextAreaElement>(null);
-  const composingRef = useRef(false);   // 中文输入法组合中(组合期不提交,防打断拼音)
 
   const currentModel = TEXT_MODELS.find((m) => m.id === data.config.model) ?? TEXT_MODELS[0];
   // 模式:普通文本 / 提示词优化(用 preset 字段存)
@@ -215,9 +214,7 @@ function TextNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               ref={editRef}
               className="nodrag nopan nowheel cv2-scroll"
               value={data.text ?? ''}
-              onCompositionStart={() => { composingRef.current = true; }}
-              onCompositionEnd={(e) => { composingRef.current = false; updateCard(id, { text: (e.target as HTMLTextAreaElement).value }); }}
-              onChange={(e) => { if (composingRef.current) return; updateCard(id, { text: e.target.value }); }}
+              onChange={(e) => updateCard(id, { text: e.target.value })}
               onBlur={() => {
                 setEditing(false);
                 // 有文字则标记为已有内容(底部 prompt 不再出现);清空则回到空态
@@ -243,9 +240,7 @@ function TextNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           <textarea
             className="nodrag nopan nowheel cv2-scroll"
             value={data.config.prompt}
-            onCompositionStart={() => { composingRef.current = true; }}
-            onCompositionEnd={(e) => { composingRef.current = false; updateConfig(id, { prompt: (e.target as HTMLTextAreaElement).value }); }}
-            onChange={(e) => { if (composingRef.current) return; updateConfig(id, { prompt: e.target.value }); }}
+            onChange={(e) => updateConfig(id, { prompt: e.target.value })}
             onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleGenerate(); }}
             placeholder={optimizeMode ? '简单描述你的想法,AI 帮你优化成专业提示词…' : '描述你想要的文本内容…'}
             rows={2}

@@ -1,13 +1,12 @@
 'use client';
 
-import { useRef, type CSSProperties } from 'react';
+import { type CSSProperties } from 'react';
 
 // ============================================================
-// PromptArea — 连接文案 + 用户输入的可编辑文本框
-// 说明:HTML textarea 无法"部分文字紫色"且同时兼容中文输入法
-// (透明叠层方案会让 IME 组合中的拼音不可见)。
-// 故采用原网做法:文字正常可见 + 下方紫色"·来自连接卡片"标注。
-// 中文输入法安全:组合中不提交,组合结束才提交。
+// PromptArea — 用户输入的可编辑文本框(朴素受控)
+// 中文输入正常:直接 onChange,不做 composition 门控。
+// 连接文案不再拼进输入框,只在下方显示一行灰色提示;
+// 生成时拼入上游文案的逻辑在各卡片 handleGenerate 里。
 // ============================================================
 
 interface Props {
@@ -21,34 +20,18 @@ interface Props {
 }
 
 export function PromptArea({ connectedText, value, onChange, onGenerate, placeholder, style }: Props) {
-  const composingRef = useRef(false);
-
-  const prefix = connectedText ? connectedText : '';
-  // textarea 显示全文 = 连接前缀 + 用户输入
-  const fullValue = prefix ? `${prefix}${value ? '\n' + value : ''}` : value;
-
-  const commit = (full: string) => {
-    const pre = prefix ? prefix + '\n' : '';
-    const userInput = pre && full.startsWith(pre)
-      ? full.slice(pre.length)
-      : (prefix && full.startsWith(prefix) ? full.slice(prefix.length) : full);
-    onChange(userInput);
-  };
-
   return (
     <>
       <textarea
         className="nodrag nopan nowheel cv2-scroll"
-        value={fullValue}
+        value={value}
         placeholder={placeholder}
-        onCompositionStart={() => { composingRef.current = true; }}
-        onCompositionEnd={(e) => { composingRef.current = false; commit((e.target as HTMLTextAreaElement).value); }}
-        onChange={(e) => { if (composingRef.current) return; commit(e.target.value); }}
+        onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) onGenerate?.(); }}
         style={style}
       />
-      {prefix && (
-        <div style={{ fontSize: 10, color: '#a78bfa', marginTop: 2, marginBottom: 4 }}>· 开头文案来自连接卡片(将自动拼入生成)</div>
+      {connectedText && (
+        <div style={{ fontSize: 10, color: '#71717a', marginTop: 2, marginBottom: 4 }}>已连接上游文案,生成时自动拼入</div>
       )}
     </>
   );

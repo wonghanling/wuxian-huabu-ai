@@ -32,7 +32,6 @@ function AudioNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [sub, setSub] = useState<'voice' | 'params' | null>(null);
   const [uploadedFileId, setUploadedFileId] = useState('');
   const [uploadingFile, setUploadingFile] = useState(false);
-  const composingRef = useRef(false);   // 中文输入法组合中(防打断拼音)
 
   const cfg = data.config as any;
   const mode = (cfg.audioMode as AudioMode) ?? 'synthesize';
@@ -206,7 +205,7 @@ function AudioNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
           {mode === 'synthesize' && (
             <>
-              <textarea className="nodrag nopan nowheel cv2-scroll" value={text} onChange={(e) => { if (composingRef.current) return; set({ text: e.target.value }); }} onCompositionStart={() => { composingRef.current = true; }} onCompositionEnd={(e) => { composingRef.current = false; set({ text: (e.target as HTMLTextAreaElement).value }); }}
+              <textarea className="nodrag nopan nowheel cv2-scroll" value={text} onChange={(e) => set({ text: e.target.value })}
                 placeholder="输入要合成的文本…" rows={3} style={textareaStyle} />
               <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
                 <NumIn label="语速" value={speed} step={0.1} min={0.5} max={2} onChange={(v) => set({ speed: v })} />
@@ -217,7 +216,7 @@ function AudioNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           )}
           {mode === 'design' && (
             <>
-              <textarea className="nodrag nopan nowheel cv2-scroll" value={designPrompt} onChange={(e) => { if (composingRef.current) return; set({ designPrompt: e.target.value }); }} onCompositionStart={() => { composingRef.current = true; }} onCompositionEnd={(e) => { composingRef.current = false; set({ designPrompt: (e.target as HTMLTextAreaElement).value }); }}
+              <textarea className="nodrag nopan nowheel cv2-scroll" value={designPrompt} onChange={(e) => set({ designPrompt: e.target.value })}
                 placeholder="描述想要的音色(如:温柔的女声、低沉磁性的男声)…" rows={2} style={textareaStyle} />
               <input value={previewText} onChange={(e) => set({ previewText: e.target.value })} placeholder="试听文本(可选)" style={inputStyle} />
             </>
@@ -228,7 +227,7 @@ function AudioNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                 <IconUpload size={13} /> <span>{uploadingFile ? '上传中…' : (uploadedFileId ? '已上传,可更换' : '上传音频样本(≥10秒)')}</span>
                 <input type="file" accept="audio/*" disabled={uploadingFile} style={{ display: 'none' }} onChange={(e) => { uploadCloneFile(e.target.files); e.currentTarget.value = ''; }} />
               </label>
-              <textarea className="nodrag nopan nowheel cv2-scroll" value={cloneText} onChange={(e) => { if (composingRef.current) return; set({ cloneText: e.target.value }); }} onCompositionStart={() => { composingRef.current = true; }} onCompositionEnd={(e) => { composingRef.current = false; set({ cloneText: (e.target as HTMLTextAreaElement).value }); }}
+              <textarea className="nodrag nopan nowheel cv2-scroll" value={cloneText} onChange={(e) => set({ cloneText: e.target.value })}
                 placeholder="复刻后试听文本(可选)…" rows={2} style={textareaStyle} />
             </>
           )}
