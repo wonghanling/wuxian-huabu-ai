@@ -292,11 +292,19 @@ function CanvasV2Inner() {
     (window as any).saveCanvasV2Now?.();
   }, [contentFingerprint, canvasLoading]);
 
-  // 通用新建:uid() 唯一 ID(不撞历史卡) + placeRef 错位摆放
+  // 通用新建:uid() 唯一 ID + 落在当前视野中心(用户不用拖画布去找)
   const addCard = useCallback((make: (i: string, x: number, y: number) => CardNode) => {
     const c = placeRef.current++;
-    const n = make(uid(), 80 + (c % 4) * 380, 120 + Math.floor(c / 4) * 360);
-    useCanvasStore.setState((s) => ({ nodes: [...s.nodes, n] }));
+    const inst = rfRef.current;
+    let x = 80 + (c % 4) * 380, y = 120 + Math.floor(c / 4) * 360;
+    if (inst) {
+      // 屏幕中心换算成画布坐标,多张时小幅错位避免完全重叠
+      const center = inst.screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
+      x = center.x - 160 + (c % 3) * 30;
+      y = center.y - 120 + (c % 3) * 30;
+    }
+    const n = make(uid(), x, y);
+    useCanvasStore.setState((s) => ({ nodes: [...s.nodes, n], selectedId: n.id }));
   }, []);
 
   const addImageCard = useCallback(() => addCard(makeImageNode), [addCard]);
