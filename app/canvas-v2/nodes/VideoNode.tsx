@@ -10,6 +10,7 @@ import { SpawnMenu } from './SpawnMenu';
 import { HoverZoomImg } from './RefThumb';
 import { PromptTools } from './PromptTools';
 import { PromptArea } from './PromptArea';
+import { Lightbox, downloadFile } from './Lightbox';
 import { uploadImageToStorage, uploadFileToStorage, generateVideo, mirrorOutput, getUserId } from '../lib/api';
 import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 
@@ -39,6 +40,7 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [spawnOpen, setSpawnOpen] = useState(false);
   const [sub, setSub] = useState<SubPanel>(null);
   const [uploading, setUploading] = useState(false);   // 上传中指示(照原网)
+  const [lightbox, setLightbox] = useState(false);      // 画布内查看放大
   const editRef = useRef<HTMLTextAreaElement>(null);
 
   const model = VIDEO_MODELS.find((m) => m.id === data.config.model) ?? VIDEO_MODELS[0];
@@ -71,6 +73,53 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     try {
       const url = await uploadImageToStorage(f);
       if (url) updateConfig(id, { [which]: url } as any);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // 捕捉画面帧:抓视频当前帧 → 上传 Supabase 拿持久 URL → 新建图片卡显示(URL,非base64)
+  const captureFrame = async () => {
+    if (!data.outputUrl) return;
+    setUploading(true);
+    try {
+      const v = document.createElement('video');
+      v.crossOrigin = 'anonymous';
+      v.src = data.outputUrl;
+      v.muted = true;
+      await new Promise<void>((resolve, reject) => {
+        v.onloadeddata = () => { v.currentTime = Math.min(0.1, (v.duration || 0.2) / 2); };
+        v.onseeked = () => resolve();
+        v.onerror = () => reject(new Error('视频加载失败'));
+      });
+      const canvas = document.createElement('canvas');
+      canvas.width = v.videoWidth;
+      canvas.height = v.videoHeight;
+      canvas.getContext('2d')!.drawImage(v, 0, 0);
+      const blob = await new Promise<Blob | null>((res) => canvas.toBlob((b) => res(b), 'image/jpeg', 0.92));
+      if (!blob) throw new Error('生成帧失败');
+      const file = new File([blob], `frame-${Date.now()}.jpg`, { type: 'image/jpeg' });
+      // 上传拿持久 URL(全站 URL 化契约)
+      const url = await uploadImageToStorage(file);
+      if (!url) throw new Error('上传帧失败');
+      // 新建图片卡显示该帧,放在本卡右侧并自动连线
+      const newId = `i${Date.now()}`;
+      const newNode: CardNode = {
+        id: newId, type: 'card',
+        position: { x: 0, y: 0 },
+        data: { kind: 'image', status: 'done', outputUrl: url, aspectW: v.videoWidth, aspectH: v.videoHeight,
+          config: { model: 'nano-banana-pro', prompt: '', ratio: '1:1' } } as any,
+      };
+      const cur = useCanvasStore.getState().nodes.find((n) => n.id === id);
+      if (cur) { newNode.position = { x: cur.position.x + 440, y: cur.position.y }; }
+      useCanvasStore.setState((s) => ({
+        nodes: [...s.nodes, newNode],
+        edges: [...s.edges, { id: `e${id}-${newId}`, source: id, target: newId, type: 'deletable', animated: true }],
+        selectedId: newId,
+      }));
+      (window as any).saveCanvasV2Now?.();
+    } catch (err: any) {
+      alert('捕捉画面帧失败: ' + (err?.message || err) + '\n(可能是视频跨域限制)');
     } finally {
       setUploading(false);
     }
@@ -296,30 +345,39 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
       </NodeToolbar>
 
       {/* ===== 顶部工具栏(上传视频 + 剪辑 + 放大) ===== */}
-      <NodeToolbar isVisible={selected && !editing && !spawnOpen && !sub} position={Position.Top} offset={12}>
+      <NodeToolbar isVisible={selected && !editing && !spawnOpen && (!sub || hasVideo)} position={Position.Top} offset={12}>
         <div style={toolRow} onClick={(e) => e.stopPropagation()}>
-          {/* 上传视频 */}
-          <label style={toolBtnWide} title="上传视频">
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <IconUpload size={16} /> 上传
-            </span>
-            <input type="file" accept="video/*" style={{ display: 'none' }} onChange={(e) => uploadVideo(e.target.files)} />
-          </label>
-          {/* 剪辑(后期接入剪辑功能) */}
-          <button onClick={() => alert('剪辑功能开发中')} style={toolBtnWide} title="剪辑(开发中)">
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <IconScissors size={16} /> 剪辑
-            </span>
-          </button>
-          {/* 放大 */}
-          <button onClick={() => updateCard(id, { enlarged: !enlarged })} style={toolBtnWide} title={enlarged ? '还原' : '放大卡片'}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {enlarged ? <IconShrink size={16} /> : <IconExpand size={16} />}
-              {enlarged ? '还原' : '放大'}
-            </span>
-          </button>
+          {hasVideo ? (
+            <>
+              {/* 有成品视频:查看/下载/捕捉帧/删除(照源网) */}
+              <button onClick={() => setLightbox(true)} style={toolBtnWide} title="查看(放大)">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><IconExpand size={16} /> 查看</span>
+              </button>
+              <button onClick={() => downloadFile(data.outputUrl!, `video-${id}.mp4`)} style={toolBtnWide} title="下载">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>↓ 下载</span>
+              </button>
+              <button onClick={captureFrame} style={toolBtnWide} title="捕捉画面帧">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><IconScissors size={16} /> 捕捉帧</span>
+              </button>
+              <button onClick={() => updateCard(id, { status: 'empty', outputUrl: null })} style={toolBtnWide} title="删除视频">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>× 删除</span>
+              </button>
+            </>
+          ) : (
+            <>
+              {/* 无成品视频:上传 + 放大卡片 */}
+              <label style={toolBtnWide} title="上传视频">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><IconUpload size={16} /> 上传</span>
+                <input type="file" accept="video/*" style={{ display: 'none' }} onChange={(e) => uploadVideo(e.target.files)} />
+              </label>
+              <button onClick={() => updateCard(id, { enlarged: !enlarged })} style={toolBtnWide} title={enlarged ? '还原' : '放大卡片'}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>{enlarged ? <IconShrink size={16} /> : <IconExpand size={16} />}{enlarged ? '还原' : '放大'}</span>
+              </button>
+            </>
+          )}
         </div>
       </NodeToolbar>
+      {lightbox && hasVideo && <Lightbox url={data.outputUrl!} kind="video" onClose={() => setLightbox(false)} />}
     </>
   );
 

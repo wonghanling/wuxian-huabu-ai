@@ -239,7 +239,7 @@ function CharacterNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           {/* 底行:价格 + Generate */}
           <div style={{ display: 'flex', alignItems: 'center', padding: '4px 8px 8px' }}>
             <span style={{ fontSize: 12, color: '#71717a' }}>{model.price}</span>
-            <button onClick={handleGenerate} disabled={!refImage} style={{ ...generateBtn, opacity: refImage ? 1 : 0.4 }}>
+            <button onClick={handleGenerate} disabled={!effRefDisplay} style={{ ...generateBtn, opacity: effRefDisplay ? 1 : 0.4 }}>
               Generate
             </button>
           </div>

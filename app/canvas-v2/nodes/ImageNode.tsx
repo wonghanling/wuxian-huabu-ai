@@ -13,6 +13,7 @@ import { SpawnMenu } from './SpawnMenu';
 import { RefThumb } from './RefThumb';
 import { PromptTools } from './PromptTools';
 import { PromptArea } from './PromptArea';
+import { Lightbox, downloadFile } from './Lightbox';
 import { uploadImageToStorage, generateImage, getUserId, softCompressImage, mirrorOutput } from '../lib/api';
 import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 
@@ -43,6 +44,7 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [spawnOpen, setSpawnOpen] = useState(false);
   const [sub, setSub] = useState<SubPanel>(null);
   const [uploading, setUploading] = useState(false);   // 上传中指示(照原网 setIsUploadingMulti)
+  const [lightbox, setLightbox] = useState(false);      // 画布内查看放大
   const editRef = useRef<HTMLTextAreaElement>(null);
 
   const model = IMAGE_MODELS.find((m) => m.id === data.config.model) ?? IMAGE_MODELS[0];
@@ -70,7 +72,8 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     if (!files.length) return;
     const max = refImageMax(model.id);
     const cur = data.config.refImages ?? [];
-    const room = Math.max(0, max - cur.length);
+    // 连接图也占名额:剩余 = 上限 - 连接数 - 已上传数
+    const room = Math.max(0, max - connectedImages.length - cur.length);
     const toUpload = files.slice(0, room);
     if (!toUpload.length) return;
     // 上传中指示(照原网 setIsUploadingMulti true...finally false)
@@ -265,10 +268,10 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               </div>
             </ParamTag>
             {model.supportsImage && (
-              <ParamTag label={<>参考图 {(data.config.refImages?.length ?? 0)}/{refImageMax(model.id)}{connectedImages.length > 0 && <span style={{ marginLeft: 4, color: '#a78bfa' }}>+{connectedImages.length}连</span>}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</>} open={sub === 'ref'} onToggle={() => setSub(sub === 'ref' ? null : 'ref')} width={300}>
+              <ParamTag label={<>参考图 {connectedImages.length + (data.config.refImages?.length ?? 0)}/{refImageMax(model.id)}{connectedImages.length > 0 && <span style={{ marginLeft: 4, color: '#a78bfa' }}>(含{connectedImages.length}连接)</span>}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</>} open={sub === 'ref'} onToggle={() => setSub(sub === 'ref' ? null : 'ref')} width={300}>
                 <label style={{ ...uploadBtn, ...(uploading ? { opacity: 0.6, pointerEvents: 'none' } : {}) }}>
                   <IconPlus size={13} />
-                  <span>{uploading ? '上传中…' : `上传图片（还能传 ${Math.max(0, refImageMax(model.id) - (data.config.refImages?.length ?? 0))} 张）`}</span>
+                  <span>{uploading ? '上传中…' : `上传图片（还能传 ${Math.max(0, refImageMax(model.id) - connectedImages.length - (data.config.refImages?.length ?? 0))} 张）`}</span>
                   <input type="file" accept="image/*" multiple disabled={uploading} style={{ display: 'none' }} onChange={(e) => handleUpload(e.target.files)} />
                 </label>
                 {(data.config.refImages?.length ?? 0) > 0 && (
@@ -317,26 +320,39 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
         </div>
       </NodeToolbar>
       {/* ===== 顶部工具栏(上传 + 放大) ===== */}
-      <NodeToolbar isVisible={selected && !editing && !spawnOpen && !sub} position={Position.Top} offset={12}>
+      <NodeToolbar isVisible={selected && !editing && !spawnOpen && (!sub || !!displayImg)} position={Position.Top} offset={12}>
         <div style={toolRow} onClick={(e) => e.stopPropagation()}>
-          {/* 顶部上传:成品图,直接显示在卡片框(所有图片卡都可用) */}
-          <label style={toolBtnWide} title="上传图片(作为成品显示)">
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <IconImage size={16} /> 上传
-            </span>
-            <input
-              type="file" accept="image/*" style={{ display: 'none' }}
-              onChange={(e) => uploadResult(e.target.files)}
-            />
-          </label>
-          <button onClick={() => updateCard(id, { enlarged: !enlarged })} style={toolBtnWide} title={enlarged ? '还原' : '放大卡片'}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {enlarged ? <IconShrink size={16} /> : <IconExpand size={16} />}
-              {enlarged ? '还原' : '放大'}
-            </span>
-          </button>
+          {displayImg ? (
+            <>
+              {/* 有成品图:查看/下载/删除(照源网) */}
+              <button onClick={() => setLightbox(true)} style={toolBtnWide} title="查看(放大)">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><IconExpand size={16} /> 查看</span>
+              </button>
+              <button onClick={() => downloadFile(displayImg, `image-${id}.jpg`)} style={toolBtnWide} title="下载">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>↓ 下载</span>
+              </button>
+              <button onClick={() => updateCard(id, { status: 'empty', outputUrl: null })} style={toolBtnWide} title="删除图片">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>× 删除</span>
+              </button>
+              <button onClick={() => updateCard(id, { enlarged: !enlarged })} style={toolBtnWide} title={enlarged ? '还原' : '放大卡片'}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>{enlarged ? <IconShrink size={16} /> : <IconExpand size={16} />}{enlarged ? '还原' : '放大'}</span>
+              </button>
+            </>
+          ) : (
+            <>
+              {/* 无成品图:上传 + 放大卡片 */}
+              <label style={toolBtnWide} title="上传图片(作为成品显示)">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><IconImage size={16} /> 上传</span>
+                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => uploadResult(e.target.files)} />
+              </label>
+              <button onClick={() => updateCard(id, { enlarged: !enlarged })} style={toolBtnWide} title={enlarged ? '还原' : '放大卡片'}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>{enlarged ? <IconShrink size={16} /> : <IconExpand size={16} />}{enlarged ? '还原' : '放大'}</span>
+              </button>
+            </>
+          )}
         </div>
       </NodeToolbar>
+      {lightbox && displayImg && <Lightbox url={displayImg} kind="image" onClose={() => setLightbox(false)} />}
     </>
   );
 
