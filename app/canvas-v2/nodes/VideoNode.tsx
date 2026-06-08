@@ -246,6 +246,7 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
             <video
               ref={videoEl}
               src={data.outputUrl!}
+              crossOrigin="anonymous"
               style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', background: '#000' }}
               muted loop playsInline preload="metadata"
               controls={selected}
