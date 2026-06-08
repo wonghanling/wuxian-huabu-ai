@@ -8,6 +8,7 @@ import { IconExpand, IconShrink, IconMinus, IconPlus } from './icons';
 import { SpawnMenu } from './SpawnMenu';
 import { HoverZoomImg } from './RefThumb';
 import { PromptTools } from './PromptTools';
+import { Lightbox, downloadFile } from './Lightbox';
 import { uploadImageToStorage, generateGemStoryboardImage, mirrorOutput, getUserId } from '../lib/api';
 import { useDebouncedField } from '../lib/useDebouncedField';
 import { useUpstream } from '../lib/connections';
@@ -48,6 +49,7 @@ function GemStep4NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [spawnOpen, setSpawnOpen] = useState(false);
   const [modeTooltip, setModeTooltip] = useState<InputType | null>(null);
   const [uploading, setUploading] = useState(false);   // 上传中指示(照原网)
+  const [lightbox, setLightbox] = useState(false);      // 画布内查看放大
   const promptField = useDebouncedField(data.config.prompt ?? '', (v) => updateConfig(id, { prompt: v }));
 
   // 输入模式:存在 textDuration 字段里(复用)
@@ -343,9 +345,23 @@ function GemStep4NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
         </div>
       </NodeToolbar>
       {/* 顶部工具栏 */}
-      <NodeToolbar isVisible={selected && !spawnOpen && !sub} position={Position.Top} offset={12}>
+      <NodeToolbar isVisible={selected && !spawnOpen && !lightbox && (!sub || hasOutput)} position={Position.Top} offset={12}>
         <div style={toolRow} onClick={(e) => e.stopPropagation()}>
-          <button onClick={() => updateCard(id, { enlarged: !enlarged })} style={toolBtnWide}>
+          {hasOutput && (
+            <>
+              {/* 有成品分镜图:查看/下载/删除(照源网) */}
+              <button onClick={() => setLightbox(true)} style={toolBtnWide} title="查看(放大)">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><IconExpand size={16} /> 查看</span>
+              </button>
+              <button onClick={() => downloadFile(data.outputUrl!, `storyboard-${id}.jpg`)} style={toolBtnWide} title="下载">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>↓ 下载</span>
+              </button>
+              <button onClick={() => updateCard(id, { status: 'empty', outputUrl: null })} style={toolBtnWide} title="删除分镜图">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>× 删除</span>
+              </button>
+            </>
+          )}
+          <button onClick={() => updateCard(id, { enlarged: !enlarged })} style={toolBtnWide} title={enlarged ? '还原' : '放大卡片'}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               {enlarged ? <IconShrink size={16} /> : <IconExpand size={16} />}
               {enlarged ? '还原' : '放大'}
@@ -353,6 +369,7 @@ function GemStep4NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           </button>
         </div>
       </NodeToolbar>
+      {lightbox && hasOutput && <Lightbox url={data.outputUrl!} kind="image" onClose={() => setLightbox(false)} />}
     </>
   );
 
