@@ -278,14 +278,15 @@ function CanvasV2Inner() {
   }, [canvasLoading]);
 
   // 节点/连线变化 → 触发节流保存
-  // 内容指纹只算"真正要持久化的内容",排除瞬态字段(progress 生成进度每0.6秒跳、
-  // status/collapsed/enlarged 等),否则生成时进度条狂跳→指纹一直变→疯狂保存(高频写库)。
+  // 指纹只算"内容"(kind/输出/文本/配置),不含 position 和 progress/status 等瞬态:
+  //  - progress 进度条跳动 → 不该触发保存
+  //  - position 拖动连续变 → 拖动过程不存,改由 onNodeDragStop 拖完存一次
+  // 这样打字(防抖存)、拖动(拖完存)都能持久化,但不会疯狂高频写库。
   const contentFingerprint = useMemo(() => {
     const n = nodes.map((x) => {
       const d: any = x.data || {};
-      // 只取持久化内容字段,忽略 progress/status/collapsed/enlarged 等运行时状态
       const persist = { kind: d.kind, outputUrl: d.outputUrl, text: d.text, config: d.config, aspectW: d.aspectW, aspectH: d.aspectH };
-      return `${x.id}:${Math.round(x.position.x)},${Math.round(x.position.y)}:${JSON.stringify(persist)}`;
+      return `${x.id}:${JSON.stringify(persist)}`;
     }).join('|');
     const e = edges.map((x) => `${x.id}:${x.source}>${x.target}`).join('|');
     return n + '#' + e;
@@ -295,6 +296,12 @@ function CanvasV2Inner() {
     if (canvasLoading) return;
     (window as any).saveCanvasV2Now?.();
   }, [contentFingerprint, canvasLoading]);
+
+  // 拖动卡片:过程中不存,拖完才存一次(保住新位置,又不疯狂写库)
+  const onNodeDragStop = useCallback(() => {
+    if (canvasLoading) return;
+    (window as any).saveCanvasV2Now?.();
+  }, [canvasLoading]);
 
   // 通用新建:uid() 唯一 ID + 落在当前视野中心(用户不用拖画布去找)
   const addCard = useCallback((make: (i: string, x: number, y: number) => CardNode) => {
@@ -351,6 +358,7 @@ function CanvasV2Inner() {
         nodeTypes={nodeTypes}
         onInit={(inst) => { rfRef.current = inst; }}
         onNodesChange={onNodesChange}
+        onNodeDragStop={onNodeDragStop}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onNodeClick={onNodeClick}

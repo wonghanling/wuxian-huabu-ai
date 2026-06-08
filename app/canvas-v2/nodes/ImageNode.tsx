@@ -110,11 +110,11 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   };
 
   const handleGenerate = async () => {
-    // 连线传参:上游文案→prompt 前缀,上游图→参考图
+    // 连线传参 + prompt 三段拼接:预设 → 连接文案 → 用户输入
     const upstream = getUpstreamOutputs(id);
-    const effPrompt = upstream.texts.length > 0
-      ? `${upstream.texts.join('\n')}\n${data.config.prompt}`.trim()
-      : data.config.prompt;
+    const presetPrompt = (data.config as any).presetPrompt || '';
+    const connectedPrompt = upstream.texts.length > 0 ? upstream.texts.join('\n') : '';
+    const effPrompt = [presetPrompt, connectedPrompt, data.config.prompt].filter(Boolean).join('\n').trim();
     if (!effPrompt.trim() && upstream.images.length === 0) return;
     updateCard(id, { status: 'generating', progress: 15 });
     // 进度条动画(真实任务无确切进度,用渐进动画到 90% 等结果)
@@ -140,6 +140,23 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
         }
       }
 
+      // flux-kontext / 豆包:后端只认 imageBase64(单张),把第一张参考图转 base64
+      // (照原网"两次转换":存储用 URL 瘦身,生成时 URL→fetch→base64→压缩 传给模型)
+      let singleBase64: string | undefined;
+      const needBase64Single = (model.id === 'flux-kontext' || model.id === 'doubao-seedream-4-5-251128');
+      if (needBase64Single && refs.length > 0) {
+        const first = refs[0];
+        if (first.startsWith('data:')) {
+          singleBase64 = await softCompressImage(first);
+        } else {
+          try {
+            const blob = await fetch(first).then((r) => r.blob());
+            const dataUrl = await new Promise<string>((res) => { const fr = new FileReader(); fr.onload = () => res(fr.result as string); fr.readAsDataURL(blob); });
+            singleBase64 = await softCompressImage(dataUrl);
+          } catch { /* 转换失败则不传,后端会提示需要图片 */ }
+        }
+      }
+
       const imageUrl = await generateImage({
         model: model.id,
         prompt: effPrompt,
@@ -147,6 +164,7 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
         imageQuality: data.config.imageQuality ?? (model.useSizeNotRatio ? 'medium' : '2k'),
         imageUrlArray: imageUrlArray.length > 0 ? imageUrlArray : undefined,
         imageBase64Array: imageBase64Array.length > 0 ? imageBase64Array : undefined,
+        imageBase64: singleBase64,
         userId,
       });
 
@@ -246,26 +264,29 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               ))}
             </ParamTag>
             <ParamTag label={<>预设{data.config.preset ? ` · ${data.config.preset}` : ''}</>} open={sub === 'preset'} onToggle={() => setSub(sub === 'preset' ? null : 'preset')} width={300}>
-              <div style={subHint}>风格(点击在 prompt 前缀填充)</div>
+              <div style={subHint}>风格(生成时自动加在最前,不占用你的输入)</div>
               <div style={presetGrid}>
                 {STYLE_PRESETS.map((p) => (
                   <button key={p.label}
-                    onClick={() => { updateConfig(id, { prompt: applyStylePrefix(data.config.prompt, p.prompt), preset: p.label }); setSub(null); }}
+                    onClick={() => { updateConfig(id, { presetPrompt: p.prompt, preset: p.label } as any); setSub(null); }}
                     style={{ ...presetChip, ...(data.config.preset === p.label ? { background: 'rgba(192,192,192,0.22)', color: '#fff', borderColor: 'rgba(192,192,192,0.45)' } : {}) }}>
                     {p.label}
                   </button>
                 ))}
               </div>
-              <div style={{ ...subHint, marginTop: 8 }}>其他预设(覆盖 prompt)</div>
+              <div style={{ ...subHint, marginTop: 8 }}>其他预设</div>
               <div style={presetGrid}>
                 {OTHER_PRESETS.map((p) => (
                   <button key={p.label}
-                    onClick={() => { updateConfig(id, { prompt: p.prompt, preset: p.label }); setSub(null); }}
+                    onClick={() => { updateConfig(id, { presetPrompt: p.prompt, preset: p.label } as any); setSub(null); }}
                     style={{ ...presetChip, borderColor: p.accent === 'purple' ? 'rgba(168,85,247,0.5)' : 'rgba(59,130,246,0.5)', color: p.accent === 'purple' ? '#c4b5fd' : '#93c5fd' }}>
                     {p.label}
                   </button>
                 ))}
               </div>
+              {data.config.preset && (
+                <button onClick={() => updateConfig(id, { presetPrompt: '', preset: '' } as any)} style={{ marginTop: 8, fontSize: 11, color: '#71717a', background: 'none', border: 'none', cursor: 'pointer' }}>清除预设</button>
+              )}
             </ParamTag>
             {model.supportsImage && (
               <ParamTag label={<>参考图 {connectedImages.length + (data.config.refImages?.length ?? 0)}/{refImageMax(model.id)}{connectedImages.length > 0 && <span style={{ marginLeft: 4, color: '#a78bfa' }}>(含{connectedImages.length}连接)</span>}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</>} open={sub === 'ref'} onToggle={() => setSub(sub === 'ref' ? null : 'ref')} width={300}>
@@ -320,7 +341,7 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
         </div>
       </NodeToolbar>
       {/* ===== 顶部工具栏(上传 + 放大) ===== */}
-      <NodeToolbar isVisible={selected && !editing && !spawnOpen && (!sub || !!displayImg)} position={Position.Top} offset={12}>
+      <NodeToolbar isVisible={selected && !editing && !spawnOpen && !lightbox && (!sub || !!displayImg)} position={Position.Top} offset={12}>
         <div style={toolRow} onClick={(e) => e.stopPropagation()}>
           {displayImg ? (
             <>

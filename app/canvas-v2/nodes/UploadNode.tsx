@@ -104,12 +104,7 @@ function UploadNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
         <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {hasMedia ? (
-            mediaType === 'video' ? (
-              <video src={data.outputUrl!} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted loop
-                onMouseEnter={(e) => (e.currentTarget as HTMLVideoElement).play()} onMouseLeave={(e) => (e.currentTarget as HTMLVideoElement).pause()} />
-            ) : (
-              <img src={data.outputUrl!} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-            )
+            <UploadMedia url={data.outputUrl!} isVideo={mediaType === 'video'} />
           ) : (
             <label style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: uploading ? 'default' : 'pointer', color: '#71717a', gap: 8 }}>
               <IconUpload size={28} />
@@ -178,3 +173,16 @@ function portCircle(color: string): React.CSSProperties {
 }
 
 export const UploadNode = memo(UploadNodeComponent);
+
+// 媒体展示子组件:按 url+isVideo memo,父组件(选中/拖动等)重渲染时不重新挂载 → 不闪烁
+const UploadMedia = memo(function UploadMedia({ url, isVideo }: { url: string; isVideo: boolean }) {
+  if (isVideo) {
+    return (
+      <video src={url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted loop playsInline preload="metadata"
+        onMouseEnter={(e) => (e.currentTarget as HTMLVideoElement).play().catch(() => {})}
+        onMouseLeave={(e) => { const v = e.currentTarget as HTMLVideoElement; v.pause(); v.currentTime = 0; }} />
+    );
+  }
+  return <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />;
+});
+

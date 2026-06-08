@@ -10,6 +10,7 @@ import { PromptTools } from './PromptTools';
 import { generateImage, mirrorOutput, getUserId, softCompressImage } from '../lib/api';
 import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 import { useDebouncedField } from '../lib/useDebouncedField';
+import { Lightbox, downloadFile } from './Lightbox';
 
 // ============================================================
 // 时空镜头延展卡片
@@ -159,6 +160,7 @@ function ExtendNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
   const [sub, setSub] = useState<SubPanel>(null);
   const [spawnOpen, setSpawnOpen] = useState(false);
+  const [lightbox, setLightbox] = useState(false);
   const promptField = useDebouncedField(data.config.prompt ?? '', (v) => updateConfig(id, { prompt: v }));
 
   const modelId = data.config.model || 'nano-banana-pro';
@@ -402,8 +404,21 @@ function ExtendNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
       </NodeToolbar>
 
       {/* 顶部工具栏 */}
-      <NodeToolbar isVisible={selected && !spawnOpen && !sub} position={Position.Top} offset={12}>
+      <NodeToolbar isVisible={selected && !spawnOpen && !sub && !lightbox} position={Position.Top} offset={12}>
         <div style={toolRow} onClick={(e) => e.stopPropagation()}>
+          {hasOutput && (
+            <>
+              <button onClick={() => setLightbox(true)} style={toolBtnWide} title="查看(放大)">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><IconExpand size={16} /> 查看</span>
+              </button>
+              <button onClick={() => downloadFile(data.outputUrl!, `extend-${id}.jpg`)} style={toolBtnWide} title="下载">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>↓ 下载</span>
+              </button>
+              <button onClick={() => updateCard(id, { status: 'empty', outputUrl: null })} style={toolBtnWide} title="删除图片">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>× 删除</span>
+              </button>
+            </>
+          )}
           <button onClick={() => updateCard(id, { enlarged: !enlarged })} style={toolBtnWide}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               {enlarged ? <IconShrink size={16} /> : <IconExpand size={16} />}
@@ -412,6 +427,7 @@ function ExtendNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           </button>
         </div>
       </NodeToolbar>
+      {lightbox && hasOutput && <Lightbox url={data.outputUrl!} kind="image" onClose={() => setLightbox(false)} />}
     </>
   );
 

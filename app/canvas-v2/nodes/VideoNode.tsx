@@ -348,7 +348,7 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
       </NodeToolbar>
 
       {/* ===== 顶部工具栏(上传视频 + 剪辑 + 放大) ===== */}
-      <NodeToolbar isVisible={selected && !editing && !spawnOpen && (!sub || hasVideo)} position={Position.Top} offset={12}>
+      <NodeToolbar isVisible={selected && !editing && !spawnOpen && !lightbox && (!sub || hasVideo)} position={Position.Top} offset={12}>
         <div style={toolRow} onClick={(e) => e.stopPropagation()}>
           {hasVideo ? (
             <>
