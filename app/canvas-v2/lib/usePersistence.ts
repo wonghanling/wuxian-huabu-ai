@@ -39,6 +39,43 @@ export function useCanvasPersistence() {
           return;
         }
 
+        // 带 templateId:从模板创建新画布并加载(照旧版数据流,快照换成 React Flow 格式)
+        const templateId = new URLSearchParams(window.location.search).get('templateId');
+        if (templateId) {
+          try {
+            const tRes = await fetch(`/api/templates/${templateId}`);
+            const tData = await tRes.json();
+            const snap = tData?.template?.snapshot_json;
+            // 只认 React Flow 格式({nodes,edges});旧 tldraw 模板没有 .nodes,跳过(空画布)
+            const isReactFlow = snap && Array.isArray(snap.nodes);
+            // 建一个副本画布存这次创作
+            const { data: { session } } = await supabase.auth.getSession();
+            const newCanvasId = await getOrCreateCanvas(user.id);
+            canvasIdRef.current = newCanvasId;
+            if (isReactFlow) {
+              const seen = new Set<string>();
+              const cleanNodes = (snap.nodes as CardNode[]).filter((n) => {
+                if (!n?.id || seen.has(n.id)) return false; seen.add(n.id); return true;
+              });
+              const cleanEdges = ((snap.edges ?? []) as Edge[]).filter((e) => seen.has(e.source) && seen.has(e.target));
+              useCanvasStore.setState({ nodes: cleanNodes, edges: cleanEdges, selectedId: null });
+            } else {
+              // 旧 tldraw 模板:无法复原,提示并留空画布
+              useCanvasStore.setState({ nodes: [], edges: [], selectedId: null });
+              console.warn('该模板是旧引擎(tldraw)格式,新版无法加载,已留空画布');
+            }
+            void session;
+            // 清掉 URL 的 templateId,避免刷新重复创建
+            window.history.replaceState({}, '', '/canvas');
+            setLoading(false);
+            setTimeout(() => { isRestoringRef.current = false; }, 500);
+            return;
+          } catch (e) {
+            console.error('从模板加载失败:', e);
+            // 失败也别卡住,走正常流程
+          }
+        }
+
         const canvasId = await getOrCreateCanvas(user.id);
         if (cancelled) return;
         canvasIdRef.current = canvasId;
