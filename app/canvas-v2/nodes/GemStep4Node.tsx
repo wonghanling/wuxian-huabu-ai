@@ -10,7 +10,7 @@ import { HoverZoomImg } from './RefThumb';
 import { PromptTools } from './PromptTools';
 import { uploadImageToStorage, generateGemStoryboardImage, mirrorOutput, getUserId } from '../lib/api';
 import { useDebouncedField } from '../lib/useDebouncedField';
-import { getUpstreamOutputs } from '../lib/connections';
+import { useUpstream } from '../lib/connections';
 
 // ============================================================
 // GEM 导演引擎 Step4 · 分镜图片生成
@@ -27,7 +27,7 @@ const OUTPUT_PORT = 'rgba(156,163,175,0.9)';
 
 type InputType = 'single' | '2x2' | '3x3';
 type ScriptMode = 'normal' | 'detail';
-type SubPanel = 'duration' | 'ratio' | 'ref' | 'mode' | null;
+type SubPanel = 'duration' | 'ratio' | 'ref' | 'mode' | 'script' | null;
 
 const DURATIONS = ['4', '5', '6', '8', '10', '12', '15'];
 const RATIOS = [
@@ -95,17 +95,27 @@ function GemStep4NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     updateConfig(id, { refImages: cur });
   };
 
-  // 连线传参:单图模式手动上传(不接连线);4/9宫格可连接上游图
-  const upstreamImg = inputType !== 'single' ? getUpstreamOutputs(id).images[0] : undefined;
-  const effImg1 = img1 || upstreamImg;
-  const canGenerate = inputType === 'single' ? !!(img1 && img2) : !!effImg1;
+  // 连线传参(响应式实时显示):
+  //  单图模式:三视角(img1)+首帧(img2)都可连接,本地上传优先,缺的位置按上游图顺序补
+  //  4/9宫格:连接1张上游图
+  const upstreamImgs = useUpstream(id).images;
+  const upstreamImg = inputType !== 'single' ? upstreamImgs[0] : undefined;
+  // 单图:本地优先,空位用上游图顺序填(已被本地占用的上游图不重复用)
+  let effImg1Single: string | undefined = img1, effImg2Single: string | undefined = img2;
+  if (inputType === 'single') {
+    const pool = [...upstreamImgs];
+    if (!effImg1Single) effImg1Single = pool.shift();
+    if (!effImg2Single) effImg2Single = pool.shift();
+  }
+  const effImg1 = inputType === 'single' ? effImg1Single : (img1 || upstreamImg);
+  const canGenerate = inputType === 'single' ? !!(effImg1Single && effImg2Single) : !!effImg1;
 
   const handleGenerate = async () => {
     if (!canGenerate) return;
     updateCard(id, { status: 'generating', progress: 10 });
     try {
       const userId = await getUserId();
-      const userImages = inputType === 'single' ? [img1, img2] : [effImg1!];
+      const userImages = inputType === 'single' ? [effImg1Single!, effImg2Single!] : [effImg1!];
       const imageUrl = await generateGemStoryboardImage(
         {
           inputType,
@@ -243,31 +253,57 @@ function GemStep4NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
             {/* 参考图按钮(ParamTag弹窗) */}
             <ParamTag
-              label={<>参考图{(img1 || img2) ? <span style={greenDot} /> : ''}</>}
+              label={<>参考图{(img1 || img2 || effImg1) ? <span style={greenDot} /> : ''}</>}
               open={sub === 'ref'}
               onToggle={() => setSub(sub === 'ref' ? null : 'ref')}
               width={inputType === 'single' ? 320 : 200}
             >
               {inputType === 'single' ? (
                 <div style={{ display: 'flex', gap: 10, padding: 6 }}>
-                  <ImgSlot label="人物三视角" url={img1} onUpload={(fl) => uploadImg(0, fl)} onClear={() => clearImg(0)} uploading={uploading} />
-                  <ImgSlot label="剧情首帧" url={img2} onUpload={(fl) => uploadImg(1, fl)} onClear={() => clearImg(1)} uploading={uploading} />
+                  <SlotOrConn label="人物三视角" local={img1} conn={!img1 ? effImg1Single : undefined} onUpload={(fl) => uploadImg(0, fl)} onClear={() => clearImg(0)} uploading={uploading} />
+                  <SlotOrConn label="剧情首帧" local={img2} conn={!img2 ? effImg2Single : undefined} onUpload={(fl) => uploadImg(1, fl)} onClear={() => clearImg(1)} uploading={uploading} />
                 </div>
               ) : (
                 <div style={{ padding: 6 }}>
-                  <ImgSlot label={`${inputType === '2x2' ? '4' : '9'}宫格分镜图`} url={img1} onUpload={(fl) => uploadImg(0, fl)} onClear={() => clearImg(0)} wide uploading={uploading} />
+                  {/* 4/9宫格:本地上传优先,否则显示连接来的上游图(只读,不可清除) */}
+                  {img1 ? (
+                    <ImgSlot label={`${inputType === '2x2' ? '4' : '9'}宫格分镜图`} url={img1} onUpload={(fl) => uploadImg(0, fl)} onClear={() => clearImg(0)} wide uploading={uploading} />
+                  ) : upstreamImg ? (
+                    <div style={{ flex: 'unset', width: '100%' }}>
+                      <div style={{ fontSize: 10, color: '#9ca3af', marginBottom: 4 }}>{inputType === '2x2' ? '4' : '9'}宫格分镜图 <span style={{ color: '#60a5fa' }}>· 来自连接</span></div>
+                      <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', borderRadius: 10, overflow: 'hidden', border: '1px solid rgba(96,165,250,0.35)', background: 'rgba(0,0,0,0.3)' }}>
+                        <HoverZoomImg url={upstreamImg} />
+                      </div>
+                    </div>
+                  ) : (
+                    <ImgSlot label={`${inputType === '2x2' ? '4' : '9'}宫格分镜图`} url={undefined} onUpload={(fl) => uploadImg(0, fl)} onClear={() => clearImg(0)} wide uploading={uploading} />
+                  )}
                 </div>
               )}
             </ParamTag>
 
-            {/* 脚本模式(4/9宫格才有) */}
+            {/* 脚本模式(4/9宫格才有,弹窗选择) */}
             {(inputType === '2x2' || inputType === '3x3') && (
-              <>
-                <button onClick={() => updateConfig(id, { imageQuality: 'normal' })}
-                  style={{ ...tagBtn, ...(scriptMode === 'normal' ? tagActive : {}) }}>普通分镜</button>
-                <button onClick={() => updateConfig(id, { imageQuality: 'detail' })}
-                  style={{ ...tagBtn, ...(scriptMode === 'detail' ? tagActive : {}) }}>细化动作</button>
-              </>
+              <ParamTag
+                label={`${scriptMode === 'normal' ? '普通分镜' : '细化动作'} ▾`}
+                open={sub === 'script'}
+                onToggle={() => setSub(sub === 'script' ? null : 'script')}
+                width={300}
+              >
+                {([
+                  { key: 'normal', label: '普通分镜', desc: '按宫格画面顺序生成标准分镜脚本,每格一个镜头,适合常规叙事节奏。' },
+                  { key: 'detail', label: '细化动作', desc: '把宫格画面拆解为更细的动作分解,跳过重复帧,按实际动作节奏分配时间轴,适合高密度动作戏。' },
+                ] as { key: ScriptMode; label: string; desc: string }[]).map((opt) => (
+                  <button key={opt.key}
+                    onClick={() => { updateConfig(id, { imageQuality: opt.key }); setSub(null); }}
+                    style={{ ...subItemStyle, ...(scriptMode === opt.key ? { background: 'rgba(192,192,192,0.16)', color: '#fff' } : {}) }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 3, alignItems: 'flex-start', width: '100%' }}>
+                      <span style={{ fontWeight: 600, fontSize: 13 }}>{opt.label}</span>
+                      <span style={{ fontSize: 11, color: '#9ca3af', lineHeight: 1.5, whiteSpace: 'normal' }}>{opt.desc}</span>
+                    </div>
+                  </button>
+                ))}
+              </ParamTag>
             )}
 
             {/* 时长 */}
@@ -330,6 +366,27 @@ function GemStep4NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
       </>
     );
   }
+}
+
+// ===== 单图槽:本地上传优先,否则只读显示连接来的上游图 =====
+function SlotOrConn({ label, local, conn, onUpload, onClear, uploading }: {
+  label: string; local?: string; conn?: string;
+  onUpload: (fl: FileList | null) => void;
+  onClear: () => void;
+  uploading?: boolean;
+}) {
+  // 本地有图 → 正常可上传/清除;无本地但有连接 → 只读显示;都没有 → 上传占位
+  if (!local && conn) {
+    return (
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: 10, color: '#9ca3af', marginBottom: 4 }}>{label} <span style={{ color: '#60a5fa' }}>· 来自连接</span></div>
+        <div style={{ position: 'relative', width: '100%', aspectRatio: '1', borderRadius: 10, overflow: 'hidden', border: '1px solid rgba(96,165,250,0.35)', background: 'rgba(0,0,0,0.3)', minHeight: 80 }}>
+          <HoverZoomImg url={conn} />
+        </div>
+      </div>
+    );
+  }
+  return <ImgSlot label={label} url={local} onUpload={onUpload} onClear={onClear} uploading={uploading} />;
 }
 
 // ===== 图片上传槽 =====
