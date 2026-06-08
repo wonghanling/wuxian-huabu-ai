@@ -42,6 +42,7 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [uploading, setUploading] = useState(false);   // 上传中指示(照原网)
   const [lightbox, setLightbox] = useState(false);      // 画布内查看放大
   const editRef = useRef<HTMLTextAreaElement>(null);
+  const videoEl = useRef<HTMLVideoElement>(null);       // 卡片内成品视频(捕捉帧抓当前帧)
 
   const model = VIDEO_MODELS.find((m) => m.id === data.config.model) ?? VIDEO_MODELS[0];
   const ratio = data.config.ratio ?? (model.aspectRatios[0] ?? '16:9');
@@ -56,10 +57,37 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   // 实时价格(会员/普通总价 = 单价 × 时长,复用原网 calcVideoPrice)
   const price = videoPrice(model.id, resolution, duration, !!data.config.audio);
 
-  // 卡片框:矩形,默认按比例(16:9),无比例模型按首帧或默认 16:9
+  // 卡片框比例规则(照用户三条):
+  //  1) 成品已生成→按视频真实尺寸(aspectW/H,最准,三种情况都覆盖)
+  //  2) 未生成 + 模型有比例选项→按所选比例(文生视频 / veo 图生等)
+  //  3) 未生成 + 模型无比例选项→跟随参考图比例(即梦/万相 图生、首尾帧)
   const mult = enlarged ? 1.7 : 1;
   const baseLong = 360 * mult;
-  const dims = ratioToWH(ratio || '16:9', baseLong);
+  const aw = (data as any).aspectW as number | undefined;
+  const ah = (data as any).aspectH as number | undefined;
+  const whFromRatio = (r: number): { w: number; h: number } =>
+    r >= 1 ? { w: baseLong, h: Math.round(baseLong / r) } : { w: Math.round(baseLong * r), h: baseLong };
+
+  // 模型无比例选项时,探测参考图真实比例
+  const followsRefImage = model.aspectRatios.length === 0;
+  const [refDims, setRefDims] = useState<{ w: number; h: number } | null>(null);
+  useEffect(() => {
+    if (!followsRefImage || !dispFirst) { setRefDims(null); return; }
+    const probe = new Image();
+    probe.onload = () => setRefDims({ w: probe.naturalWidth, h: probe.naturalHeight });
+    probe.src = dispFirst;
+  }, [followsRefImage, dispFirst]);
+
+  let dims: { w: number; h: number };
+  if (aw && ah && aw > 0 && ah > 0) {
+    dims = whFromRatio(aw / ah);                          // ① 成品真实比例
+  } else if (model.aspectRatios.length > 0) {
+    dims = ratioToWH(ratio || '16:9', baseLong);          // ② 按所选比例
+  } else if (refDims) {
+    dims = whFromRatio(refDims.w / refDims.h);             // ③ 跟随参考图
+  } else {
+    dims = ratioToWH('16:9', baseLong);                   // 兜底
+  }
   // 卡片框只显示成品(outputUrl);首帧/参考图绝不进卡片框
 
   useEffect(() => { if (editing && editRef.current) editRef.current.focus(); }, [editing]);
@@ -78,24 +106,17 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     }
   };
 
-  // 捕捉画面帧:抓视频当前帧 → 上传 Supabase 拿持久 URL → 新建图片卡显示(URL,非base64)
+  // 捕捉画面帧:抓卡片内正在播放的视频「当前帧」(暂停/拖到哪一帧就抓哪帧,照原网 captureCurrentFrame)
+  // → 上传 Supabase 拿持久 URL → 新建图片卡显示(URL,非base64)
   const captureFrame = async () => {
-    if (!data.outputUrl) return;
+    const v = videoEl.current;
+    if (!v || !v.videoWidth) { alert('请先等视频加载出来再捕捉'); return; }
     setUploading(true);
     try {
-      const v = document.createElement('video');
-      v.crossOrigin = 'anonymous';
-      v.src = data.outputUrl;
-      v.muted = true;
-      await new Promise<void>((resolve, reject) => {
-        v.onloadeddata = () => { v.currentTime = Math.min(0.1, (v.duration || 0.2) / 2); };
-        v.onseeked = () => resolve();
-        v.onerror = () => reject(new Error('视频加载失败'));
-      });
       const canvas = document.createElement('canvas');
       canvas.width = v.videoWidth;
       canvas.height = v.videoHeight;
-      canvas.getContext('2d')!.drawImage(v, 0, 0);
+      canvas.getContext('2d')!.drawImage(v, 0, 0, canvas.width, canvas.height);
       const blob = await new Promise<Blob | null>((res) => canvas.toBlob((b) => res(b), 'image/jpeg', 0.92));
       if (!blob) throw new Error('生成帧失败');
       const file = new File([blob], `frame-${Date.now()}.jpg`, { type: 'image/jpeg' });
@@ -223,11 +244,20 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
             </div>
           ) : hasVideo ? (
             <video
+              ref={videoEl}
               src={data.outputUrl!}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', background: '#000' }}
               muted loop playsInline preload="metadata"
-              onMouseEnter={(e) => { (e.currentTarget as HTMLVideoElement).play().catch(() => {}); }}
-              onMouseLeave={(e) => { const v = e.currentTarget as HTMLVideoElement; v.pause(); v.currentTime = 0; }}
+              controls={selected}
+              onLoadedMetadata={(e) => {
+                const v = e.currentTarget as HTMLVideoElement;
+                // 探测成品真实尺寸 → 卡片按真实比例显示(三种情况都覆盖)
+                if (v.videoWidth && v.videoHeight && (aw !== v.videoWidth || ah !== v.videoHeight)) {
+                  updateCard(id, { aspectW: v.videoWidth, aspectH: v.videoHeight });
+                }
+              }}
+              onMouseEnter={(e) => { if (!selected) (e.currentTarget as HTMLVideoElement).play().catch(() => {}); }}
+              onMouseLeave={(e) => { if (!selected) { const v = e.currentTarget as HTMLVideoElement; v.pause(); v.currentTime = 0; } }}
             />
           ) : (
             <span style={{ fontSize: 12, color: '#5a5a5f' }}>点击选中 · 下方描述视频</span>

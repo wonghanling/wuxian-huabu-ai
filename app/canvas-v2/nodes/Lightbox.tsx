@@ -14,11 +14,11 @@ export function Lightbox({ url, kind, onClose }: { url: string; kind: 'image' | 
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}
     >
-      <div style={{ position: 'relative', maxWidth: '85vw', maxHeight: '85vh' }} onClick={(e) => e.stopPropagation()}>
+      <div style={{ position: 'relative', maxWidth: '72vw', maxHeight: '72vh' }} onClick={(e) => e.stopPropagation()}>
         {kind === 'video' ? (
-          <video src={url} controls autoPlay style={{ maxWidth: '85vw', maxHeight: '85vh', borderRadius: 12, display: 'block' }} />
+          <video src={url} controls autoPlay style={{ maxWidth: '72vw', maxHeight: '72vh', borderRadius: 12, display: 'block' }} />
         ) : (
-          <img src={url} alt="" style={{ maxWidth: '85vw', maxHeight: '85vh', objectFit: 'contain', borderRadius: 12, display: 'block' }} />
+          <img src={url} alt="" style={{ maxWidth: '72vw', maxHeight: '72vh', objectFit: 'contain', borderRadius: 12, display: 'block' }} />
         )}
         <button
           onClick={onClose}
