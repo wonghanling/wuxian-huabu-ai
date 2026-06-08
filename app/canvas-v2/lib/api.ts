@@ -501,10 +501,14 @@ export async function generateGemStoryboardImage(params: {
     rd.readAsDataURL(templateBlob);
   });
 
-  const userB64 = await Promise.all(params.userImages.map((u) => urlToBase64(u)));
+  // 用户图保持 URL 直传(后端认 http 直接用,避免 base64 撑爆 4.5MB 请求体导致 413);
+  // 只有 data: 开头的(本地未上传)才转 base64。模板图是本地资源仍转 base64。
+  const userImgArr = await Promise.all(
+    params.userImages.map((u) => (u && u.startsWith('http') ? Promise.resolve(u) : urlToBase64(u)))
+  );
   const imageBase64Array = params.inputType === 'single'
-    ? [...userB64, templateB64]
-    : [userB64[0], templateB64];
+    ? [...userImgArr, templateB64]
+    : [userImgArr[0], templateB64];
 
   onProgress?.(10);
   const res = await fetch('/api/gem/generate-storyboard-image', {
