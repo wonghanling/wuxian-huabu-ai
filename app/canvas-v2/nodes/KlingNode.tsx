@@ -161,10 +161,13 @@ function KlingNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               <div style={track}><div style={{ height: '100%', width: `${data.progress ?? 0}%`, background: 'linear-gradient(90deg,#a0a0a0,#fff)', borderRadius: 99, transition: 'width .3s' }} /></div>
             </div>
           ) : hasVideo ? (
-            <>
-              <img src={data.outputUrl!} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-              <span style={playBadge}>▶</span>
-            </>
+            <video
+              src={data.outputUrl!}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              muted loop playsInline preload="metadata"
+              onMouseEnter={(e) => { (e.currentTarget as HTMLVideoElement).play().catch(() => {}); }}
+              onMouseLeave={(e) => { const v = e.currentTarget as HTMLVideoElement; v.pause(); v.currentTime = 0; }}
+            />
           ) : (
             <span style={{ fontSize: 12, color: '#5a5a5f' }}>上传视频+音频 · 点击下方生成</span>
           )}
