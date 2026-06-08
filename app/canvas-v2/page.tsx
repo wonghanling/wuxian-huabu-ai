@@ -278,11 +278,15 @@ function CanvasV2Inner() {
   }, [canvasLoading]);
 
   // 节点/连线变化 → 触发节流保存
-  // 用"内容指纹"过滤 React Flow 的内部 churn(selected/dragging/measured/尺寸等
-  // 会不断产生新 nodes 引用但不是真内容变化),只在真正持久化的内容变了才保存,
-  // 否则会"一直在保存"。
+  // 内容指纹只算"真正要持久化的内容",排除瞬态字段(progress 生成进度每0.6秒跳、
+  // status/collapsed/enlarged 等),否则生成时进度条狂跳→指纹一直变→疯狂保存(高频写库)。
   const contentFingerprint = useMemo(() => {
-    const n = nodes.map((x) => `${x.id}:${Math.round(x.position.x)},${Math.round(x.position.y)}:${JSON.stringify(x.data)}`).join('|');
+    const n = nodes.map((x) => {
+      const d: any = x.data || {};
+      // 只取持久化内容字段,忽略 progress/status/collapsed/enlarged 等运行时状态
+      const persist = { kind: d.kind, outputUrl: d.outputUrl, text: d.text, config: d.config, aspectW: d.aspectW, aspectH: d.aspectH };
+      return `${x.id}:${Math.round(x.position.x)},${Math.round(x.position.y)}:${JSON.stringify(persist)}`;
+    }).join('|');
     const e = edges.map((x) => `${x.id}:${x.source}>${x.target}`).join('|');
     return n + '#' + e;
   }, [nodes, edges]);
