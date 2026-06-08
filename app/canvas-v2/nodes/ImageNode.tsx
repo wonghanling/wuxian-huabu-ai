@@ -110,11 +110,10 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   };
 
   const handleGenerate = async () => {
-    // 连线传参 + prompt 三段拼接:预设 → 连接文案 → 用户输入
+    // 连线传参:连接文案在前 + prompt(已含预设前缀+用户输入)在后(照原网顺序)
     const upstream = getUpstreamOutputs(id);
-    const presetPrompt = (data.config as any).presetPrompt || '';
     const connectedPrompt = upstream.texts.length > 0 ? upstream.texts.join('\n') : '';
-    const effPrompt = [presetPrompt, connectedPrompt, data.config.prompt].filter(Boolean).join('\n').trim();
+    const effPrompt = [connectedPrompt, data.config.prompt].filter(Boolean).join('\n').trim();
     if (!effPrompt.trim() && upstream.images.length === 0) return;
     updateCard(id, { status: 'generating', progress: 15 });
     // 进度条动画(真实任务无确切进度,用渐进动画到 90% 等结果)
@@ -229,12 +228,6 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
       <NodeToolbar isVisible={selected && !editing && !spawnOpen && !displayImg} position={Position.Bottom} offset={16}>
         <div className="nodrag nopan" style={promptBar} onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
           <PromptTools value={data.config.prompt} onPaste={(t) => updateConfig(id, { prompt: t })} />
-          {data.config.preset && (
-            <div style={{ fontSize: 11, color: '#93c5fd', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 8, padding: '5px 8px', marginBottom: 6, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span>预设风格:{data.config.preset}(生成时自动加在最前)</span>
-              <button onClick={() => updateConfig(id, { presetPrompt: '', preset: '' } as any)} style={{ background: 'none', border: 'none', color: '#93c5fd', cursor: 'pointer', fontSize: 14 }}>×</button>
-            </div>
-          )}
           <PromptArea
             connectedText={connectedTexts.length > 0 ? connectedTexts.join('\n') : undefined}
             value={data.config.prompt}
@@ -252,29 +245,26 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               ))}
             </ParamTag>
             <ParamTag label={<>预设{data.config.preset ? ` · ${data.config.preset}` : ''}</>} open={sub === 'preset'} onToggle={() => setSub(sub === 'preset' ? null : 'preset')} width={300}>
-              <div style={subHint}>风格(生成时自动加在最前,不占用你的输入)</div>
+              <div style={subHint}>风格(点击填入 prompt 最前)</div>
               <div style={presetGrid}>
                 {STYLE_PRESETS.map((p) => (
                   <button key={p.label}
-                    onClick={() => { updateConfig(id, { presetPrompt: p.prompt, preset: p.label } as any); setSub(null); }}
+                    onClick={() => { updateConfig(id, { prompt: applyStylePrefix(data.config.prompt, p.prompt), preset: p.label }); setSub(null); }}
                     style={{ ...presetChip, ...(data.config.preset === p.label ? { background: 'rgba(192,192,192,0.22)', color: '#fff', borderColor: 'rgba(192,192,192,0.45)' } : {}) }}>
                     {p.label}
                   </button>
                 ))}
               </div>
-              <div style={{ ...subHint, marginTop: 8 }}>其他预设</div>
+              <div style={{ ...subHint, marginTop: 8 }}>其他预设(覆盖 prompt)</div>
               <div style={presetGrid}>
                 {OTHER_PRESETS.map((p) => (
                   <button key={p.label}
-                    onClick={() => { updateConfig(id, { presetPrompt: p.prompt, preset: p.label } as any); setSub(null); }}
+                    onClick={() => { updateConfig(id, { prompt: p.prompt, preset: p.label }); setSub(null); }}
                     style={{ ...presetChip, borderColor: p.accent === 'purple' ? 'rgba(168,85,247,0.5)' : 'rgba(59,130,246,0.5)', color: p.accent === 'purple' ? '#c4b5fd' : '#93c5fd' }}>
                     {p.label}
                   </button>
                 ))}
               </div>
-              {data.config.preset && (
-                <button onClick={() => updateConfig(id, { presetPrompt: '', preset: '' } as any)} style={{ marginTop: 8, fontSize: 11, color: '#71717a', background: 'none', border: 'none', cursor: 'pointer' }}>清除预设</button>
-              )}
             </ParamTag>
             {model.supportsImage && (
               <ParamTag label={<>参考图 {connectedImages.length + (data.config.refImages?.length ?? 0)}/{refImageMax(model.id)}{connectedImages.length > 0 && <span style={{ marginLeft: 4, color: '#a78bfa' }}>(含{connectedImages.length}连接)</span>}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</>} open={sub === 'ref'} onToggle={() => setSub(sub === 'ref' ? null : 'ref')} width={300}>

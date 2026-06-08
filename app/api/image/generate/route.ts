@@ -356,7 +356,25 @@ export async function POST(req: NextRequest) {
       if (!imageUrl) throw new Error('无法解析图片');
 
     } else if (modelConfig.apiType === 'midjourney') {
-      const base64Array = imageBase64 ? [imageBase64] : [];
+      // 参考图:base64 直接用;只有 URL(瘦身)时服务端 fetch 转 base64(不进请求体)
+      const base64Array: string[] = [];
+      if (imageBase64) {
+        base64Array.push(imageBase64);
+      } else if (imageUrlArray && Array.isArray(imageUrlArray) && imageUrlArray.length > 0) {
+        for (const u of imageUrlArray) {
+          if (typeof u !== 'string') continue;
+          if (u.startsWith('data:')) { base64Array.push(u); }
+          else if (u.startsWith('http')) {
+            try {
+              const ir = await fetch(u);
+              const ibuf = await ir.arrayBuffer();
+              const ict = ir.headers.get('content-type') || 'image/jpeg';
+              const imime = ict.includes('png') ? 'image/png' : ict.includes('webp') ? 'image/webp' : 'image/jpeg';
+              base64Array.push(`data:${imime};base64,${Buffer.from(ibuf).toString('base64')}`);
+            } catch (e) { console.error('MJ 参考图 URL→base64 失败:', e); }
+          }
+        }
+      }
       // MJ 通过 --ar 参数控制比例，转换格式（1:1 → --ar 1:1）
       const arParam = aspectRatio && aspectRatio !== '1:1' ? ` --ar ${aspectRatio}` : '';
       const mjPrompt = `${prompt}${arParam}`;
