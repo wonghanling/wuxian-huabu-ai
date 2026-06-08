@@ -166,8 +166,9 @@ export async function generateImage(params: ImageGenParams): Promise<string> {
       await new Promise((r) => setTimeout(r, 3000));
       const qRes = await fetch(`/api/image/mj-query?taskId=${encodeURIComponent(data.taskId)}`);
       const qData = await qRes.json();
-      if (qData.success && qData.imageUrl) return qData.imageUrl;
-      if (qData.error) throw new Error(qData.error);
+      // 后端返回 { status: 'completed'|'failed'|'pending', imageUrl?, error? }
+      if (qData.status === 'completed' && qData.imageUrl) return qData.imageUrl;
+      if (qData.status === 'failed') throw new Error(qData.error || 'MJ 生成失败');
       if (attempts > 60) throw new Error('生成超时');
       return poll();
     };

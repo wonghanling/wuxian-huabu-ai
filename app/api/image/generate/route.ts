@@ -120,7 +120,7 @@ export async function POST(req: NextRequest) {
 
     if (model === 'nano-banana-pro-multi' && (!imageUrlArray || imageUrlArray.length === 0)) {
       return NextResponse.json({ error: '多图融合模型需要至少一张图片' }, { status: 400 });
-    } else if (modelConfig.requiresImage && model !== 'nano-banana-pro-multi' && !imageBase64) {
+    } else if (modelConfig.requiresImage && model !== 'nano-banana-pro-multi' && !imageBase64 && !(imageUrlArray && imageUrlArray.length > 0)) {
       return NextResponse.json({ error: '该模型需要上传一张图片' }, { status: 400 });
     }
 
@@ -255,6 +255,9 @@ export async function POST(req: NextRequest) {
         if (!requestId) throw new Error('fal.ai 未返回 requestId');
         falSuccess = true;
         return NextResponse.json({ success: true, requestId, endpoint: gptEndpoint, model, prompt, pending: true });
+      } else if (imageUrlArray && Array.isArray(imageUrlArray) && imageUrlArray.length > 0 && typeof imageUrlArray[0] === 'string' && imageUrlArray[0].startsWith('http')) {
+        // 参考图走 URL(瘦身,不进请求体避免 413);fal 认 http URL,直接用第一张
+        input.image_url = imageUrlArray[0];
       } else if (imageBase64) {
         input.image_url = imageBase64;
       }
@@ -376,7 +379,25 @@ export async function POST(req: NextRequest) {
         n: 1,
         size: aspectRatio || '1:1',
       };
-      if (imageBase64) requestBody.image = imageBase64;
+      // 参考图:base64 直接用;只有 URL(瘦身)时在服务端 fetch 转 base64(不进请求体,不会 413)
+      if (imageBase64) {
+        requestBody.image = imageBase64;
+      } else if (imageUrlArray && Array.isArray(imageUrlArray) && imageUrlArray.length > 0) {
+        const first = imageUrlArray[0];
+        if (typeof first === 'string' && first.startsWith('data:')) {
+          requestBody.image = first;
+        } else if (typeof first === 'string' && first.startsWith('http')) {
+          try {
+            const ir = await fetch(first);
+            const ibuf = await ir.arrayBuffer();
+            const ict = ir.headers.get('content-type') || 'image/jpeg';
+            const imime = ict.includes('png') ? 'image/png' : ict.includes('webp') ? 'image/webp' : 'image/jpeg';
+            requestBody.image = `data:${imime};base64,${Buffer.from(ibuf).toString('base64')}`;
+          } catch (e) {
+            console.error('豆包参考图 URL→base64 失败:', e);
+          }
+        }
+      }
 
       const response = await fetchWithN1nPool(`${YUNWU_BASE_URL}/v1/images/generations`, {
         method: 'POST',

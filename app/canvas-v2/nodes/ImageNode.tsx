@@ -140,23 +140,6 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
         }
       }
 
-      // flux-kontext / 豆包:后端只认 imageBase64(单张),把第一张参考图转 base64
-      // (照原网"两次转换":存储用 URL 瘦身,生成时 URL→fetch→base64→压缩 传给模型)
-      let singleBase64: string | undefined;
-      const needBase64Single = (model.id === 'flux-kontext' || model.id === 'doubao-seedream-4-5-251128');
-      if (needBase64Single && refs.length > 0) {
-        const first = refs[0];
-        if (first.startsWith('data:')) {
-          singleBase64 = await softCompressImage(first);
-        } else {
-          try {
-            const blob = await fetch(first).then((r) => r.blob());
-            const dataUrl = await new Promise<string>((res) => { const fr = new FileReader(); fr.onload = () => res(fr.result as string); fr.readAsDataURL(blob); });
-            singleBase64 = await softCompressImage(dataUrl);
-          } catch { /* 转换失败则不传,后端会提示需要图片 */ }
-        }
-      }
-
       const imageUrl = await generateImage({
         model: model.id,
         prompt: effPrompt,
@@ -164,7 +147,6 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
         imageQuality: data.config.imageQuality ?? (model.useSizeNotRatio ? 'medium' : '2k'),
         imageUrlArray: imageUrlArray.length > 0 ? imageUrlArray : undefined,
         imageBase64Array: imageBase64Array.length > 0 ? imageBase64Array : undefined,
-        imageBase64: singleBase64,
         userId,
       });
 
@@ -247,6 +229,12 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
       <NodeToolbar isVisible={selected && !editing && !spawnOpen && !displayImg} position={Position.Bottom} offset={16}>
         <div className="nodrag nopan" style={promptBar} onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
           <PromptTools value={data.config.prompt} onPaste={(t) => updateConfig(id, { prompt: t })} />
+          {data.config.preset && (
+            <div style={{ fontSize: 11, color: '#93c5fd', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 8, padding: '5px 8px', marginBottom: 6, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span>预设风格:{data.config.preset}(生成时自动加在最前)</span>
+              <button onClick={() => updateConfig(id, { presetPrompt: '', preset: '' } as any)} style={{ background: 'none', border: 'none', color: '#93c5fd', cursor: 'pointer', fontSize: 14 }}>×</button>
+            </div>
+          )}
           <PromptArea
             connectedText={connectedTexts.length > 0 ? connectedTexts.join('\n') : undefined}
             value={data.config.prompt}
