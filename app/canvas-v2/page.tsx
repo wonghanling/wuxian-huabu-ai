@@ -261,6 +261,31 @@ function CanvasV2Inner() {
   // 画布持久化:加载历史快照 / 自动保存 / 空画布保护(完整复刻原网)
   const { status: saveStatus, loading: canvasLoading, switchCanvas, getCurrentCanvasId } = useCanvasPersistence();
 
+  // 防黏兜底:React Flow 节点拖动若 pointerup 丢失(快速甩动/拖出窗口/拖动中重渲染),
+  // d3-drag 会一直以为在拖→卡片黏鼠标。这里监听窗口级 up/cancel/blur,
+  // 补派发一个 pointerup 到当前元素,强制结束卡住的拖动。
+  useEffect(() => {
+    const endDrag = () => {
+      try {
+        const evt = new PointerEvent('pointerup', { bubbles: true, cancelable: true, pointerId: 1 });
+        (document.querySelector('.react-flow__pane') || document.body).dispatchEvent(evt);
+        document.body.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+      } catch {}
+    };
+    // 鼠标移出浏览器窗口 / 窗口失焦 / 切到别的标签 → 结束拖动
+    const onLeave = (e: PointerEvent) => { if (!e.relatedTarget && (e as any).buttons === 0) endDrag(); };
+    window.addEventListener('blur', endDrag);
+    window.addEventListener('pointercancel', endDrag);
+    document.addEventListener('pointerleave', onLeave);
+    document.addEventListener('mouseleave', endDrag);
+    return () => {
+      window.removeEventListener('blur', endDrag);
+      window.removeEventListener('pointercancel', endDrag);
+      document.removeEventListener('pointerleave', onLeave);
+      document.removeEventListener('mouseleave', endDrag);
+    };
+  }, []);
+
   // 加载完成后,若画布为空(无历史)才放演示卡;有历史则不动
   useEffect(() => {
     if (canvasLoading) return;
