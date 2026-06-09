@@ -47,6 +47,9 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const editRef = useRef<HTMLTextAreaElement>(null);
   const videoEl = useRef<HTMLVideoElement>(null);       // 卡片内成品视频(捕捉帧抓当前帧)
 
+  // 取消选中卡片时,关闭剪辑条(点画布空白处即收起)
+  useEffect(() => { if (!selected && trimming) setTrimming(false); }, [selected, trimming]);
+
   const model = VIDEO_MODELS.find((m) => m.id === data.config.model) ?? VIDEO_MODELS[0];
   const ratio = data.config.ratio ?? (model.aspectRatios[0] ?? '16:9');
   const duration = data.config.duration ?? model.durations[0] ?? 5;

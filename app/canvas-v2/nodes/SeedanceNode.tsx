@@ -54,6 +54,9 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const editRef = useRef<HTMLTextAreaElement>(null);
   const videoEl = useRef<HTMLVideoElement>(null);       // 成品视频(捕捉帧抓当前帧)
 
+  // 取消选中卡片时,关闭剪辑条
+  useEffect(() => { if (!selected && trimming) setTrimming(false); }, [selected, trimming]);
+
   const model = SEEDANCE_MODELS.find((m) => m.id === data.config.model) ?? SEEDANCE_MODELS[0];
   const mode = (data.config.preset as SeedanceMode) ?? 't2v';   // 用 preset 字段存模式
   const ratio = data.config.ratio ?? '16:9';

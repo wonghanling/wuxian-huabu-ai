@@ -65,17 +65,17 @@ export function VideoTrimBar({
     <div className="nodrag nopan" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}
       style={{
         marginTop: 8, padding: '14px 16px', borderRadius: 16, minWidth: 320,
-        background: 'linear-gradient(135deg, rgba(20,28,22,0.96) 0%, rgba(16,20,18,0.96) 100%)',
-        border: '1px solid rgba(34,197,94,0.35)',
+        background: 'linear-gradient(135deg, rgba(28,28,32,0.96) 0%, rgba(20,20,23,0.96) 100%)',
+        border: '1px solid rgba(255,255,255,0.14)',
         backdropFilter: 'blur(24px) saturate(160%)', WebkitBackdropFilter: 'blur(24px) saturate(160%)',
-        boxShadow: '0 16px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(34,197,94,0.08), inset 0 1px 0 rgba(255,255,255,0.04)',
+        boxShadow: '0 16px 48px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04)',
       }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <span style={{ fontSize: 12, fontWeight: 600, color: '#4ade80', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 8px #22c55e' }} />
+        <span style={{ fontSize: 12, fontWeight: 600, color: '#d4d4d8', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#a1a1aa' }} />
           视频剪辑
         </span>
-        <span style={{ fontSize: 12, color: '#86efac', fontFamily: 'monospace', fontWeight: 600 }}>
+        <span style={{ fontSize: 12, color: '#d4d4d8', fontFamily: 'monospace', fontWeight: 600 }}>
           {trimStart.toFixed(1)}s – {trimEnd.toFixed(1)}s
           <span style={{ color: '#52525b', marginLeft: 8, fontWeight: 400 }}>共 {(trimEnd - trimStart).toFixed(1)}s</span>
         </span>
@@ -84,19 +84,19 @@ export function VideoTrimBar({
       {/* 轨道 */}
       <div ref={barRef} style={{ position: 'relative', height: 34, background: 'rgba(0,0,0,0.35)', borderRadius: 8, cursor: 'pointer', border: '1px solid rgba(255,255,255,0.05)' }}>
         {/* 选中区间 */}
-        <div style={{ position: 'absolute', top: 0, bottom: 0, left: pct(trimStart), width: `calc(${pct(trimEnd)} - ${pct(trimStart)})`, background: 'linear-gradient(180deg, rgba(34,197,94,0.32), rgba(34,197,94,0.18))', borderTop: '2px solid #22c55e', borderBottom: '2px solid #22c55e', borderRadius: 4 }} />
+        <div style={{ position: 'absolute', top: 0, bottom: 0, left: pct(trimStart), width: `calc(${pct(trimEnd)} - ${pct(trimStart)})`, background: 'linear-gradient(180deg, rgba(212,212,216,0.28), rgba(161,161,170,0.16))', borderTop: '2px solid #d4d4d8', borderBottom: '2px solid #d4d4d8', borderRadius: 4 }} />
         {/* 播放游标 */}
         {playhead >= trimStart && playhead <= trimEnd && (
           <div style={{ position: 'absolute', top: -3, bottom: -3, left: pct(playhead), width: 2, background: '#fff', boxShadow: '0 0 6px rgba(255,255,255,0.8)' }} />
         )}
         {/* 起点把手 */}
         <div onMouseDown={(e) => { e.stopPropagation(); setDrag('start'); }}
-          style={{ position: 'absolute', top: -4, left: pct(trimStart), width: 14, height: 42, marginLeft: -7, background: 'linear-gradient(180deg, #4ade80, #22c55e)', borderRadius: 5, cursor: 'ew-resize', boxShadow: '0 2px 10px rgba(34,197,94,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          style={{ position: 'absolute', top: -4, left: pct(trimStart), width: 14, height: 42, marginLeft: -7, background: 'linear-gradient(180deg, #e4e4e7, #a1a1aa)', borderRadius: 5, cursor: 'ew-resize', boxShadow: '0 2px 10px rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <span style={{ width: 2, height: 16, background: 'rgba(0,0,0,0.35)', borderRadius: 2 }} />
         </div>
         {/* 终点把手 */}
         <div onMouseDown={(e) => { e.stopPropagation(); setDrag('end'); }}
-          style={{ position: 'absolute', top: -4, left: pct(trimEnd), width: 14, height: 42, marginLeft: -7, background: 'linear-gradient(180deg, #4ade80, #22c55e)', borderRadius: 5, cursor: 'ew-resize', boxShadow: '0 2px 10px rgba(34,197,94,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          style={{ position: 'absolute', top: -4, left: pct(trimEnd), width: 14, height: 42, marginLeft: -7, background: 'linear-gradient(180deg, #e4e4e7, #a1a1aa)', borderRadius: 5, cursor: 'ew-resize', boxShadow: '0 2px 10px rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <span style={{ width: 2, height: 16, background: 'rgba(0,0,0,0.35)', borderRadius: 2 }} />
         </div>
       </div>
@@ -113,13 +113,13 @@ export function VideoTrimBar({
 }
 
 const previewBtn: React.CSSProperties = {
-  flex: 1, height: 34, borderRadius: 9, border: '1px solid rgba(34,197,94,0.4)',
-  background: 'rgba(34,197,94,0.1)', color: '#86efac', fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
+  flex: 1, height: 34, borderRadius: 9, border: '1px solid rgba(255,255,255,0.18)',
+  background: 'rgba(255,255,255,0.07)', color: '#e4e4e7', fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
 };
 const exportBtn: React.CSSProperties = {
   flex: 1, height: 34, borderRadius: 9, border: 'none',
-  background: 'linear-gradient(180deg, #22c55e, #16a34a)', color: '#fff', fontSize: 12.5, fontWeight: 700,
-  boxShadow: '0 4px 14px rgba(34,197,94,0.4)',
+  background: 'linear-gradient(180deg, #e4e4e7, #a1a1aa)', color: '#18181b', fontSize: 12.5, fontWeight: 700,
+  boxShadow: '0 4px 14px rgba(0,0,0,0.4)',
 };
 
 // ============================================================
