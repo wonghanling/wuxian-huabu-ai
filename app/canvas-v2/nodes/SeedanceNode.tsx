@@ -16,6 +16,8 @@ import { SpawnMenu } from './SpawnMenu';
 import { RefThumb, HoverZoomImg } from './RefThumb';
 import { PromptTools } from './PromptTools';
 import { PromptArea } from './PromptArea';
+import { Lightbox, downloadFile } from './Lightbox';
+import { VideoTrimBar, exportVideoSegment } from './VideoTrimBar';
 import { uploadImageToStorage, uploadFileToStorage, generateSeedance, mirrorOutput, getUserId } from '../lib/api';
 import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 
@@ -46,7 +48,11 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [spawnOpen, setSpawnOpen] = useState(false);
   const [sub, setSub] = useState<SubPanel>(null);
   const [uploading, setUploading] = useState(false);   // 上传中指示(照原网)
+  const [lightbox, setLightbox] = useState(false);      // 画布内查看放大
+  const [trimming, setTrimming] = useState(false);      // 剪辑条开关
+  const [exporting, setExporting] = useState(false);    // 导出片段中
   const editRef = useRef<HTMLTextAreaElement>(null);
+  const videoEl = useRef<HTMLVideoElement>(null);       // 成品视频(捕捉帧抓当前帧)
 
   const model = SEEDANCE_MODELS.find((m) => m.id === data.config.model) ?? SEEDANCE_MODELS[0];
   const mode = (data.config.preset as SeedanceMode) ?? 't2v';   // 用 preset 字段存模式
@@ -170,6 +176,87 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     }
   };
 
+  // 捕捉画面帧:抓卡片内视频「当前帧」(暂停/拖到哪一帧就抓哪帧,照视频卡)→ 上传 Supabase → 新建图片卡
+  const captureFrame = async () => {
+    const v = videoEl.current;
+    if (!v || !v.videoWidth) { alert('请先等视频加载出来再捕捉'); return; }
+    setUploading(true);
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = v.videoWidth;
+      canvas.height = v.videoHeight;
+      canvas.getContext('2d')!.drawImage(v, 0, 0, canvas.width, canvas.height);
+      const blob = await new Promise<Blob | null>((res) => canvas.toBlob((b) => res(b), 'image/jpeg', 0.92));
+      if (!blob) throw new Error('生成帧失败');
+      const file = new File([blob], `frame-${Date.now()}.jpg`, { type: 'image/jpeg' });
+      const url = await uploadImageToStorage(file);
+      if (!url) throw new Error('上传帧失败');
+      const newId = `i${Date.now()}`;
+      const newNode: CardNode = {
+        id: newId, type: 'card',
+        position: { x: 0, y: 0 },
+        data: { kind: 'image', status: 'done', outputUrl: url, aspectW: v.videoWidth, aspectH: v.videoHeight,
+          config: { model: 'nano-banana-pro', prompt: '', ratio: '1:1' } } as any,
+      };
+      const cur = useCanvasStore.getState().nodes.find((n) => n.id === id);
+      if (cur) { newNode.position = { x: cur.position.x + 440, y: cur.position.y }; }
+      useCanvasStore.setState((s) => ({
+        nodes: [...s.nodes, newNode],
+        edges: [...s.edges, { id: `e${id}-${newId}`, source: id, target: newId, type: 'deletable', animated: true }],
+        selectedId: newId,
+      }));
+      (window as any).saveCanvasV2Now?.();
+    } catch (err: any) {
+      alert('捕捉画面帧失败: ' + (err?.message || err) + '\n(可能是视频跨域限制)');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // 剪辑:开启剪辑条(初始区间=整段)
+  const openTrim = () => {
+    const v = videoEl.current;
+    const dur = v?.duration || data.config.duration || 5;
+    if (data.config.trimStart == null || data.config.trimEnd == null) {
+      updateConfig(id, { trimStart: 0, trimEnd: +dur.toFixed(2) });
+    }
+    setTrimming(true);
+  };
+
+  // 导出剪辑片段:MediaRecorder 录区间 → 上传 → 新建视频卡(可连 Seedance多模态/Kling)
+  const exportSegment = async () => {
+    if (!data.outputUrl) return;
+    const ts = data.config.trimStart ?? 0;
+    const te = data.config.trimEnd ?? (videoEl.current?.duration || 5);
+    setExporting(true);
+    try {
+      const blob = await exportVideoSegment(data.outputUrl, ts, te);
+      const ext = blob.type.includes('mp4') ? 'mp4' : 'webm';
+      const file = new File([blob], `clip-${Date.now()}.${ext}`, { type: blob.type });
+      const url = await uploadFileToStorage(file, 'video');
+      if (!url) throw new Error('上传片段失败');
+      const newId = `v${Date.now()}`;
+      const cur = useCanvasStore.getState().nodes.find((n) => n.id === id);
+      const newNode: CardNode = {
+        id: newId, type: 'card',
+        position: cur ? { x: cur.position.x, y: cur.position.y + 420 } : { x: 0, y: 0 },
+        data: { kind: 'video', status: 'done', outputUrl: url, aspectW: (data as any).aspectW, aspectH: (data as any).aspectH,
+          config: { model: 'veo3.1-t2v', prompt: '' } } as any,
+      };
+      useCanvasStore.setState((s) => ({
+        nodes: [...s.nodes, newNode],
+        edges: [...s.edges, { id: `e${id}-${newId}`, source: id, target: newId, type: 'deletable', animated: true }],
+        selectedId: newId,
+      }));
+      (window as any).saveCanvasV2Now?.();
+      setTrimming(false);
+    } catch (err: any) {
+      alert('导出片段失败: ' + (err?.message || err));
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const handleGenerate = async () => {
     // 连线传参:上游图→首帧/参考图,上游视频→refVideo,上游文案→prompt前缀
     const upstream = getUpstreamOutputs(id);
@@ -267,11 +354,28 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
             </div>
           ) : hasVideo ? (
             <video
+              ref={videoEl}
               src={data.outputUrl!}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-              muted loop playsInline preload="metadata"
-              onMouseEnter={(e) => { (e.currentTarget as HTMLVideoElement).play().catch(() => {}); }}
-              onMouseLeave={(e) => { const v = e.currentTarget as HTMLVideoElement; v.pause(); v.currentTime = 0; }}
+              crossOrigin="anonymous"
+              style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', background: '#000' }}
+              loop playsInline preload="metadata"
+              muted={!selected}
+              controls={selected}
+              onLoadedMetadata={(e) => {
+                const v = e.currentTarget as HTMLVideoElement;
+                if (v.videoWidth && v.videoHeight && ((data as any).aspectW !== v.videoWidth || (data as any).aspectH !== v.videoHeight)) {
+                  updateCard(id, { aspectW: v.videoWidth, aspectH: v.videoHeight });
+                }
+              }}
+              onTimeUpdate={(e) => {
+                if (!trimming) return;
+                const v = e.currentTarget as HTMLVideoElement;
+                const ts = data.config.trimStart ?? 0;
+                const te = data.config.trimEnd ?? v.duration;
+                if (v.currentTime >= te || v.currentTime < ts) v.currentTime = ts;
+              }}
+              onMouseEnter={(e) => { if (!selected) (e.currentTarget as HTMLVideoElement).play().catch(() => {}); }}
+              onMouseLeave={(e) => { if (!selected) { const v = e.currentTarget as HTMLVideoElement; v.pause(); v.currentTime = 0; } }}
             />
           ) : (
             <span style={{ fontSize: 12, color: '#5a5a5f' }}>点击选中 · 下方描述视频</span>
@@ -413,29 +517,63 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               <span style={{ color: '#71717a' }}> / 普通 ¥{price.normal.toFixed(2)}</span>
             </span>
             <span style={{ fontSize: 10, color: '#52525b' }}>{duration === '-1' ? '智能~5s' : duration + 's'} · {resolution.toUpperCase()} · 自带音频</span>
-            <button onClick={handleGenerate} style={generateBtn}>Generate</button>
+            <button onClick={handleGenerate} disabled={data.status === 'generating'} style={{ ...generateBtn, opacity: data.status === 'generating' ? 0.4 : 1, cursor: data.status === 'generating' ? 'default' : 'pointer' }}>{data.status === 'generating' ? '生成中…' : 'Generate'}</button>
           </div>
         </div>
       </NodeToolbar>
 
-      {/* ===== 顶部工具栏(上传视频 + 剪辑 + 放大;弹窗打开时隐藏避免遮挡) ===== */}
-      <NodeToolbar isVisible={selected && !editing && !spawnOpen && !sub} position={Position.Top} offset={12}>
+      {/* ===== 顶部工具栏(有成品:查看/下载/捕捉帧/删除;无成品:上传/剪辑/放大;弹窗打开时隐藏避免遮挡) ===== */}
+      <NodeToolbar isVisible={selected && !editing && !spawnOpen && !lightbox && (!sub || hasVideo)} position={Position.Top} offset={12}>
         <div style={toolRow} onClick={(e) => e.stopPropagation()}>
-          <label style={toolBtnWide} title="上传视频">
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><IconUpload size={16} /> 上传</span>
-            <input type="file" accept="video/*" style={{ display: 'none' }} onChange={(e) => uploadVideo(e.target.files)} />
-          </label>
-          <button onClick={() => alert('剪辑功能开发中')} style={toolBtnWide} title="剪辑(开发中)">
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><IconScissors size={16} /> 剪辑</span>
-          </button>
-          <button onClick={() => updateCard(id, { enlarged: !enlarged })} style={toolBtnWide} title={enlarged ? '还原' : '放大卡片'}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {enlarged ? <IconShrink size={16} /> : <IconExpand size={16} />}
-              {enlarged ? '还原' : '放大'}
-            </span>
-          </button>
+          {hasVideo ? (
+            <>
+              <button onClick={() => setLightbox(true)} style={toolBtnWide} title="查看(放大)">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><IconExpand size={16} /> 查看</span>
+              </button>
+              <button onClick={() => downloadFile(data.outputUrl!, `seedance-${id}.mp4`)} style={toolBtnWide} title="下载">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>↓ 下载</span>
+              </button>
+              <button onClick={captureFrame} style={toolBtnWide} title="捕捉画面帧">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><IconScissors size={16} /> 捕捉帧</span>
+              </button>
+              <button onClick={openTrim} style={{ ...toolBtnWide, ...(trimming ? { background: 'rgba(96,165,250,0.25)' } : {}) }} title="剪辑(截取片段)">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><IconScissors size={16} /> 剪辑</span>
+              </button>
+              <button onClick={() => updateCard(id, { status: 'empty', outputUrl: null })} style={toolBtnWide} title="删除视频">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>× 删除</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <label style={toolBtnWide} title="上传视频">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><IconUpload size={16} /> 上传</span>
+                <input type="file" accept="video/*" style={{ display: 'none' }} onChange={(e) => uploadVideo(e.target.files)} />
+              </label>
+              <button onClick={() => updateCard(id, { enlarged: !enlarged })} style={toolBtnWide} title={enlarged ? '还原' : '放大卡片'}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {enlarged ? <IconShrink size={16} /> : <IconExpand size={16} />}
+                  {enlarged ? '还原' : '放大'}
+                </span>
+              </button>
+            </>
+          )}
         </div>
       </NodeToolbar>
+      {/* 剪辑条(底部弹出) */}
+      {trimming && hasVideo && (
+        <NodeToolbar isVisible position={Position.Bottom} offset={12}>
+          <VideoTrimBar
+            videoEl={videoEl.current}
+            duration={videoEl.current?.duration || data.config.duration || 5}
+            trimStart={data.config.trimStart ?? 0}
+            trimEnd={data.config.trimEnd ?? (videoEl.current?.duration || 5)}
+            onChange={(s, e) => updateConfig(id, { trimStart: s, trimEnd: e })}
+            onExport={exportSegment}
+            exporting={exporting}
+          />
+        </NodeToolbar>
+      )}
+      {lightbox && hasVideo && <Lightbox url={data.outputUrl!} kind="video" onClose={() => setLightbox(false)} />}
     </>
   );
 

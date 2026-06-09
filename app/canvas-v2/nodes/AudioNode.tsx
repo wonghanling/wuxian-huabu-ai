@@ -237,8 +237,8 @@ function AudioNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
             </>
           )}
 
-          <button onClick={handleGenerate} style={generateBtn}>
-            {mode === 'synthesize' ? '生成语音' : mode === 'design' ? '设计音色' : '开始复刻'}
+          <button onClick={handleGenerate} disabled={data.status === 'generating'} style={{ ...generateBtn, opacity: data.status === 'generating' ? 0.4 : 1, cursor: data.status === 'generating' ? 'default' : 'pointer' }}>
+            {data.status === 'generating' ? '生成中…' : mode === 'synthesize' ? '生成语音' : mode === 'design' ? '设计音色' : '开始复刻'}
           </button>
         </div>
       </NodeToolbar>

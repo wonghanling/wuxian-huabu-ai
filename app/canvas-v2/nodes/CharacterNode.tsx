@@ -241,8 +241,8 @@ function CharacterNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           {/* 底行:价格 + Generate */}
           <div style={{ display: 'flex', alignItems: 'center', padding: '4px 8px 8px' }}>
             <span style={{ fontSize: 12, color: '#71717a' }}>{model.price}</span>
-            <button onClick={handleGenerate} disabled={!effRefDisplay} style={{ ...generateBtn, opacity: effRefDisplay ? 1 : 0.4 }}>
-              Generate
+            <button onClick={handleGenerate} disabled={!effRefDisplay || data.status === 'generating'} style={{ ...generateBtn, opacity: (effRefDisplay && data.status !== 'generating') ? 1 : 0.4 }}>
+              {data.status === 'generating' ? '生成中…' : 'Generate'}
             </button>
           </div>
         </div>

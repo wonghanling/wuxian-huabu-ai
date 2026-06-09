@@ -398,7 +398,7 @@ function ExtendNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           {/* 底行 */}
           <div style={{ display: 'flex', alignItems: 'center', padding: '4px 8px 8px' }}>
             <span style={{ fontSize: 12, color: '#71717a' }}>{model.price}</span>
-            <button onClick={handleGenerate} style={generateBtn}>Generate</button>
+            <button onClick={handleGenerate} disabled={data.status === 'generating'} style={{ ...generateBtn, opacity: data.status === 'generating' ? 0.4 : 1, cursor: data.status === 'generating' ? 'default' : 'pointer' }}>{data.status === 'generating' ? '生成中…' : 'Generate'}</button>
           </div>
         </div>
       </NodeToolbar>

@@ -59,7 +59,7 @@ const SPAWN_RULES: Record<NodeKind, SpawnAction[]> = {
   kling:     VIDEO_OUTPUT_ACTIONS,
   gem:       ['image'],              // Step2 仅连图片生成卡片
   gem3:      [],                     // Step3 原网无加号
-  gem4:      [],                     // Step4 原网无加号(输出图,但只能手动拖线连)
+  gem4:      IMAGE_OUTPUT_ACTIONS, // Step4 输出分镜图→可建 Seedance/视频/Step2 等下游
   text:      [],                     // 文本卡原网无加号
   audio:     VIDEO_OUTPUT_ACTIONS,   // 语音卡输出音频→连 Seedance/Kling 配音
   shot:      VIDEO_OUTPUT_ACTIONS,   // 电影控制器输出指令→连视频/Seedance/Kling(照原网连视频卡)
@@ -106,6 +106,9 @@ export interface CardData extends Record<string, unknown> {
     refAudioName?: string;      // 参考音频名
     // 文本卡提示词优化专用
     textDuration?: string;      // 优化时长(4-8秒/9-12秒/13-15秒/>15秒)
+    // 视频剪辑(方案A:区间标记,播放只循环此段,下载按段录制)
+    trimStart?: number;         // 剪辑起点(秒)
+    trimEnd?: number;           // 剪辑终点(秒)
   };
   // 输出图片真实宽高(按原图比例显示卡片用)
   aspectW?: number;

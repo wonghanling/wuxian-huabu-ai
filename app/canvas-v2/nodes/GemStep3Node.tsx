@@ -221,9 +221,9 @@ function GemStep3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           {/* 底行 Generate */}
           <div style={{ display: 'flex', alignItems: 'center', padding: '4px 8px 8px' }}>
             <span style={{ fontSize: 12, color: '#71717a' }}>首帧 + 尾帧必填</span>
-            <button onClick={handleGenerate} disabled={!dispStart || !dispEnd}
-              style={{ ...generateBtn, opacity: dispStart && dispEnd ? 1 : 0.4 }}>
-              Generate
+            <button onClick={handleGenerate} disabled={!dispStart || !dispEnd || data.status === 'generating'}
+              style={{ ...generateBtn, opacity: (dispStart && dispEnd && data.status !== 'generating') ? 1 : 0.4 }}>
+              {data.status === 'generating' ? '生成中…' : 'Generate'}
             </button>
           </div>
         </div>

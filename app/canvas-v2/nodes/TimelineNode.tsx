@@ -63,6 +63,19 @@ function TimelineNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
             <div key={t} style={{ position: 'absolute', left: `${(t / duration) * 100}%`, top: 0 }}>
               <div style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.35)' }} />
               <div style={{ fontSize: 9, color: '#71717a', marginTop: 2, transform: 'translateX(-50%)' }}>{t}s</div>
+              {/* 每个刻度一个连接点(蓝点),可从此拖出连线连到视频卡(照原网时间轴 tick 连接点) */}
+              <Handle
+                id={`tick-${t}`}
+                type="source"
+                position={Position.Bottom}
+                className="rf-port rf-port-out"
+                style={{
+                  width: 14, height: 14, borderRadius: '50%', background: INPUT_PORT,
+                  border: '2px solid #fff', boxShadow: '0 2px 6px rgba(0,0,0,0.5)',
+                  left: 0, top: 22, transform: 'translate(-50%, 0)',
+                }}
+                title={`连接点 ${t}s`}
+              />
             </div>
           ))}
         </div>
@@ -85,7 +98,7 @@ function TimelineNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     return (
       <>
         <Handle type="target" position={Position.Left} className="rf-port" style={{ ...portCircle(INPUT_PORT), left: -16 }} />
-        <Handle type="source" position={Position.Right} className="rf-port rf-port-out"
+        <Handle id="main-out" type="source" position={Position.Right} className="rf-port rf-port-out"
           style={{ ...portCircle(OUTPUT_PORT), right: -16 }}
           onClick={(e) => { e.stopPropagation(); setSpawnOpen((v) => !v); }} />
         {spawnOpen && <SpawnMenu sourceId={id} onClose={() => setSpawnOpen(false)} />}

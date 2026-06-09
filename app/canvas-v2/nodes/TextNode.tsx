@@ -309,7 +309,7 @@ function TextNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                 )}
               </div>
             )}
-            <button onClick={handleGenerate} style={generateBtn}>Generate</button>
+            <button onClick={handleGenerate} disabled={data.status === 'generating'} style={{ ...generateBtn, opacity: data.status === 'generating' ? 0.4 : 1, cursor: data.status === 'generating' ? 'default' : 'pointer' }}>{data.status === 'generating' ? '生成中…' : 'Generate'}</button>
             {optimizeMode && <span style={{ fontSize: 11, color: '#71717a' }}>专有模型</span>}
           </div>
         </div>

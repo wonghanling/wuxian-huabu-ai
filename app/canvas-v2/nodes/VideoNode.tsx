@@ -11,6 +11,7 @@ import { HoverZoomImg } from './RefThumb';
 import { PromptTools } from './PromptTools';
 import { PromptArea } from './PromptArea';
 import { Lightbox, downloadFile } from './Lightbox';
+import { VideoTrimBar, exportVideoSegment } from './VideoTrimBar';
 import { uploadImageToStorage, uploadFileToStorage, generateVideo, mirrorOutput, getUserId } from '../lib/api';
 import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 
@@ -41,6 +42,8 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [sub, setSub] = useState<SubPanel>(null);
   const [uploading, setUploading] = useState(false);   // 上传中指示(照原网)
   const [lightbox, setLightbox] = useState(false);      // 画布内查看放大
+  const [trimming, setTrimming] = useState(false);      // 剪辑条开关
+  const [exporting, setExporting] = useState(false);    // 导出片段中
   const editRef = useRef<HTMLTextAreaElement>(null);
   const videoEl = useRef<HTMLVideoElement>(null);       // 卡片内成品视频(捕捉帧抓当前帧)
 
@@ -103,6 +106,50 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
       if (url) updateConfig(id, { [which]: url } as any);
     } finally {
       setUploading(false);
+    }
+  };
+
+  // 剪辑:开启剪辑条(初始化区间为整段)
+  const openTrim = () => {
+    const v = videoEl.current;
+    const dur = v?.duration || data.config.duration || 5;
+    if (data.config.trimStart == null || data.config.trimEnd == null) {
+      updateConfig(id, { trimStart: 0, trimEnd: +dur.toFixed(2) });
+    }
+    setTrimming(true);
+  };
+
+  // 导出剪辑片段:MediaRecorder 录区间 → 上传 → 新建视频卡(连线)
+  const exportSegment = async () => {
+    if (!data.outputUrl) return;
+    const ts = data.config.trimStart ?? 0;
+    const te = data.config.trimEnd ?? (videoEl.current?.duration || 5);
+    setExporting(true);
+    try {
+      const blob = await exportVideoSegment(data.outputUrl, ts, te);
+      const ext = blob.type.includes('mp4') ? 'mp4' : 'webm';
+      const file = new File([blob], `clip-${Date.now()}.${ext}`, { type: blob.type });
+      const url = await uploadFileToStorage(file, 'video');
+      if (!url) throw new Error('上传片段失败');
+      const newId = `v${Date.now()}`;
+      const cur = useCanvasStore.getState().nodes.find((n) => n.id === id);
+      const newNode: CardNode = {
+        id: newId, type: 'card',
+        position: cur ? { x: cur.position.x, y: cur.position.y + 420 } : { x: 0, y: 0 },
+        data: { kind: 'video', status: 'done', outputUrl: url, aspectW: (data as any).aspectW, aspectH: (data as any).aspectH,
+          config: { ...data.config, trimStart: undefined, trimEnd: undefined } } as any,
+      };
+      useCanvasStore.setState((s) => ({
+        nodes: [...s.nodes, newNode],
+        edges: [...s.edges, { id: `e${id}-${newId}`, source: id, target: newId, type: 'deletable', animated: true }],
+        selectedId: newId,
+      }));
+      (window as any).saveCanvasV2Now?.();
+      setTrimming(false);
+    } catch (err: any) {
+      alert('导出片段失败: ' + (err?.message || err));
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -258,6 +305,14 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                   updateCard(id, { aspectW: v.videoWidth, aspectH: v.videoHeight });
                 }
               }}
+              onTimeUpdate={(e) => {
+                // 剪辑开启时:播放只在 [trimStart, trimEnd] 区间内循环
+                if (!trimming) return;
+                const v = e.currentTarget as HTMLVideoElement;
+                const ts = data.config.trimStart ?? 0;
+                const te = data.config.trimEnd ?? v.duration;
+                if (v.currentTime >= te || v.currentTime < ts) v.currentTime = ts;
+              }}
               onMouseEnter={(e) => { if (!selected) (e.currentTarget as HTMLVideoElement).play().catch(() => {}); }}
               onMouseLeave={(e) => { if (!selected) { const v = e.currentTarget as HTMLVideoElement; v.pause(); v.currentTime = 0; } }}
             />
@@ -374,7 +429,7 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               <span style={{ color: '#71717a' }}> / 普通 ¥{price.normal.toFixed(2)}</span>
             </span>
             <span style={{ fontSize: 10, color: '#52525b' }}>{duration}s · {resolution}{data.config.audio ? ' · 有声' : ''}</span>
-            <button onClick={handleGenerate} style={generateBtn}>Generate</button>
+            <button onClick={handleGenerate} disabled={data.status === 'generating'} style={{ ...generateBtn, opacity: data.status === 'generating' ? 0.4 : 1, cursor: data.status === 'generating' ? 'default' : 'pointer' }}>{data.status === 'generating' ? '生成中…' : 'Generate'}</button>
           </div>
         </div>
       </NodeToolbar>
@@ -394,6 +449,9 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               <button onClick={captureFrame} style={toolBtnWide} title="捕捉画面帧">
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><IconScissors size={16} /> 捕捉帧</span>
               </button>
+              <button onClick={openTrim} style={{ ...toolBtnWide, ...(trimming ? { background: 'rgba(96,165,250,0.25)' } : {}) }} title="剪辑(截取片段)">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><IconScissors size={16} /> 剪辑</span>
+              </button>
               <button onClick={() => updateCard(id, { status: 'empty', outputUrl: null })} style={toolBtnWide} title="删除视频">
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>× 删除</span>
               </button>
@@ -412,6 +470,20 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           )}
         </div>
       </NodeToolbar>
+      {/* 剪辑条(底部弹出) */}
+      {trimming && hasVideo && (
+        <NodeToolbar isVisible position={Position.Bottom} offset={12}>
+          <VideoTrimBar
+            videoEl={videoEl.current}
+            duration={videoEl.current?.duration || data.config.duration || 5}
+            trimStart={data.config.trimStart ?? 0}
+            trimEnd={data.config.trimEnd ?? (videoEl.current?.duration || 5)}
+            onChange={(s, e) => updateConfig(id, { trimStart: s, trimEnd: e })}
+            onExport={exportSegment}
+            exporting={exporting}
+          />
+        </NodeToolbar>
+      )}
       {lightbox && hasVideo && <Lightbox url={data.outputUrl!} kind="video" onClose={() => setLightbox(false)} />}
     </>
   );
