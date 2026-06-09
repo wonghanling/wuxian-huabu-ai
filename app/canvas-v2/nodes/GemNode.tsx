@@ -58,6 +58,7 @@ const STYLE_OPTIONS = [
 type SubPanel = 'mode' | 'grid' | 'style' | 'ref' | 'gemMode' | null;
 
 const REF_MAX = 9;
+const REF_MAX_CINEMATIC = 2;   // 时空模式:只首帧+尾帧 2 张
 
 function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const collapsed = data.collapsed ?? false;
@@ -84,6 +85,9 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   // 连线实时:上游图(连接进来的,实时显示+生成时合并)
   const connImages = useUpstream(id).images.filter((u) => !refImages.includes(u));
   const gridOptions = mode === 'story' ? STORY_GRIDS : CINEMATIC_GRIDS;
+  // 时空模式参考图限 2 张(首帧/尾帧);故事模式 9 张
+  const isCinematic = mode === 'cinematic';
+  const refMax = isCinematic ? REF_MAX_CINEMATIC : REF_MAX;
   const selectedGrid = gridOptions.find((g) => g.value === gridSize) ?? gridOptions[1];
 
   const toggleCollapse = (e: React.MouseEvent) => {
@@ -94,7 +98,7 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const addRefImages = async (fileList: FileList | null) => {
     if (!fileList) return;
     const cur = data.config.refImages ?? [];
-    const room = Math.max(0, REF_MAX - cur.length);
+    const room = Math.max(0, refMax - cur.length);
     const files = Array.from(fileList).slice(0, room);
     if (!files.length) return;
     setUploading(true);
@@ -246,7 +250,16 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                     { key: 'cinematic', label: '时空模式', desc: '上传两张关键帧图（首帧+尾帧），AI 分析两帧之间的动作变化，生成过渡中间镜头序列。适合动作细节拆解，支持2×2/3×3格子布局。' },
                   ] as { key: GemMode; label: string; desc: string }[]).map((opt) => (
                     <button key={opt.key}
-                      onClick={() => { updateConfig(id, { preset: opt.key }); setSub(null); }}
+                      onClick={() => {
+                        // 切到时空模式时,参考图裁到首尾 2 张
+                        const patch: any = { preset: opt.key };
+                        if (opt.key === 'cinematic') {
+                          const cur = data.config.refImages ?? [];
+                          if (cur.length > REF_MAX_CINEMATIC) patch.refImages = cur.slice(0, REF_MAX_CINEMATIC);
+                        }
+                        updateConfig(id, patch);
+                        setSub(null);
+                      }}
                       onMouseEnter={() => setModeTooltip(opt.key)}
                       onMouseLeave={() => setModeTooltip(null)}
                       style={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%', padding: '10px 12px', borderRadius: 8, border: 'none', background: mode === opt.key ? 'rgba(192,192,192,0.16)' : 'transparent', color: '#d4d4d8', cursor: 'pointer', textAlign: 'left' }}>
@@ -280,18 +293,27 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               ))}
             </ParamTag>
 
-            {/* 参考图(可选,最多9张;含连接进来的上游图) */}
-            <ParamTag label={<>参考图{refImages.length > 0 ? ` ${refImages.length}` : ' 可选'}{connImages.length > 0 && <span style={{ marginLeft: 4, color: '#a78bfa' }}>+{connImages.length}连</span>}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</>} open={sub === 'ref'} onToggle={() => setSub(sub === 'ref' ? null : 'ref')} width={300}>
-              <label style={{ ...uploadBtn, ...(uploading ? { opacity: 0.6, pointerEvents: 'none' } : {}) }}>
-                <IconPlus size={13} /> <span>{uploading ? '上传中…' : `上传图片（还能传 ${REF_MAX - refImages.length} 张）`}</span>
-                <input type="file" accept="image/*" multiple disabled={uploading} style={{ display: 'none' }} onChange={(e) => { addRefImages(e.target.files); e.currentTarget.value = ''; }} />
-              </label>
-              <div style={{ fontSize: 10, color: '#71717a', marginBottom: 6 }}>AI 将参考图片风格生成分镜</div>
+            {/* 参考图:故事模式最多9张;时空模式仅首帧+尾帧2张 */}
+            <ParamTag label={<>{isCinematic ? '首尾帧' : '参考图'}{refImages.length > 0 ? ` ${refImages.length}` : (isCinematic ? '' : ' 可选')}{connImages.length > 0 && <span style={{ marginLeft: 4, color: '#a78bfa' }}>+{connImages.length}连</span>}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</>} open={sub === 'ref'} onToggle={() => setSub(sub === 'ref' ? null : 'ref')} width={300}>
+              {refImages.length < refMax && (
+                <label style={{ ...uploadBtn, ...(uploading ? { opacity: 0.6, pointerEvents: 'none' } : {}) }}>
+                  <IconPlus size={13} /> <span>{uploading ? '上传中…' : isCinematic ? (refImages.length === 0 ? '上传首帧' : '上传尾帧') : `上传图片（还能传 ${refMax - refImages.length} 张）`}</span>
+                  <input type="file" accept="image/*" multiple={!isCinematic} disabled={uploading} style={{ display: 'none' }} onChange={(e) => { addRefImages(e.target.files); e.currentTarget.value = ''; }} />
+                </label>
+              )}
+              <div style={{ fontSize: 10, color: '#71717a', marginBottom: 6 }}>{isCinematic ? '时空模式:首帧+尾帧定义起止画面,AI 推演中间过程' : 'AI 将参考图片风格生成分镜'}</div>
               {refImages.length > 0 && (
                 <div style={refGrid}>
                   {refImages.map((url, i) => (
-                    <RefThumb key={i} url={url} index={i}
-                      onRemove={() => updateConfig(id, { refImages: refImages.filter((_, j) => j !== i) })} />
+                    <div key={i} style={{ position: 'relative' }}>
+                      <RefThumb url={url} index={i}
+                        onRemove={() => updateConfig(id, { refImages: refImages.filter((_, j) => j !== i) })} />
+                      {isCinematic && (
+                        <span style={{ position: 'absolute', top: 2, left: 2, fontSize: 9, fontWeight: 700, color: '#fff', background: 'rgba(34,197,94,0.9)', padding: '1px 5px', borderRadius: 4, pointerEvents: 'none' }}>
+                          {i === 0 ? '首帧' : '尾帧'}
+                        </span>
+                      )}
+                    </div>
                   ))}
                 </div>
               )}

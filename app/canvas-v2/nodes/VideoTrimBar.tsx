@@ -64,46 +64,62 @@ export function VideoTrimBar({
   return (
     <div className="nodrag nopan" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}
       style={{
-        marginTop: 8, padding: '10px 12px', borderRadius: 12,
-        background: 'rgba(24,24,27,0.92)', border: '1px solid rgba(255,255,255,0.12)',
-        backdropFilter: 'blur(20px)', minWidth: 280, boxShadow: '0 10px 36px rgba(0,0,0,0.5)',
+        marginTop: 8, padding: '14px 16px', borderRadius: 16, minWidth: 320,
+        background: 'linear-gradient(135deg, rgba(20,28,22,0.96) 0%, rgba(16,20,18,0.96) 100%)',
+        border: '1px solid rgba(34,197,94,0.35)',
+        backdropFilter: 'blur(24px) saturate(160%)', WebkitBackdropFilter: 'blur(24px) saturate(160%)',
+        boxShadow: '0 16px 48px rgba(0,0,0,0.6), 0 0 0 1px rgba(34,197,94,0.08), inset 0 1px 0 rgba(255,255,255,0.04)',
       }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-        <span style={{ fontSize: 11, color: '#a1a1aa' }}>剪辑区间</span>
-        <span style={{ fontSize: 11, color: '#e4e4e7' }}>{trimStart.toFixed(1)}s — {trimEnd.toFixed(1)}s · 共 {(trimEnd - trimStart).toFixed(1)}s</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <span style={{ fontSize: 12, fontWeight: 600, color: '#4ade80', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', boxShadow: '0 0 8px #22c55e' }} />
+          视频剪辑
+        </span>
+        <span style={{ fontSize: 12, color: '#86efac', fontFamily: 'monospace', fontWeight: 600 }}>
+          {trimStart.toFixed(1)}s – {trimEnd.toFixed(1)}s
+          <span style={{ color: '#52525b', marginLeft: 8, fontWeight: 400 }}>共 {(trimEnd - trimStart).toFixed(1)}s</span>
+        </span>
       </div>
 
       {/* 轨道 */}
-      <div ref={barRef} style={{ position: 'relative', height: 28, background: 'rgba(255,255,255,0.08)', borderRadius: 6, cursor: 'pointer' }}>
+      <div ref={barRef} style={{ position: 'relative', height: 34, background: 'rgba(0,0,0,0.35)', borderRadius: 8, cursor: 'pointer', border: '1px solid rgba(255,255,255,0.05)' }}>
         {/* 选中区间 */}
-        <div style={{ position: 'absolute', top: 0, bottom: 0, left: pct(trimStart), width: `calc(${pct(trimEnd)} - ${pct(trimStart)})`, background: 'rgba(96,165,250,0.3)', border: '1px solid rgba(96,165,250,0.6)', borderRadius: 6 }} />
+        <div style={{ position: 'absolute', top: 0, bottom: 0, left: pct(trimStart), width: `calc(${pct(trimEnd)} - ${pct(trimStart)})`, background: 'linear-gradient(180deg, rgba(34,197,94,0.32), rgba(34,197,94,0.18))', borderTop: '2px solid #22c55e', borderBottom: '2px solid #22c55e', borderRadius: 4 }} />
         {/* 播放游标 */}
         {playhead >= trimStart && playhead <= trimEnd && (
-          <div style={{ position: 'absolute', top: -2, bottom: -2, left: pct(playhead), width: 2, background: '#fff' }} />
+          <div style={{ position: 'absolute', top: -3, bottom: -3, left: pct(playhead), width: 2, background: '#fff', boxShadow: '0 0 6px rgba(255,255,255,0.8)' }} />
         )}
         {/* 起点把手 */}
         <div onMouseDown={(e) => { e.stopPropagation(); setDrag('start'); }}
-          style={{ position: 'absolute', top: -3, left: pct(trimStart), width: 12, height: 34, marginLeft: -6, background: '#60a5fa', borderRadius: 4, cursor: 'ew-resize', boxShadow: '0 2px 6px rgba(0,0,0,0.5)' }} />
+          style={{ position: 'absolute', top: -4, left: pct(trimStart), width: 14, height: 42, marginLeft: -7, background: 'linear-gradient(180deg, #4ade80, #22c55e)', borderRadius: 5, cursor: 'ew-resize', boxShadow: '0 2px 10px rgba(34,197,94,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ width: 2, height: 16, background: 'rgba(0,0,0,0.35)', borderRadius: 2 }} />
+        </div>
         {/* 终点把手 */}
         <div onMouseDown={(e) => { e.stopPropagation(); setDrag('end'); }}
-          style={{ position: 'absolute', top: -3, left: pct(trimEnd), width: 12, height: 34, marginLeft: -6, background: '#60a5fa', borderRadius: 4, cursor: 'ew-resize', boxShadow: '0 2px 6px rgba(0,0,0,0.5)' }} />
+          style={{ position: 'absolute', top: -4, left: pct(trimEnd), width: 14, height: 42, marginLeft: -7, background: 'linear-gradient(180deg, #4ade80, #22c55e)', borderRadius: 5, cursor: 'ew-resize', boxShadow: '0 2px 10px rgba(34,197,94,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ width: 2, height: 16, background: 'rgba(0,0,0,0.35)', borderRadius: 2 }} />
+        </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+      <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
         <button onClick={() => { if (videoEl) { videoEl.currentTime = trimStart; videoEl.play().catch(() => {}); } }}
-          style={trimBtn}>▶ 预览片段</button>
-        <button onClick={onExport} disabled={exporting}
-          style={{ ...trimBtn, background: exporting ? 'rgba(96,165,250,0.3)' : 'rgba(96,165,250,0.85)', color: '#fff', opacity: exporting ? 0.7 : 1 }}>
-          {exporting ? '导出中…' : '导出片段'}
+          style={previewBtn}>▶ 预览片段</button>
+        <button onClick={onExport} disabled={exporting} style={{ ...exportBtn, opacity: exporting ? 0.6 : 1, cursor: exporting ? 'default' : 'pointer' }}>
+          {exporting ? '导出中…' : '✓ 导出片段'}
         </button>
       </div>
     </div>
   );
 }
 
-const trimBtn: React.CSSProperties = {
-  flex: 1, height: 30, borderRadius: 8, border: '1px solid rgba(255,255,255,0.14)',
-  background: 'rgba(255,255,255,0.06)', color: '#e4e4e7', fontSize: 12, cursor: 'pointer',
+const previewBtn: React.CSSProperties = {
+  flex: 1, height: 34, borderRadius: 9, border: '1px solid rgba(34,197,94,0.4)',
+  background: 'rgba(34,197,94,0.1)', color: '#86efac', fontSize: 12.5, fontWeight: 600, cursor: 'pointer',
+};
+const exportBtn: React.CSSProperties = {
+  flex: 1, height: 34, borderRadius: 9, border: 'none',
+  background: 'linear-gradient(180deg, #22c55e, #16a34a)', color: '#fff', fontSize: 12.5, fontWeight: 700,
+  boxShadow: '0 4px 14px rgba(34,197,94,0.4)',
 };
 
 // ============================================================
