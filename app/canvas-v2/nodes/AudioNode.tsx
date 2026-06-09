@@ -1,12 +1,13 @@
 'use client';
 
-import { memo, useState, useRef } from 'react';
+import { memo, useState, useRef, useEffect } from 'react';
 import { Handle, Position, NodeToolbar, type NodeProps } from '@xyflow/react';
 import { useCanvasStore, type CardNode } from '../store';
 import { IconExpand, IconShrink, IconMinus, IconPlus, IconUpload } from './icons';
 import { SpawnMenu } from './SpawnMenu';
 import { getUserId } from '../lib/api';
 import { useDebouncedField } from '../lib/useDebouncedField';
+import { loadVoices, saveVoice, deleteVoice, type VoiceEntry } from '../lib/voiceLibrary';
 
 // ============================================================
 // 语音合成卡片(照原网 AudioCard,三模式:合成/音色设计/克隆)
@@ -33,6 +34,12 @@ function AudioNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [sub, setSub] = useState<'voice' | 'params' | null>(null);
   const [uploadedFileId, setUploadedFileId] = useState('');
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [libOpen, setLibOpen] = useState(false);        // 我的音色库弹窗
+  const [voices, setVoices] = useState<VoiceEntry[]>([]); // 语音库列表
+
+  // 加载我的音色库(登录后)
+  const refreshVoices = async () => setVoices(await loadVoices());
+  useEffect(() => { refreshVoices(); }, []);
 
   const cfg = data.config as any;
   const mode = (cfg.audioMode as AudioMode) ?? 'synthesize';
@@ -106,7 +113,10 @@ function AudioNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
         const d = await res.json();
         if (!res.ok) throw new Error(d.error || '设计失败');
         updateCard(id, { status: 'done', progress: 100, outputUrl: d.audioUrl || d.url || null });
-        alert('音色设计成功!Voice ID: ' + voiceId);
+        // 自动存入我的音色库(设计来源)
+        await saveVoice({ voiceId, description: designPrompt, source: 'design', voiceType: 'human' });
+        await refreshVoices();
+        alert('音色设计成功!Voice ID 已存入「我的音色库」: ' + voiceId);
       } catch (err: any) {
         updateCard(id, { status: 'error', progress: 0 });
         alert('设计失败: ' + (err?.message || err));
@@ -130,8 +140,11 @@ function AudioNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           throw new Error(m.includes('duration too short') ? '音频时长太短,至少需要 10 秒' : m);
         }
         set({ clonedVoices: JSON.stringify([...clonedVoices, voiceId]) });
+        // 自动存入我的音色库(复刻来源)
+        await saveVoice({ voiceId, description: '复刻音色', source: 'clone', voiceType: 'human' });
+        await refreshVoices();
         updateCard(id, { status: 'done', progress: 100 });
-        alert(`音色复刻成功!\nVoice ID: ${voiceId}\n已保存到音色列表,可在语音合成模式选择使用。`);
+        alert(`音色复刻成功!\nVoice ID: ${voiceId}\n已存入「我的音色库」,可在语音合成模式选择使用。`);
       } catch (err: any) {
         updateCard(id, { status: 'error', progress: 0 });
         alert('复刻失败: ' + (err?.message || err));
@@ -197,13 +210,49 @@ function AudioNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
             ))}
           </div>
 
-          {/* Voice ID 输入(三模式共用) */}
-          <input value={voiceId} onChange={(e) => set({ voiceId: e.target.value })} placeholder="Voice ID"
-            style={inputStyle} />
-          {clonedVoices.length > 0 && mode === 'synthesize' && (
-            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 6 }}>
-              {clonedVoices.map((v) => (
-                <button key={v} onClick={() => set({ voiceId: v })} style={{ fontSize: 9, padding: '2px 6px', borderRadius: 6, background: 'rgba(168,85,247,0.2)', color: '#c4b5fd', border: 'none', cursor: 'pointer' }}>{v.slice(0, 12)}…</button>
+          {/* Voice ID 输入(三模式共用) + 音色库入口 */}
+          <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+            <input value={voiceId} onChange={(e) => set({ voiceId: e.target.value })} placeholder="Voice ID"
+              style={{ ...inputStyle, marginBottom: 0, flex: 1 }} />
+            <button onClick={() => setLibOpen((v) => !v)} title="我的音色库"
+              style={{ padding: '0 10px', borderRadius: 8, fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap',
+                background: libOpen ? 'rgba(59,130,246,0.8)' : 'rgba(255,255,255,0.06)', color: libOpen ? '#fff' : '#a1a1aa',
+                border: `1px solid ${libOpen ? 'rgba(96,165,250,0.5)' : 'rgba(255,255,255,0.12)'}` }}>
+              音色库{voices.length > 0 ? ` ${voices.length}` : ''}
+            </button>
+            {/* 手动收藏当前 Voice ID(网络找的也能存) */}
+            {voiceId && !voices.some((v) => v.voiceId === voiceId) && (
+              <button onClick={async () => { await saveVoice({ voiceId, source: 'manual', voiceType: 'human' }); await refreshVoices(); }}
+                title="收藏当前 ID 到音色库"
+                style={{ padding: '0 8px', borderRadius: 8, fontSize: 11, cursor: 'pointer', background: 'rgba(255,255,255,0.06)', color: '#a1a1aa', border: '1px solid rgba(255,255,255,0.12)' }}>
+                ★收藏
+              </button>
+            )}
+          </div>
+
+          {/* 我的音色库面板:选 ID / 改名 / 删除 */}
+          {libOpen && (
+            <div className="nodrag nowheel cv2-scroll" style={{ marginBottom: 8, maxHeight: 160, overflowY: 'auto', background: 'rgba(0,0,0,0.3)', borderRadius: 8, padding: 6, border: '1px solid rgba(255,255,255,0.08)' }}>
+              {voices.length === 0 ? (
+                <div style={{ fontSize: 11, color: '#71717a', textAlign: 'center', padding: '10px 0' }}>音色库为空。设计/复刻成功会自动存入,或填 ID 后点★收藏。</div>
+              ) : voices.map((v) => (
+                <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 4px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <button onClick={() => { set({ voiceId: v.voiceId }); setLibOpen(false); }}
+                    style={{ flex: 1, textAlign: 'left', background: voiceId === v.voiceId ? 'rgba(59,130,246,0.2)' : 'transparent', border: 'none', cursor: 'pointer', borderRadius: 6, padding: '2px 4px' }}>
+                    <div style={{ fontSize: 11, color: '#e4e4e7' }}>{v.name || v.voiceId.slice(0, 18)}
+                      <span style={{ fontSize: 9, marginLeft: 6, color: v.source === 'design' ? '#86efac' : v.source === 'clone' ? '#c4b5fd' : '#71717a' }}>
+                        {v.source === 'design' ? '设计' : v.source === 'clone' ? '复刻' : '收藏'}
+                      </span>
+                    </div>
+                    {v.description && <div style={{ fontSize: 9, color: '#71717a', marginTop: 1 }}>{v.description.slice(0, 30)}</div>}
+                  </button>
+                  <button onClick={async () => {
+                      const nn = prompt('重命名音色', v.name || '');
+                      if (nn !== null) { const { renameVoice } = await import('../lib/voiceLibrary'); await renameVoice(v.voiceId, nn); await refreshVoices(); }
+                    }} title="改名" style={{ fontSize: 10, color: '#a1a1aa', background: 'none', border: 'none', cursor: 'pointer' }}>✎</button>
+                  <button onClick={async () => { if (confirm('从音色库删除?')) { await deleteVoice(v.voiceId); await refreshVoices(); } }}
+                    title="删除" style={{ fontSize: 11, color: '#f87171', background: 'none', border: 'none', cursor: 'pointer' }}>×</button>
+                </div>
               ))}
             </div>
           )}
