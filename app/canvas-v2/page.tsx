@@ -373,7 +373,7 @@ function CanvasV2Inner() {
         onlyRenderVisibleElements
         minZoom={0.2}
         maxZoom={2}
-        nodeDragThreshold={2}
+        nodeDragThreshold={8}
         elevateNodesOnSelect
         connectionRadius={48}
         deleteKeyCode={['Delete']}
