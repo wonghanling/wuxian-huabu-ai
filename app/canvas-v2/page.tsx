@@ -351,7 +351,7 @@ function CanvasV2Inner() {
   }, []);
 
   return (
-    <div style={{ width: '100vw', height: '100vh', background: '#000' }}>
+    <div style={{ width: '100vw', height: '100vh', background: '#000' }} onContextMenu={(e) => e.preventDefault()}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -373,13 +373,15 @@ function CanvasV2Inner() {
         onlyRenderVisibleElements
         minZoom={0.2}
         maxZoom={2}
-        nodeDragThreshold={8}
+        nodeDragThreshold={4}
         elevateNodesOnSelect
         connectionRadius={48}
         deleteKeyCode={['Delete']}
         zoomOnScroll={false}
         zoomOnDoubleClick={false}
         panOnScroll
+        panOnDrag={[1, 2]}
+        selectionOnDrag={false}
         zoomActivationKeyCode={null}
         defaultViewport={{ x: 60, y: 60, zoom: 0.9 }}
         edgeTypes={edgeTypes}
