@@ -47,7 +47,7 @@ function AudioNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const updateConfig = useCanvasStore((s) => s.updateConfig);
 
   const [spawnOpen, setSpawnOpen] = useState(false);
-  const [sub, setSub] = useState<'fn' | 'lib' | null>(null);
+  const [sub, setSub] = useState<'fn' | 'lib' | 'params' | 'preview' | null>(null);
   const [uploadedFileId, setUploadedFileId] = useState('');
   const [uploadingFile, setUploadingFile] = useState(false);
   const [sceneAudioUrl, setSceneAudioUrl] = useState('');   // 场景声 audio-to-audio 输入音频 URL
@@ -64,7 +64,8 @@ function AudioNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
   const hasAudio = data.status === 'done' && !!data.outputUrl;
   const baseW = enlarged ? 460 : 360;
-  const baseH = enlarged ? 360 : 300;
+  // 有音频成品时卡片自适应成小条(只放播放器),否则正常高度给提示/进度
+  const baseH = hasAudio ? 96 : (enlarged ? 360 : 300);
 
   const set = (patch: any) => updateConfig(id, patch);
   const textField = useDebouncedField(text, (v) => set({ text: v }));
@@ -233,12 +234,33 @@ function AudioNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
         </div>
       </div>
 
-      {/* 底部一体式栏 */}
+      {/* 底部一体式栏(对齐其它卡:大输入区在上,按钮一排在下) */}
       <NodeToolbar isVisible={selected && !spawnOpen} position={Position.Bottom} offset={16}>
         <div className="nodrag nopan" style={promptBar} onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
-          {/* 功能选择(平铺弹窗) + 音色库 */}
-          <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
-            <ParamTag label={`${fnDef.group} · ${fnDef.label} ▾`} open={sub === 'fn'} onToggle={() => setSub(sub === 'fn' ? null : 'fn')} width={300}>
+          {/* 主输入大区域(随功能切换) */}
+          {fn === 'clone' ? (
+            <label style={{ ...bigUpload, ...(uploadingFile ? { opacity: 0.6, pointerEvents: 'none' } : {}) }}>
+              <IconUpload size={20} />
+              <span style={{ marginTop: 8 }}>{uploadingFile ? '上传中…' : (uploadedFileId ? '✓ 已上传样本,可更换' : '上传音频样本(≥10秒)')}</span>
+              <input type="file" accept="audio/*" disabled={uploadingFile} style={{ display: 'none' }} onChange={(e) => { uploadAudio(e.target.files, false); e.currentTarget.value = ''; }} />
+            </label>
+          ) : (
+            <textarea className="nodrag nopan nowheel cv2-scroll"
+              value={fn === 'synthesize' ? textField.value : designField.value}
+              {...(fn === 'synthesize' ? textField.bind : designField.bind)}
+              placeholder={
+                fn === 'synthesize' ? '输入要合成的文本…' :
+                fn === 'design' ? '描述想要的音色(如:温柔的女声、低沉磁性的男声)…' :
+                fn === 'scene-music' ? '描述想要的音乐(如:轻快的爵士钢琴)…' :
+                '描述想要的声音/音效(如:海浪拍打礁石、雨夜雷声)…'
+              }
+              style={promptInput} />
+          )}
+
+          {/* 底部按钮一排:功能 + 各功能专属参数 + 生成 */}
+          <div style={tagsRow}>
+            {/* 功能选择 */}
+            <ParamTag label={`${fnDef.group}·${fnDef.label}`} open={sub === 'fn'} onToggle={() => setSub(sub === 'fn' ? null : 'fn')} width={300}>
               {(['人声', '场景声'] as const).map((g) => (
                 <div key={g}>
                   <div style={{ fontSize: 10, color: '#71717a', padding: '6px 8px 2px' }}>{g}</div>
@@ -253,100 +275,75 @@ function AudioNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                 </div>
               ))}
             </ParamTag>
-            {/* 人声功能才有音色库 */}
+
+            {/* Voice ID + 音色库(人声三功能) */}
             {!isScene && (
-              <button onClick={() => setSub(sub === 'lib' ? null : 'lib')} title="我的音色库"
-                style={{ padding: '0 10px', borderRadius: 8, fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap',
-                  background: sub === 'lib' ? 'rgba(59,130,246,0.8)' : 'rgba(255,255,255,0.06)', color: sub === 'lib' ? '#fff' : '#a1a1aa',
-                  border: `1px solid ${sub === 'lib' ? 'rgba(96,165,250,0.5)' : 'rgba(255,255,255,0.12)'}` }}>
-                音色库{voices.length > 0 ? ` ${voices.length}` : ''}
-              </button>
-            )}
-          </div>
-
-          {/* 音色库面板 */}
-          {sub === 'lib' && !isScene && (
-            <div className="nodrag nowheel cv2-scroll" style={{ marginBottom: 8, maxHeight: 150, overflowY: 'auto', background: 'rgba(0,0,0,0.3)', borderRadius: 8, padding: 6, border: '1px solid rgba(255,255,255,0.08)' }}>
-              {voices.length === 0 ? (
-                <div style={{ fontSize: 11, color: '#71717a', textAlign: 'center', padding: '10px 0' }}>音色库为空。设计/复刻成功会自动存入。</div>
-              ) : voices.map((v) => (
-                <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 4px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <button onClick={() => { set({ voiceId: v.voiceId }); setSub(null); }}
-                    style={{ flex: 1, textAlign: 'left', background: voiceId === v.voiceId ? 'rgba(59,130,246,0.2)' : 'transparent', border: 'none', cursor: 'pointer', borderRadius: 6, padding: '2px 4px' }}>
-                    <div style={{ fontSize: 11, color: '#e4e4e7' }}>{v.name || v.voiceId.slice(0, 18)}
-                      <span style={{ fontSize: 9, marginLeft: 6, color: v.source === 'design' ? '#86efac' : v.source === 'clone' ? '#c4b5fd' : '#71717a' }}>
-                        {v.source === 'design' ? '设计' : v.source === 'clone' ? '复刻' : '收藏'}
-                      </span>
-                    </div>
-                  </button>
-                  <button onClick={async () => { const nn = prompt('重命名音色', v.name || ''); if (nn !== null) { await renameVoice(v.voiceId, nn); await refreshVoices(); } }} title="改名" style={{ fontSize: 10, color: '#a1a1aa', background: 'none', border: 'none', cursor: 'pointer' }}>✎</button>
-                  <button onClick={async () => { if (confirm('从音色库删除?')) { await deleteVoice(v.voiceId); await refreshVoices(); } }} title="删除" style={{ fontSize: 11, color: '#f87171', background: 'none', border: 'none', cursor: 'pointer' }}>×</button>
+              <ParamTag label={`🎚 ${fn === 'synthesize' ? 'Voice ID' : 'ID/库'}`} open={sub === 'lib'} onToggle={() => setSub(sub === 'lib' ? null : 'lib')} width={300}>
+                <div style={{ padding: 6 }}>
+                  <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                    <input value={voiceId} onChange={(e) => set({ voiceId: e.target.value })} placeholder={fn === 'synthesize' ? 'Voice ID' : '起个 Voice ID(字母开头)'} style={{ ...inputStyle, marginBottom: 0, flex: 1 }} />
+                    {voiceId && !voices.some((v) => v.voiceId === voiceId) && (
+                      <button onClick={async () => { await saveVoice({ voiceId, source: 'manual', voiceType: 'human' }); await refreshVoices(); }} title="收藏到音色库"
+                        style={{ padding: '0 8px', borderRadius: 8, fontSize: 11, cursor: 'pointer', background: 'rgba(255,255,255,0.06)', color: '#a1a1aa', border: '1px solid rgba(255,255,255,0.12)' }}>★</button>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 10, color: '#71717a', marginBottom: 4 }}>我的音色库 {voices.length > 0 ? `(${voices.length})` : ''}</div>
+                  <div className="nowheel cv2-scroll" style={{ maxHeight: 140, overflowY: 'auto' }}>
+                    {voices.length === 0 ? (
+                      <div style={{ fontSize: 11, color: '#71717a', textAlign: 'center', padding: '8px 0' }}>空。设计/复刻成功会自动存入。</div>
+                    ) : voices.map((v) => (
+                      <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 4px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                        <button onClick={() => { set({ voiceId: v.voiceId }); setSub(null); }}
+                          style={{ flex: 1, textAlign: 'left', background: voiceId === v.voiceId ? 'rgba(59,130,246,0.2)' : 'transparent', border: 'none', cursor: 'pointer', borderRadius: 6, padding: '2px 4px' }}>
+                          <span style={{ fontSize: 11, color: '#e4e4e7' }}>{v.name || v.voiceId.slice(0, 18)}</span>
+                          <span style={{ fontSize: 9, marginLeft: 6, color: v.source === 'design' ? '#86efac' : v.source === 'clone' ? '#c4b5fd' : '#71717a' }}>{v.source === 'design' ? '设计' : v.source === 'clone' ? '复刻' : '收藏'}</span>
+                        </button>
+                        <button onClick={async () => { const nn = prompt('重命名音色', v.name || ''); if (nn !== null) { await renameVoice(v.voiceId, nn); await refreshVoices(); } }} title="改名" style={{ fontSize: 10, color: '#a1a1aa', background: 'none', border: 'none', cursor: 'pointer' }}>✎</button>
+                        <button onClick={async () => { if (confirm('从音色库删除?')) { await deleteVoice(v.voiceId); await refreshVoices(); } }} title="删除" style={{ fontSize: 11, color: '#f87171', background: 'none', border: 'none', cursor: 'pointer' }}>×</button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
-            </div>
-          )}
+              </ParamTag>
+            )}
 
-          {/* ===== 人声:语音合成 ===== */}
-          {fn === 'synthesize' && (
-            <>
-              <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
-                <input value={voiceId} onChange={(e) => set({ voiceId: e.target.value })} placeholder="Voice ID" style={{ ...inputStyle, marginBottom: 0, flex: 1 }} />
-                {voiceId && !voices.some((v) => v.voiceId === voiceId) && (
-                  <button onClick={async () => { await saveVoice({ voiceId, source: 'manual', voiceType: 'human' }); await refreshVoices(); }} title="收藏到音色库"
-                    style={{ padding: '0 8px', borderRadius: 8, fontSize: 11, cursor: 'pointer', background: 'rgba(255,255,255,0.06)', color: '#a1a1aa', border: '1px solid rgba(255,255,255,0.12)' }}>★</button>
-                )}
-              </div>
-              <textarea className="nodrag nopan nowheel cv2-scroll" value={textField.value} {...textField.bind} placeholder="输入要合成的文本…" rows={3} style={textareaStyle} />
-              <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
-                <NumIn label="语速" value={cfg.speed ?? 1} step={0.1} min={0.5} max={2} onChange={(v) => set({ speed: v })} />
-                <NumIn label="音量" value={cfg.vol ?? 1} step={0.1} min={0.1} max={2} onChange={(v) => set({ vol: v })} />
-                <NumIn label="音调" value={cfg.pitch ?? 0} step={1} min={-12} max={12} onChange={(v) => set({ pitch: v })} />
-              </div>
-            </>
-          )}
+            {/* 语音合成:语速/音量/音调 */}
+            {fn === 'synthesize' && (
+              <ParamTag label="⚙ 参数" open={sub === 'params'} onToggle={() => setSub(sub === 'params' ? null : 'params')} width={240}>
+                <div style={{ display: 'flex', gap: 6, padding: 6 }}>
+                  <NumIn label="语速" value={cfg.speed ?? 1} step={0.1} min={0.5} max={2} onChange={(v) => set({ speed: v })} />
+                  <NumIn label="音量" value={cfg.vol ?? 1} step={0.1} min={0.1} max={2} onChange={(v) => set({ vol: v })} />
+                  <NumIn label="音调" value={cfg.pitch ?? 0} step={1} min={-12} max={12} onChange={(v) => set({ pitch: v })} />
+                </div>
+              </ParamTag>
+            )}
 
-          {/* ===== 人声:音色设计 ===== */}
-          {fn === 'design' && (
-            <>
-              <input value={voiceId} onChange={(e) => set({ voiceId: e.target.value })} placeholder="给新音色起个 Voice ID(字母开头)" style={inputStyle} />
-              <textarea className="nodrag nopan nowheel cv2-scroll" value={designField.value} {...designField.bind} placeholder="描述想要的音色(如:温柔的女声、低沉磁性的男声)…" rows={2} style={textareaStyle} />
-              <input value={cfg.previewText ?? ''} onChange={(e) => set({ previewText: e.target.value })} placeholder="试听文本(可选)" style={{ ...inputStyle, marginTop: 6, marginBottom: 0 }} />
-            </>
-          )}
+            {/* 音色设计:试听文本 */}
+            {fn === 'design' && (
+              <ParamTag label="🔈 试听" open={sub === 'preview'} onToggle={() => setSub(sub === 'preview' ? null : 'preview')} width={240}>
+                <div style={{ padding: 6 }}>
+                  <input value={cfg.previewText ?? ''} onChange={(e) => set({ previewText: e.target.value })} placeholder="试听文本(可选)" style={{ ...inputStyle, marginBottom: 0 }} />
+                </div>
+              </ParamTag>
+            )}
 
-          {/* ===== 人声:音色复刻 ===== */}
-          {fn === 'clone' && (
-            <>
-              <input value={voiceId} onChange={(e) => set({ voiceId: e.target.value })} placeholder="给复刻音色起个 Voice ID(字母开头)" style={inputStyle} />
-              <label style={{ ...uploadBtn, ...(uploadingFile ? { opacity: 0.6, pointerEvents: 'none' } : {}) }}>
-                <IconUpload size={13} /> <span>{uploadingFile ? '上传中…' : (uploadedFileId ? '已上传,可更换' : '上传音频样本(≥10秒)')}</span>
-                <input type="file" accept="audio/*" disabled={uploadingFile} style={{ display: 'none' }} onChange={(e) => { uploadAudio(e.target.files, false); e.currentTarget.value = ''; }} />
+            {/* 场景声:输入音频上传(转换类) + 时长 */}
+            {isScene && fnDef.needAudio && (
+              <label style={{ ...miniTagBtn, ...(uploadingFile ? { opacity: 0.6, pointerEvents: 'none' } : {}) }}>
+                <IconUpload size={12} /> {uploadingFile ? '上传中' : (sceneAudioUrl ? '已传音频' : `上传${fn === 'scene-music' ? '音乐' : '音效'}`)}
+                <input type="file" accept="audio/*" disabled={uploadingFile} style={{ display: 'none' }} onChange={(e) => { uploadAudio(e.target.files, true); e.currentTarget.value = ''; }} />
               </label>
-            </>
-          )}
+            )}
+            {isScene && (
+              <ParamTag label={`⏱ ${sceneDuration}s`} open={sub === 'params'} onToggle={() => setSub(sub === 'params' ? null : 'params')} width={180}>
+                <div style={{ padding: 6 }}><NumIn label="时长(秒)" value={sceneDuration} step={5} min={5} max={180} onChange={(v) => set({ sceneDuration: v })} /></div>
+              </ParamTag>
+            )}
 
-          {/* ===== 场景声(fal):描述 + 时长 + (转换类)输入音频 ===== */}
-          {isScene && (
-            <>
-              {fnDef.needAudio && (
-                <label style={{ ...uploadBtn, ...(uploadingFile ? { opacity: 0.6, pointerEvents: 'none' } : {}) }}>
-                  <IconUpload size={13} /> <span>{uploadingFile ? '上传中…' : (sceneAudioUrl ? '已上传输入音频,可更换' : `上传${fn === 'scene-music' ? '音乐' : '音效'}文件`)}</span>
-                  <input type="file" accept="audio/*" disabled={uploadingFile} style={{ display: 'none' }} onChange={(e) => { uploadAudio(e.target.files, true); e.currentTarget.value = ''; }} />
-                </label>
-              )}
-              <textarea className="nodrag nopan nowheel cv2-scroll" value={designField.value} {...designField.bind} placeholder={fn === 'scene-music' ? '描述想要的音乐(如:轻快的爵士钢琴)…' : '描述想要的声音/音效(如:海浪拍打礁石、雨夜雷声)…'} rows={3} style={textareaStyle} />
-              <div style={{ marginTop: 6 }}>
-                <NumIn label="时长(秒)" value={sceneDuration} step={5} min={5} max={180} onChange={(v) => set({ sceneDuration: v })} />
-              </div>
-            </>
-          )}
-
-          {/* 生成按钮 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-            {isScene && <span style={{ fontSize: 11, color: '#71717a' }}>¥0.3/次</span>}
+            {/* 生成按钮 */}
             <button onClick={handleGenerate} disabled={data.status === 'generating'}
-              style={{ ...generateBtn, marginTop: 0, flex: 1, opacity: data.status === 'generating' ? 0.4 : 1, cursor: data.status === 'generating' ? 'default' : 'pointer' }}>
-              {data.status === 'generating' ? '处理中…' : isScene ? '生成' : fn === 'synthesize' ? '生成语音' : fn === 'design' ? '设计音色' : '开始复刻'}
+              style={{ ...genBtn, opacity: data.status === 'generating' ? 0.4 : 1, cursor: data.status === 'generating' ? 'default' : 'pointer' }}>
+              {data.status === 'generating' ? '处理中…' : isScene ? `生成 ¥0.3` : fn === 'synthesize' ? '生成语音' : fn === 'design' ? '设计音色' : '开始复刻'}
             </button>
           </div>
         </div>
@@ -395,8 +392,28 @@ function NumIn({ label, value, step, min, max, onChange }: { label: string; valu
 }
 
 const promptBar: React.CSSProperties = {
-  width: 360, padding: 10, background: 'rgba(24,24,27,0.96)', backdropFilter: 'blur(24px)',
-  border: '1px solid rgba(255,255,255,0.12)', borderRadius: 16, boxShadow: '0 18px 55px rgba(0,0,0,0.6)',
+  width: 480, background: 'rgba(24,24,27,0.96)', backdropFilter: 'blur(24px)',
+  border: '1px solid rgba(255,255,255,0.12)', borderRadius: 16, padding: 10,
+  boxShadow: '0 18px 55px rgba(0,0,0,0.6)', display: 'flex', flexDirection: 'column',
+};
+const promptInput: React.CSSProperties = {
+  width: '100%', minHeight: 120, padding: '12px 14px', border: 'none', background: 'transparent',
+  color: '#e4e4e7', fontSize: 14, fontFamily: 'inherit', resize: 'none', outline: 'none', lineHeight: 1.6,
+  boxSizing: 'border-box', userSelect: 'text', WebkitUserSelect: 'text', cursor: 'text',
+};
+const bigUpload: React.CSSProperties = {
+  width: '100%', minHeight: 120, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+  border: '1px dashed rgba(255,255,255,0.2)', borderRadius: 12, background: 'rgba(255,255,255,0.03)',
+  color: '#a1a1aa', fontSize: 12, cursor: 'pointer',
+};
+const tagsRow: React.CSSProperties = { display: 'flex', flexWrap: 'wrap', gap: 6, padding: '8px 2px 2px', alignItems: 'center' };
+const miniTagBtn: React.CSSProperties = {
+  display: 'flex', alignItems: 'center', gap: 4, height: 30, padding: '0 10px', borderRadius: 8,
+  border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)', color: '#e4e4e7', fontSize: 11.5, cursor: 'pointer', whiteSpace: 'nowrap',
+};
+const genBtn: React.CSSProperties = {
+  marginLeft: 'auto', height: 30, padding: '0 16px', borderRadius: 8, border: 'none',
+  background: '#fff', color: '#000', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
 };
 const inputStyle: React.CSSProperties = {
   width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
