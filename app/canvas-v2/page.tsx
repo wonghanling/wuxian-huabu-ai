@@ -252,7 +252,7 @@ function CanvasV2Inner() {
   // 新建卡片的摆放位置计数器(只管错位摆放,不参与 ID 生成 → 不会撞 ID)
   const placeRef = useRef(0);
   // 工具栏分组下拉:当前展开的分组('video' | 'gem' | null)
-  const [toolGroup, setToolGroup] = useState<'video' | 'gem' | null>(null);
+  const [toolGroup, setToolGroup] = useState<'video' | 'gem' | 'audio' | null>(null);
   // 图片切割弹窗
   const [showSplit, setShowSplit] = useState(false);
   // 工具栏展开/折叠(照原网抽屉式)
@@ -404,7 +404,6 @@ function CanvasV2Inner() {
                   {toolGroup === 'video' && (
                     <div style={toolFlyout}>
                       <button onClick={() => { addVideoCard(); setToolGroup(null); }} style={flyItem}>视频卡片</button>
-                      <button onClick={() => { addKlingCard(); setToolGroup(null); }} style={flyItem}>Kling 视频配音</button>
                       <button onClick={() => { addSeedanceCard(); setToolGroup(null); }} style={flyItem}>Seedance 2.0</button>
                     </div>
                   )}
@@ -429,8 +428,16 @@ function CanvasV2Inner() {
                     </div>
                   )}
                 </div>
-                {/* 10 语音合成 */}
-                <button onClick={addAudioCard} style={toolIconBtn} title="语音合成卡片"><TbAudio size={18} /></button>
+                {/* 10 语音分组(语音合成 / Kling配音) */}
+                <div style={{ position: 'relative' }}>
+                  <button onClick={() => setToolGroup(toolGroup === 'audio' ? null : 'audio')} style={{ ...toolIconBtn, ...(toolGroup === 'audio' ? toolIconActive : {}) }} title="语音类(语音合成/Kling配音)"><TbAudio size={18} /></button>
+                  {toolGroup === 'audio' && (
+                    <div style={toolFlyout}>
+                      <button onClick={() => { addAudioCard(); setToolGroup(null); }} style={flyItem}>语音合成</button>
+                      <button onClick={() => { addKlingCard(); setToolGroup(null); }} style={flyItem}>King 配音</button>
+                    </div>
+                  )}
+                </div>
                 {/* 时空镜头延展 */}
                 <button onClick={addExtendCard} style={toolIconBtn} title="时空镜头延展"><TbExtend size={18} /></button>
                 <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '2px 0' }} />

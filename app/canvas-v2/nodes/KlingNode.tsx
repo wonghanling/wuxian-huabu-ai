@@ -10,7 +10,7 @@ import { SpawnMenu } from './SpawnMenu';
 import { PromptTools } from './PromptTools';
 import { uploadFileToStorage, generateKlingLipSync, mirrorOutput } from '../lib/api';
 import { useDebouncedField } from '../lib/useDebouncedField';
-import { getUpstreamOutputs, useUpstream } from '../lib/connections';
+import { useUpstream } from '../lib/connections';
 
 // ============================================================
 // Kling 对口型卡片 · 矩形框
@@ -48,6 +48,10 @@ function KlingNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const connVideo = upstreamLive.videos[0];
   const dispVideo = srcVideo || connVideo;
   const videoFromConn = !srcVideo && !!connVideo;
+  // 连线实时:上游语音卡音频 → 配音音频(本地上传优先,否则用连接来的)
+  const connAudio = upstreamLive.audios[0];
+  const effAudio = data.config.refAudio || connAudio;
+  const audioFromConn = !data.config.refAudio && !!connAudio;
   const audioName = data.config.refAudioName;
 
   // 卡片框:矩形(默认 16:9),只显示成品
@@ -95,10 +99,8 @@ function KlingNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   };
 
   const handleGenerate = async () => {
-    // 连线传参:上游视频→源视频,上游音频→音频
-    const upstream = getUpstreamOutputs(id);
-    const effVideo = srcVideo || upstream.videos[0];
-    const effAudio = data.config.refAudio || upstream.audios[0];
+    // 连线传参:用组件级 effVideo/effAudio(本地优先,否则连接来的;响应式)
+    const effVideo = dispVideo;
     if (!effVideo || !effAudio) return;  // 需要视频+音频
     updateCard(id, { status: 'generating', progress: 5 });
     try {
@@ -208,7 +210,7 @@ function KlingNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               ) : null}
             </ParamTag>
 
-            <ParamTag label={<>音频{data.config.refAudio && <span style={greenDot} />}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</>} open={sub === 'audio'} onToggle={() => setSub(sub === 'audio' ? null : 'audio')} width={260}>
+            <ParamTag label={<>音频{effAudio && <span style={greenDot} />}{audioFromConn && <span style={{ marginLeft: 4, color: '#60a5fa', fontSize: 10 }}>连</span>}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</>} open={sub === 'audio'} onToggle={() => setSub(sub === 'audio' ? null : 'audio')} width={260}>
               <label style={{ ...uploadBtn, ...(uploading ? { opacity: 0.6, pointerEvents: 'none' } : {}) }}>
                 <IconUpload size={13} /> <span>{uploading ? '上传中…' : KLING_AUDIO_HINT}</span>
                 <input type="file" accept="audio/*" disabled={uploading} style={{ display: 'none' }} onChange={(e) => { uploadAudio(e.target.files); e.currentTarget.value = ''; }} />
@@ -218,6 +220,14 @@ function KlingNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                   <span style={{ display: 'flex' }}>♪</span>
                   <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{audioName}</span>
                   <button style={fileDel} onClick={() => updateConfig(id, { refAudio: undefined, refAudioName: undefined })}>×</button>
+                </div>
+              )}
+              {/* 连接来的音频(来自语音卡,实时,不可删) */}
+              {audioFromConn && (
+                <div style={{ ...fileRow, borderColor: 'rgba(96,165,250,0.35)' }}>
+                  <span style={{ display: 'flex', color: '#60a5fa' }}>♪</span>
+                  <span style={{ flex: 1, fontSize: 11, color: '#93c5fd' }}>来自连接的语音</span>
+                  <audio src={connAudio} controls style={{ height: 24, maxWidth: 120 }} />
                 </div>
               )}
             </ParamTag>
