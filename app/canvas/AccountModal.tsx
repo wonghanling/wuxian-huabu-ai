@@ -20,6 +20,7 @@ interface Transaction {
   amount: number;
   balance_after: number;
   created_at: string;
+  description?: string;
   metadata?: Record<string, unknown>;
 }
 
@@ -416,7 +417,11 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
                 ) : (
                   <div className="space-y-2">
                     {transactions.map(tx => {
-                      const info = TYPE_LABEL[tx.type] ?? { label: tx.type, color: 'text-white/60' };
+                      let info = TYPE_LABEL[tx.type] ?? { label: tx.type, color: 'text-white/60' };
+                      // 音频扣费复用了 image_deduct 类型,按描述纠正显示为"音频生成"
+                      if (tx.description && /场景声|音频|语音|stable-audio/i.test(tx.description)) {
+                        info = { label: '音频生成', color: 'text-red-400' };
+                      }
                       const isIncome = tx.amount > 0;
                       return (
                         <div key={tx.id} className="flex items-center justify-between px-4 py-3 rounded-xl bg-white/3 border border-white/6">

@@ -5,7 +5,7 @@ import { Handle, Position, NodeToolbar, type NodeProps } from '@xyflow/react';
 import { useCanvasStore, type CardNode } from '../store';
 import { IconMinus, IconPlus, IconUpload } from './icons';
 import { SpawnMenu } from './SpawnMenu';
-import { getUserId } from '../lib/api';
+import { getUserId, uploadFileToStorage } from '../lib/api';
 import { useDebouncedField } from '../lib/useDebouncedField';
 import { loadVoices, saveVoice, deleteVoice, renameVoice, type VoiceEntry } from '../lib/voiceLibrary';
 
@@ -75,19 +75,26 @@ function AudioNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   useEffect(() => { refreshVoices(); }, []);
   useEffect(() => { if (!selected && sub) setSub(null); }, [selected, sub]);
 
-  // 上传音频:克隆样本(拿 fileId) 或 场景声输入音频(拿 URL)
+  // 上传音频:
+  //  - 人声复刻样本 → MiniMax(/api/audio/upload),拿 MiniMax fileId
+  //  - 场景声输入音频 → Supabase Storage,拿公开 URL(供 fal audio-to-audio 访问)
   const uploadAudio = async (fileList: FileList | null, forScene: boolean) => {
     const f = fileList?.[0];
     if (!f) return;
     setUploadingFile(true);
     try {
-      const formData = new FormData();
-      formData.append('file', f);
-      const res = await fetch('/api/audio/upload', { method: 'POST', body: formData });
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error || '上传失败');
-      if (forScene) { setSceneAudioUrl(d.url || d.audioUrl || ''); }
-      else { setUploadedFileId(d.fileId || d.file_id || ''); alert('音频上传成功,可以开始复刻'); }
+      if (forScene) {
+        const url = await uploadFileToStorage(f, 'audio');
+        if (url) setSceneAudioUrl(url);
+      } else {
+        const formData = new FormData();
+        formData.append('file', f);
+        const res = await fetch('/api/audio/upload', { method: 'POST', body: formData });
+        const d = await res.json();
+        if (!res.ok) throw new Error(d.error || '上传失败');
+        setUploadedFileId(d.fileId || d.file_id || '');
+        alert('音频上传成功,可以开始复刻');
+      }
     } catch (err: any) {
       alert('上传失败: ' + (err?.message || err));
     } finally {
