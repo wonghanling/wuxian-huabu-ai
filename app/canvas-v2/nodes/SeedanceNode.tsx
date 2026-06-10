@@ -358,7 +358,7 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           ) : hasVideo ? (
             <video
               ref={videoEl}
-              className="nodrag nopan"
+              className="nodrag"
               src={data.outputUrl!}
               crossOrigin="anonymous"
               style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', background: '#000' }}
