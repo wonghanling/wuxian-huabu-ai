@@ -11,7 +11,7 @@ import { HoverZoomImg } from './RefThumb';
 import { PromptTools } from './PromptTools';
 import { PromptArea } from './PromptArea';
 import { Lightbox, downloadFile } from './Lightbox';
-import { VideoTrimBar, exportVideoSegment } from './VideoTrimBar';
+import { VideoTrimBar } from './VideoTrimBar';
 import { uploadImageToStorage, uploadFileToStorage, generateVideo, mirrorOutput, getUserId } from '../lib/api';
 import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 
@@ -123,24 +123,28 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     setTrimming(true);
   };
 
-  // 导出剪辑片段:MediaRecorder 录区间 → 上传 → 新建视频卡(连线)
+  // 导出剪辑片段:调后端 fal 裁切(真mp4,不崩;避开Chromium captureStream崩溃bug)
   const exportSegment = async () => {
     if (!data.outputUrl) return;
     const ts = data.config.trimStart ?? 0;
     const te = data.config.trimEnd ?? (videoEl.current?.duration || 5);
+    if (te - ts < 0.1) { alert('请先拖把手选择一段区间'); return; }
     setExporting(true);
     try {
-      const blob = await exportVideoSegment(data.outputUrl, ts, te);
-      const ext = blob.type.includes('mp4') ? 'mp4' : 'webm';
-      const file = new File([blob], `clip-${Date.now()}.${ext}`, { type: blob.type });
-      const url = await uploadFileToStorage(file, 'video');
-      if (!url) throw new Error('上传片段失败');
+      const userId = await getUserId();
+      const res = await fetch('/api/video/trim', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoUrl: data.outputUrl, start: ts, end: te, userId }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || '裁切失败');
+      const url = d.videoUrl;
       const newId = `v${Date.now()}`;
       const cur = useCanvasStore.getState().nodes.find((n) => n.id === id);
       const newNode: CardNode = {
         id: newId, type: 'card',
         position: cur ? { x: cur.position.x, y: cur.position.y + 420 } : { x: 0, y: 0 },
-        data: { kind: 'video', status: 'done', outputUrl: url, aspectW: (data as any).aspectW, aspectH: (data as any).aspectH,
+        data: { kind: 'video', status: 'done', outputUrl: url,
           config: { ...data.config, trimStart: undefined, trimEnd: undefined } } as any,
       };
       useCanvasStore.setState((s) => ({
