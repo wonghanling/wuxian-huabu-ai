@@ -44,11 +44,12 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [lightbox, setLightbox] = useState(false);      // 画布内查看放大
   const [trimming, setTrimming] = useState(false);      // 剪辑条开关
   const [exporting, setExporting] = useState(false);    // 导出片段中
+  const [capturing, setCapturing] = useState(false);    // 捕捉帧模式:开启才显示controls+nodrag,否则可拖卡片
   const editRef = useRef<HTMLTextAreaElement>(null);
   const videoEl = useRef<HTMLVideoElement>(null);       // 卡片内成品视频(捕捉帧抓当前帧)
 
   // 取消选中卡片时,关闭剪辑条(点画布空白处即收起)
-  useEffect(() => { if (!selected && trimming) setTrimming(false); }, [selected, trimming]);
+  useEffect(() => { if (!selected) { if (trimming) setTrimming(false); if (capturing) setCapturing(false); } }, [selected, trimming, capturing]);
 
   const model = VIDEO_MODELS.find((m) => m.id === data.config.model) ?? VIDEO_MODELS[0];
   const ratio = data.config.ratio ?? (model.aspectRatios[0] ?? '16:9');
@@ -295,13 +296,13 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           ) : hasVideo ? (
             <video
               ref={videoEl}
-              className="nodrag"
+              className={(capturing || trimming) ? 'nodrag' : undefined}
               src={data.outputUrl!}
               crossOrigin="anonymous"
               style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', background: '#000' }}
               loop playsInline preload="metadata"
               muted={!selected}
-              controls={selected}
+              controls={capturing || trimming}
               onLoadedMetadata={(e) => {
                 const v = e.currentTarget as HTMLVideoElement;
                 // 探测成品真实尺寸 → 卡片按真实比例显示(三种情况都覆盖)
@@ -450,9 +451,20 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               <button onClick={() => downloadFile(data.outputUrl!, `video-${id}.mp4`)} style={toolBtnWide} title="下载">
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>↓ 下载</span>
               </button>
-              <button onClick={captureFrame} style={toolBtnWide} title="捕捉画面帧">
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><IconScissors size={16} /> 捕捉帧</span>
-              </button>
+              {capturing ? (
+                <>
+                  <button onClick={async () => { await captureFrame(); setCapturing(false); }} style={{ ...toolBtnWide, background: 'rgba(96,165,250,0.3)' }} title="抓取当前画面为图片">
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><IconScissors size={16} /> 确认捕捉</span>
+                  </button>
+                  <button onClick={() => setCapturing(false)} style={toolBtnWide} title="退出捕捉">
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>取消</span>
+                  </button>
+                </>
+              ) : (
+                <button onClick={() => { setCapturing(true); setTrimming(false); }} style={toolBtnWide} title="捕捉画面帧(拖进度条选帧)">
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><IconScissors size={16} /> 捕捉帧</span>
+                </button>
+              )}
               <button onClick={openTrim} style={{ ...toolBtnWide, ...(trimming ? { background: 'rgba(96,165,250,0.25)' } : {}) }} title="剪辑(截取片段)">
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><IconScissors size={16} /> 剪辑</span>
               </button>
