@@ -136,64 +136,42 @@ export async function exportVideoSegment(
   const v = document.createElement('video');
   v.crossOrigin = 'anonymous';
   v.src = sourceUrl;
-  v.muted = true;            // 录制不需要外放;非静音边播边录易触发音频管线崩溃
-  v.playsInline = true;
-  v.style.position = 'fixed';
-  v.style.left = '-9999px';
-  document.body.appendChild(v);   // 部分内核要求 video 在 DOM 中才能稳定 captureStream
+  v.muted = false;
+  await new Promise<void>((res, rej) => {
+    v.onloadeddata = () => res();
+    v.onerror = () => rej(new Error('视频加载失败(可能跨域)'));
+  });
 
-  const cleanup = () => { try { v.pause(); v.removeAttribute('src'); v.load(); v.remove(); } catch {} };
+  const stream = (v as any).captureStream?.() as MediaStream | undefined;
+  if (!stream) throw new Error('当前浏览器不支持 captureStream 录制');
 
-  try {
-    await new Promise<void>((res, rej) => {
-      v.onloadeddata = () => res();
-      v.onerror = () => rej(new Error('视频加载失败(可能跨域)'));
-      setTimeout(() => rej(new Error('视频加载超时')), 15000);
-    });
+  // 选可用的 mime
+  const mime = ['video/mp4;codecs=h264', 'video/webm;codecs=vp9', 'video/webm'].find((m) => MediaRecorder.isTypeSupported(m)) || 'video/webm';
+  const recorder = new MediaRecorder(stream, { mimeType: mime });
+  const chunks: BlobPart[] = [];
+  recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
 
-    const stream = (v as any).captureStream?.() ?? (v as any).mozCaptureStream?.();
-    if (!stream) throw new Error('当前浏览器不支持 captureStream 录制');
+  const done = new Promise<Blob>((resolve) => {
+    recorder.onstop = () => resolve(new Blob(chunks, { type: mime }));
+  });
 
-    const mime = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4'].find((m) => MediaRecorder.isTypeSupported(m)) || 'video/webm';
-    const recorder = new MediaRecorder(stream, { mimeType: mime });
-    const chunks: BlobPart[] = [];
-    recorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+  v.currentTime = start;
+  await new Promise<void>((res) => { v.onseeked = () => res(); });
 
-    const done = new Promise<Blob>((resolve) => {
-      recorder.onstop = () => resolve(new Blob(chunks, { type: mime }));
-    });
+  recorder.start();
+  await v.play();
 
-    // 先 seek 到起点
-    v.currentTime = start;
-    await new Promise<void>((res) => {
-      v.onseeked = () => res();
-      setTimeout(res, 3000);
-    });
+  // 播到 end 停止
+  await new Promise<void>((res) => {
+    const tick = () => {
+      if (v.currentTime >= end || v.ended) { res(); return; }
+      onProgress?.(Math.min(99, ((v.currentTime - start) / Math.max(0.1, end - start)) * 100));
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
 
-    recorder.start(200);   // 200ms 分片,避免一次性大 buffer 撑崩
-    await v.play();
-
-    // 播到 end 停止(用 ontimeupdate + 兜底定时器,不用 rAF 死循环)
-    await new Promise<void>((res) => {
-      let finished = false;
-      const finish = () => { if (finished) return; finished = true; res(); };
-      const onTime = () => {
-        if (v.currentTime >= end || v.ended) finish();
-        else onProgress?.(Math.min(99, ((v.currentTime - start) / Math.max(0.1, end - start)) * 100));
-      };
-      v.ontimeupdate = onTime;
-      v.onended = finish;
-      // 兜底:按区间时长 + 1.5 秒,无论如何都停
-      setTimeout(finish, (end - start) * 1000 + 1500);
-    });
-
-    v.pause();
-    if (recorder.state !== 'inactive') recorder.stop();
-    const blob = await done;
-    cleanup();
-    return blob;
-  } catch (err) {
-    cleanup();
-    throw err;
-  }
+  v.pause();
+  recorder.stop();
+  return done;
 }
