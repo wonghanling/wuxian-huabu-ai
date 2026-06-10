@@ -266,6 +266,14 @@ export const VIDEO_PRICING: Record<string, VideoModelPrice> = {
       '4K_audio':    tier(4.06),
     },
   },
+
+  // ── Pixverse v6(fal,统一带音频,无音频开关;只 720p/1080p)──
+  'pixverse-t2v': {
+    resolutions: { '720P': tier(0.4), '1080P': tier(0.7) },
+  },
+  'pixverse-i2v': {
+    resolutions: { '720P': tier(0.4), '1080P': tier(0.7) },
+  },
 };
 
 // ============================================================

@@ -45,6 +45,10 @@ export const VIDEO_MODELS: VideoModel[] = [
   { id: 'veo3.1-fast-t2v', label: 'Veo 3.1 Fast 文生', mode: 't2v', durations: [4, 6, 8], aspectRatios: ['16:9','9:16'], resolutions: ['720p','1080p','4k'], defaultResolution: '720p', supportsAudio: true, price: '720P 较低价' },
   { id: 'veo3.1-fast-i2v', label: 'Veo 3.1 Fast 首帧', mode: 'i2v', durations: [4, 6, 8], aspectRatios: ['16:9','9:16'], resolutions: ['720p','1080p','4k'], defaultResolution: '720p', supportsAudio: true, price: '720P 较低价' },
   { id: 'veo3.1-first-last', label: 'Veo 3.1 首尾帧', mode: 'firstLastFrame', durations: [4, 6, 8], aspectRatios: ['16:9','9:16'], resolutions: ['720p','1080p','4k'], defaultResolution: '720p', supportsAudio: true, price: '720P ¥1.38/秒起' },
+
+  // —— Pixverse v6(fal,自带音频,无音频开关;720p/1080p)——
+  { id: 'pixverse-t2v', label: 'Pixverse v6 文生', mode: 't2v', durations: [5, 8], aspectRatios: ['16:9','9:16','1:1'], resolutions: ['720p','1080p'], defaultResolution: '720p', supportsAudio: false, price: '会员 720P¥0.6/1080P¥0.9 起' },
+  { id: 'pixverse-i2v', label: 'Pixverse v6 首帧', mode: 'i2v', durations: [5, 8], aspectRatios: [], resolutions: ['720p','1080p'], defaultResolution: '720p', supportsAudio: false, price: '会员 720P¥0.6/1080P¥0.9 起' },
 ];
 
 export const DEFAULT_VIDEO_MODEL = 'jimeng-i2v';
