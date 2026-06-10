@@ -501,6 +501,11 @@ export async function POST(req: NextRequest) {
       input.generate_audio = generateAudio === true;
     }
 
+    // Pixverse:自带音频(无开关),显式开启音频生成(参数名 generate_audio_switch,默认false)
+    if (cfg.endpoint.includes('pixverse')) {
+      input.generate_audio_switch = true;
+    }
+
     // Veo 系列安全等级（字符串类型）+ auto_fix
     if (cfg.endpoint.includes('veo')) {
       input.safety_tolerance = '4';
