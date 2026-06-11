@@ -28,6 +28,11 @@ export const IMAGE_MODELS: ImageModel[] = [
   { id: 'flux-kontext-max', label: 'Flux Kontext Max', price: '¥1.0/次' },
   { id: 'mj_imagine', label: 'Midjourney', price: '¥0.6/次', supportsImage: true },
   { id: 'doubao-seedream-4-5-251128', label: '豆包 Seedream', price: '¥0.3/次', supportsImage: true },
+  // Flux 2 Pro(fal,1080/2K/4K;16:9/9:16/1:1)
+  { id: 'flux-2-pro', label: 'Flux 2 Pro 文生图', price: '¥0.42~2.04/次',
+    qualityOptions: [{ value: '1080', label: '1080' }, { value: '2k', label: '2K' }, { value: '4k', label: '4K' }] },
+  { id: 'flux-2-pro-edit', label: 'Flux 2 Pro 图生图', price: '¥0.53~3.88/次', supportsImage: true,
+    qualityOptions: [{ value: '1080', label: '1080' }, { value: '2k', label: '2K' }, { value: '4k', label: '4K' }] },
 ];
 
 export const DEFAULT_IMAGE_MODEL = 'nano-banana-pro';

@@ -39,13 +39,6 @@ export const VIDEO_MODELS: VideoModel[] = [
   { id: 'wan2.5-i2v-preview', label: 'Wan 2.5 首帧', mode: 'i2v', durations: [5, 10], aspectRatios: [], resolutions: ['480P','720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '会员 480P¥0.5/720P¥0.8/1080P¥1.2 起' },
   { id: 'wan2.2-kf2v-flash', label: 'Wan 2.2 首尾帧', mode: 'firstLastFrame', durations: [5], aspectRatios: [], resolutions: ['480P','720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '固定5秒 会员720P¥2.0起' },
 
-  // —— Veo 3.1(有音频;720p/1080p 同价,4K 单独) ——
-  { id: 'veo3.1-t2v', label: 'Veo 3.1 文生', mode: 't2v', durations: [4, 6, 8], aspectRatios: ['16:9','9:16'], resolutions: ['720p','1080p','4k'], defaultResolution: '720p', supportsAudio: true, price: '720P ¥1.38/秒起' },
-  { id: 'veo3.1-i2v', label: 'Veo 3.1 首帧', mode: 'i2v', durations: [4, 6, 8], aspectRatios: ['16:9','9:16'], resolutions: ['720p','1080p','4k'], defaultResolution: '720p', supportsAudio: true, price: '720P ¥1.38/秒起' },
-  { id: 'veo3.1-fast-t2v', label: 'Veo 3.1 Fast 文生', mode: 't2v', durations: [4, 6, 8], aspectRatios: ['16:9','9:16'], resolutions: ['720p','1080p','4k'], defaultResolution: '720p', supportsAudio: true, price: '720P 较低价' },
-  { id: 'veo3.1-fast-i2v', label: 'Veo 3.1 Fast 首帧', mode: 'i2v', durations: [4, 6, 8], aspectRatios: ['16:9','9:16'], resolutions: ['720p','1080p','4k'], defaultResolution: '720p', supportsAudio: true, price: '720P 较低价' },
-  { id: 'veo3.1-first-last', label: 'Veo 3.1 首尾帧', mode: 'firstLastFrame', durations: [4, 6, 8], aspectRatios: ['16:9','9:16'], resolutions: ['720p','1080p','4k'], defaultResolution: '720p', supportsAudio: true, price: '720P ¥1.38/秒起' },
-
   // —— Pixverse v6(fal,自带音频,无音频开关;720p/1080p)——
   { id: 'pixverse-t2v', label: 'Pixverse v6 文生', mode: 't2v', durations: [5, 8], aspectRatios: ['16:9','9:16','1:1'], resolutions: ['720p','1080p'], defaultResolution: '720p', supportsAudio: false, price: '会员 720P¥0.6/1080P¥0.9 起' },
   { id: 'pixverse-i2v', label: 'Pixverse v6 首帧', mode: 'i2v', durations: [5, 8], aspectRatios: [], resolutions: ['720p','1080p'], defaultResolution: '720p', supportsAudio: false, price: '会员 720P¥0.6/1080P¥0.9 起' },

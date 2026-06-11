@@ -101,6 +101,17 @@ const IMAGE_MODELS: Record<string, {
     requiresImage: true,
     supportsImage: true,
   },
+  'flux-2-pro': {
+    provider: 'fal',
+    falEndpoint: 'fal-ai/flux-2-pro',
+    // 纯文生图
+  },
+  'flux-2-pro-edit': {
+    provider: 'fal',
+    falEndpoint: 'fal-ai/flux-2-pro/edit',
+    requiresImage: true,
+    supportsImage: true,
+  },
 };
 
 export async function POST(req: NextRequest) {
@@ -125,12 +136,21 @@ export async function POST(req: NextRequest) {
     }
 
     // ── 扣费 ──────────────────────────────────────────────────
+    // Flux 2 Pro 复合价 key:flux-2-pro[-edit]-{档位}-{wide|square}
+    const fluxKey = (m: string, q?: string, ar?: string) => {
+      const tier = q === '4k' ? '4k' : q === '2k' ? '2k' : '1080';
+      const shape = ar === '1:1' ? 'square' : 'wide';   // 16:9/9:16=wide,1:1=square
+      const editSeg = m === 'flux-2-pro-edit' ? 'edit-' : '';
+      return `flux-2-pro-${editSeg}${tier}-${shape}`;
+    };
     const pricingKey = model === 'nano-banana-pro'
       ? (imageQuality === '4k' ? 'nano-banana-pro-4k' : 'nano-banana-pro-2k')
       : model === 'nano-banana-pro-multi'
       ? (imageQuality === '4k' ? 'nano-banana-pro-multi-4k' : 'nano-banana-pro-multi-2k')
       : ['gpt-image-2', 'gpt-image-2-all'].includes(model)
       ? `gpt-image-2-${imageQuality || 'medium'}-${aspectRatio || '2048x1152'}`
+      : ['flux-2-pro', 'flux-2-pro-edit'].includes(model)
+      ? fluxKey(model, imageQuality, aspectRatio)
       : model;
     const price = calcImagePrice(pricingKey);
     if (userId) {
@@ -189,6 +209,26 @@ export async function POST(req: NextRequest) {
         const requestId = submitted.request_id;
         if (!requestId) throw new Error('fal.ai 未返回 requestId');
         return NextResponse.json({ success: true, requestId, model, prompt, pending: true });
+      } else if (['flux-2-pro', 'flux-2-pro-edit'].includes(model)) {
+        // Flux 2 Pro：image_size 用比例枚举 + 档位决定尺寸;edit 传 image_urls
+        delete input.aspect_ratio;
+        delete input.num_images;
+        // 比例 → flux image_size 枚举(只 16:9/9:16/1:1)
+        const sizeEnum = aspectRatio === '9:16' ? 'portrait_16_9'
+          : aspectRatio === '1:1' ? 'square_hd'
+          : 'landscape_16_9';  // 16:9 默认
+        input.image_size = sizeEnum;
+        input.num_images = 1;
+        // 图生图:传参考图 URL
+        if (model === 'flux-2-pro-edit') {
+          const urls: string[] = imageUrlArray && Array.isArray(imageUrlArray) ? imageUrlArray.filter((u: any) => typeof u === 'string' && u.startsWith('http')) : [];
+          if (urls.length === 0) throw new Error('图生图需要至少一张图片');
+          input.image_urls = urls;
+        }
+        const submitted = await fal.queue.submit(modelConfig.falEndpoint!, { input });
+        const requestId = submitted.request_id;
+        if (!requestId) throw new Error('fal.ai 未返回 requestId');
+        return NextResponse.json({ success: true, requestId, endpoint: modelConfig.falEndpoint, model, prompt, pending: true });
       } else if (['gpt-image-2', 'gpt-image-2-all'].includes(model)) {
         // GPT Image 2：尺寸用 image_size，画质用 quality，图片传 URL
         delete input.aspect_ratio;
@@ -486,6 +526,8 @@ export async function POST(req: NextRequest) {
         ? (body.imageQuality === '4k' ? 'nano-banana-pro-multi-4k' : 'nano-banana-pro-multi-2k')
         : ['gpt-image-2', 'gpt-image-2-all'].includes(body.model)
         ? `gpt-image-2-${body.imageQuality || 'medium'}-${body.aspectRatio || '2048x1152'}`
+        : ['flux-2-pro', 'flux-2-pro-edit'].includes(body.model)
+        ? `flux-2-pro-${body.model === 'flux-2-pro-edit' ? 'edit-' : ''}${body.imageQuality === '4k' ? '4k' : body.imageQuality === '2k' ? '2k' : '1080'}-${body.aspectRatio === '1:1' ? 'square' : 'wide'}`
         : body.model;
       const price = calcImagePrice(refundKey);
       await refundBalance(body.userId, price, `图片生成失败退款 - ${body.model}`, { model: body.model });

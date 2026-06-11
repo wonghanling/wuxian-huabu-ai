@@ -37,6 +37,21 @@ export const IMAGE_PRICING: Record<string, number> = {
   'gpt-image-2-high-3840x2160': 3.1,
   'gpt-image-2-high-2160x3840': 3.1,
   'gpt-image-2-high-2048x2048': 1.7,
+
+  // Flux 2 Pro 文生图(售卖价,会员普通同价;wide=16:9/9:16, square=1:1)
+  'flux-2-pro-1080-wide':   0.53,
+  'flux-2-pro-1080-square': 0.42,
+  'flux-2-pro-2k-wide':     0.53,
+  'flux-2-pro-2k-square':   0.75,
+  'flux-2-pro-4k-wide':     1.29,
+  'flux-2-pro-4k-square':   2.04,
+  // Flux 2 Pro 图生图(edit)
+  'flux-2-pro-edit-1080-wide':   0.75,
+  'flux-2-pro-edit-1080-square': 0.53,
+  'flux-2-pro-edit-2k-wide':     0.75,
+  'flux-2-pro-edit-2k-square':   1.18,
+  'flux-2-pro-edit-4k-wide':     2.26,
+  'flux-2-pro-edit-4k-square':   3.88,
 };
 
 // ============================================================
