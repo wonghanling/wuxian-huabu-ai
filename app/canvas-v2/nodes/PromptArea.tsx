@@ -109,7 +109,7 @@ export function PromptArea({ connectedText, value, onChange, onGenerate, placeho
       />
       {/* @ 素材选择弹窗(照同类产品:输入@即弹,选中插入光标处) */}
       {mentionOpen && mentionItems && mentionItems.length > 0 && (
-        <div className="nodrag nowheel" style={{ position: 'absolute', bottom: '100%', left: 8, zIndex: 40, marginBottom: 6, background: 'rgba(28,28,32,0.98)', border: '1px solid rgba(124,58,237,0.4)', borderRadius: 12, padding: 6, maxHeight: 220, overflowY: 'auto', boxShadow: '0 14px 44px rgba(0,0,0,0.65)', minWidth: 180 }}
+        <div className="nodrag nowheel cv2-scroll" style={{ position: 'absolute', bottom: '100%', left: 8, zIndex: 40, marginBottom: 6, background: 'rgba(28,28,32,0.98)', border: '1px solid rgba(124,58,237,0.4)', borderRadius: 12, padding: 6, maxHeight: 220, overflowY: 'auto', boxShadow: '0 14px 44px rgba(0,0,0,0.65)', minWidth: 180 }}
           onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.preventDefault()}>
           <div style={{ fontSize: 10, color: '#a78bfa', padding: '2px 6px 6px' }}>选择要引用的参考图</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
