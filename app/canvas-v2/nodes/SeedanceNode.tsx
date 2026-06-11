@@ -72,7 +72,6 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const refImages = data.config.refImages ?? [];
   const refVideos = data.config.refVideos ?? [];
   const audioCount = data.config.refAudio ? 1 : 0;
-  const counts = multimodalCount(refImages.length, refVideos.length, audioCount);
   // 连线实时:上游图→首/尾帧/参考图(照原网渲染时实时读)
   const upstreamLive = useUpstream(id);
   const dispFirst = data.config.firstFrame || upstreamLive.images[0];
@@ -84,6 +83,13 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const connVideos = upstreamLive.videos.filter((u) => !refVideos.includes(u));   // 连接进来的视频
   const connAudio = upstreamLive.audios[0];                                        // 连接进来的音频
   const connectedTexts = upstreamLive.texts;   // 来自连接的文案(实时,自动拼入生成)
+  // 计数含连接进来的素材(照图片卡:连接的也占额度,生成时一起传给模型)
+  const connAudioCount = connAudio && !data.config.refAudio ? 1 : 0;
+  const counts = multimodalCount(
+    refImages.length + connImages.length,
+    refVideos.length + connVideos.length,
+    audioCount + connAudioCount,
+  );
 
   // 卡片框:矩形,按比例(adaptive 用 16:9)
   // 卡片框只显示成品(outputUrl);参考图/首帧绝不进卡片框
@@ -111,7 +117,8 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const addRefImages = async (fileList: FileList | null) => {
     if (!fileList) return;
     const cur = data.config.refImages ?? [];
-    const room = Math.min(MULTIMODAL_MAX_IMAGES - cur.length, MULTIMODAL_MAX_TOTAL - counts.total);
+    // 图片额度 = min(9 - 本地图 - 连接图, 12 - 总占用);连接的也占额度
+    const room = Math.min(MULTIMODAL_MAX_IMAGES - cur.length - connImages.length, MULTIMODAL_MAX_TOTAL - counts.total);
     if (room <= 0) return;
     const files = Array.from(fileList).slice(0, room);
     if (!files.length) return;
@@ -497,6 +504,7 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                       onAddImages={addRefImages} onRemoveImage={removeRefImage}
                       onAddVideo={addRefVideo} onRemoveVideo={removeRefVideo}
                       onAddAudio={addRefAudio} onRemoveAudio={() => updateConfig(id, { refAudio: undefined, refAudioName: undefined })}
+                      onInsertRef={(n) => updateConfig(id, { prompt: `${(data.config.prompt ?? '').trimEnd()} [图${n}]`.trim() })}
                     />
                   ) : (
                     <div style={{ display: 'flex', gap: 8, padding: 4 }}>
@@ -613,7 +621,7 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 }
 
 // ===== 参考内容面板(多模态:图/视频/音频,总12上限) =====
-function RefPanel({ images, videos, videoNames, audioName, counts, uploading, connImages, connVideos, connAudio, onAddImages, onRemoveImage, onAddVideo, onRemoveVideo, onAddAudio, onRemoveAudio }: {
+function RefPanel({ images, videos, videoNames, audioName, counts, uploading, connImages, connVideos, connAudio, onAddImages, onRemoveImage, onAddVideo, onRemoveVideo, onAddAudio, onRemoveAudio, onInsertRef }: {
   images: string[]; videos: string[]; videoNames: string[]; audioName?: string;
   counts: ReturnType<typeof multimodalCount>;
   uploading?: boolean;
@@ -623,17 +631,18 @@ function RefPanel({ images, videos, videoNames, audioName, counts, uploading, co
   onAddImages: (fl: FileList | null) => void; onRemoveImage: (i: number) => void;
   onAddVideo: (fl: FileList | null) => void; onRemoveVideo: (i: number) => void;
   onAddAudio: (fl: FileList | null) => void; onRemoveAudio: () => void;
+  onInsertRef?: (n: number) => void;   // 在 prompt 插入 [图N] 引用
 }) {
   return (
     <div style={{ padding: 4 }}>
       {/* 上传按钮区 */}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
         <label style={{ ...refUploadBtn, opacity: (counts.canAddImage && !uploading) ? 1 : 0.4, pointerEvents: (counts.canAddImage && !uploading) ? 'auto' : 'none' }}>
-          {uploading ? '上传中…' : `+ 图片 (剩${Math.max(0, Math.min(MULTIMODAL_MAX_IMAGES - images.length, MULTIMODAL_MAX_TOTAL - counts.total))})`}
+          {uploading ? '上传中…' : `+ 图片 (剩${Math.max(0, Math.min(MULTIMODAL_MAX_IMAGES - images.length - (connImages?.length ?? 0), MULTIMODAL_MAX_TOTAL - counts.total))})`}
           <input type="file" accept="image/*" multiple disabled={uploading} style={{ display: 'none' }} onChange={(e) => { onAddImages(e.target.files); e.currentTarget.value = ''; }} />
         </label>
         <label style={{ ...refUploadBtn, opacity: (counts.canAddVideo && !uploading) ? 1 : 0.4, pointerEvents: (counts.canAddVideo && !uploading) ? 'auto' : 'none' }}>
-          {uploading ? '上传中…' : `+ 视频 (剩${Math.max(0, Math.min(MULTIMODAL_MAX_VIDEOS - videos.length, MULTIMODAL_MAX_TOTAL - counts.total))})`}
+          {uploading ? '上传中…' : `+ 视频 (剩${Math.max(0, Math.min(MULTIMODAL_MAX_VIDEOS - videos.length - (connVideos?.length ?? 0), MULTIMODAL_MAX_TOTAL - counts.total))})`}
           <input type="file" accept="video/*" disabled={uploading} style={{ display: 'none' }} onChange={(e) => { onAddVideo(e.target.files); e.currentTarget.value = ''; }} />
         </label>
         <label style={{ ...refUploadBtn, opacity: (counts.canAddAudio && !audioName && !uploading) ? 1 : 0.4, pointerEvents: (counts.canAddAudio && !audioName && !uploading) ? 'auto' : 'none' }}>
@@ -642,14 +651,22 @@ function RefPanel({ images, videos, videoNames, audioName, counts, uploading, co
         </label>
       </div>
       <div style={{ fontSize: 10, color: '#71717a', marginBottom: 6 }}>
-        已用 {counts.total}/{MULTIMODAL_MAX_TOTAL}（图片 {images.length}/{MULTIMODAL_MAX_IMAGES} · 视频 {videos.length}/{MULTIMODAL_MAX_VIDEOS}）{counts.total >= MULTIMODAL_MAX_TOTAL ? ' · 已达上限' : ` · 还可上传 ${MULTIMODAL_MAX_TOTAL - counts.total} 个`}
+        已用 {counts.total}/{MULTIMODAL_MAX_TOTAL}（图片 {images.length + (connImages?.length ?? 0)}/{MULTIMODAL_MAX_IMAGES} · 视频 {videos.length + (connVideos?.length ?? 0)}/{MULTIMODAL_MAX_VIDEOS}）{((connImages?.length ?? 0) + (connVideos?.length ?? 0)) > 0 ? `· 含${(connImages?.length ?? 0) + (connVideos?.length ?? 0)}连接 ` : ''}{counts.total >= MULTIMODAL_MAX_TOTAL ? '· 已达上限' : `· 还可上传 ${MULTIMODAL_MAX_TOTAL - counts.total} 个`}
       </div>
 
-      {/* 参考图缩略 */}
+      {/* 参考图缩略(点 [图N] 把引用插入提示词,照Seedance官方[图1][图2]语法) */}
+      {(images.length > 0 || (connImages?.length ?? 0) > 0) && onInsertRef && (
+        <div style={{ fontSize: 10, color: '#a78bfa', marginBottom: 4 }}>点 [图N] 插入到提示词,精确指定每张图</div>
+      )}
       {images.length > 0 && (
         <div style={refGrid}>
           {images.map((img, i) => (
-            <RefThumb key={i} url={img} index={i} onRemove={() => onRemoveImage(i)} />
+            <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+              <RefThumb url={img} index={i} onRemove={() => onRemoveImage(i)} />
+              {onInsertRef && (
+                <button onClick={() => onInsertRef(i + 1)} style={insertRefBtn}>[图{i + 1}]</button>
+              )}
+            </div>
           ))}
         </div>
       )}
@@ -659,7 +676,12 @@ function RefPanel({ images, videos, videoNames, audioName, counts, uploading, co
           <div style={{ fontSize: 10, color: '#a78bfa', margin: '6px 0 4px' }}>来自连接 · {connImages.length} 张图</div>
           <div style={refGrid}>
             {connImages.map((img, i) => (
-              <RefThumb key={`c${i}`} url={img} index={i} onRemove={() => {}} />
+              <div key={`c${i}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                <RefThumb url={img} index={i} onRemove={() => {}} />
+                {onInsertRef && (
+                  <button onClick={() => onInsertRef(images.length + i + 1)} style={insertRefBtn}>[图{images.length + i + 1}]</button>
+                )}
+              </div>
             ))}
           </div>
         </>
@@ -864,6 +886,10 @@ const refUploadBtn: React.CSSProperties = {
   background: 'rgba(255,255,255,0.07)', color: '#e4e4e7', fontSize: 14, cursor: 'pointer', whiteSpace: 'nowrap',
 };
 const refGrid: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 8 };
+const insertRefBtn: React.CSSProperties = {
+  fontSize: 9, padding: '1px 5px', borderRadius: 5, cursor: 'pointer',
+  background: 'rgba(124,58,237,0.18)', color: '#c4b5fd', border: '1px solid rgba(124,58,237,0.35)', whiteSpace: 'nowrap',
+};
 const refThumb: React.CSSProperties = {
   position: 'relative', width: '100%', aspectRatio: '1', borderRadius: 8, overflow: 'hidden',
   border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.25)', cursor: 'zoom-in' };
