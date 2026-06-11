@@ -14,7 +14,31 @@ export interface ImageModel {
   useSizeNotRatio?: boolean;
   // 是否支持参考图(来自 API supportsImage/requiresImage;false 则不显示参考图/上传)
   supportsImage?: boolean;
+  // 限定比例选项(不设则用通用 RATIO_OPTIONS);flux-2-pro 只 16:9/9:16/1:1
+  ratios?: { value: string; label: string }[];
 }
+
+// Flux 2 Pro 价格查询(档位×比例,售卖价);供 UI 标价 + 说明
+export function fluxImagePrice(modelId: string, quality?: string, ratio?: string): number {
+  const tier = quality === '4k' ? '4k' : quality === '2k' ? '2k' : '1080';
+  const shape = ratio === '1:1' ? 'square' : 'wide';
+  const map: Record<string, number> = {
+    'flux-2-pro-1080-wide': 0.53, 'flux-2-pro-1080-square': 0.42,
+    'flux-2-pro-2k-wide': 0.53, 'flux-2-pro-2k-square': 0.75,
+    'flux-2-pro-4k-wide': 1.29, 'flux-2-pro-4k-square': 2.04,
+    'flux-2-pro-edit-1080-wide': 0.75, 'flux-2-pro-edit-1080-square': 0.53,
+    'flux-2-pro-edit-2k-wide': 0.75, 'flux-2-pro-edit-2k-square': 1.18,
+    'flux-2-pro-edit-4k-wide': 2.26, 'flux-2-pro-edit-4k-square': 3.88,
+  };
+  const editSeg = modelId === 'flux-2-pro-edit' ? 'edit-' : '';
+  return map[`flux-2-pro-${editSeg}${tier}-${shape}`] ?? 0;
+}
+
+const FLUX_RATIOS = [
+  { value: '16:9', label: '16:9 宽屏' },
+  { value: '9:16', label: '9:16 竖屏' },
+  { value: '1:1', label: '1:1 正方形' },
+];
 
 export const IMAGE_MODELS: ImageModel[] = [
   { id: 'nano-banana-pro', label: 'Nano Banana 2', price: '2K ¥1.0 / 4K ¥1.2', supportsImage: true,
@@ -29,9 +53,9 @@ export const IMAGE_MODELS: ImageModel[] = [
   { id: 'mj_imagine', label: 'Midjourney', price: '¥0.6/次', supportsImage: true },
   { id: 'doubao-seedream-4-5-251128', label: '豆包 Seedream', price: '¥0.3/次', supportsImage: true },
   // Flux 2 Pro(fal,1080/2K/4K;16:9/9:16/1:1)
-  { id: 'flux-2-pro', label: 'Flux 2 Pro 文生图', price: '¥0.42~2.04/次',
+  { id: 'flux-2-pro', label: 'Flux 2 Pro 文生图', price: '¥0.42~2.04/次', ratios: FLUX_RATIOS,
     qualityOptions: [{ value: '1080', label: '1080' }, { value: '2k', label: '2K' }, { value: '4k', label: '4K' }] },
-  { id: 'flux-2-pro-edit', label: 'Flux 2 Pro 图生图', price: '¥0.53~3.88/次', supportsImage: true,
+  { id: 'flux-2-pro-edit', label: 'Flux 2 Pro 图生图', price: '¥0.53~3.88/次', supportsImage: true, ratios: FLUX_RATIOS,
     qualityOptions: [{ value: '1080', label: '1080' }, { value: '2k', label: '2K' }, { value: '4k', label: '4K' }] },
 ];
 

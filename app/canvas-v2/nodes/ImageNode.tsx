@@ -5,7 +5,7 @@ import { Handle, Position, NodeToolbar, type NodeProps } from '@xyflow/react';
 import { useCanvasStore, type CardNode } from '../store';
 import {
   IMAGE_MODELS, DEFAULT_IMAGE_MODEL, RATIO_OPTIONS, SIZE_OPTIONS, QUALITY_OPTIONS,
-  ratioToWH, type ImageModel,
+  ratioToWH, fluxImagePrice, type ImageModel,
 } from '../imageModels';
 import { STYLE_PRESETS, OTHER_PRESETS, refImageMax, applyStylePrefix } from '../imagePresets';
 import { IconImage, IconModel, IconExpand, IconShrink, IconMinus, IconPlus } from './icons';
@@ -295,10 +295,14 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               </ParamTag>
             )}
             <ParamTag label={<>{model.useSizeNotRatio ? '尺寸' : '比例'} {ratio}</>} open={sub === 'ratio'} onToggle={() => setSub(sub === 'ratio' ? null : 'ratio')} width={220}>
-              {(model.useSizeNotRatio ? SIZE_OPTIONS : RATIO_OPTIONS).map((opt: any) => (
+              {(model.useSizeNotRatio ? SIZE_OPTIONS : (model.ratios ?? RATIO_OPTIONS)).map((opt: any) => (
                 <SubItem key={opt.value} active={opt.value === ratio} onClick={() => { updateConfig(id, { ratio: opt.value }); updateCard(id, { aspectW: undefined, aspectH: undefined }); setSub(null); }}>
                   <span>{opt.label}</span>
                   {opt.priceMedium && <span style={subPrice}>{(data.config.imageQuality ?? 'medium') === 'high' ? opt.priceHigh : opt.priceMedium}</span>}
+                  {/* Flux 2 Pro:按当前档位显示该比例价格 */}
+                  {model.ratios && (model.id === 'flux-2-pro' || model.id === 'flux-2-pro-edit') && (
+                    <span style={subPrice}>¥{fluxImagePrice(model.id, data.config.imageQuality ?? '1080', opt.value).toFixed(2)}</span>
+                  )}
                 </SubItem>
               ))}
             </ParamTag>
@@ -313,7 +317,11 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
             )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', padding: '4px 8px 8px' }}>
-            <span style={{ fontSize: 12, color: '#71717a' }}>{model.price}</span>
+            <span style={{ fontSize: 12, color: '#71717a' }}>
+              {(model.id === 'flux-2-pro' || model.id === 'flux-2-pro-edit')
+                ? `¥${fluxImagePrice(model.id, data.config.imageQuality ?? '1080', ratio).toFixed(2)}/次`
+                : model.price}
+            </span>
             <button onClick={handleGenerate} disabled={data.status === 'generating'} style={{ ...generateBtn, opacity: data.status === 'generating' ? 0.4 : 1, cursor: data.status === 'generating' ? 'default' : 'pointer' }}>{data.status === 'generating' ? '生成中…' : 'Generate'}</button>
           </div>
         </div>
