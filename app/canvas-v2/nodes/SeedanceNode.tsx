@@ -275,9 +275,11 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const handleGenerate = async () => {
     // 连线传参:上游图→首帧/参考图,上游视频→refVideo,上游文案→prompt前缀
     const upstream = getUpstreamOutputs(id);
+    // 界面用 @图片N(直观),发给后端时转成 Seedance 官方 [图N] 语法
+    const rawPrompt = (data.config.prompt ?? '').replace(/@图片(\d+)/g, '[图$1]');
     const effPrompt = upstream.texts.length > 0
-      ? `${upstream.texts.join('\n')}\n${data.config.prompt}`.trim()
-      : data.config.prompt;
+      ? `${upstream.texts.join('\n')}\n${rawPrompt}`.trim()
+      : rawPrompt;
     const effFirst = data.config.firstFrame || upstream.images[0];
     const effLast = data.config.lastFrame || upstream.images[1];
     const effRefImages = mode === 'multimodal'
@@ -433,12 +435,23 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
             value={data.config.prompt}
             onChange={(v) => updateConfig(id, { prompt: v })}
             onGenerate={handleGenerate}
-            placeholder={mode === 't2v' ? '描述视频内容…（必填，输入 @ 可引用参考图）' : '描述视频内容…（输入 @ 可引用参考图）'}
+            placeholder={mode === 't2v' ? '描述视频内容…（必填）' : '描述视频内容…（点下方 @图片N 引用参考图）'}
             style={promptInput}
-            mentionItems={mode === 'multimodal'
-              ? [...refImages, ...connImages].map((url, i) => ({ label: `图${i + 1}`, ref: `[图${i + 1}]`, thumb: url }))
-              : undefined}
           />
+
+          {/* @图片N 引用标签(多模态,点击插入提示词;照同类产品) */}
+          {mode === 'multimodal' && [...refImages, ...connImages].length > 0 && (
+            <div className="nodrag" style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '4px 6px' }} onClick={(e) => e.stopPropagation()}>
+              {[...refImages, ...connImages].map((url, i) => (
+                <button key={i}
+                  onClick={() => updateConfig(id, { prompt: `${(data.config.prompt ?? '').trimEnd()} @图片${i + 1}`.trim() + ' ' })}
+                  style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '2px 8px 2px 2px', borderRadius: 14, cursor: 'pointer', background: 'rgba(124,58,237,0.18)', border: '1px solid rgba(124,58,237,0.35)', color: '#c4b5fd', fontSize: 11 }}>
+                  <img src={url} alt="" style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover' }} />
+                  @图片{i + 1}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* 参数标签行(每个按钮各自弹窗,从按钮正上方弹出) */}
           <div style={tagsRow}>
