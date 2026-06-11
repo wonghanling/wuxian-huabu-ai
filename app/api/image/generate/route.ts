@@ -68,6 +68,18 @@ const IMAGE_MODELS: Record<string, {
     apiType: 'midjourney',
     supportsImage: true,
   },
+  'mj_imagine_v7': {
+    provider: 'n1n',
+    yunwuModel: 'midjourney',
+    apiType: 'midjourney',
+    supportsImage: true,
+  },
+  'mj_niji_7': {
+    provider: 'n1n',
+    yunwuModel: 'midjourney',
+    apiType: 'midjourney',
+    supportsImage: true,
+  },
   'doubao-seedream-4-5-251128': {
     provider: 'n1n',
     yunwuModel: 'doubao-seedream-4-5-251128',
@@ -417,11 +429,15 @@ export async function POST(req: NextRequest) {
       }
       // MJ 通过 --ar 参数控制比例，转换格式（1:1 → --ar 1:1）
       const arParam = aspectRatio && aspectRatio !== '1:1' ? ` --ar ${aspectRatio}` : '';
-      const mjPrompt = `${prompt}${arParam}`;
+      // 版本参数:V7 加 --v 7;Niji7 加 --niji 7 且 botType 用 NIJI_JOURNEY
+      const isNiji = model === 'mj_niji_7';
+      const verParam = model === 'mj_imagine_v7' ? ' --v 7' : isNiji ? ' --niji 7' : '';
+      const mjBotType = isNiji ? 'NIJI_JOURNEY' : 'MID_JOURNEY';
+      const mjPrompt = `${prompt}${arParam}${verParam}`;
       const response = await fetchWithN1nPool(`${YUNWU_BASE_URL}/mj/submit/imagine`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ botType: 'MID_JOURNEY', prompt: mjPrompt, base64Array, notifyHook: '', state: '' }),
+        body: JSON.stringify({ botType: mjBotType, prompt: mjPrompt, base64Array, notifyHook: '', state: '' }),
       });
       if (!response.ok) throw new Error(`API 错误: ${response.status}`);
       const data = await response.json();

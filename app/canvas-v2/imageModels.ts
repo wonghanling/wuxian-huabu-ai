@@ -51,6 +51,8 @@ export const IMAGE_MODELS: ImageModel[] = [
   { id: 'flux-kontext', label: 'Flux Kontext', price: '¥0.6/次', supportsImage: true },
   { id: 'flux-kontext-max', label: 'Flux Kontext Max', price: '¥1.0/次' },
   { id: 'mj_imagine', label: 'Midjourney', price: '¥0.6/次', supportsImage: true },
+  { id: 'mj_imagine_v7', label: 'Midjourney V7', price: '¥0.6/次', supportsImage: true },
+  { id: 'mj_niji_7', label: 'Niji 7 动漫', price: '¥0.6/次', supportsImage: true },
   { id: 'doubao-seedream-4-5-251128', label: '豆包 Seedream', price: '¥0.3/次', supportsImage: true },
   // Flux 2 Pro(fal,1080/2K/4K;16:9/9:16/1:1)
   { id: 'flux-2-pro', label: 'Flux 2 Pro 文生图', price: '¥0.42~2.04/次', ratios: FLUX_RATIOS,
