@@ -433,8 +433,11 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
             value={data.config.prompt}
             onChange={(v) => updateConfig(id, { prompt: v })}
             onGenerate={handleGenerate}
-            placeholder={mode === 't2v' ? '描述视频内容…（必填）' : '描述视频内容…（可选）'}
+            placeholder={mode === 't2v' ? '描述视频内容…（必填，输入 @ 可引用参考图）' : '描述视频内容…（输入 @ 可引用参考图）'}
             style={promptInput}
+            mentionItems={mode === 'multimodal'
+              ? [...refImages, ...connImages].map((url, i) => ({ label: `图${i + 1}`, ref: `[图${i + 1}]`, thumb: url }))
+              : undefined}
           />
 
           {/* 参数标签行(每个按钮各自弹窗,从按钮正上方弹出) */}
@@ -504,7 +507,6 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                       onAddImages={addRefImages} onRemoveImage={removeRefImage}
                       onAddVideo={addRefVideo} onRemoveVideo={removeRefVideo}
                       onAddAudio={addRefAudio} onRemoveAudio={() => updateConfig(id, { refAudio: undefined, refAudioName: undefined })}
-                      onInsertRef={(n) => updateConfig(id, { prompt: `${(data.config.prompt ?? '').trimEnd()} [图${n}]`.trim() })}
                     />
                   ) : (
                     <div style={{ display: 'flex', gap: 8, padding: 4 }}>
@@ -621,7 +623,7 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 }
 
 // ===== 参考内容面板(多模态:图/视频/音频,总12上限) =====
-function RefPanel({ images, videos, videoNames, audioName, counts, uploading, connImages, connVideos, connAudio, onAddImages, onRemoveImage, onAddVideo, onRemoveVideo, onAddAudio, onRemoveAudio, onInsertRef }: {
+function RefPanel({ images, videos, videoNames, audioName, counts, uploading, connImages, connVideos, connAudio, onAddImages, onRemoveImage, onAddVideo, onRemoveVideo, onAddAudio, onRemoveAudio }: {
   images: string[]; videos: string[]; videoNames: string[]; audioName?: string;
   counts: ReturnType<typeof multimodalCount>;
   uploading?: boolean;
@@ -631,7 +633,6 @@ function RefPanel({ images, videos, videoNames, audioName, counts, uploading, co
   onAddImages: (fl: FileList | null) => void; onRemoveImage: (i: number) => void;
   onAddVideo: (fl: FileList | null) => void; onRemoveVideo: (i: number) => void;
   onAddAudio: (fl: FileList | null) => void; onRemoveAudio: () => void;
-  onInsertRef?: (n: number) => void;   // 在 prompt 插入 [图N] 引用
 }) {
   return (
     <div style={{ padding: 4 }}>
@@ -654,19 +655,11 @@ function RefPanel({ images, videos, videoNames, audioName, counts, uploading, co
         已用 {counts.total}/{MULTIMODAL_MAX_TOTAL}（图片 {images.length + (connImages?.length ?? 0)}/{MULTIMODAL_MAX_IMAGES} · 视频 {videos.length + (connVideos?.length ?? 0)}/{MULTIMODAL_MAX_VIDEOS}）{((connImages?.length ?? 0) + (connVideos?.length ?? 0)) > 0 ? `· 含${(connImages?.length ?? 0) + (connVideos?.length ?? 0)}连接 ` : ''}{counts.total >= MULTIMODAL_MAX_TOTAL ? '· 已达上限' : `· 还可上传 ${MULTIMODAL_MAX_TOTAL - counts.total} 个`}
       </div>
 
-      {/* 参考图缩略(点 [图N] 把引用插入提示词,照Seedance官方[图1][图2]语法) */}
-      {(images.length > 0 || (connImages?.length ?? 0) > 0) && onInsertRef && (
-        <div style={{ fontSize: 10, color: '#a78bfa', marginBottom: 4 }}>点 [图N] 插入到提示词,精确指定每张图</div>
-      )}
+      {/* 参考图缩略(引用方式:在提示词输入 @ 选图) */}
       {images.length > 0 && (
         <div style={refGrid}>
           {images.map((img, i) => (
-            <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-              <RefThumb url={img} index={i} onRemove={() => onRemoveImage(i)} />
-              {onInsertRef && (
-                <button onClick={() => onInsertRef(i + 1)} style={insertRefBtn}>[图{i + 1}]</button>
-              )}
-            </div>
+            <RefThumb key={i} url={img} index={i} onRemove={() => onRemoveImage(i)} />
           ))}
         </div>
       )}
@@ -676,12 +669,7 @@ function RefPanel({ images, videos, videoNames, audioName, counts, uploading, co
           <div style={{ fontSize: 10, color: '#a78bfa', margin: '6px 0 4px' }}>来自连接 · {connImages.length} 张图</div>
           <div style={refGrid}>
             {connImages.map((img, i) => (
-              <div key={`c${i}`} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                <RefThumb url={img} index={i} onRemove={() => {}} />
-                {onInsertRef && (
-                  <button onClick={() => onInsertRef(images.length + i + 1)} style={insertRefBtn}>[图{images.length + i + 1}]</button>
-                )}
-              </div>
+              <RefThumb key={`c${i}`} url={img} index={i} onRemove={() => {}} />
             ))}
           </div>
         </>
@@ -886,10 +874,6 @@ const refUploadBtn: React.CSSProperties = {
   background: 'rgba(255,255,255,0.07)', color: '#e4e4e7', fontSize: 14, cursor: 'pointer', whiteSpace: 'nowrap',
 };
 const refGrid: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 8 };
-const insertRefBtn: React.CSSProperties = {
-  fontSize: 9, padding: '1px 5px', borderRadius: 5, cursor: 'pointer',
-  background: 'rgba(124,58,237,0.18)', color: '#c4b5fd', border: '1px solid rgba(124,58,237,0.35)', whiteSpace: 'nowrap',
-};
 const refThumb: React.CSSProperties = {
   position: 'relative', width: '100%', aspectRatio: '1', borderRadius: 8, overflow: 'hidden',
   border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.25)', cursor: 'zoom-in' };
