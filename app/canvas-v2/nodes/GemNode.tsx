@@ -10,6 +10,7 @@ import { PromptTools } from './PromptTools';
 import { uploadImageToStorage, generateGemStoryboard, getUserId } from '../lib/api';
 import { useUpstream } from '../lib/connections';
 import { useDebouncedField } from '../lib/useDebouncedField';
+import { applyStylePrefix } from '../imagePresets';
 
 // ============================================================
 // GEM 分镜设计卡片 (Step2)
@@ -122,8 +123,8 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     const timer = setInterval(() => { p = Math.min(90, p + 8); updateCard(id, { progress: p }); }, 600);
     try {
       const userId = await getUserId();
-      // 风格 prompt 拼在剧本前(照原网),refImages 已是 storage URL;合并连接进来的上游图
-      const script = style ? `${style}\n${data.config.prompt}` : data.config.prompt;
+      // 风格已直接填进 prompt 框(所见即所得),生成时不再重复拼接
+      const script = data.config.prompt;
       const allImages = [...refImages, ...connImages];
       const result = await generateGemStoryboard({
         images: allImages.length > 0 ? allImages : undefined,
@@ -284,10 +285,14 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               ))}
             </ParamTag>
 
-            {/* 风格 */}
+            {/* 风格:选中直接填进剧本框(所见即所得,照图片卡) */}
             <ParamTag label={styleLabel || '风格'} open={sub === 'style'} onToggle={() => setSub(sub === 'style' ? null : 'style')} width={220}>
               {STYLE_OPTIONS.map((s) => (
-                <SubItem key={s.label} active={s.prompt === style} onClick={() => { updateConfig(id, { ratio: s.prompt }); setSub(null); }}>
+                <SubItem key={s.label} active={s.prompt === style} onClick={() => {
+                  const next = applyStylePrefix(data.config.prompt ?? '', s.prompt);
+                  updateConfig(id, { prompt: next, ratio: s.prompt });
+                  setSub(null);
+                }}>
                   <span>{s.label}</span>
                 </SubItem>
               ))}
