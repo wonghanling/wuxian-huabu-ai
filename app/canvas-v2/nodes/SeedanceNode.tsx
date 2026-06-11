@@ -629,11 +629,11 @@ function RefPanel({ images, videos, videoNames, audioName, counts, uploading, co
       {/* 上传按钮区 */}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
         <label style={{ ...refUploadBtn, opacity: (counts.canAddImage && !uploading) ? 1 : 0.4, pointerEvents: (counts.canAddImage && !uploading) ? 'auto' : 'none' }}>
-          {uploading ? '上传中…' : '+ 图片'}
+          {uploading ? '上传中…' : `+ 图片 (剩${Math.max(0, Math.min(MULTIMODAL_MAX_IMAGES - images.length, MULTIMODAL_MAX_TOTAL - counts.total))})`}
           <input type="file" accept="image/*" multiple disabled={uploading} style={{ display: 'none' }} onChange={(e) => { onAddImages(e.target.files); e.currentTarget.value = ''; }} />
         </label>
         <label style={{ ...refUploadBtn, opacity: (counts.canAddVideo && !uploading) ? 1 : 0.4, pointerEvents: (counts.canAddVideo && !uploading) ? 'auto' : 'none' }}>
-          {uploading ? '上传中…' : '+ 视频'}
+          {uploading ? '上传中…' : `+ 视频 (剩${Math.max(0, Math.min(MULTIMODAL_MAX_VIDEOS - videos.length, MULTIMODAL_MAX_TOTAL - counts.total))})`}
           <input type="file" accept="video/*" disabled={uploading} style={{ display: 'none' }} onChange={(e) => { onAddVideo(e.target.files); e.currentTarget.value = ''; }} />
         </label>
         <label style={{ ...refUploadBtn, opacity: (counts.canAddAudio && !audioName && !uploading) ? 1 : 0.4, pointerEvents: (counts.canAddAudio && !audioName && !uploading) ? 'auto' : 'none' }}>
@@ -642,7 +642,7 @@ function RefPanel({ images, videos, videoNames, audioName, counts, uploading, co
         </label>
       </div>
       <div style={{ fontSize: 10, color: '#71717a', marginBottom: 6 }}>
-        图片 {images.length}/{MULTIMODAL_MAX_IMAGES} · 视频 {videos.length}/{MULTIMODAL_MAX_VIDEOS} · 总 {counts.total}/{MULTIMODAL_MAX_TOTAL}
+        已用 {counts.total}/{MULTIMODAL_MAX_TOTAL}（图片 {images.length}/{MULTIMODAL_MAX_IMAGES} · 视频 {videos.length}/{MULTIMODAL_MAX_VIDEOS}）{counts.total >= MULTIMODAL_MAX_TOTAL ? ' · 已达上限' : ` · 还可上传 ${MULTIMODAL_MAX_TOTAL - counts.total} 个`}
       </div>
 
       {/* 参考图缩略 */}
