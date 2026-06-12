@@ -1,6 +1,5 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
 
 type Template = {
@@ -33,7 +32,7 @@ export function TemplateGallery() {
 
   return (
     <section className="py-20 px-6 border-t border-white/5">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-[1600px] mx-auto">
         <div className="text-center mb-12">
           <div className="inline-block mb-3 px-3 py-1 rounded-full border border-purple-500/30 bg-purple-500/10">
             <span className="text-xs text-purple-300 font-medium">WORKFLOW TEMPLATES</span>
@@ -43,7 +42,7 @@ export function TemplateGallery() {
           </h2>
           <p className="text-zinc-400 text-base">一键复用完整工作流，立即开始创作</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
           {templates.map((t) => (
             <TemplateCard key={t.id} template={t} />
           ))}
@@ -55,11 +54,12 @@ export function TemplateGallery() {
 
 function TemplateCard({ template }: { template: Template }) {
   const [hovered, setHovered] = useState(false);
+  const [playing, setPlaying] = useState(false);
   const [videoSrc, setVideoSrc] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
-  // 只有卡片进入视口才加载视频 src
+  // 进入视口就预加载视频(preload metadata),保证悬停时已就绪,避免黑屏
   useEffect(() => {
     if (!template.preview_video_url) return;
     const el = cardRef.current;
@@ -71,7 +71,7 @@ function TemplateCard({ template }: { template: Template }) {
           observer.disconnect();
         }
       },
-      { rootMargin: '200px' }
+      { rootMargin: '300px' }
     );
     observer.observe(el);
     return () => observer.disconnect();
@@ -81,10 +81,11 @@ function TemplateCard({ template }: { template: Template }) {
     const video = videoRef.current;
     if (!video || !videoSrc) return;
     if (hovered) {
-      video.currentTime = 0;
       video.play().catch(() => {});
     } else {
       video.pause();
+      video.currentTime = 0;
+      setPlaying(false); // 移开后复位,下次悬停重新等首帧
     }
   }, [hovered, videoSrc]);
 
@@ -101,7 +102,8 @@ function TemplateCard({ template }: { template: Template }) {
             src={template.cover_url}
             alt={template.title}
             fill
-            className={`object-cover transition-opacity duration-300 ${hovered && template.preview_video_url ? 'opacity-0' : 'opacity-100'}`}
+            // 封面只在视频真正出画(onPlaying)后才淡出,杜绝黑屏缝隙
+            className={`object-cover transition-opacity duration-500 ${playing ? 'opacity-0' : 'opacity-100'}`}
             sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
             loading="lazy"
           />
@@ -110,15 +112,26 @@ function TemplateCard({ template }: { template: Template }) {
           <video
             ref={videoRef}
             src={videoSrc}
+            poster={template.cover_url || undefined}
             muted
             loop
             playsInline
-            preload="none"
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${hovered ? 'opacity-100' : 'opacity-0'}`}
+            preload="metadata"
+            onPlaying={() => setPlaying(true)}
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${playing ? 'opacity-100' : 'opacity-0'}`}
           />
         )}
+        {template.preview_video_url && !hovered && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-14 h-14 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center border border-white/20 group-hover:scale-110 transition-transform">
+              <svg className="w-6 h-6 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </div>
+          </div>
+        )}
         {template.is_featured && (
-          <div className="absolute top-3 left-3 px-2 py-1 rounded-md bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-[10px] font-bold shadow-lg">
+          <div className="absolute top-3 left-3 px-2 py-1 rounded-md bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-[10px] font-bold shadow-lg z-10">
             精选
           </div>
         )}
@@ -126,10 +139,10 @@ function TemplateCard({ template }: { template: Template }) {
       <div className="p-5">
         <h3 className="text-lg font-semibold mb-2 text-white">{template.title}</h3>
         {template.description && (
-          <p className="text-sm text-zinc-400 mb-3 line-clamp-2 leading-relaxed">{template.description}</p>
+          <p className="text-sm text-zinc-400 mb-1 line-clamp-2 leading-relaxed">{template.description}</p>
         )}
         {template.tags && template.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-4">
+          <div className="flex flex-wrap gap-1 mt-3">
             {template.tags.slice(0, 4).map((tag) => (
               <span key={tag} className="px-2 py-0.5 text-[10px] rounded bg-white/5 text-zinc-300 border border-white/5">
                 {tag}
@@ -137,15 +150,6 @@ function TemplateCard({ template }: { template: Template }) {
             ))}
           </div>
         )}
-        <Link
-          href={`/canvas?templateId=${template.id}`}
-          className="inline-flex items-center justify-center w-full px-4 py-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 hover:opacity-90 transition-all text-sm font-medium text-white"
-        >
-          <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-          </svg>
-          使用模板
-        </Link>
       </div>
     </div>
   );
