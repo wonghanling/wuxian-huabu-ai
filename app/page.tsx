@@ -11,6 +11,7 @@ export default function Home() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [showPromoModal, setShowPromoModal] = useState(false);
+  const [navScrolled, setNavScrolled] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
@@ -64,6 +65,46 @@ export default function Home() {
 
       return () => subscription.unsubscribe();
     }
+  }, []);
+
+  // 鼠标跟随柔光 + 滚动淡入 + 导航滚动态(全部纯 transform/opacity,GPU 合成,零重排)
+  useEffect(() => {
+    // 1) 光晕跟随鼠标:rAF 节流 + 缓动,只写 transform
+    const orb = document.getElementById('cursor-orb');
+    let targetX = window.innerWidth / 2, targetY = window.innerHeight / 2;
+    let curX = targetX, curY = targetY, raf = 0;
+    const onMove = (e: MouseEvent) => { targetX = e.clientX; targetY = e.clientY; };
+    const tick = () => {
+      curX += (targetX - curX) * 0.08;
+      curY += (targetY - curY) * 0.08;
+      if (orb) orb.style.transform = `translate3d(${curX}px, ${curY}px, 0)`;
+      raf = requestAnimationFrame(tick);
+    };
+    window.addEventListener('mousemove', onMove, { passive: true });
+    raf = requestAnimationFrame(tick);
+
+    // 2) 滚动淡入:一次性触发即解绑,无持续开销
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in-view');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+
+    // 3) 导航滚动态
+    const onScroll = () => setNavScrolled(window.scrollY > 40);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('scroll', onScroll);
+      cancelAnimationFrame(raf);
+      io.disconnect();
+    };
   }, []);
 
   // 登出
@@ -134,9 +175,11 @@ export default function Home() {
       {/* Glowing Orbs */}
       <div className="orb orb-blue" />
       <div className="orb orb-purple" />
+      {/* 跟随鼠标的柔光 */}
+      <div id="cursor-orb" className="orb-cursor" />
 
       {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 border-b border-white/5 bg-zinc-950/50 backdrop-blur-md">
+      <nav className={`fixed top-0 w-full z-50 border-b transition-all duration-500 ${navScrolled ? 'border-white/10 bg-zinc-950/80 backdrop-blur-xl' : 'border-white/5 bg-zinc-950/50 backdrop-blur-md'}`}>
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <img src="/Boluolab_logo.svg" alt="Boluolab" className="w-8 h-8" />
@@ -205,7 +248,7 @@ export default function Home() {
       <main className="relative pt-32 pb-20 px-6 flex flex-col items-center">
         <div className="relative z-10 max-w-5xl mx-auto text-center">
           <h1 className="text-6xl md:text-8xl font-bold tracking-tighter hero-text leading-[1.1] mb-4">
-            The AI workspace for <br/> <span className="italic">infinite</span> creative flow.
+            The AI workspace for <br/> <span className="hero-flow italic">infinite</span> creative flow.
           </h1>
           <p className="text-2xl md:text-3xl text-zinc-500 mb-8">
             为<span className="text-zinc-300">无限创作流</span>而生的 AI 工作空间
@@ -373,7 +416,7 @@ export default function Home() {
       {/* Features Section */}
       <section className="py-32 relative z-10">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-20">
+          <div className="text-center mb-20 reveal">
             <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
               Everything you need to create
             </h2>
@@ -436,7 +479,7 @@ export default function Home() {
       {/* Card Types Section */}
       <section className="py-32 border-t border-white/5 relative z-10 bg-zinc-950/50">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-20">
+          <div className="text-center mb-20 reveal">
             <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
               Powerful card types
             </h2>
@@ -446,76 +489,76 @@ export default function Home() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="p-6 bg-slate-400 border border-white/5 rounded-3xl backdrop-blur-sm">
+            <div className="p-6 bg-white/[0.03] border border-white/10 rounded-3xl backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.06] hover:border-violet-500/30 hover:-translate-y-1">
               <div className="w-8 h-8 mb-3">
                 <img src="/book-business-guidelines-svgrepo-com.svg" alt="Text Card" className="w-full h-full" />
               </div>
-              <h4 className="font-semibold mb-1 text-zinc-900">Text Card</h4>
-              <p className="text-xs text-zinc-700 mb-2">文本卡</p>
-              <p className="text-sm text-zinc-800">Write prompts and scripts</p>
+              <h4 className="font-semibold mb-1 text-white">Text Card</h4>
+              <p className="text-xs text-zinc-500 mb-2">文本卡</p>
+              <p className="text-sm text-zinc-400">Write prompts and scripts</p>
             </div>
 
-            <div className="p-6 bg-slate-400 border border-white/5 rounded-3xl backdrop-blur-sm">
+            <div className="p-6 bg-white/[0.03] border border-white/10 rounded-3xl backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.06] hover:border-violet-500/30 hover:-translate-y-1">
               <div className="w-8 h-8 mb-3">
                 <img src="/juese-halloween-typical-character-bandaged-outline-svgrepo-com.svg" alt="Character Card" className="w-full h-full" />
               </div>
-              <h4 className="font-semibold mb-1 text-zinc-900">Character Card</h4>
-              <p className="text-xs text-zinc-700 mb-2">角色卡</p>
-              <p className="text-sm text-zinc-800">Create detailed characters</p>
+              <h4 className="font-semibold mb-1 text-white">Character Card</h4>
+              <p className="text-xs text-zinc-500 mb-2">角色卡</p>
+              <p className="text-sm text-zinc-400">Create detailed characters</p>
             </div>
 
-            <div className="p-6 bg-slate-400 border border-white/5 rounded-3xl backdrop-blur-sm">
+            <div className="p-6 bg-white/[0.03] border border-white/10 rounded-3xl backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.06] hover:border-violet-500/30 hover:-translate-y-1">
               <div className="w-8 h-8 mb-3">
                 <img src="/tupian-landscape-png-svgrepo-com.svg" alt="Image Generate" className="w-full h-full" />
               </div>
-              <h4 className="font-semibold mb-1 text-zinc-900">Image Generate</h4>
-              <p className="text-xs text-zinc-700 mb-2">图片生成</p>
-              <p className="text-sm text-zinc-800">Text to image with AI</p>
+              <h4 className="font-semibold mb-1 text-white">Image Generate</h4>
+              <p className="text-xs text-zinc-500 mb-2">图片生成</p>
+              <p className="text-sm text-zinc-400">Text to image with AI</p>
             </div>
 
-            <div className="p-6 bg-slate-400 border border-white/5 rounded-3xl backdrop-blur-sm">
+            <div className="p-6 bg-white/[0.03] border border-white/10 rounded-3xl backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.06] hover:border-violet-500/30 hover:-translate-y-1">
               <div className="w-8 h-8 mb-3">
                 <img src="/jingtou-film-svgrepo-com.svg" alt="Shot Grid" className="w-full h-full" />
               </div>
-              <h4 className="font-semibold mb-1 text-zinc-900">Shot Grid</h4>
-              <p className="text-xs text-zinc-700 mb-2">多镜头</p>
-              <p className="text-sm text-zinc-800">Multiple camera angles</p>
+              <h4 className="font-semibold mb-1 text-white">Shot Grid</h4>
+              <p className="text-xs text-zinc-500 mb-2">多镜头</p>
+              <p className="text-sm text-zinc-400">Multiple camera angles</p>
             </div>
 
-            <div className="p-6 bg-slate-400 border border-white/5 rounded-3xl backdrop-blur-sm">
+            <div className="p-6 bg-white/[0.03] border border-white/10 rounded-3xl backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.06] hover:border-violet-500/30 hover:-translate-y-1">
               <div className="w-8 h-8 mb-3">
                 <img src="/jiandao-svgrepo-com.svg" alt="Crop Card" className="w-full h-full" />
               </div>
-              <h4 className="font-semibold mb-1 text-zinc-900">Crop Card</h4>
-              <p className="text-xs text-zinc-700 mb-2">裁剪卡</p>
-              <p className="text-sm text-zinc-800">Crop and resize images</p>
+              <h4 className="font-semibold mb-1 text-white">Crop Card</h4>
+              <p className="text-xs text-zinc-500 mb-2">裁剪卡</p>
+              <p className="text-sm text-zinc-400">Crop and resize images</p>
             </div>
 
-            <div className="p-6 bg-slate-400 border border-white/5 rounded-3xl backdrop-blur-sm">
+            <div className="p-6 bg-white/[0.03] border border-white/10 rounded-3xl backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.06] hover:border-violet-500/30 hover:-translate-y-1">
               <div className="w-8 h-8 mb-3">
                 <img src="/bianhuanka-camera-svgrepo-com.svg" alt="Transform" className="w-full h-full" />
               </div>
-              <h4 className="font-semibold mb-1 text-zinc-900">Transform</h4>
-              <p className="text-xs text-zinc-700 mb-2">变换卡</p>
-              <p className="text-sm text-zinc-800">Rotate, scale, and flip</p>
+              <h4 className="font-semibold mb-1 text-white">Transform</h4>
+              <p className="text-xs text-zinc-500 mb-2">变换卡</p>
+              <p className="text-sm text-zinc-400">Rotate, scale, and flip</p>
             </div>
 
-            <div className="p-6 bg-slate-400 border border-white/5 rounded-3xl backdrop-blur-sm">
+            <div className="p-6 bg-white/[0.03] border border-white/10 rounded-3xl backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.06] hover:border-violet-500/30 hover:-translate-y-1">
               <div className="w-8 h-8 mb-3">
                 <img src="/shipingshengchen-camera-filled-svgrepo-com.svg" alt="Video Generate" className="w-full h-full" />
               </div>
-              <h4 className="font-semibold mb-1 text-zinc-900">Video Generate</h4>
-              <p className="text-xs text-zinc-700 mb-2">视频生成</p>
-              <p className="text-sm text-zinc-800">Create AI videos</p>
+              <h4 className="font-semibold mb-1 text-white">Video Generate</h4>
+              <p className="text-xs text-zinc-500 mb-2">视频生成</p>
+              <p className="text-sm text-zinc-400">Create AI videos</p>
             </div>
 
-            <div className="p-6 bg-slate-400 border border-white/5 rounded-3xl backdrop-blur-sm">
+            <div className="p-6 bg-white/[0.03] border border-white/10 rounded-3xl backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.06] hover:border-violet-500/30 hover:-translate-y-1">
               <div className="w-8 h-8 mb-3">
                 <img src="/zijing-svgrepo-com.svg" alt="Asset Card" className="w-full h-full" />
               </div>
-              <h4 className="font-semibold mb-1 text-zinc-900">Asset Card</h4>
-              <p className="text-xs text-zinc-700 mb-2">资产卡</p>
-              <p className="text-sm text-zinc-800">Manage your assets</p>
+              <h4 className="font-semibold mb-1 text-white">Asset Card</h4>
+              <p className="text-xs text-zinc-500 mb-2">资产卡</p>
+              <p className="text-sm text-zinc-400">Manage your assets</p>
             </div>
           </div>
         </div>
@@ -524,7 +567,7 @@ export default function Home() {
       {/* How It Works Section */}
       <section className="py-32 border-t border-white/5 relative z-10">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-20">
+          <div className="text-center mb-20 reveal">
             <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
               How it works
             </h2>
@@ -631,25 +674,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Social Proof Section */}
-      <section className="py-24 border-t border-white/5 relative z-10 bg-zinc-950">
-        <div className="max-w-7xl mx-auto px-6 text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 mb-2">Trusted by builders at</p>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-600 mb-12">受到这些团队的信赖</p>
-          <div className="flex flex-wrap justify-center items-center gap-12 md:gap-24 opacity-40 grayscale contrast-125">
-            <span className="text-2xl font-bold tracking-tighter">VERCEL</span>
-            <span className="text-2xl font-bold tracking-tighter">LINEAR</span>
-            <span className="text-2xl font-bold tracking-tighter">RAILWAY</span>
-            <span className="text-2xl font-bold tracking-tighter">STRIPE</span>
-            <span className="text-2xl font-bold tracking-tighter">REPLICATE</span>
-          </div>
-        </div>
-      </section>
-
       {/* Pricing Section */}
       <section id="pricing" className="py-32 border-t border-white/5 relative z-10">
         <div className="max-w-5xl mx-auto px-6">
-          <div className="text-center mb-16">
+          <div className="text-center mb-16 reveal">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 mb-4">Pricing</p>
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">简单透明的定价</h2>
             <p className="text-zinc-400 text-lg">按需付费，无隐藏费用</p>

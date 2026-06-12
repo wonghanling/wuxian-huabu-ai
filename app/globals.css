@@ -86,6 +86,25 @@ body::-webkit-scrollbar {
   right: -100px;
 }
 
+/* 跟随鼠标的柔光(纯 transform,GPU 合成,不触发重排) */
+.orb-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 480px;
+  height: 480px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(139,92,246,0.5) 0%, transparent 70%);
+  filter: blur(110px);
+  opacity: 0.12;
+  z-index: 0;
+  pointer-events: none;
+  margin-left: -240px;
+  margin-top: -240px;
+  will-change: transform;
+  transition: opacity 0.6s ease;
+}
+
 /* Premium Buttons */
 .btn-primary {
   background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%);
@@ -118,11 +137,48 @@ body::-webkit-scrollbar {
   background-clip: text;
 }
 
+/* 仅 "infinite" 一词缓慢流光(克制:白→淡紫→淡蓝,8s 极慢) */
+.hero-flow {
+  background: linear-gradient(100deg, #ffffff 0%, #c4b5fd 35%, #93c5fd 55%, #ffffff 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: hero-flow-move 8s linear infinite;
+}
+
+@keyframes hero-flow-move {
+  to { background-position: 200% center; }
+}
+
 .glass-card {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 24px;
   backdrop-filter: blur(12px);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+/* 卡片 hover 柔光(克制:轻微上浮 + 品牌色淡投影) */
+.glass-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px -12px rgba(139, 92, 246, 0.25);
+}
+
+/* 滚动进场:默认透明下移,加 .in-view 后浮现(IntersectionObserver 一次性触发) */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+.reveal.in-view {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-flow { animation: none; }
+  .reveal { opacity: 1; transform: none; transition: none; }
 }
 
 /* canvas-v2 参考图缩略图 hover 放大 */
