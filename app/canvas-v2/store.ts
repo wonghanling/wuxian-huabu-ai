@@ -135,6 +135,9 @@ interface CanvasState {
   splitStory: (sourceId: string) => void;
   // 端口加号菜单：从某节点引用生成下游卡片
   spawnFrom: (sourceId: string, action: SpawnAction) => void;
+  // 剧本工作室"发送到画布"：在画布上新建一张预填内容的卡片(不自动连线/生成)
+  // 返回新卡 id;多张连续发送时按 index 错位铺开
+  addCardFromStudio: (kind: 'text' | 'character' | 'image', prefillText: string, index?: number) => string;
 }
 
 export const useCanvasStore = create<CanvasState>((set, get) => ({
@@ -258,5 +261,41 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       ),
       selectedId: newId,
     });
+  },
+
+  // 剧本工作室"发送到画布":新建一张预填内容的卡片(不连线、不自动生成)
+  // text: 内容填进 text 字段、done 态(像已生成的文本卡)
+  // character/image: 内容填进 config.prompt、empty 态(用户自己点生成)
+  addCardFromStudio: (kind, prefillText, index = 0) => {
+    const newId = `${kind[0]}${Date.now()}${index}`;
+    // 在现有节点附近错位铺开:基准点取已有节点的右侧,多张按 index 排列
+    const nodes = get().nodes;
+    const baseX = nodes.length ? Math.max(...nodes.map((n) => n.position.x)) + 380 : 120;
+    const baseY = 120;
+    const col = index % 3;
+    const row = Math.floor(index / 3);
+    const position = { x: baseX + col * 360, y: baseY + row * 340 };
+
+    const isText = kind === 'text';
+    const baseConfig: any = {
+      model: kind === 'text' ? '' : 'nano-banana-pro',
+      prompt: isText ? '' : prefillText,
+    };
+    if (!isText) { baseConfig.ratio = '1:1'; baseConfig.imageQuality = '2k'; baseConfig.refImages = []; }
+
+    const newNode: CardNode = {
+      id: newId,
+      type: 'card',
+      position,
+      data: {
+        kind,
+        status: isText ? 'done' : 'empty',
+        outputUrl: null,
+        text: isText ? prefillText : '',
+        config: baseConfig,
+      },
+    };
+    set({ nodes: [...get().nodes, newNode], selectedId: newId });
+    return newId;
   },
 }));

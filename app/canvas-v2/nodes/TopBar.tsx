@@ -7,6 +7,7 @@ import { isAdmin } from '@/lib/admin';
 import { listCanvases, createCanvas, deleteCanvas } from '@/lib/canvas-storage';
 import AccountModal from '@/app/canvas/AccountModal';
 import { SaveTemplateModal } from './SaveTemplateModal';
+import { ScriptStudioModal } from './ScriptStudioModal';
 
 // ============================================================
 // 画布右上角状态栏(照原网 fixed top-4 right-4，1:1 复刻样式)
@@ -24,6 +25,7 @@ export function TopBar({ saveStatus, switchCanvas, getCurrentCanvasId }: Props) 
   const [showCanvasList, setShowCanvasList] = useState(false);
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
+  const [showScriptStudio, setShowScriptStudio] = useState(false);
   const [canvases, setCanvases] = useState<{ id: string; title: string; updated_at: string }[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -202,6 +204,18 @@ export function TopBar({ saveStatus, switchCanvas, getCurrentCanvasId }: Props) 
           )}
         </button>
 
+        {/* 剧本工作室入口 */}
+        <button
+          onClick={() => setShowScriptStudio(true)}
+          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-violet-600/30 backdrop-blur-md border border-violet-500/40 text-violet-200 hover:bg-violet-600/50 hover:border-violet-500/60 transition-all"
+          title="剧本工作室:从想法到拍摄剧本"
+        >
+          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <span>剧本工作室</span>
+        </button>
+
         {/* 返回主页按钮 */}
         <button
           onClick={goHome}
@@ -228,6 +242,11 @@ export function TopBar({ saveStatus, switchCanvas, getCurrentCanvasId }: Props) 
       {/* 保存为模板弹窗(canvas-v2 版,存 {nodes,edges}) */}
       {showSaveTemplateModal && (
         <SaveTemplateModal onClose={() => setShowSaveTemplateModal(false)} />
+      )}
+
+      {/* 剧本工作室全屏弹窗 */}
+      {showScriptStudio && (
+        <ScriptStudioModal onClose={() => setShowScriptStudio(false)} />
       )}
     </>
   );
