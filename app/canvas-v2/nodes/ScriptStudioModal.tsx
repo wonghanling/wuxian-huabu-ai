@@ -28,6 +28,12 @@ const PHASE_PLACEHOLDERS = [
 
 // 发送到画布:全部阶段统一发文本卡(整段内容),用户在文本卡里自己选择性复制到角色/图片卡
 
+// 依赖链(1基阶段号 → 它依赖的前置阶段号):后端据此自动拼前置上下文
+// ②←① ③←①② ④⑤⑥←③ ⑦←③④⑤⑥;① 无前置
+const DEPENDS_ON: Record<number, number[]> = {
+  1: [], 2: [1], 3: [1, 2], 4: [3], 5: [3], 6: [3], 7: [3, 4, 5, 6],
+};
+
 export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
   const addCardFromStudio = useCanvasStore((s) => s.addCardFromStudio);
   const [project, setProject] = useState<ScriptProject>(emptyProject);
@@ -92,10 +98,25 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
 
   const handleGenerate = async () => {
     const input = project.inputs[active]?.trim();
-    if (!input || generating) return;
+    // 依赖链:把已生成的前置阶段内容传给后端(1基阶段号→内容)
+    // ②←① ③←①② ④⑤⑥←③ ⑦←③④⑤⑥;① 不需前置
+    const prev: Record<number, string> = {};
+    for (let i = 0; i < 7; i++) {
+      const v = project.phases[i]?.trim();
+      if (v) prev[i + 1] = v;
+    }
+    // ① 必须有输入;其余阶段:有输入 或 有可用前置 即可
+    const phaseNo = active + 1;
+    const depReady = DEPENDS_ON[phaseNo].some((d) => prev[d]);
+    if (phaseNo === 1 && !input) { alert('请先输入你的故事想法'); return; }
+    if (phaseNo !== 1 && !input && !depReady) {
+      alert(`请先生成${DEPENDS_ON[phaseNo].map((d) => PHASE_LABELS[d - 1]).join('/')},或在输入框补充内容`);
+      return;
+    }
+    if (generating) return;
     setGenerating(true);
     try {
-      const result = await generatePhase(active + 1, input, userIdRef.current);
+      const result = await generatePhase(phaseNo, input || '', prev, userIdRef.current);
       setProject((p) => {
         const phases = [...p.phases]; phases[active] = result;
         const next = { ...p, phases };
@@ -128,6 +149,15 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
 
   const output = project.phases[active] || '';
   const hasOutput = !!output.trim();
+  // 能否生成:①需输入;其余 有输入 或 有可用前置 即可
+  const phaseNo = active + 1;
+  const depReady = DEPENDS_ON[phaseNo].some((d) => project.phases[d - 1]?.trim());
+  const hasInput = !!project.inputs[active]?.trim();
+  const canGenerate = !generating && (phaseNo === 1 ? hasInput : (hasInput || depReady));
+  // 依赖未就绪的提示
+  const depHint = phaseNo !== 1 && !depReady && !hasInput
+    ? `需先生成 ${DEPENDS_ON[phaseNo].map((d) => PHASE_LABELS[d - 1]).join(' / ')}，或在下方输入框补充`
+    : '';
 
   return (
     <div style={overlay} onClick={onClose}>
@@ -178,10 +208,11 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
 
             {/* 生成按钮 */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '10px 0' }}>
-              <button onClick={handleGenerate} disabled={generating || !project.inputs[active]?.trim()}
-                style={{ ...genBtn, opacity: (generating || !project.inputs[active]?.trim()) ? 0.45 : 1, cursor: generating ? 'wait' : 'pointer' }}>
+              <button onClick={handleGenerate} disabled={!canGenerate}
+                style={{ ...genBtn, opacity: canGenerate ? 1 : 0.45, cursor: generating ? 'wait' : (canGenerate ? 'pointer' : 'not-allowed') }}>
                 {generating ? '生成中…' : `✨ 生成${PHASE_LABELS[active]}`}
               </button>
+              {depHint && <span style={{ fontSize: 12, color: '#a78bfa' }}>{depHint}</span>}
               {sentTip && <span style={{ fontSize: 12, color: '#86efac' }}>{sentTip}</span>}
             </div>
 

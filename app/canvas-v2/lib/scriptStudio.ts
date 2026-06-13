@@ -108,12 +108,19 @@ export async function saveProject(p: ScriptProject): Promise<string | null> {
   }
 }
 
-// ---------- 生成某阶段(各阶段独立,只发本阶段输入) ----------
-export async function generatePhase(phase: number, input: string, userId?: string): Promise<string> {
+// ---------- 生成某阶段(依赖链:前端把已生成的前置阶段内容一起传来) ----------
+// prev: { 阶段号(1基): 内容 },后端按依赖规则取用
+//   ②←① ③←①② ④⑤⑥←③ ⑦←③④⑤⑥
+export async function generatePhase(
+  phase: number,
+  input: string,
+  prev: Record<number, string>,
+  userId?: string,
+): Promise<string> {
   const res = await fetch('/api/gem/generate-script', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phase, input, userId }),
+    body: JSON.stringify({ phase, input, prev, userId }),
   });
   const data = await res.json();
   if (!res.ok || data.error) throw new Error(data.error || `生成失败(${res.status})`);
