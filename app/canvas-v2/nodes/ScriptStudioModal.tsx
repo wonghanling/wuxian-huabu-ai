@@ -15,23 +15,21 @@ import {
 // 发送到画布:④⑤⑥按 ===xxx=== 拆多卡;人物→角色卡、场景/道具→图片卡、其余→文本卡
 // ============================================================
 
-// 各阶段输入框占位提示
+// 各阶段输入框占位提示(新顺序:小说→Beat→人物→场景→道具→正式剧本→拍摄剧本)
 const PHASE_PLACEHOLDERS = [
-  '输入你的故事想法、题材或一句话梗概,AI 扩写成完整小说…',
-  '粘贴你的小说/故事,AI 提炼为结构化节拍表(建立/触发/发展/升级/高潮/结局)…',
-  '粘贴故事或节拍表,AI 写成标准格式的正式剧本(场景/动作/对白)…',
-  '粘贴剧本或故事,AI 逐个设计角色(外貌/性格/服装)…',
-  '粘贴剧本或故事,AI 逐个设计场景(地点/氛围/光线/布景)…',
-  '粘贴剧本或故事,AI 逐个设计道具(外观/材质/用途)…',
-  '粘贴剧本,AI 拆解为可执行的拍摄镜头列表(景别/机位/画面/时长)…',
+  '输入你的故事想法、题材或一句话梗概,AI 按专业框架扩写成完整小说…',
+  '已生成小说后点生成,AI 提炼为专业电影 Beat Sheet(15拍结构)。也可在此补充结构要求…',
+  '已生成小说后点生成,AI 设计角色资产(故事功能/视觉/心理/一致性)。也可补充选角方向…',
+  '已生成小说后点生成,AI 设计场景资产(世界观/空间/视觉/灯光)。也可补充场景方向…',
+  '已生成小说后点生成,AI 设计道具资产(故事功能/象征/视觉/一致性)。也可补充道具方向…',
+  '需先有小说+Beat+人物+场景+道具,AI 综合生成正式电影剧本。也可补充剧本要求…',
+  '需先有正式剧本(及前置素材),AI 生成可拍摄的镜头列表。也可补充导演/风格/时长要求…',
 ];
 
-// 发送到画布:全部阶段统一发文本卡(整段内容),用户在文本卡里自己选择性复制到角色/图片卡
-
 // 依赖链(1基阶段号 → 它依赖的前置阶段号):后端据此自动拼前置上下文
-// ②←① ③←①② ④⑤⑥←③ ⑦←③④⑤⑥;① 无前置
+// ②←① ③④⑤←① ⑥←①②③④⑤ ⑦←①②⑥③④⑤;① 无前置
 const DEPENDS_ON: Record<number, number[]> = {
-  1: [], 2: [1], 3: [1, 2], 4: [3], 5: [3], 6: [3], 7: [3, 4, 5, 6],
+  1: [], 2: [1], 3: [1], 4: [1], 5: [1], 6: [1, 2, 3, 4, 5], 7: [1, 2, 6, 3, 4, 5],
 };
 
 export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
@@ -165,7 +163,6 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
         {/* 头部 */}
         <div style={header}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 18 }}>🎬</span>
             <span style={{ fontWeight: 700, fontSize: 16, color: '#fff' }}>剧本工作室</span>
             <span style={{ fontSize: 12, color: '#71717a' }}>从想法到拍摄剧本 · 自动保存</span>
           </div>
@@ -210,7 +207,7 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '10px 0' }}>
               <button onClick={handleGenerate} disabled={!canGenerate}
                 style={{ ...genBtn, opacity: canGenerate ? 1 : 0.45, cursor: generating ? 'wait' : (canGenerate ? 'pointer' : 'not-allowed') }}>
-                {generating ? '生成中…' : `✨ 生成${PHASE_LABELS[active]}`}
+                {generating ? '生成中…' : `生成${PHASE_LABELS[active]}`}
               </button>
               {depHint && <span style={{ fontSize: 12, color: '#a78bfa' }}>{depHint}</span>}
               {sentTip && <span style={{ fontSize: 12, color: '#86efac' }}>{sentTip}</span>}

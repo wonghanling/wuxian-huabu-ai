@@ -10,7 +10,7 @@ import { createClient } from '@/lib/supabase/client';
 // ============================================================
 
 export const PHASE_LABELS = [
-  '小说', 'Beat Sheet', '正式剧本', '人物设计', '场景设计', '道具设计', '拍摄剧本',
+  '小说', 'Beat Sheet', '人物设计', '场景设计', '道具设计', '正式剧本', '拍摄剧本',
 ];
 
 export interface ScriptProject {
