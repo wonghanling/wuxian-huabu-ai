@@ -7,23 +7,37 @@ import { createClient } from '@/lib/supabase/client';
 // 双存:localStorage 即时草稿(防刷新/崩溃白写) + Supabase 云端永久(跨设备)
 // 不碰扣费/支付,纯数据 CRUD + 调生成接口
 // 第一期:单草稿(Supabase 取最近一条)
+// 6 阶段:Novel Bible / Beat Sheet / Character Bible / Environment Bible / Screenplay / Shooting Script
+// Asset Bible 按需钻取,存于 assetBibles(key=资产标识,value=Asset Bible 文本)
 // ============================================================
 
 export const PHASE_LABELS = [
-  '小说', 'Beat Sheet', '人物设计', '场景设计', '道具设计', '正式剧本', '拍摄剧本',
+  'Novel Bible', 'Beat Sheet', 'Character Bible', 'Environment Bible', 'Screenplay', 'Shooting Script',
 ];
+export const PHASE_LABELS_CN = [
+  '小说', '节拍表', '人物设定', '场景世界', '正式剧本', '拍摄剧本',
+];
+
+const N = 6;
 
 export interface ScriptProject {
   id: string | null;          // Supabase 行 id(本地草稿为 null)
   title: string;
-  phases: string[];           // 长度 7,各阶段生成结果
-  inputs: string[];           // 长度 7,各阶段输入框内容
+  phases: string[];           // 长度 6,各阶段生成结果
+  inputs: string[];           // 长度 6,各阶段输入框内容
+  assetBibles: Record<string, string>; // Asset Bible:key=资产标识(编号|名称),value=bible 文本
 }
 
 const LS_KEY = 'script_studio_draft';
 
 export function emptyProject(): ScriptProject {
-  return { id: null, title: '未命名剧本', phases: Array(7).fill(''), inputs: Array(7).fill('') };
+  return { id: null, title: '未命名剧本', phases: Array(N).fill(''), inputs: Array(N).fill(''), assetBibles: {} };
+}
+
+function padToN(arr: any[]): string[] {
+  const out = Array(N).fill('');
+  for (let i = 0; i < N; i++) out[i] = typeof arr[i] === 'string' ? arr[i] : '';
+  return out;
 }
 
 // ---------- localStorage 即时草稿 ----------
@@ -39,16 +53,11 @@ export function loadDraftLocal(): ScriptProject | null {
     return {
       id: o.id ?? null,
       title: o.title ?? '未命名剧本',
-      phases: Array.isArray(o.phases) ? padTo7(o.phases) : Array(7).fill(''),
-      inputs: Array.isArray(o.inputs) ? padTo7(o.inputs) : Array(7).fill(''),
+      phases: Array.isArray(o.phases) ? padToN(o.phases) : Array(N).fill(''),
+      inputs: Array.isArray(o.inputs) ? padToN(o.inputs) : Array(N).fill(''),
+      assetBibles: (o.assetBibles && typeof o.assetBibles === 'object') ? o.assetBibles : {},
     };
   } catch { return null; }
-}
-
-function padTo7(arr: any[]): string[] {
-  const out = Array(7).fill('');
-  for (let i = 0; i < 7; i++) out[i] = typeof arr[i] === 'string' ? arr[i] : '';
-  return out;
 }
 
 // ---------- Supabase 云端永久 ----------
@@ -67,11 +76,14 @@ export async function loadProject(): Promise<ScriptProject | null> {
     if (error || !data || !data.length) return null;
     const r = data[0];
     const inputsObj = (r.inputs && typeof r.inputs === 'object') ? r.inputs : {};
+    const assetObj = (r.asset_bibles && typeof r.asset_bibles === 'object') ? r.asset_bibles : {};
     return {
       id: r.id,
       title: r.title ?? '未命名剧本',
-      phases: [r.phase_1, r.phase_2, r.phase_3, r.phase_4, r.phase_5, r.phase_6, r.phase_7].map((s: any) => s ?? ''),
-      inputs: Array.from({ length: 7 }, (_, i) => (inputsObj[String(i)] ?? inputsObj[i] ?? '')),
+      // 6 阶段对应 phase_1..phase_6(旧库 phase_7 忽略)
+      phases: [r.phase_1, r.phase_2, r.phase_3, r.phase_4, r.phase_5, r.phase_6].map((s: any) => s ?? ''),
+      inputs: Array.from({ length: N }, (_, i) => (inputsObj[String(i)] ?? inputsObj[i] ?? '')),
+      assetBibles: assetObj,
     };
   } catch { return null; }
 }
@@ -89,8 +101,8 @@ export async function saveProject(p: ScriptProject): Promise<string | null> {
       title: p.title || '未命名剧本',
       phase_1: p.phases[0] ?? '', phase_2: p.phases[1] ?? '', phase_3: p.phases[2] ?? '',
       phase_4: p.phases[3] ?? '', phase_5: p.phases[4] ?? '', phase_6: p.phases[5] ?? '',
-      phase_7: p.phases[6] ?? '',
       inputs: inputsObj,
+      asset_bibles: p.assetBibles || {},
       updated_at: new Date().toISOString(),
     };
     if (p.id) {
@@ -109,8 +121,8 @@ export async function saveProject(p: ScriptProject): Promise<string | null> {
 }
 
 // ---------- 生成某阶段(依赖链:前端把已生成的前置阶段内容一起传来) ----------
-// prev: { 阶段号(1基): 内容 },后端按依赖规则取用
-//   ②←① ③←①② ④⑤⑥←③ ⑦←③④⑤⑥
+// prev: { 阶段号(1基): 内容 }
+//   ②←① ③④←① ⑤←①②③④ ⑥←①②⑤③④
 export async function generatePhase(
   phase: number,
   input: string,
@@ -125,4 +137,66 @@ export async function generatePhase(
   const data = await res.json();
   if (!res.ok || data.error) throw new Error(data.error || `生成失败(${res.status})`);
   return data.result || '';
+}
+
+// ---------- Asset Bible 按需钻取 ----------
+// assetName: 资产标识(编号 + 名称),envBible: ④Environment Bible 全文上下文
+export async function generateAssetBible(
+  assetName: string,
+  envBible: string,
+  input: string,
+  userId?: string,
+): Promise<string> {
+  const res = await fetch('/api/gem/generate-script', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mode: 'asset', assetName, envBible, input, userId }),
+  });
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error || `生成失败(${res.status})`);
+  return data.result || '';
+}
+
+// ---------- 从 Environment Bible 文本解析资产清单 ----------
+// 匹配格式 "- 编号 | 资产名 | 一句话",同时识别 4 个分类标题
+export interface ParsedAsset {
+  id: string;        // 资产编号(如 WT001),无编号则用名称
+  name: string;      // 资产名
+  note: string;      // 一句话说明
+  category: string;  // Structures / Props / Natural Elements / Background Elements
+}
+
+export function parseAssets(envBible: string): ParsedAsset[] {
+  if (!envBible) return [];
+  const lines = envBible.split('\n');
+  const out: ParsedAsset[] = [];
+  let category = '其他';
+  const catMap: { kw: string; label: string }[] = [
+    { kw: 'Structures', label: 'Structures 建筑/结构' },
+    { kw: 'Props', label: 'Props 道具' },
+    { kw: 'Natural', label: 'Natural Elements 自然元素' },
+    { kw: 'Background', label: 'Background Elements 背景元素' },
+  ];
+  for (const raw of lines) {
+    const line = raw.trim();
+    // 分类标题行
+    const cat = catMap.find((c) => line.includes(c.kw) && (line.includes(':') || line.includes('：') || line.endsWith(c.kw) || /[一-龥]/.test(line)));
+    if (cat && !line.startsWith('-')) { category = cat.label; continue; }
+    // 资产行:- 编号 | 名称 | 说明  或  - 名称 | 说明
+    if (line.startsWith('-')) {
+      const body = line.replace(/^[-•·]\s*/, '');
+      const parts = body.split(/\s*\|\s*/);
+      if (parts.length >= 2) {
+        // 判断第一段是不是编号(字母+数字)
+        const first = parts[0].trim();
+        const isId = /^[A-Za-z]{1,4}\d{2,4}$/.test(first);
+        if (isId && parts.length >= 2) {
+          out.push({ id: first, name: (parts[1] || '').trim(), note: (parts[2] || '').trim(), category });
+        } else {
+          out.push({ id: first, name: first, note: (parts[1] || '').trim(), category });
+        }
+      }
+    }
+  }
+  return out;
 }

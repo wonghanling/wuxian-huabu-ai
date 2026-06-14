@@ -7,43 +7,42 @@ const YUNWU_BASE_URL = 'https://api.n1n.ai';
 export const maxDuration = 300;
 
 // ============================================================
-// 剧本工作室 · 7 阶段文字生成
-// 顺序与依赖链(后端自动拼前置,前端把已生成的前置内容一起传来):
-//   ① 小说       ← 用户想法 + 内置专业 JSON 框架(只当思考框架,输出自然语言)
-//   ② Beat Sheet ← ①小说
-//   ③ 人物设计   ← ①小说 + 用户输入
-//   ④ 场景设计   ← ①小说 + 用户输入
-//   ⑤ 道具设计   ← ①小说 + 用户输入
-//   ⑥ 正式剧本   ← ①小说 + ②Beat + ③人物 + ④场景 + ⑤道具(全综合)
-//   ⑦ 拍摄剧本   ← ①小说 + ②Beat + ⑥正式剧本 + ③人物 + ④场景 + ⑤道具
-// 全部阶段输出自然语言(中文),不输出 JSON。
-// 走 n1n 账号池;会员 + 每日额度守卫。
+// 剧本工作室 · 6 阶段 AI 电影工业管线 + Asset Bible 按需钻取
+//   ① Novel Bible      ← 用户想法 + 专业框架(输出自然语言小说)
+//   ② Beat Sheet       ← ①
+//   ③ Character Bible  ← ① + 用户输入
+//   ④ Environment Bible← ① + 用户输入(地点体系/Location System:世界定义 + 分类资产清单(带asset_id) + Visual Reference,不出图片提示词)
+//   ⑤ Screenplay       ← ①②③④
+//   ⑥ Shooting Script  ← ①②⑤③④(内含 Shot List + Keyframes + Image Prompt + Video Prompt,这里才出真正可出图出片的 prompt)
+//
+// Asset Bible 钻取(mode='asset'):由 ④资产清单里某个资产 + Environment Bible 上下文按需生成,绝不自动批量。
+//   职责分层:Environment Bible 定义世界 / Asset Bible 定义资产 / Shooting Script 生成画面。
+//   ①~④的 Bible 只附 Visual Reference(验证设计用),真正 Image/Video Prompt 仅在 ⑥ 生成。
+// 全部输出自然语言(中文),不输出 JSON。走 n1n 账号池;会员 + 每日额度守卫。
 // ============================================================
 
-const PHASE_NAMES = ['小说', 'Beat Sheet', '人物设计', '场景设计', '道具设计', '正式剧本', '拍摄剧本'];
+const PHASE_NAMES = ['Novel Bible', 'Beat Sheet', 'Character Bible', 'Environment Bible', 'Screenplay', 'Shooting Script'];
 
-// ①小说的专业思考框架(World-Class Novelist & Screenwriter)
-// 模型据此构思,但最终输出可读小说,不输出 JSON
+// ① Novel Bible(World-Class Novelist & Screenwriter)
 const NOVEL_FRAMEWORK = `你是世界级小说家兼影视编剧(World-Class Novelist and Screenwriter),擅长小说创作、电影故事开发、角色弧光、主题表达、冲突升级、三幕式结构、英雄之旅、Save The Cat 节拍、Pixar 故事原则、Show Don't Tell。
 
 请把用户的想法/片段,扩写成一个具备影视改编潜力的完整故事。在构思时(内部思考,不要输出)务必覆盖以下专业维度:
-- 故事核心:主题(theme)、前提(premise)、一句话梗概(logline)、核心问题、道德命题
-- 主角:外在目标(external_goal)、内在需求(internal_need)、致命缺陷(fatal_flaw)、动机、恐惧、错误信念、角色弧光(起点→转变→终点)
+- 故事核心:主题、前提、一句话梗概、核心问题、道德命题
+- 主角:外在目标、内在需求、致命缺陷、动机、恐惧、错误信念、角色弧光(起点→转变→终点)
 - 冲突系统:主冲突、外部冲突、内部冲突、对抗力量、冲突三级升级(逐步加压)
-- 赌注(stakes):个人/关系/社会/世界层面,以及"主角失败会怎样"
+- 赌注:个人/关系/社会/世界层面,以及"主角失败会怎样"
 - 故事世界:时代、地点、世界规则、社会语境、视觉潜力
 - 故事弧线:平凡世界→触发事件→第一转折→上升→中点反转→危机→至暗时刻→高潮→结局→最终画面
 - 情绪弧线:开场情绪→中段主导情绪→最低点→高潮情绪→结尾情绪→看完后的观众感受
 
 创作原则:主题先行、人物驱动、冲突驱动、因果叙事、必有情绪弧线、可影视化、Show Don't Tell;
-避免:随机事件、无动机行为、剧情漏洞、天降神兵(deus ex machina)。
+避免:随机事件、无动机行为、剧情漏洞、天降神兵。
 
 输出要求:
 - 中文,自然流畅的小说叙事文字(梗概 + 展开故事),600-1200 字
 - 把内心想法转化为可见的动作和场景,让事件可拍摄
 - 只输出小说正文,不要 JSON、不要分镜、不要剧本格式、不要镜头语言、不要解释`;
 
-// ②~⑦ 各阶段 system prompt
 const PHASE_PROMPTS: Record<number, string> = {
   // ② Beat Sheet
   2: `你是世界级电影故事架构师兼编剧顾问(World-Class Film Story Architect)。精通三幕式结构、Save The Cat 节拍、英雄之旅、Pixar Story Spine、好莱坞长片结构、角色弧光、冲突升级、中点反转、危机与高潮设计、因果叙事、情绪节奏设计。
@@ -75,91 +74,72 @@ const PHASE_PROMPTS: Record<number, string> = {
 - 不要写完整剧本、不要写对白、不要写镜头、不要做视觉化角色/场景设计
 - 不要输出 JSON、不要 Markdown 表格、不要额外解释`,
 
-  // ③ 人物设计
-  3: `你是世界级角色架构师(World-Class Character Architect),兼具角色设计师、故事架构师、选角导演三重身份。根据给定的小说故事和用户输入,设计既服务故事又具备视觉识别度和 AI 生成一致性的电影角色资产。
+  // ③ Character Bible
+  3: `你是世界级角色架构师(World-Class Character Architect),兼具角色设计师、故事架构师、选角导演三重身份。根据给定的小说故事和用户输入,设计既服务故事又具备视觉识别度和 AI 生成一致性的电影角色资产(Character Bible)。
 
 设计哲学:故事功能优先、主题功能优先、必须视觉一致、每个角色都有存在目的;避免冗余角色、避免视觉上的通用脸。
 
 从故事中提取必要角色(不要创造无用角色),为每个角色按以下层次设计:
-- 故事功能:原型(参考库:Hero/Mentor/Shadow/Ally/Guardian/Trickster/Herald/Tempter/Mirror/False Hero/Anti Hero/Foil)、叙事角色、与主角关系、冲突功能、主题功能、对弧光施加的压力
+- 故事功能:原型(Hero/Mentor/Shadow/Ally/Guardian/Trickster/Herald/Tempter/Mirror/False Hero/Anti Hero/Foil)、叙事角色、与主角关系、冲突功能、主题功能、对弧光施加的压力
 - 心理:核心渴望、核心需求、恐惧、错误信念、动机、情感创伤、内在冲突
 - 观众设计:第一印象、共情触发、依恋触发、恐惧触发、记忆点
-- 视觉设计:性别、年龄、族裔、体型、脸型、五官、眼睛、发型、肤质、剪影、视觉标志(visual signature)
+- 视觉设计:性别、年龄、族裔、体型、脸型、五官、眼睛、发型、肤质、剪影、视觉标志
 - 服装设计:默认服装、色彩语言、材质语言、配饰、故事含义
 - 行为设计:动作风格、手势语言、说话方式、默认情绪状态
 - 象征:象征意义、视觉隐喻、与主题的关联
 - AI 一致性规则:必须保持脸部结构/视觉标志/核心服装/年龄/性别,避免风格漂移
 
-输出要求(关键,严格遵守此版式):
+输出要求(严格遵守此版式):
 - 中文。每个角色单独成段,用「角色N:姓名」起头
 - 每个角色先给【画面提示词】再给【设计说明】两块:
-  【画面提示词】(一段可直接复制去图片卡生成形象的视觉描述,80-150字,只写外观可见信息:性别年龄族裔、脸型五官眼睛发型肤质、体型、默认服装色彩材质配饰、视觉标志、整体气质,末尾可加风格词如"电影感/写实")
+  【画面提示词】(可直接复制去图片卡生成形象的视觉描述,80-150字,只写外观可见信息:性别年龄族裔、脸型五官眼睛发型肤质、体型、默认服装色彩材质配饰、视觉标志、整体气质,末尾可加风格词如"电影感/写实")
   【设计说明】(3-5条短句,每条一行,以"· "起头:原型与叙事角色、核心动机/缺陷、与主角关系、象征意义、AI一致性要点)
-- 视觉描述具体可重复生成;设计说明简短克制,不要长段落
-- 严格只描述人物本身(角色定妆照式):干净或纯色背景,画面里只有这一个角色;不要描写场景/环境/地点/天气、不要描写其他角色、不要把道具当主体(道具只能作为角色随身携带的配饰一笔带过)
+- 严格只描述人物本身(角色定妆照式):干净或纯色背景,画面里只有这一个角色;不要描写场景/环境/天气、不要描写其他角色、不要把道具当主体(道具只能作为随身配饰一笔带过)
 - 不要改写故事、不要创造不必要角色、不要输出 JSON、不要 Markdown 表格、不要额外解释`,
 
-  // ④ 场景设计
-  4: `你是世界级美术指导(World-Class Production Designer),兼具场景设计、世界观构建、环境叙事架构三重身份。根据给定的小说故事和用户输入,设计既服务故事又具备视觉识别度和 AI 生成一致性的场景系统。
+  // ④ Environment Bible — 地点体系/Location System;严格对齐 output_sections 结构
+  4: `你是世界级美术指导兼世界观设计师(World-Class Production Designer & Worldbuilder)。请按 Pixar / Disney / DreamWorks / Netflix Writer's Room / 电影美术部门(Production Design)的思维工作。
 
-设计哲学:故事功能优先、主题功能优先、情绪功能优先、必须视觉一致、每个场景都有存在目的;避免通用电影场景。
+重要概念:Environment Bible 不是图片提示词、不是单张概念图、不是单个房间。它是【地点体系 / Location System】——定义一个完整、可持续复用的世界区域(Environment),让这个世界能被拆解成多个可复用资产,并在数百个镜头和视频中保持一致性。一个 Environment 是一个"世界区域/地点体系"(例:雾海风电场、地下避难所、潮汐实验站、漂浮城市),不是一个房间或一面墙。不要用 Midjourney prompt 思维,不要用单张图片思维,不要用游戏引擎配置文件思维。
 
-为每个关键场景按以下层次设计:
-- 故事功能:地点角色、叙事功能、冲突功能、关系功能、弧光功能(参考场景原型:Safe Haven/Ordinary World/Threshold/Trial Zone/Forbidden Zone/Transformation/Mirror/Conflict Arena/Climax Arena/Memory/Dream/Isolation/Power/Decay/Redemption Space)
-- 主题功能:主题呈现、象征意义、视觉隐喻
-- 情绪功能:意图情绪、观众感受、情绪转变
-- 世界观:时代、地理、文化、技术水平、社会语境、世界规则
-- 空间设计:场地类型、布局、尺度、关键区域、动线、前景/中景/背景元素
-- 视觉设计:建筑风格、形状语言、材质、纹理、色板、视觉标志
-- 灯光设计:主光源、灯光风格、对比度、阴影语言、情绪支撑
-- 环境叙事:空间中可见的故事/历史/人物痕迹/重要背景信息
-- 电影化设计:运镜机会、纵深机会、视觉揭示机会、张力机会
-- AI 一致性规则:保持布局/建筑/色彩语言/标志性元素,避免风格漂移,支持多镜头/角色互动/道具互动
+任务:根据给定的小说、Beat Sheet、Character Bible 和用户输入,从故事中提取关键的 Environment(世界区域)。每个 Environment 用「Environment N:名称」起头,严格按以下分节顺序输出(每节用对应中文标题起头,内容为有美术部门文档深度的专业自然语言):
 
-输出要求(关键,严格遵守此版式):
-- 中文。每个场景单独成段,用「场景N:名称」起头
-- 每个场景依次给【画面提示词】【多角度视图】【设计说明】三块:
-  【画面提示词】(一段可直接复制去图片卡生成场景主图的视觉描述,80-150字,建立标准广角全景:地点类型、空间布局与尺度、前景/中景/背景关键元素、建筑风格材质纹理、色板、灯光与氛围、视觉标志,末尾可加风格词如"电影感/写实")
-  【多角度视图】(同一场景的 5 个不同机位视图,用于 360° 多角度生成与视觉一致;每个一行,格式"· 角度名:该角度可直接复制的画面提示词"。固定给这 5 个角度:正面广角 / 侧面 45° / 背面反打 / 高空俯瞰(鸟瞰) / 内部细节(关键区域近景);每个角度都要复述场景的固定标志元素+色板+灯光,只改变观察机位和构图,确保是同一空间的不同视角)
-  【设计说明】(3-5条短句,每条一行,以"· "起头:故事功能、情绪基调、象征意义、AI一致性要点如必须反复出现的固定元素)
-- 视觉描述具体可重复生成;多角度之间务必保持同一空间的一致性(同样的建筑/材质/色板/标志物,只换视角);设计说明简短克制,不要长段落
-- 严格只描述空场景/环境(空镜):画面里没有人物、没有人;不要描写任何角色或人,不要把道具当主体(道具只能作为环境陈设一笔带过);专注地点、空间、建筑、光线、氛围
+1. Story Function 故事功能 — 叙事功能 / 主题功能 / 情绪功能
+2. World Context 世界语境 — 时代 / 地理 / 社会 / 技术水平 / 世界规则
+3. Spatial Layout 空间布局 — 主分区 / 次分区 / 连接关系 / 动线 / 重要观察方向
+4. Environment Assets 环境资产 — 见下方固定格式
+5. Visual Language 视觉语言 — 形状语言 / 色板 / 材质 / 纹理 / 视觉标志
+6. Lighting Design 灯光设计 — 主光 / 辅光 / 对比风格 / 情绪支撑
+7. Environmental Storytelling 环境叙事 — 历史痕迹 / 人类痕迹 / 世界信息 / 象征元素
+8. Cinematic Opportunities 电影化机会 — 建立镜头机会 / 特写机会 / 张力机会 / 揭示机会
+9. Continuity Rules 连续性规则 — 固定元素 / 可变元素 / 资产一致性 / 灯光一致性 / 空间一致性
+10. Environment Visual Reference 环境视觉参考 — 一段用于验证世界设计是否符合预期的整体视觉参考(氛围/色调/空间感/标志元素),这是"设计验证参考",不是分镜画面提示词,不要写机位/景别/运镜/具体镜头
+
+其中第 4 节【Environment Assets 环境资产】必须按 4 个分类输出,每个资产带 asset_id(便于后续按需钻取 Asset Bible),不要在这里展开资产细节,只列清单:
+Environment Assets 环境资产:
+Structures 建筑/结构:
+- WT001 | 风机塔 | 一句话说明
+Props 道具:
+- PR001 | 安全绳 | 一句话说明
+Natural Elements 自然元素:
+- NE001 | 浓雾 | 一句话说明
+Background Elements 背景元素:
+- BG001 | 远处叶片阵列 | 一句话说明
+(asset_id 用分类前缀+三位序号:Structures=WT/ST、Props=PR、Natural=NE、Background=BG;每个资产一行,格式"- 编号 | 资产名 | 一句话";某分类没有可省略整节)
+
+强约束:
+- 不要在本阶段生成可出图出片的 Image Prompt / Video Prompt(那属于 Shooting Script 阶段)
+- 不要描写人物;专注世界区域、空间、资产、视觉、光线、氛围
 - 不要改写故事、不要输出 JSON、不要 Markdown 表格、不要额外解释`,
 
-  // ⑤ 道具设计
-  5: `你是世界级道具设计师兼故事象征架构师(World-Class Prop Designer and Story Symbolism Architect),兼具道具设计、叙事设计、象征专家三重身份。根据给定的小说故事、人物设计、场景设计和用户输入,设计既服务剧情又具备视觉识别度、象征意义和 AI 生成一致性的道具系统。
+  // ⑤ Screenplay
+  5: `你是世界级专业编剧(World-Class Professional Screenwriter),兼具电影编剧、剧本医生、影视改编顾问三重身份。精通电影剧本格式、小说改编、场景构建、对白设计、人物弧光执行、冲突升级、潜台词写作、Show Don't Tell、可拍摄动作描写、电影节奏控制。
 
-设计哲学:故事功能优先、主题功能优先、情绪功能优先、必须视觉一致、每个道具都有存在目的;避免随意装饰、避免通用背景物件。
+任务:综合给定的小说(Novel Bible)、Beat Sheet、Character Bible、Environment Bible,生成可拍摄、可表演、可继续拆解为拍摄剧本的正式电影剧本(Screenplay)。
 
-为每个关键道具按以下层次设计:
-- 故事功能:叙事角色、情节功能、冲突功能、关系功能、弧光功能(参考道具原型:MacGuffin/Totem/Key/Weapon/Memory Object/Power Symbol/Inheritance/Forbidden/Transformation/Relationship/Identity/Mystery/Quest/Sacrifice Object)
-- 主题功能:主题呈现、象征意义、隐喻意义
-- 情绪功能:记忆触发、情感联结、观众反应、回报(payoff)功能
-- 归属设计:拥有者、与拥有者的关系、人物联结、身份信号
-- 视觉设计:道具类型、形状语言、材质、纹理、色板、磨损/年代感、视觉标志
-- 世界观功能:技术水平、历史语境、文化语境、社会语境
-- 连续性设计:初始状态、状态变化、最终状态、回扣(callback)、铺垫回报
-- 电影化功能:特写价值、插入镜头价值、视觉焦点价值、构图价值
-- 高级故事设计:setup 铺垫、payoff 回报、callback 回扣、foreshadowing 预示、反转用法
-- AI 一致性规则:保持形状/材质/色彩语言/视觉标志/故事功能,避免风格漂移
+素材优先级:小说决定故事本质,Beat Sheet 控制结构节奏,Character/Environment Bible 负责一致性和细节。
 
-输出要求(关键,严格遵守此版式):
-- 中文。每个道具单独成段,用「道具N:名称」起头
-- 每个道具先给【画面提示词】再给【设计说明】两块:
-  【画面提示词】(一段可直接复制去图片卡生成道具图的视觉描述,60-120字,只写外观可见信息:道具类型、形状、材质纹理、色彩、尺寸比例、磨损/年代感、视觉标志,末尾可加风格词如"产品特写/电影感")
-  【设计说明】(3-5条短句,每条一行,以"· "起头:故事功能/情节作用、拥有者、象征意义、铺垫与回报、AI一致性要点)
-- 视觉描述具体可重复生成;设计说明简短克制,不要长段落
-- 严格只描述道具本身(产品特写式):干净或纯色背景,画面里只有这一件道具;不要描写人物、不要描写场景/环境/地点、不要出现手或人体
-- 不要改写故事、不要输出 JSON、不要 Markdown 表格、不要额外解释`,
-
-  // ⑥ 正式剧本
-  6: `你是世界级专业编剧(World-Class Professional Screenwriter),兼具电影编剧、剧本医生、影视改编顾问三重身份。精通电影剧本格式、小说改编、场景构建、对白设计、人物弧光执行、冲突升级、潜台词写作、Show Don't Tell、可拍摄动作描写、电影节奏控制。
-
-任务:综合给定的小说、Beat Sheet、人物设计、场景设计、道具设计,生成可拍摄、可表演、可继续拆解为拍摄剧本的正式电影剧本。
-
-素材优先级:小说决定故事本质,Beat Sheet 控制结构节奏,人物/场景/道具设计负责一致性和细节。
-
-剧本规则:用现在时书写;只写可见可听的信息;Show Don't Tell;每场戏必须有目标-冲突-转折,必须改变故事状态;对白必须推进冲突或揭示人物;避免小说式内心独白;避免随意新增剧情;避免无动机的人物行为;不要过度指挥镜头(镜头交给拍摄剧本)。
+剧本规则:用现在时书写;只写可见可听的信息;Show Don't Tell;每场戏必须有目标-冲突-转折,必须改变故事状态;对白必须推进冲突或揭示人物;避免小说式内心独白;避免随意新增剧情;避免无动机的人物行为;不要过度指挥镜头(镜头交给 Shooting Script)。
 
 专业格式:
 - 场景标题:内景/外景 - 地点 - 时间(INT./EXT. LOCATION - TIME)
@@ -170,35 +150,56 @@ const PHASE_PROMPTS: Record<number, string> = {
 
 输出要求:
 - 中文,标准剧本格式的自然语言
-- 忠实于小说主题/主冲突/主角目标/角色弧光,人物造型/场景/道具与前期设计保持一致
+- 忠实于小说主题/主冲突/主角目标/角色弧光,人物造型/场景与前期 Bible 保持一致
 - 不要输出 JSON、不要镜头列表、不要额外解释`,
 
-  // ⑦ 拍摄剧本(Shot List)
-  7: `你是世界级电影导演、摄影指导兼视觉叙事架构师(World-Class Film Director, Cinematographer and Visual Storytelling Architect),兼具电影导演、摄影指导、分镜导演、广告片导演、AI 视频导演身份。精通导演调度、摄影、视觉叙事、镜头构图、运镜、走位(blocking)、剪辑节奏、情绪节奏、广告片语言、AI 视频提示词设计、视觉连续性、场景覆盖、镜头动机、场面调度(mise-en-scene)、潜台词视觉化。
+  // ⑥ Shooting Script — 内含 Shot List + Keyframes + Image Prompt + Video Prompt
+  6: `你是世界级电影导演、摄影指导兼视觉叙事架构师(World-Class Film Director, Cinematographer and Visual Storytelling Architect),兼具电影导演、摄影指导、分镜导演、广告片导演、AI 视频导演身份。精通导演调度、摄影、视觉叙事、镜头构图、运镜、走位、剪辑节奏、情绪节奏、广告片语言、AI 视频提示词设计、视觉连续性、场景覆盖、镜头动机、场面调度、潜台词视觉化。
 
-任务:综合给定的小说、Beat Sheet、正式剧本、人物设计、场景设计、道具设计,生成可直接用于 AI 视频生成的专业拍摄剧本(Shot List)。
+任务:综合给定的小说、Beat Sheet、Screenplay、Character Bible、Environment Bible,生成专业拍摄剧本(Shooting Script)。这是整个管线里唯一生成真正可出图出片的 Image Prompt / Video Prompt 的阶段。
 
-素材优先级:小说定魂,Beat Sheet 定节奏,正式剧本定戏,人物/场景/道具定一致性,拍摄剧本负责把一切转成镜头语言。用户的导演指示(若有)优先级最高。
+素材优先级:小说定魂,Beat Sheet 定节奏,Screenplay 定戏,Character/Environment Bible 定一致性;用户的导演指示(若有)优先级最高。
 
-导演思维原则:每个镜头都要有叙事功能;每个镜头选择都要有动机;视觉叙事重于解释;情绪驱动镜头;构图反映权力关系;走位揭示人物关系;灯光反映情绪状态;道具要按故事目的使用;保持视觉连续性与剪辑节奏。
+导演思维原则:每个镜头都要有叙事功能;每个镜头选择都要有动机;视觉叙事重于解释;情绪驱动镜头;构图反映权力关系;走位揭示人物关系;灯光反映情绪状态;保持视觉连续性与剪辑节奏。
 
-为每个镜头单独成段,用「镜头N」起头,包含:
+Shooting Script 内部结构(全部属于本阶段,不要拆成多个阶段):为每个镜头(Shot)单独成段,用「Shot N」起头,依次给出:
 - 景别(远景/全景/中景/近景/特写/大特写)
 - 机位与运镜(平视/俯视/仰视 + 固定/推/拉/摇/移/跟/手持等)
-- 画面内容(结合具体的人物造型、场景细节、道具,描述这一镜里发生什么、谁在做什么)
-- 灯光/氛围/色调
+- 叙事/情绪功能(简短一句)
 - 预估时长(秒)
-- 该镜头的叙事/情绪功能(简短)
+- Keyframe 关键帧:这个镜头要定格生成的关键画面(可 1-2 个)
+- 【Image Prompt】:一段可直接复制去图片卡生成关键帧的完整画面提示词(结合具体人物造型、Environment 细节、资产、灯光、色调、构图)
+- 【Video Prompt】:一段可直接复制去视频卡的动态提示词(在 Image Prompt 基础上补充动作、运镜、时间变化)
 
 输出要求:
-- 中文,每个镜头的"画面内容"要具体可视化,直接可作为 AI 视频/图像生成的提示词
-- 镜头之间保持视觉连续性,符合 Beat Sheet 的情绪节奏
+- 中文。镜头之间保持视觉连续性,符合 Beat Sheet 的情绪节奏,人物/场景与前期 Bible 一致
 - 不要输出 JSON、不要 Markdown 表格、不要额外解释`,
 };
 
+// Asset Bible 生成(按需钻取):资产名/ID + Environment Bible 上下文
+const ASSET_BIBLE_PROMPT = `你是世界级电影美术部门资产设计师(Film Production Asset Designer)。请按电影工业 Production Design 的思维工作。
+
+重要:Asset Bible 的职责是【定义一个可复用的场景资产】,让它能在数百个镜头中保持一致性。不要用 Midjourney prompt 思维,不要用单张图片思维。
+
+任务:根据给定的【Environment Bible 上下文】和指定的【资产(含编号与名称)】,为这个资产生成完整的 Asset Bible。用「Asset 编号:名称」起头,严格按以下分节顺序输出(每节用对应中文标题起头,专业自然语言):
+1. Story Function 故事功能 — 在剧情中的作用、与角色/冲突的关系
+2. Theme Function 主题功能 — 象征意义、隐喻
+3. Visual Function 视觉功能 — 在画面中承担的视觉作用、焦点价值
+4. Technical Description 技术描述 — 类型、结构、尺寸比例、构造、机械/功能细节
+5. Materials 材质 — 主要材质、纹理、磨损/年代感
+6. Color Language 色彩语言 — 主色、辅色、与 Environment 色板的关系
+7. Visual Signature 视觉标志 — 让它一眼可辨识的独特特征
+8. Continuity Rules 连续性规则 — 跨镜头必须保持一致的固定特征
+9. AI Generation Rules AI 生成规则 — 生成时必须锁定/避免的要点,防止风格漂移
+10. Asset Visual Reference 资产视觉参考 — 一段用于验证资产设计是否符合预期的视觉参考(造型/材质/色彩/标志特征),这是"设计验证参考",不是分镜画面提示词,不要写机位/景别/镜头,画面里只有这一件资产、干净背景
+
+强约束:
+- 不要在本阶段生成用于出片的 Video Prompt
+- 不要描写人物/场景环境(资产本体特写)、不要输出 JSON、不要 Markdown 表格、不要额外解释`;
+
 // 依赖链(1基阶段号 → 它依赖的前置阶段号)
 const DEPENDS_ON: Record<number, number[]> = {
-  1: [], 2: [1], 3: [1], 4: [1], 5: [1], 6: [1, 2, 3, 4, 5], 7: [1, 2, 6, 3, 4, 5],
+  1: [], 2: [1], 3: [1], 4: [1], 5: [1, 2, 3, 4], 6: [1, 2, 5, 3, 4],
 };
 
 // 拼接前置上下文 + 用户补充输入 → user message
@@ -206,34 +207,82 @@ function buildUserMessage(phase: number, input: string, prev: Record<number, str
   if (phase === 1) {
     return `用户的故事想法/方向:\n${input}\n\n请据此创作完整故事。`;
   }
-
   const parts: string[] = [];
   const add = (label: string, content?: string) => {
     if (content && content.trim()) parts.push(`【${label}】\n${content.trim()}`);
   };
-
-  // 按依赖顺序拼接前置阶段内容
-  for (const dep of DEPENDS_ON[phase]) {
-    add(PHASE_NAMES[dep - 1], prev[dep]);
-  }
-
-  // 用户在本阶段输入框的补充要求(可选)
-  if (input && input.trim()) {
-    parts.push(`【用户补充要求】\n${input.trim()}`);
-  }
-
-  if (!parts.length) {
-    return `请生成${PHASE_NAMES[phase - 1]}。`;
-  }
+  for (const dep of DEPENDS_ON[phase]) add(PHASE_NAMES[dep - 1], prev[dep]);
+  if (input && input.trim()) parts.push(`【用户补充要求】\n${input.trim()}`);
+  if (!parts.length) return `请生成${PHASE_NAMES[phase - 1]}。`;
   return parts.join('\n\n') + `\n\n请据以上内容生成${PHASE_NAMES[phase - 1]}。`;
+}
+
+// 调用 n1n
+async function callModel(systemPrompt: string, userMessage: string): Promise<string> {
+  const keyInfo = await pickKey('n1n');
+  let success = false;
+  let caught: any = null;
+  let response: Response;
+  try {
+    response = await fetch(`${YUNWU_BASE_URL}/v1/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${keyInfo.keyValue}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-5.2',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userMessage },
+        ],
+        temperature: 0.7,
+        max_tokens: 4000,
+      }),
+    });
+    success = response.ok;
+  } catch (err) {
+    caught = err;
+    throw err;
+  } finally {
+    await releaseKey(keyInfo.keyId, success, success ? undefined : categorizeError(caught));
+  }
+  if (!response.ok) {
+    const errText = await response.text();
+    console.error('剧本生成 API 错误:', response.status, errText);
+    throw new Error(`API 错误: ${response.status}`);
+  }
+  const data = await response.json();
+  return (data.choices?.[0]?.message?.content || '').trim();
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const { phase, input, prev, userId } = await req.json();
+    const body = await req.json();
+    const { mode, userId } = body;
 
+    // 守卫:会员 + 每日额度(两种模式共用)
+    const guard = await requireMemberWithDailyQuota(userId, 100);
+    if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
+
+    // ---------- Asset Bible 按需钻取 ----------
+    if (mode === 'asset') {
+      const { assetName, envBible, input } = body;
+      if (!assetName || !String(assetName).trim()) {
+        return NextResponse.json({ error: '缺少资产名称' }, { status: 400 });
+      }
+      const parts: string[] = [];
+      if (envBible && String(envBible).trim()) parts.push(`【Environment Bible 上下文】\n${String(envBible).trim()}`);
+      parts.push(`【要生成 Asset Bible 的资产】\n${String(assetName).trim()}`);
+      if (input && String(input).trim()) parts.push(`【用户补充要求】\n${String(input).trim()}`);
+      const result = await callModel(ASSET_BIBLE_PROMPT, parts.join('\n\n'));
+      return NextResponse.json({ success: true, result });
+    }
+
+    // ---------- 阶段生成 ----------
+    const { phase, input, prev } = body;
     const p = Number(phase);
-    if (!p || p < 1 || p > 7) {
+    if (!p || p < 1 || p > 6) {
       return NextResponse.json({ error: '无效的阶段' }, { status: 400 });
     }
     const prevMap: Record<number, string> = (prev && typeof prev === 'object') ? prev : {};
@@ -246,51 +295,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '请先生成前置阶段,或在输入框补充内容' }, { status: 400 });
     }
 
-    // 守卫:会员 + 每日额度
-    const guard = await requireMemberWithDailyQuota(userId, 100);
-    if (!guard.ok) return NextResponse.json({ error: guard.error }, { status: guard.status });
-
     const systemPrompt = p === 1 ? NOVEL_FRAMEWORK : PHASE_PROMPTS[p];
     const userMessage = buildUserMessage(p, String(input || ''), prevMap);
-
-    const keyInfo = await pickKey('n1n');
-    let success = false;
-    let caught: any = null;
-    let response: Response;
-    try {
-      response = await fetch(`${YUNWU_BASE_URL}/v1/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${keyInfo.keyValue}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-5.2',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userMessage },
-          ],
-          temperature: 0.7,
-          max_tokens: 4000,
-        }),
-      });
-      success = response.ok;
-    } catch (err) {
-      caught = err;
-      throw err;
-    } finally {
-      await releaseKey(keyInfo.keyId, success, success ? undefined : categorizeError(caught));
-    }
-
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error('剧本生成 API 错误:', response.status, errText);
-      throw new Error(`API 错误: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const result = (data.choices?.[0]?.message?.content || '').trim();
-
+    const result = await callModel(systemPrompt, userMessage);
     return NextResponse.json({ success: true, result });
   } catch (error: any) {
     console.error('剧本生成失败:', error);

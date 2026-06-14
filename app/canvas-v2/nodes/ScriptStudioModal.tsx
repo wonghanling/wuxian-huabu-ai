@@ -4,40 +4,45 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useCanvasStore } from '../store';
 import { getUserId } from '../lib/api';
 import {
-  PHASE_LABELS, emptyProject, loadDraftLocal, saveDraftLocal,
-  loadProject, saveProject, generatePhase, type ScriptProject,
+  PHASE_LABELS, PHASE_LABELS_CN, emptyProject, loadDraftLocal, saveDraftLocal,
+  loadProject, saveProject, generatePhase, generateAssetBible, parseAssets,
+  type ScriptProject, type ParsedAsset,
 } from '../lib/scriptStudio';
 
 // ============================================================
 // 剧本工作室 · 全屏弹窗(画布内,共享同一个 store,发送到画布零跨页)
-// 7 阶段独立文字生成:①小说 ②BeatSheet ③正式剧本 ④人物 ⑤场景 ⑥道具 ⑦拍摄剧本
+// 6 阶段 AI 电影管线:Novel/Beat/Character/Environment/Screenplay/Shooting Script
+// ④Environment Bible 含资产清单,可点单个资产按需钻取 Asset Bible
 // 双存:localStorage 即时草稿 + Supabase 云端永久
-// 发送到画布:④⑤⑥按 ===xxx=== 拆多卡;人物→角色卡、场景/道具→图片卡、其余→文本卡
+// 发送到画布:统一发文本卡(整段),用户自己选择性复制到角色/图片卡
 // ============================================================
 
-// 各阶段输入框占位提示(新顺序:小说→Beat→人物→场景→道具→正式剧本→拍摄剧本)
+const ENV_PHASE = 4; // ④ Environment Bible(1基)
+
+// 各阶段输入框占位提示(6 阶段)
 const PHASE_PLACEHOLDERS = [
   '输入你的故事想法、题材或一句话梗概,AI 按专业框架扩写成完整小说…',
-  '已生成小说后点生成,AI 提炼为专业电影 Beat Sheet(15拍结构)。也可在此补充结构要求…',
+  '已生成小说后点生成,AI 提炼为专业电影 Beat Sheet(15拍结构)。也可补充结构要求…',
   '已生成小说后点生成,AI 设计角色资产(故事功能/视觉/心理/一致性)。也可补充选角方向…',
-  '已生成小说后点生成,AI 设计场景资产(世界观/空间/视觉/灯光)。也可补充场景方向…',
-  '已生成小说后点生成,AI 设计道具资产(故事功能/象征/视觉/一致性)。也可补充道具方向…',
-  '需先有小说+Beat+人物+场景+道具,AI 综合生成正式电影剧本。也可补充剧本要求…',
-  '需先有正式剧本(及前置素材),AI 生成可拍摄的镜头列表。也可补充导演/风格/时长要求…',
+  '已生成小说后点生成,AI 构建场景世界(地点体系+分类资产清单)。也可补充世界方向…',
+  '需先有小说+Beat+人物+场景世界,AI 综合生成正式电影剧本。也可补充剧本要求…',
+  '需先有正式剧本(及前置素材),AI 生成拍摄剧本(含Shot/关键帧/图片提示词/视频提示词)。也可补充导演风格时长…',
 ];
 
-// 依赖链(1基阶段号 → 它依赖的前置阶段号):后端据此自动拼前置上下文
-// ②←① ③④⑤←① ⑥←①②③④⑤ ⑦←①②⑥③④⑤;① 无前置
+// 依赖链(1基阶段号 → 它依赖的前置阶段号)
+// ②←① ③④←① ⑤←①②③④ ⑥←①②⑤③④;① 无前置
 const DEPENDS_ON: Record<number, number[]> = {
-  1: [], 2: [1], 3: [1], 4: [1], 5: [1], 6: [1, 2, 3, 4, 5], 7: [1, 2, 6, 3, 4, 5],
+  1: [], 2: [1], 3: [1], 4: [1], 5: [1, 2, 3, 4], 6: [1, 2, 5, 3, 4],
 };
 
 export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
   const addCardFromStudio = useCanvasStore((s) => s.addCardFromStudio);
   const [project, setProject] = useState<ScriptProject>(emptyProject);
-  const [active, setActive] = useState(0);            // 当前阶段 0..6
+  const [active, setActive] = useState(0);            // 当前阶段 0..5
   const [generating, setGenerating] = useState(false);
   const [sentTip, setSentTip] = useState('');         // 发送/复制提示
+  const [openAsset, setOpenAsset] = useState<string | null>(null); // 展开查看的资产 key
+  const [assetBusy, setAssetBusy] = useState<string | null>(null); // 正在生成的资产 key
   const composing = useRef(false);
   const cloudTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const userIdRef = useRef<string | undefined>(undefined);
@@ -97,9 +102,8 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
   const handleGenerate = async () => {
     const input = project.inputs[active]?.trim();
     // 依赖链:把已生成的前置阶段内容传给后端(1基阶段号→内容)
-    // ②←① ③←①② ④⑤⑥←③ ⑦←③④⑤⑥;① 不需前置
     const prev: Record<number, string> = {};
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 6; i++) {
       const v = project.phases[i]?.trim();
       if (v) prev[i + 1] = v;
     }
@@ -143,6 +147,51 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
     addCardFromStudio('text', text.trim(), 0);
     (window as any).saveCanvasV2Now?.();
     flashTip('已发送到画布(文本卡)');
+  };
+
+  // ④Environment Bible 的资产清单(从输出文本解析)
+  const assets: ParsedAsset[] = active + 1 === ENV_PHASE ? parseAssets(project.phases[active] || '') : [];
+
+  // 生成单个资产的 Asset Bible(按需钻取)
+  const handleAssetBible = async (asset: ParsedAsset) => {
+    const key = asset.id || asset.name;
+    if (assetBusy) return;
+    setAssetBusy(key);
+    try {
+      const result = await generateAssetBible(
+        `${asset.id} ${asset.name}（${asset.note}）`,
+        project.phases[ENV_PHASE - 1] || '',
+        '',
+        userIdRef.current,
+      );
+      setProject((p) => {
+        const next = { ...p, assetBibles: { ...p.assetBibles, [key]: result } };
+        persist(next);
+        return next;
+      });
+      setOpenAsset(key);
+    } catch (e: any) {
+      alert('生成 Asset Bible 失败: ' + (e?.message || e));
+    } finally {
+      setAssetBusy(null);
+    }
+  };
+
+  // 更新某资产 Asset Bible 文本(可编辑)
+  const updateAssetBible = (key: string, v: string) => {
+    setProject((p) => {
+      const next = { ...p, assetBibles: { ...p.assetBibles, [key]: v } };
+      if (!composing.current) persist(next);
+      return next;
+    });
+  };
+
+  const sendAssetToCanvas = (key: string) => {
+    const text = project.assetBibles[key] || '';
+    if (!text.trim()) return;
+    addCardFromStudio('text', text.trim(), 0);
+    (window as any).saveCanvasV2Now?.();
+    flashTip('Asset Bible 已发送到画布');
   };
 
   const output = project.phases[active] || '';
@@ -189,7 +238,8 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
           {/* 右侧当前阶段 */}
           <div style={editor}>
             <div style={{ fontSize: 13, color: '#a1a1aa', marginBottom: 8 }}>
-              阶段 {active + 1} / 7 · <span style={{ color: '#e4e4e7', fontWeight: 600 }}>{PHASE_LABELS[active]}</span>
+              阶段 {active + 1} / 6 · <span style={{ color: '#e4e4e7', fontWeight: 600 }}>{PHASE_LABELS[active]}</span>
+              <span style={{ color: '#71717a', marginLeft: 6 }}>{PHASE_LABELS_CN[active]}</span>
             </div>
 
             {/* 输入框 */}
@@ -235,6 +285,67 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
                 <span style={{ fontSize: 11, opacity: 0.8, marginLeft: 6 }}>(文本卡)</span>
               </button>
             </div>
+
+            {/* ④ Environment Bible:资产清单 + 按需钻取 Asset Bible */}
+            {active + 1 === ENV_PHASE && assets.length > 0 && (
+              <div style={{ marginTop: 18, borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 14 }}>
+                <div style={{ fontSize: 13, color: '#e4e4e7', fontWeight: 600, marginBottom: 4 }}>
+                  资产清单 Asset Registry
+                  <span style={{ fontSize: 11, color: '#71717a', fontWeight: 400, marginLeft: 8 }}>
+                    点资产按需生成 Asset Bible(不会一次性全生成)
+                  </span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
+                  {assets.map((a) => {
+                    const key = a.id || a.name;
+                    const bible = project.assetBibles[key];
+                    const isOpen = openAsset === key;
+                    const busy = assetBusy === key;
+                    return (
+                      <div key={key} style={assetRow}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          {a.id && a.id !== a.name && (
+                            <span style={assetId}>{a.id}</span>
+                          )}
+                          <span style={{ color: '#e4e4e7', fontSize: 13, fontWeight: 500 }}>{a.name}</span>
+                          {a.category && <span style={{ fontSize: 10, color: '#71717a' }}>{a.category}</span>}
+                          {a.note && <span style={{ fontSize: 11, color: '#8b8b92', flex: 1 }}>· {a.note}</span>}
+                          <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+                            {bible ? (
+                              <button style={assetSmallBtn} onClick={() => setOpenAsset(isOpen ? null : key)}>
+                                {isOpen ? '收起' : '查看 Bible'}
+                              </button>
+                            ) : (
+                              <button style={{ ...assetSmallBtn, color: busy ? '#c4b5fd' : '#a78bfa', cursor: busy ? 'wait' : 'pointer' }}
+                                onClick={() => handleAssetBible(a)} disabled={!!assetBusy}>
+                                {busy ? '生成中…' : '生成 Asset Bible'}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        {bible && isOpen && (
+                          <div style={{ marginTop: 8 }}>
+                            <textarea
+                              className="cv2-scroll"
+                              value={bible}
+                              onChange={(e) => updateAssetBible(key, e.target.value)}
+                              onCompositionStart={() => { composing.current = true; }}
+                              onCompositionEnd={(e) => { composing.current = false; updateAssetBible(key, (e.target as HTMLTextAreaElement).value); }}
+                              style={{ ...outputArea, minHeight: 180, flex: 'none' }}
+                            />
+                            <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                              <button style={assetSmallBtn} onClick={() => { navigator.clipboard.writeText(bible).then(() => flashTip('已复制')).catch(() => {}); }}>复制</button>
+                              <button style={assetSmallBtn} onClick={() => sendAssetToCanvas(key)}>➤ 发送到画布</button>
+                              <button style={{ ...assetSmallBtn, color: '#a78bfa' }} onClick={() => handleAssetBible(a)} disabled={!!assetBusy}>重新生成</button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -309,3 +420,16 @@ const sendBtn: React.CSSProperties = {
   padding: '8px 18px', borderRadius: 9, border: '1px solid rgba(124,58,237,0.4)',
   background: 'rgba(124,58,237,0.2)', color: '#c4b5fd', cursor: 'pointer', fontSize: 13, fontWeight: 600,
 };
+const assetRow: React.CSSProperties = {
+  background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+  borderRadius: 10, padding: '8px 12px',
+};
+const assetId: React.CSSProperties = {
+  fontSize: 10, fontWeight: 700, color: '#a78bfa', background: 'rgba(124,58,237,0.16)',
+  border: '1px solid rgba(124,58,237,0.35)', borderRadius: 5, padding: '1px 6px', flexShrink: 0,
+};
+const assetSmallBtn: React.CSSProperties = {
+  padding: '4px 10px', borderRadius: 7, border: '1px solid rgba(255,255,255,0.14)',
+  background: 'rgba(255,255,255,0.05)', color: '#d4d4d8', cursor: 'pointer', fontSize: 11,
+};
+
