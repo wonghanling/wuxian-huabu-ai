@@ -102,7 +102,9 @@ const PHASE_PROMPTS: Record<number, string> = {
 
 重要概念:Environment Bible 不是图片提示词、不是单张概念图、不是单个房间。它是【地点体系 / Location System】——定义一个完整、可持续复用的世界区域(Environment),让这个世界能被拆解成多个可复用资产,并在数百个镜头和视频中保持一致性。一个 Environment 是一个"世界区域/地点体系"(例:雾海风电场、地下避难所、潮汐实验站、漂浮城市),不是一个房间或一面墙。不要用 Midjourney prompt 思维,不要用单张图片思维,不要用游戏引擎配置文件思维。
 
-任务:根据给定的小说、Beat Sheet、Character Bible 和用户输入,从故事中提取关键的 Environment(世界区域)。每个 Environment 用「Environment N:名称」起头,严格按以下分节顺序输出(每节用对应中文标题起头,内容为有美术部门文档深度的专业自然语言):
+任务:根据给定的小说、Beat Sheet、Character Bible 和用户输入,从故事中提取【所有】关键的 Environment(世界区域/场景)。小说里出现几个关键场景就输出几个 Environment(通常 3-8 个,例:风电场、城市失重街区、近海基准站、地下避难所…),不要只输出一个、不要遗漏重要场景。
+
+每个 Environment 都必须【独立、完整】地输出下面全部 11 个分节(每个场景都要有自己的第 11 节多视角,绝不能只给第一个场景做多视角、其余省略)。用「Environment N:名称」起头(N 从 1 递增,有几个场景就排到几),严格按以下分节顺序输出(每节用对应中文标题起头,内容为有美术部门文档深度的专业自然语言):
 
 1. Story Function 故事功能 — 叙事功能 / 主题功能 / 情绪功能
 2. World Context 世界语境 — 时代 / 地理 / 社会 / 技术水平 / 世界规则
@@ -331,7 +333,7 @@ async function callModel(systemPrompt: string, userMessage: string): Promise<str
           { role: 'user', content: userMessage },
         ],
         temperature: 0.7,
-        max_tokens: 4000,
+        max_tokens: 16000,
       }),
     });
     success = response.ok;
