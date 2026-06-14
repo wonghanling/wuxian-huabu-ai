@@ -5,8 +5,9 @@ import { useCanvasStore } from '../store';
 import { getUserId } from '../lib/api';
 import {
   PHASE_LABELS, PHASE_LABELS_CN, emptyProject, loadDraftLocal, saveDraftLocal,
-  loadProject, saveProject, generatePhase, generateAssetBible, parseAssets,
-  type ScriptProject, type ParsedAsset,
+  loadProject, saveProject, generatePhase, generateAssetBible, generateAssetSheet,
+  generateCostume, parseAssets, parseCharacters,
+  type ScriptProject, type ParsedAsset, type ParsedCharacter,
 } from '../lib/scriptStudio';
 
 // ============================================================
@@ -18,6 +19,7 @@ import {
 // ============================================================
 
 const ENV_PHASE = 4; // ④ Environment Bible(1基)
+const CHAR_PHASE = 3; // ③ Character Bible(1基)
 
 // 各阶段输入框占位提示(6 阶段)
 const PHASE_PLACEHOLDERS = [
@@ -42,7 +44,10 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
   const [generating, setGenerating] = useState(false);
   const [sentTip, setSentTip] = useState('');         // 发送/复制提示
   const [openAsset, setOpenAsset] = useState<string | null>(null); // 展开查看的资产 key
-  const [assetBusy, setAssetBusy] = useState<string | null>(null); // 正在生成的资产 key
+  const [assetBusy, setAssetBusy] = useState<string | null>(null); // 正在生成 Asset Bible 的资产 key
+  const [sheetBusy, setSheetBusy] = useState<string | null>(null); // 正在生成 Sheet 的 key:`${assetKey}|breakdown|exploration`
+  const [openChar, setOpenChar] = useState<string | null>(null);   // 展开查看的角色 key
+  const [costumeBusy, setCostumeBusy] = useState<string | null>(null); // 正在生成服装的 key:`${charName}|bible|sheet`
   const composing = useRef(false);
   const cloudTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const userIdRef = useRef<string | undefined>(undefined);
@@ -194,6 +199,92 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
     flashTip('Asset Bible 已发送到画布');
   };
 
+  // 生成资产的 Breakdown(技术拆解) / Exploration(9宫格多角度)Sheet
+  const handleAssetSheet = async (asset: ParsedAsset, kind: 'breakdown' | 'exploration') => {
+    const key = asset.id || asset.name;
+    const busyKey = `${key}|${kind}`;
+    if (sheetBusy) return;
+    const bible = project.assetBibles[key] || '';
+    if (!bible.trim()) { alert('请先生成 Asset Bible'); return; }
+    setSheetBusy(busyKey);
+    try {
+      const result = await generateAssetSheet(
+        kind, `${asset.id} ${asset.name}`, bible,
+        project.phases[ENV_PHASE - 1] || '', userIdRef.current,
+      );
+      setProject((p) => {
+        const field = kind === 'breakdown' ? 'assetBreakdowns' : 'assetExplorations';
+        const next = { ...p, [field]: { ...(p as any)[field], [key]: result } };
+        persist(next);
+        return next;
+      });
+    } catch (e: any) {
+      alert('生成失败: ' + (e?.message || e));
+    } finally {
+      setSheetBusy(null);
+    }
+  };
+
+  // 角色清单(③Character Bible 解析)
+  const characters: ParsedCharacter[] = active + 1 === CHAR_PHASE ? parseCharacters(project.phases[active] || '') : [];
+
+  // 生成角色的 Costume & Equipment Bible
+  const handleCostumeBible = async (ch: ParsedCharacter) => {
+    const key = ch.name;
+    if (costumeBusy) return;
+    setCostumeBusy(`${key}|bible`);
+    try {
+      const result = await generateCostume('costumeBible', ch.name, project.phases[CHAR_PHASE - 1] || '', '', userIdRef.current);
+      setProject((p) => {
+        const next = { ...p, costumeBibles: { ...p.costumeBibles, [key]: result } };
+        persist(next);
+        return next;
+      });
+      setOpenChar(key);
+    } catch (e: any) {
+      alert('生成失败: ' + (e?.message || e));
+    } finally {
+      setCostumeBusy(null);
+    }
+  };
+
+  // 生成角色的 Costume Sheet(动态格数,需先有 Costume Bible)
+  const handleCostumeSheet = async (ch: ParsedCharacter) => {
+    const key = ch.name;
+    if (costumeBusy) return;
+    const cb = project.costumeBibles[key] || '';
+    if (!cb.trim()) { alert('请先生成 Costume & Equipment Bible'); return; }
+    setCostumeBusy(`${key}|sheet`);
+    try {
+      const result = await generateCostume('costumeSheet', ch.name, '', cb, userIdRef.current);
+      setProject((p) => {
+        const next = { ...p, costumeSheets: { ...p.costumeSheets, [key]: result } };
+        persist(next);
+        return next;
+      });
+    } catch (e: any) {
+      alert('生成失败: ' + (e?.message || e));
+    } finally {
+      setCostumeBusy(null);
+    }
+  };
+
+  // 通用:更新某 Record 字段的文本(可编辑)
+  const updateRecordField = (field: 'assetBreakdowns' | 'assetExplorations' | 'costumeBibles' | 'costumeSheets', key: string, v: string) => {
+    setProject((p) => {
+      const next = { ...p, [field]: { ...(p as any)[field], [key]: v } };
+      if (!composing.current) persist(next);
+      return next;
+    });
+  };
+
+  const sendTextToCanvas = (text: string, tip: string) => {
+    if (!text.trim()) return;
+    addCardFromStudio('text', text.trim(), 0);
+    (window as any).saveCanvasV2Now?.();
+    flashTip(tip);
+  };
+
   const output = project.phases[active] || '';
   const hasOutput = !!output.trim();
   // 能否生成:①需输入;其余 有输入 或 有可用前置 即可
@@ -337,6 +428,119 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
                               <button style={assetSmallBtn} onClick={() => { navigator.clipboard.writeText(bible).then(() => flashTip('已复制')).catch(() => {}); }}>复制</button>
                               <button style={assetSmallBtn} onClick={() => sendAssetToCanvas(key)}>➤ 发送到画布</button>
                               <button style={{ ...assetSmallBtn, color: '#a78bfa' }} onClick={() => handleAssetBible(a)} disabled={!!assetBusy}>重新生成</button>
+                            </div>
+
+                            {/* 下游两个 Sheet:技术拆解 + 多角度探索 */}
+                            {(['breakdown', 'exploration'] as const).map((sk) => {
+                              const field = sk === 'breakdown' ? 'assetBreakdowns' : 'assetExplorations';
+                              const label = sk === 'breakdown' ? 'Breakdown Sheet 拆解图(技术验证)' : 'Exploration Sheet 探索图(9宫格多角度)';
+                              const sheet = (project as any)[field][key] as string | undefined;
+                              const sbusy = sheetBusy === `${key}|${sk}`;
+                              return (
+                                <div key={sk} style={{ marginTop: 10, paddingLeft: 10, borderLeft: '2px solid rgba(124,58,237,0.3)' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <span style={{ fontSize: 12, color: '#c4b5fd' }}>{label}</span>
+                                    <button style={{ ...assetSmallBtn, marginLeft: 'auto', color: sbusy ? '#c4b5fd' : '#a78bfa', cursor: sbusy ? 'wait' : 'pointer' }}
+                                      onClick={() => handleAssetSheet(a, sk)} disabled={!!sheetBusy}>
+                                      {sbusy ? '生成中…' : (sheet ? '重新生成' : '生成')}
+                                    </button>
+                                  </div>
+                                  {sheet && (
+                                    <div style={{ marginTop: 6 }}>
+                                      <textarea className="cv2-scroll" value={sheet}
+                                        onChange={(e) => updateRecordField(field as any, key, e.target.value)}
+                                        onCompositionStart={() => { composing.current = true; }}
+                                        onCompositionEnd={(e) => { composing.current = false; updateRecordField(field as any, key, (e.target as HTMLTextAreaElement).value); }}
+                                        style={{ ...outputArea, minHeight: 140, flex: 'none' }} />
+                                      <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                                        <button style={assetSmallBtn} onClick={() => { navigator.clipboard.writeText(sheet).then(() => flashTip('已复制')).catch(() => {}); }}>复制</button>
+                                        <button style={assetSmallBtn} onClick={() => sendTextToCanvas(sheet, '已发送到画布')}>➤ 发送到画布</button>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* ③ Character Bible:角色清单 + 按需钻取 Costume & Equipment Bible → Costume Sheet */}
+            {active + 1 === CHAR_PHASE && characters.length > 0 && (
+              <div style={{ marginTop: 18, borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 14 }}>
+                <div style={{ fontSize: 13, color: '#e4e4e7', fontWeight: 600, marginBottom: 4 }}>
+                  角色服装装备 Costume & Equipment
+                  <span style={{ fontSize: 11, color: '#71717a', fontWeight: 400, marginLeft: 8 }}>
+                    管服装/装备连续性(不管长相);先生成 Bible 再生成 Sheet
+                  </span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
+                  {characters.map((ch) => {
+                    const key = ch.name;
+                    const cb = project.costumeBibles[key];
+                    const cs = project.costumeSheets[key];
+                    const isOpen = openChar === key;
+                    const bbusy = costumeBusy === `${key}|bible`;
+                    const sbusy = costumeBusy === `${key}|sheet`;
+                    return (
+                      <div key={key} style={assetRow}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ color: '#e4e4e7', fontSize: 13, fontWeight: 500 }}>{ch.name}</span>
+                          <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+                            {cb ? (
+                              <button style={assetSmallBtn} onClick={() => setOpenChar(isOpen ? null : key)}>
+                                {isOpen ? '收起' : '查看服装装备'}
+                              </button>
+                            ) : (
+                              <button style={{ ...assetSmallBtn, color: bbusy ? '#c4b5fd' : '#a78bfa', cursor: bbusy ? 'wait' : 'pointer' }}
+                                onClick={() => handleCostumeBible(ch)} disabled={!!costumeBusy}>
+                                {bbusy ? '生成中…' : '生成 Costume & Equipment Bible'}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        {cb && isOpen && (
+                          <div style={{ marginTop: 8 }}>
+                            {/* Costume & Equipment Bible */}
+                            <div style={{ fontSize: 12, color: '#c4b5fd', marginBottom: 4 }}>Costume & Equipment Bible(服装装备定义)</div>
+                            <textarea className="cv2-scroll" value={cb}
+                              onChange={(e) => updateRecordField('costumeBibles', key, e.target.value)}
+                              onCompositionStart={() => { composing.current = true; }}
+                              onCompositionEnd={(e) => { composing.current = false; updateRecordField('costumeBibles', key, (e.target as HTMLTextAreaElement).value); }}
+                              style={{ ...outputArea, minHeight: 160, flex: 'none' }} />
+                            <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                              <button style={assetSmallBtn} onClick={() => { navigator.clipboard.writeText(cb).then(() => flashTip('已复制')).catch(() => {}); }}>复制</button>
+                              <button style={assetSmallBtn} onClick={() => sendTextToCanvas(cb, '已发送到画布')}>➤ 发送到画布</button>
+                              <button style={{ ...assetSmallBtn, color: '#a78bfa' }} onClick={() => handleCostumeBible(ch)} disabled={!!costumeBusy}>重新生成</button>
+                            </div>
+
+                            {/* Costume Sheet(动态格数) */}
+                            <div style={{ marginTop: 10, paddingLeft: 10, borderLeft: '2px solid rgba(124,58,237,0.3)' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span style={{ fontSize: 12, color: '#c4b5fd' }}>Costume Sheet 服装装备表(动态格数)</span>
+                                <button style={{ ...assetSmallBtn, marginLeft: 'auto', color: sbusy ? '#c4b5fd' : '#a78bfa', cursor: sbusy ? 'wait' : 'pointer' }}
+                                  onClick={() => handleCostumeSheet(ch)} disabled={!!costumeBusy}>
+                                  {sbusy ? '生成中…' : (cs ? '重新生成' : '生成')}
+                                </button>
+                              </div>
+                              {cs && (
+                                <div style={{ marginTop: 6 }}>
+                                  <textarea className="cv2-scroll" value={cs}
+                                    onChange={(e) => updateRecordField('costumeSheets', key, e.target.value)}
+                                    onCompositionStart={() => { composing.current = true; }}
+                                    onCompositionEnd={(e) => { composing.current = false; updateRecordField('costumeSheets', key, (e.target as HTMLTextAreaElement).value); }}
+                                    style={{ ...outputArea, minHeight: 140, flex: 'none' }} />
+                                  <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                                    <button style={assetSmallBtn} onClick={() => { navigator.clipboard.writeText(cs).then(() => flashTip('已复制')).catch(() => {}); }}>复制</button>
+                                    <button style={assetSmallBtn} onClick={() => sendTextToCanvas(cs, '已发送到画布')}>➤ 发送到画布</button>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </div>
                         )}

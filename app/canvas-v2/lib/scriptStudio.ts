@@ -25,13 +25,22 @@ export interface ScriptProject {
   title: string;
   phases: string[];           // 长度 6,各阶段生成结果
   inputs: string[];           // 长度 6,各阶段输入框内容
-  assetBibles: Record<string, string>; // Asset Bible:key=资产标识(编号|名称),value=bible 文本
+  assetBibles: Record<string, string>;       // Asset Bible:key=资产标识,value=bible 文本
+  assetBreakdowns: Record<string, string>;   // Asset Breakdown Sheet(技术验证)
+  assetExplorations: Record<string, string>; // Asset Exploration Sheet(镜头验证9宫格)
+  costumeBibles: Record<string, string>;     // Character Costume & Equipment Bible(key=角色名)
+  costumeSheets: Record<string, string>;     // Character Costume Sheet(动态格数服装装备表)
 }
 
 const LS_KEY = 'script_studio_draft';
 
 export function emptyProject(): ScriptProject {
-  return { id: null, title: '未命名剧本', phases: Array(N).fill(''), inputs: Array(N).fill(''), assetBibles: {} };
+  return {
+    id: null, title: '未命名剧本',
+    phases: Array(N).fill(''), inputs: Array(N).fill(''),
+    assetBibles: {}, assetBreakdowns: {}, assetExplorations: {},
+    costumeBibles: {}, costumeSheets: {},
+  };
 }
 
 function padToN(arr: any[]): string[] {
@@ -56,6 +65,10 @@ export function loadDraftLocal(): ScriptProject | null {
       phases: Array.isArray(o.phases) ? padToN(o.phases) : Array(N).fill(''),
       inputs: Array.isArray(o.inputs) ? padToN(o.inputs) : Array(N).fill(''),
       assetBibles: (o.assetBibles && typeof o.assetBibles === 'object') ? o.assetBibles : {},
+      assetBreakdowns: (o.assetBreakdowns && typeof o.assetBreakdowns === 'object') ? o.assetBreakdowns : {},
+      assetExplorations: (o.assetExplorations && typeof o.assetExplorations === 'object') ? o.assetExplorations : {},
+      costumeBibles: (o.costumeBibles && typeof o.costumeBibles === 'object') ? o.costumeBibles : {},
+      costumeSheets: (o.costumeSheets && typeof o.costumeSheets === 'object') ? o.costumeSheets : {},
     };
   } catch { return null; }
 }
@@ -77,6 +90,10 @@ export async function loadProject(): Promise<ScriptProject | null> {
     const r = data[0];
     const inputsObj = (r.inputs && typeof r.inputs === 'object') ? r.inputs : {};
     const assetObj = (r.asset_bibles && typeof r.asset_bibles === 'object') ? r.asset_bibles : {};
+    const breakdownObj = (r.asset_breakdowns && typeof r.asset_breakdowns === 'object') ? r.asset_breakdowns : {};
+    const explorationObj = (r.asset_explorations && typeof r.asset_explorations === 'object') ? r.asset_explorations : {};
+    const costumeBibleObj = (r.costume_bibles && typeof r.costume_bibles === 'object') ? r.costume_bibles : {};
+    const costumeSheetObj = (r.costume_sheets && typeof r.costume_sheets === 'object') ? r.costume_sheets : {};
     return {
       id: r.id,
       title: r.title ?? '未命名剧本',
@@ -84,6 +101,10 @@ export async function loadProject(): Promise<ScriptProject | null> {
       phases: [r.phase_1, r.phase_2, r.phase_3, r.phase_4, r.phase_5, r.phase_6].map((s: any) => s ?? ''),
       inputs: Array.from({ length: N }, (_, i) => (inputsObj[String(i)] ?? inputsObj[i] ?? '')),
       assetBibles: assetObj,
+      assetBreakdowns: breakdownObj,
+      assetExplorations: explorationObj,
+      costumeBibles: costumeBibleObj,
+      costumeSheets: costumeSheetObj,
     };
   } catch { return null; }
 }
@@ -103,6 +124,10 @@ export async function saveProject(p: ScriptProject): Promise<string | null> {
       phase_4: p.phases[3] ?? '', phase_5: p.phases[4] ?? '', phase_6: p.phases[5] ?? '',
       inputs: inputsObj,
       asset_bibles: p.assetBibles || {},
+      asset_breakdowns: p.assetBreakdowns || {},
+      asset_explorations: p.assetExplorations || {},
+      costume_bibles: p.costumeBibles || {},
+      costume_sheets: p.costumeSheets || {},
       updated_at: new Date().toISOString(),
     };
     if (p.id) {
@@ -155,6 +180,66 @@ export async function generateAssetBible(
   const data = await res.json();
   if (!res.ok || data.error) throw new Error(data.error || `生成失败(${res.status})`);
   return data.result || '';
+}
+
+// ---------- Asset Breakdown Sheet(技术验证) / Asset Exploration Sheet(镜头验证9宫格) ----------
+// kind: 'breakdown' 拆解图 | 'exploration' 探索图;沿用 Asset ID,不派生子编号
+export async function generateAssetSheet(
+  kind: 'breakdown' | 'exploration',
+  assetName: string,
+  assetBible: string,
+  envBible: string,
+  userId?: string,
+): Promise<string> {
+  const res = await fetch('/api/gem/generate-script', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mode: kind, assetName, assetBible, envBible, userId }),
+  });
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error || `生成失败(${res.status})`);
+  return data.result || '';
+}
+
+// ---------- Character Costume & Equipment Bible / Character Costume Sheet ----------
+// kind: 'costumeBible' 服装装备定义 | 'costumeSheet' 动态格数服装装备表
+export async function generateCostume(
+  kind: 'costumeBible' | 'costumeSheet',
+  charName: string,
+  charBible: string,      // costumeBible 用:Character Bible(③全文)
+  costumeBible: string,   // costumeSheet 用:该角色的 Costume & Equipment Bible
+  userId?: string,
+): Promise<string> {
+  const res = await fetch('/api/gem/generate-script', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mode: kind, charName, charBible, costumeBible, userId }),
+  });
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error || `生成失败(${res.status})`);
+  return data.result || '';
+}
+
+// ---------- 从 Character Bible 文本解析角色清单 ----------
+// 匹配「角色N:姓名」起头的段
+export interface ParsedCharacter {
+  name: string;   // 角色名(去掉"角色N:"前缀)
+}
+
+export function parseCharacters(charBible: string): ParsedCharacter[] {
+  if (!charBible) return [];
+  const out: ParsedCharacter[] = [];
+  const seen = new Set<string>();
+  const re = /角色\s*\d+\s*[:：]\s*(.+)/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(charBible)) !== null) {
+    // 取冒号后的角色名(可能后面跟着括号说明,取首段)
+    let name = (m[1] || '').trim();
+    // 去掉行尾多余内容,只保留名字本身(到第一个标点/空格/括号前)
+    name = name.split(/[（(\s,，。·|]/)[0].trim();
+    if (name && !seen.has(name)) { seen.add(name); out.push({ name }); }
+  }
+  return out;
 }
 
 // ---------- 从 Environment Bible 文本解析资产清单 ----------

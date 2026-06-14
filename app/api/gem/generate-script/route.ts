@@ -197,6 +197,93 @@ const ASSET_BIBLE_PROMPT = `你是世界级电影美术部门资产设计师(Fil
 - 不要在本阶段生成用于出片的 Video Prompt
 - 不要描写人物/场景环境(资产本体特写)、不要输出 JSON、不要 Markdown 表格、不要额外解释`;
 
+// Asset Breakdown Sheet(资产拆解图)— 技术验证:部件/材质/功能/关键部件
+const ASSET_BREAKDOWN_PROMPT = `你是世界级电影美术部门资产技术总监(Film Production Asset Technical Director)。请按工业设计图 / 产品拆解图的思维工作。
+
+任务:根据给定的【Asset Bible】和【资产标识】,生成 Asset Breakdown Sheet(资产拆解图说明)。职责是【技术验证】——验证资产的结构组成、材质、功能细节、关键部件是否定义正确。这不是镜头/角度验证。
+
+(以风机塔为例,需拆解到:塔基、法兰环、检修门、紧急停机按钮、系挂环、爬梯、避雷灯等部件,以及各部件的材质细节。)
+
+请按以下结构输出:
+- 用「资产标识:名称」起头(标识直接沿用传入的 Asset ID,例如 ST001;严禁生成 ST001-01、ST001-02 这类新编号,部件只用部件名,不要给部件编号)
+1. 整体结构 Overall Structure:资产由哪些主要部件组成、装配关系
+2. 关键部件 Key Components:逐个列出关键部件(部件名 + 形态/尺寸比例 + 功能 + 材质),每个部件一行,以"· "起头
+3. 材质细节 Materials:主体材质、表面处理、磨损/年代感、不同部件的材质差异
+4. 功能细节 Functional Details:可动部件、机械/电气/交互细节、工作原理
+5. 技术验证要点 Validation Notes:生成图时最容易画错/需重点核对的结构要点
+
+强约束:
+- 这是技术拆解,不是多角度展示、不写机位/景别
+- Asset ID 仅作系统引用,不要派生子编号
+- 中文。不要输出 JSON、不要 Markdown 表格、不要额外解释`;
+
+// Asset Exploration Sheet(资产探索图)— 镜头验证:9 宫格多角度一致性
+const ASSET_EXPLORATION_PROMPT = `你是世界级电影摄影指导兼概念美术(Cinematographer & Concept Artist)。
+
+任务:根据给定的【Asset Bible】和【资产标识】,生成 Asset Exploration Sheet(资产探索图说明)。职责是【镜头验证】——验证资产在不同角度下的视觉一致性、空间轮廓,为后续 Shot List 提供角度参考。这不是技术拆解。
+
+默认 9 宫格视图,逐个给出每个视图可直接复制去图片卡生成的画面提示词。固定这 9 个角度:
+1. Front View 正视图
+2. Front Left 45° 左前45度
+3. Front Right 45° 右前45度
+4. Left Side 左侧视图
+5. Right Side 右侧视图
+6. Rear View 后视图
+7. Low Angle Hero View 低角度英雄视角
+8. High Angle View 高角度俯视
+9. Medium Cinematic View 中景电影感视角
+
+请按以下结构输出:
+- 用「资产标识:名称」起头(标识直接沿用传入的 Asset ID,例如 ST001;严禁生成 ST001-01 这类子编号,9 个视图只用上面的视图名,不要编号)
+- 然后逐个视图,每个用「视图名:」起头,跟一段可直接复制去图片卡的画面提示词
+- 每个视图都复述资产的固定标志特征 + 材质 + 色彩,只改变观察机位和构图,确保是同一资产的不同视角(视觉一致)
+- 画面里只有这一件资产、干净背景,不要人物、不要场景环境
+
+强约束:
+- 9 个视图必须保持同一资产一致(同样造型/材质/色彩/标志),只换角度
+- Asset ID 仅作系统引用,不要派生子编号
+- 中文。不要输出 JSON、不要 Markdown 表格、不要额外解释`;
+
+// Character Costume & Equipment Bible — 管服装/装备/工具/配件/状态(不管长相,长相在 Character Visual Reference)
+// 目标:解决 AI 视频连续性(头盔/工牌/对讲机/安全绳/工具包忽隐忽现、位置漂移、服装变色)
+const COSTUME_BIBLE_PROMPT = `你是世界级电影服装设计师兼道具统筹(Costume Designer & Property Master)。
+
+重要:本表【不管理角色长相】(长相已由 Character Visual Reference 锁定)。本表管理【服装、装备、工具、配件、工作状态、特殊状态】,核心目的是解决 AI 视频的连续性问题——避免头盔忽然消失、工牌忽然消失、对讲机位置变化、安全绳有时出现有时消失、工具包换位置、服装颜色漂移。
+
+任务:根据给定的【Character Bible(角色定义)】和指定的【角色】,生成 Character Costume & Equipment Bible。用「角色:姓名」起头,按以下 6 节输出(每节用对应标题起头,专业自然语言):
+1. Costume Sets 服装套装 — 列出该角色在故事中会穿的成套服装(例:Work Uniform 工作服 / Casual Outfit 便装 / Weather Protection 防护服 / Injury State 受伤状态),每套描述款式、颜色、材质、剪裁
+2. Equipment Sets 装备套装 — 列出随身装备/工具/配件(例:Safety Helmet 头盔 / Safety Harness 安全绳 / Radio 对讲机 / ID Badge 工牌 / Tool Bag 工具包 / Flashlight 手电),每件描述外观、颜色、佩戴位置
+3. Carry Rules 佩戴规则 — 什么情境必须带什么(例:高空作业必须佩戴安全绳、风机平台必须戴头盔、对讲机固定挂左肩、工牌固定胸前)
+4. Continuity Rules 连续性规则 — 跨镜头必须保持一致的服装/装备规则(哪些必须永远在、固定位置、固定颜色)
+5. AI Generation Rules AI生成规则 — 生成时必须锁定的服装与装备清单、避免遗漏的要点、避免颜色漂移
+6. Costume Visual Reference 服装视觉参考 — 一段用于验证服装/装备设计的整体参考描述(全套着装的整体外观),这是设计验证参考,不写机位/景别/镜头
+
+强约束:
+- 只管服装/装备/工具/配件/状态,不要描写脸部长相/五官/发型(那是 Character Visual Reference 的职责)
+- 中文。不要输出 JSON、不要 Markdown 表格、不要额外解释`;
+
+// Character Costume Sheet — 动态格数服装装备表(不是人物转面图)
+const COSTUME_SHEET_PROMPT = `你是世界级电影服装/道具概念美术。
+
+任务:根据给定的【Character Costume & Equipment Bible】和指定的【角色】,生成 Character Costume Sheet(服装装备表)。这【不是人物转面图(Turnaround)】,不要生成正面/背面/侧面/45度的人物长相设定。本表是【服装与装备的逐项验证表】,用于锁定 AI 视频连续性。
+
+格数动态决定(不要写死 9 格):
+- 根据 Costume & Equipment Bible 里实际有多少服装套装+装备件数来定
+- 最少 4 格(简单角色,如普通上班族:发型/眼镜/西装/手表)
+- 默认约 9 格
+- 复杂角色可扩展到 12~16 格(如风电工程师:头盔/安全绳/工牌/对讲机/工具包/手套/安全靴...;机甲驾驶员:头盔/胸甲/肩甲/腕甲/背包/武器/工具/徽章...)
+
+每格输出格式:
+- 用「格N:项目名」起头(N 从 1 递增,项目名如"工作服正面""头盔细节""安全绳细节""全套装备组合")
+- 跟一段可直接复制去图片卡生成的画面提示词,只聚焦该服装/装备项目的外观/材质/颜色/佩戴方式/细节
+- 最后一格通常是"全套装备组合"(角色穿戴全套的整体参考)
+- 干净或纯色背景,聚焦服装装备本身
+
+强约束:
+- 不是人物转面图,不做正/背/侧/45°的长相设定
+- 每格复述固定颜色/材质,确保跨格一致,服务连续性
+- 中文。不要输出 JSON、不要 Markdown 表格、不要额外解释`;
+
 // 依赖链(1基阶段号 → 它依赖的前置阶段号)
 const DEPENDS_ON: Record<number, number[]> = {
   1: [], 2: [1], 3: [1], 4: [1], 5: [1, 2, 3, 4], 6: [1, 2, 5, 3, 4],
@@ -277,6 +364,40 @@ export async function POST(req: NextRequest) {
       if (input && String(input).trim()) parts.push(`【用户补充要求】\n${String(input).trim()}`);
       const result = await callModel(ASSET_BIBLE_PROMPT, parts.join('\n\n'));
       return NextResponse.json({ success: true, result });
+    }
+
+    // ---------- Asset Breakdown Sheet(技术验证) / Asset Exploration Sheet(镜头验证) ----------
+    if (mode === 'breakdown' || mode === 'exploration') {
+      const { assetName, assetBible, envBible } = body;
+      if (!assetName || !String(assetName).trim()) {
+        return NextResponse.json({ error: '缺少资产标识' }, { status: 400 });
+      }
+      const parts: string[] = [];
+      parts.push(`【资产标识】\n${String(assetName).trim()}`);
+      if (assetBible && String(assetBible).trim()) parts.push(`【Asset Bible】\n${String(assetBible).trim()}`);
+      if (envBible && String(envBible).trim()) parts.push(`【Environment Bible 上下文(参考色板/材质)】\n${String(envBible).trim()}`);
+      const sys = mode === 'breakdown' ? ASSET_BREAKDOWN_PROMPT : ASSET_EXPLORATION_PROMPT;
+      const result = await callModel(sys, parts.join('\n\n'));
+      return NextResponse.json({ success: true, result });
+    }
+
+    // ---------- Character Costume & Equipment Bible / Character Costume Sheet ----------
+    if (mode === 'costumeBible' || mode === 'costumeSheet') {
+      const { charName, charBible, costumeBible } = body;
+      if (!charName || !String(charName).trim()) {
+        return NextResponse.json({ error: '缺少角色名' }, { status: 400 });
+      }
+      const parts: string[] = [];
+      parts.push(`【角色】\n${String(charName).trim()}`);
+      if (mode === 'costumeBible') {
+        if (charBible && String(charBible).trim()) parts.push(`【Character Bible(角色定义)】\n${String(charBible).trim()}`);
+        const result = await callModel(COSTUME_BIBLE_PROMPT, parts.join('\n\n'));
+        return NextResponse.json({ success: true, result });
+      } else {
+        if (costumeBible && String(costumeBible).trim()) parts.push(`【Character Costume & Equipment Bible】\n${String(costumeBible).trim()}`);
+        const result = await callModel(COSTUME_SHEET_PROMPT, parts.join('\n\n'));
+        return NextResponse.json({ success: true, result });
+      }
     }
 
     // ---------- 阶段生成 ----------

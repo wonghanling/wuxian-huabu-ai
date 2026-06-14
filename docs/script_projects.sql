@@ -17,6 +17,10 @@ create table if not exists public.script_projects (
   phase_6 text default '',   -- Shooting Script(拍摄剧本)
   inputs jsonb default '{}',        -- 各阶段输入框内容 {"0":"...","1":"..."}
   asset_bibles jsonb default '{}',  -- Asset Bible {资产标识: bible文本}(按需钻取)
+  asset_breakdowns jsonb default '{}',   -- Asset Breakdown Sheet 技术验证 {资产标识: 文本}
+  asset_explorations jsonb default '{}', -- Asset Exploration Sheet 镜头验证9宫格 {资产标识: 文本}
+  costume_bibles jsonb default '{}',     -- Character Costume & Equipment Bible {角色名: 文本}
+  costume_sheets jsonb default '{}',     -- Character Costume Sheet 动态格数服装装备表 {角色名: 文本}
   updated_at timestamptz not null default now(),
   created_at timestamptz not null default now()
 );
@@ -28,7 +32,11 @@ create policy "用户只能读写自己的剧本" on public.script_projects
 create index if not exists idx_script_projects_user on public.script_projects(user_id);
 
 -- ============================================================
--- 若之前已建过旧版表(7阶段/无 asset_bibles),执行下面 ALTER 补列即可(已存在会自动跳过):
+-- 若之前已建过旧版表,执行下面 ALTER 补列即可(已存在会自动跳过):
 -- ============================================================
 alter table public.script_projects add column if not exists asset_bibles jsonb default '{}';
+alter table public.script_projects add column if not exists asset_breakdowns jsonb default '{}';
+alter table public.script_projects add column if not exists asset_explorations jsonb default '{}';
+alter table public.script_projects add column if not exists costume_bibles jsonb default '{}';
+alter table public.script_projects add column if not exists costume_sheets jsonb default '{}';
 -- 旧版 phase_7 列不再使用,保留无害,无需删除
