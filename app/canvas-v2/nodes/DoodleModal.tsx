@@ -136,40 +136,48 @@ export function DoodleModal({ imageUrl, onClose, onConfirm }: Props) {
   }, [busy, prompt, model, onConfirm, onClose]);
 
   return (
-    <div style={overlay} onClick={onClose}>
-      <div style={panel} onClick={(e) => e.stopPropagation()}>
+    <div
+      className="nodrag nopan nowheel"
+      style={overlay}
+      onClick={onClose}
+      onPointerDown={(e) => e.stopPropagation()}
+      onWheel={(e) => e.stopPropagation()}
+    >
+      <div className="nodrag nopan nowheel" style={panel} onClick={(e) => e.stopPropagation()}>
         <div style={header}>
-          <span style={{ fontWeight: 700, fontSize: 15, color: '#fff' }}>涂鸦编辑</span>
-          <span style={{ fontSize: 12, color: '#71717a' }}>在图上标注需要修改的位置,写出需求</span>
+          <span style={{ fontWeight: 700, fontSize: 16, color: '#fff' }}>涂鸦编辑</span>
+          <span style={{ fontSize: 12, color: '#8b8b92' }}>在图上标注要修改的位置,写出需求</span>
           <button onClick={onClose} style={closeBtn} title="关闭">✕</button>
         </div>
 
         {/* 工具条 */}
         <div style={toolbar}>
+          <span style={{ fontSize: 12, color: '#8b8b92', marginRight: 2 }}>颜色</span>
           {COLORS.map((c) => (
             <button key={c} onClick={() => { setColor(c); setEraser(false); }}
-              style={{ ...swatch, background: c, outline: (!eraser && color === c) ? '2px solid #fff' : '1px solid rgba(255,255,255,0.2)' }} />
+              style={{ ...swatch, background: c, outline: (!eraser && color === c) ? '2px solid #a78bfa' : '1px solid rgba(255,255,255,0.2)', outlineOffset: 1 }} />
           ))}
-          <span style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.15)', margin: '0 4px' }} />
+          <span style={divider} />
+          <span style={{ fontSize: 12, color: '#8b8b92', marginRight: 2 }}>粗细</span>
           {SIZES.map((s) => (
             <button key={s} onClick={() => setSize(s)}
               style={{ ...sizeBtn, outline: size === s ? '2px solid #a78bfa' : '1px solid rgba(255,255,255,0.15)' }}>
               <span style={{ width: s, height: s, borderRadius: '50%', background: '#e4e4e7', display: 'block' }} />
             </button>
           ))}
-          <span style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.15)', margin: '0 4px' }} />
-          <button onClick={() => setEraser(!eraser)} style={{ ...textBtn, color: eraser ? '#a78bfa' : '#d4d4d8', borderColor: eraser ? 'rgba(124,58,237,0.5)' : 'rgba(255,255,255,0.15)' }}>橡皮</button>
+          <span style={divider} />
+          <button onClick={() => setEraser(!eraser)} style={{ ...textBtn, color: eraser ? '#a78bfa' : '#d4d4d8', borderColor: eraser ? 'rgba(124,58,237,0.5)' : 'rgba(255,255,255,0.15)', background: eraser ? 'rgba(124,58,237,0.15)' : 'rgba(255,255,255,0.05)' }}>橡皮擦</button>
           <button onClick={clearDoodle} style={textBtn}>清空</button>
         </div>
 
         {/* 画布区 */}
         <div style={canvasWrap} className="cv2-scroll">
           <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0 }}>
-            <canvas ref={baseRef} style={{ display: 'block', maxWidth: '100%', maxHeight: '50vh', borderRadius: 8 }} />
+            <canvas ref={baseRef} style={{ display: 'block', maxWidth: '100%', maxHeight: '62vh', borderRadius: 10 }} />
             <canvas ref={drawRef}
               onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerLeave={onUp}
               style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', cursor: 'crosshair', touchAction: 'none' }} />
-            {!imgEl && <div style={{ padding: 40, color: '#71717a', fontSize: 13 }}>加载图片中…</div>}
+            {!imgEl && <div style={{ padding: 60, color: '#71717a', fontSize: 13 }}>加载图片中…</div>}
           </div>
         </div>
 
@@ -204,57 +212,62 @@ export function DoodleModal({ imageUrl, onClose, onConfirm }: Props) {
 }
 
 const overlay: React.CSSProperties = {
-  position: 'fixed', inset: 0, zIndex: 99999,
-  background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)',
+  position: 'fixed', inset: 0, zIndex: 2147483647,
+  background: 'rgba(8,8,12,0.78)', backdropFilter: 'blur(10px)',
   display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
 };
 const panel: React.CSSProperties = {
-  width: 'min(820px, 95vw)', maxHeight: '92vh',
-  background: '#18181b', border: '1px solid rgba(255,255,255,0.1)',
-  borderRadius: 16, boxShadow: '0 30px 90px rgba(0,0,0,0.7)',
+  width: 'min(1080px, 96vw)', maxHeight: '94vh',
+  background: 'linear-gradient(180deg,#1c1c22 0%,#16161a 100%)',
+  border: '1px solid rgba(255,255,255,0.12)',
+  borderRadius: 20, boxShadow: '0 40px 120px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04) inset',
   display: 'flex', flexDirection: 'column', overflow: 'hidden',
 };
 const header: React.CSSProperties = {
-  display: 'flex', alignItems: 'center', gap: 10,
-  padding: '14px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)',
+  display: 'flex', alignItems: 'center', gap: 12,
+  padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)',
 };
 const closeBtn: React.CSSProperties = {
-  marginLeft: 'auto', width: 28, height: 28, borderRadius: 8,
+  marginLeft: 'auto', width: 32, height: 32, borderRadius: 10,
   border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.05)',
-  color: '#a1a1aa', cursor: 'pointer', fontSize: 13,
+  color: '#a1a1aa', cursor: 'pointer', fontSize: 14,
 };
 const toolbar: React.CSSProperties = {
-  display: 'flex', alignItems: 'center', gap: 6, padding: '10px 16px',
+  display: 'flex', alignItems: 'center', gap: 8, padding: '12px 20px',
   borderBottom: '1px solid rgba(255,255,255,0.06)', flexWrap: 'wrap',
 };
+const divider: React.CSSProperties = { width: 1, height: 22, background: 'rgba(255,255,255,0.12)', margin: '0 6px' };
 const swatch: React.CSSProperties = {
-  width: 22, height: 22, borderRadius: '50%', cursor: 'pointer', padding: 0,
+  width: 24, height: 24, borderRadius: '50%', cursor: 'pointer', padding: 0, border: 'none',
 };
 const sizeBtn: React.CSSProperties = {
-  width: 30, height: 26, borderRadius: 7, background: 'rgba(255,255,255,0.05)',
+  width: 34, height: 30, borderRadius: 9, background: 'rgba(255,255,255,0.05)', border: 'none',
   display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
 };
 const textBtn: React.CSSProperties = {
-  padding: '5px 12px', borderRadius: 7, border: '1px solid rgba(255,255,255,0.15)',
-  background: 'rgba(255,255,255,0.05)', color: '#d4d4d8', cursor: 'pointer', fontSize: 12,
+  padding: '7px 14px', borderRadius: 9, border: '1px solid rgba(255,255,255,0.15)',
+  background: 'rgba(255,255,255,0.05)', color: '#d4d4d8', cursor: 'pointer', fontSize: 12.5,
 };
 const canvasWrap: React.CSSProperties = {
-  padding: 16, overflow: 'auto', textAlign: 'center', background: 'rgba(0,0,0,0.25)',
+  padding: 20, overflow: 'auto', textAlign: 'center',
+  background: 'repeating-conic-gradient(#1a1a1f 0% 25%, #202027 0% 50%) 50% / 24px 24px',
+  flex: 1, minHeight: 0,
 };
 const select: React.CSSProperties = {
-  flex: 1, padding: '7px 10px', borderRadius: 8, background: 'rgba(0,0,0,0.3)',
+  flex: 1, padding: '9px 12px', borderRadius: 10, background: 'rgba(0,0,0,0.35)',
   border: '1px solid rgba(255,255,255,0.12)', color: '#e4e4e7', fontSize: 13, outline: 'none',
 };
 const promptArea: React.CSSProperties = {
-  width: '100%', minHeight: 60, resize: 'vertical', boxSizing: 'border-box',
-  background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10,
-  padding: 10, color: '#e4e4e7', fontSize: 13, lineHeight: 1.6, outline: 'none',
+  width: '100%', minHeight: 64, resize: 'vertical', boxSizing: 'border-box',
+  background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12,
+  padding: 12, color: '#e4e4e7', fontSize: 13.5, lineHeight: 1.6, outline: 'none',
 };
 const cancelBtn: React.CSSProperties = {
-  padding: '8px 18px', borderRadius: 9, border: '1px solid rgba(255,255,255,0.14)',
-  background: 'rgba(255,255,255,0.05)', color: '#e4e4e7', cursor: 'pointer', fontSize: 13,
+  padding: '10px 22px', borderRadius: 11, border: '1px solid rgba(255,255,255,0.14)',
+  background: 'rgba(255,255,255,0.05)', color: '#e4e4e7', cursor: 'pointer', fontSize: 13.5,
 };
 const genBtn: React.CSSProperties = {
-  padding: '8px 18px', borderRadius: 9, border: 'none',
-  background: 'linear-gradient(135deg,#7c3aed,#4f46e5)', color: '#fff', fontSize: 13, fontWeight: 600,
+  padding: '10px 22px', borderRadius: 11, border: 'none',
+  background: 'linear-gradient(135deg,#8b5cf6,#6366f1)', color: '#fff', fontSize: 13.5, fontWeight: 600,
+  boxShadow: '0 6px 20px -6px rgba(124,58,237,0.6)',
 };
