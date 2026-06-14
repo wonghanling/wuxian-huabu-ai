@@ -21,6 +21,7 @@ create table if not exists public.script_projects (
   asset_explorations jsonb default '{}', -- Asset Exploration Sheet 镜头验证9宫格 {资产标识: 文本}
   costume_bibles jsonb default '{}',     -- Character Costume & Equipment Bible {角色名: 文本}
   costume_sheets jsonb default '{}',     -- Character Costume Sheet 动态格数服装装备表 {角色名: 文本}
+  env_scenes jsonb default '{}',         -- Environment 单场景完整Bible(含多视角) {场景名: 文本}
   updated_at timestamptz not null default now(),
   created_at timestamptz not null default now()
 );

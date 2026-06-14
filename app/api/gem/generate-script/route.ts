@@ -97,49 +97,24 @@ const PHASE_PROMPTS: Record<number, string> = {
 - 严格只描述人物本身(角色定妆照式):干净或纯色背景,画面里只有这一个角色;不要描写场景/环境/天气、不要描写其他角色、不要把道具当主体(道具只能作为随身配饰一笔带过)
 - 不要改写故事、不要创造不必要角色、不要输出 JSON、不要 Markdown 表格、不要额外解释`,
 
-  // ④ Environment Bible — 地点体系/Location System;严格对齐 output_sections 结构
-  4: `你是世界级美术指导兼世界观设计师(World-Class Production Designer & Worldbuilder)。请按 Pixar / Disney / DreamWorks / Netflix Writer's Room / 电影美术部门(Production Design)的思维工作。
+  // ④ Environment 场景清单 — 轻量,只列场景(完整内容点单个场景再按需钻取,避免一次性超长超时)
+  4: `你是世界级美术指导兼世界观设计师(World-Class Production Designer & Worldbuilder)。
 
-重要概念:Environment Bible 不是图片提示词、不是单张概念图、不是单个房间。它是【地点体系 / Location System】——定义一个完整、可持续复用的世界区域(Environment),让这个世界能被拆解成多个可复用资产,并在数百个镜头和视频中保持一致性。一个 Environment 是一个"世界区域/地点体系"(例:雾海风电场、地下避难所、潮汐实验站、漂浮城市),不是一个房间或一面墙。不要用 Midjourney prompt 思维,不要用单张图片思维,不要用游戏引擎配置文件思维。
+任务:根据给定的小说、Beat Sheet、Character Bible 和用户输入,从故事中提取【所有】关键的 Environment(世界区域/场景)。小说里出现几个关键场景就列几个(通常 3-8 个,例:风电场、城市失重街区、近海基准站、地下避难所…),不要遗漏重要场景。
 
-任务:根据给定的小说、Beat Sheet、Character Bible 和用户输入,从故事中提取【所有】关键的 Environment(世界区域/场景)。小说里出现几个关键场景就输出几个 Environment(通常 3-8 个,例:风电场、城市失重街区、近海基准站、地下避难所…),不要只输出一个、不要遗漏重要场景。
+本步骤【只列场景清单】,不要展开每个场景的详细设计(详细的多视角/世界观/资产会在点击单个场景后再生成)。
 
-每个 Environment 都必须【独立、完整】地输出下面全部 11 个分节(每个场景都要有自己的第 11 节多视角,绝不能只给第一个场景做多视角、其余省略)。用「Environment N:名称」起头(N 从 1 递增,有几个场景就排到几),严格按以下分节顺序输出(每节用对应中文标题起头,内容为有美术部门文档深度的专业自然语言):
-
-1. Story Function 故事功能 — 叙事功能 / 主题功能 / 情绪功能
-2. World Context 世界语境 — 时代 / 地理 / 社会 / 技术水平 / 世界规则
-3. Spatial Layout 空间布局 — 主分区 / 次分区 / 连接关系 / 动线 / 重要观察方向
-4. Environment Assets 环境资产 — 见下方固定格式
-5. Visual Language 视觉语言 — 形状语言 / 色板 / 材质 / 纹理 / 视觉标志
-6. Lighting Design 灯光设计 — 主光 / 辅光 / 对比风格 / 情绪支撑
-7. Environmental Storytelling 环境叙事 — 历史痕迹 / 人类痕迹 / 世界信息 / 象征元素
-8. Cinematic Opportunities 电影化机会 — 建立镜头机会 / 特写机会 / 张力机会 / 揭示机会
-9. Continuity Rules 连续性规则 — 固定元素 / 可变元素 / 资产一致性 / 灯光一致性 / 空间一致性
-10. Environment Visual Reference 环境视觉参考 — 一段用于验证世界设计是否符合预期的整体视觉参考(氛围/色调/空间感/标志元素),这是"设计验证参考",不是分镜画面提示词,不要写机位/景别/运镜/具体镜头
-11. Environment Multi-View 场景多视角 — 这个世界区域的 5 个不同机位视图,用于多角度生成与跨镜头视觉一致(这是验证整个场景空间的参考视图,不是单个资产、不是分镜)。固定给这 5 个角度,每个一行,格式"· 角度名:该角度可直接复制去图片卡的画面提示词":
-   · 正面广角
-   · 侧面 45°
-   · 背面反打
-   · 高空俯瞰(鸟瞰)
-   · 内部细节(关键区域近景)
-   每个角度都复述场景的固定标志元素+色板+灯光,只改变观察机位和构图,确保是同一空间的不同视角;画面里专注场景环境,不要人物
-
-其中第 4 节【Environment Assets 环境资产】必须按 4 个分类输出,每个资产带 asset_id(便于后续按需钻取 Asset Bible),不要在这里展开资产细节,只列清单:
-Environment Assets 环境资产:
-Structures 建筑/结构:
-- WT001 | 风机塔 | 一句话说明
-Props 道具:
-- PR001 | 安全绳 | 一句话说明
-Natural Elements 自然元素:
-- NE001 | 浓雾 | 一句话说明
-Background Elements 背景元素:
-- BG001 | 远处叶片阵列 | 一句话说明
-(asset_id 用分类前缀+三位序号:Structures=WT/ST、Props=PR、Natural=NE、Background=BG;每个资产一行,格式"- 编号 | 资产名 | 一句话";某分类没有可省略整节)
+输出格式(严格遵守,每个场景一行):
+Environment 1：海雾近岸风电场 | 一句话定位(这个场景在故事里的作用/氛围)
+Environment 2：城市失重街区 | 一句话定位
+Environment 3：近海重力基准站 | 一句话定位
+...
+(每行以「Environment N：」起头,N 从 1 递增,场景名 + 竖线 + 一句话;不要输出别的内容)
 
 强约束:
-- 不要在本阶段生成可出图出片的 Image Prompt / Video Prompt(那属于 Shooting Script 阶段)
-- 不要描写人物;专注世界区域、空间、资产、视觉、光线、氛围
-- 不要改写故事、不要输出 JSON、不要 Markdown 表格、不要额外解释`,
+- 只列清单,不展开详细设计、不写多视角、不写资产明细
+- 不要描写人物、不要输出 JSON、不要 Markdown 表格、不要额外解释`,
+
 
   // ⑤ Screenplay
   5: `你是世界级专业编剧(World-Class Professional Screenwriter),兼具电影编剧、剧本医生、影视改编顾问三重身份。精通电影剧本格式、小说改编、场景构建、对白设计、人物弧光执行、冲突升级、潜台词写作、Show Don't Tell、可拍摄动作描写、电影节奏控制。
@@ -205,6 +180,46 @@ const ASSET_BIBLE_PROMPT = `你是世界级电影美术部门资产设计师(Fil
 强约束:
 - 不要在本阶段生成用于出片的 Video Prompt
 - 不要描写人物/场景环境(资产本体特写)、不要输出 JSON、不要 Markdown 表格、不要额外解释`;
+
+// 单个 Environment 完整 Bible(按需钻取:由场景名 + 小说/前置上下文生成一个场景的完整 11 节)
+const ENV_SCENE_PROMPT = `你是世界级美术指导兼世界观设计师(World-Class Production Designer & Worldbuilder)。请按 Pixar / Disney / DreamWorks / 电影美术部门(Production Design)的思维工作。
+
+任务:根据给定的【小说等上下文】和指定的【场景名称】,为【这一个场景】生成完整的 Environment Bible。用「Environment:场景名」起头,严格按以下 11 节顺序输出(每节用对应中文标题起头,专业自然语言):
+
+1. Story Function 故事功能 — 叙事功能 / 主题功能 / 情绪功能
+2. World Context 世界语境 — 时代 / 地理 / 社会 / 技术水平 / 世界规则
+3. Spatial Layout 空间布局 — 主分区 / 次分区 / 连接关系 / 动线 / 重要观察方向
+4. Environment Assets 环境资产 — 见下方固定格式
+5. Visual Language 视觉语言 — 形状语言 / 色板 / 材质 / 纹理 / 视觉标志
+6. Lighting Design 灯光设计 — 主光 / 辅光 / 对比风格 / 情绪支撑
+7. Environmental Storytelling 环境叙事 — 历史痕迹 / 人类痕迹 / 世界信息 / 象征元素
+8. Cinematic Opportunities 电影化机会 — 建立镜头 / 特写 / 张力 / 揭示机会
+9. Continuity Rules 连续性规则 — 固定元素 / 可变元素 / 资产一致性 / 灯光一致性 / 空间一致性
+10. Environment Visual Reference 环境视觉参考 — 一段验证世界设计的整体视觉参考(氛围/色调/空间感/标志元素),不写机位/景别/镜头
+11. Environment Multi-View 场景多视角 — 这个场景的 5 个机位视图,用于多角度生成与跨镜头一致。固定 5 个角度,每个一行,格式"· 角度名:可直接复制去图片卡的画面提示词":
+   · 正面广角
+   · 侧面 45°
+   · 背面反打
+   · 高空俯瞰(鸟瞰)
+   · 内部细节(关键区域近景)
+   每个角度都复述场景的固定标志元素+色板+灯光,只改变机位和构图,确保同一空间的不同视角;画面专注场景环境,不要人物
+
+第 4 节【Environment Assets】按 4 分类列清单,每个资产带 asset_id(便于后续钻取 Asset Bible),只列不展开:
+Environment Assets 环境资产:
+Structures 建筑/结构:
+- ST001 | 风机塔 | 一句话说明
+Props 道具:
+- PR001 | 安全绳 | 一句话说明
+Natural Elements 自然元素:
+- NE001 | 浓雾 | 一句话说明
+Background Elements 背景元素:
+- BG001 | 远处叶片阵列 | 一句话说明
+(asset_id 前缀:Structures=ST、Props=PR、Natural=NE、Background=BG;每行"- 编号 | 资产名 | 一句话";某分类没有可省略)
+
+强约束:
+- 只做这一个场景,不要生成别的场景
+- 第 11 节多视角必须有(本场景最重要的产出)
+- 不要描写人物、不要输出 JSON、不要 Markdown 表格、不要额外解释`;
 
 // Asset Breakdown Sheet(资产拆解图)— 技术验证:部件/材质/功能/关键部件
 const ASSET_BREAKDOWN_PROMPT = `你是世界级电影美术部门资产技术总监(Film Production Asset Technical Director)。请按工业设计图 / 产品拆解图的思维工作。
@@ -333,7 +348,7 @@ async function callModel(systemPrompt: string, userMessage: string): Promise<str
           { role: 'user', content: userMessage },
         ],
         temperature: 0.7,
-        max_tokens: 16000,
+        max_tokens: 8000,
       }),
     });
     success = response.ok;
@@ -407,6 +422,22 @@ export async function POST(req: NextRequest) {
         const result = await callModel(COSTUME_SHEET_PROMPT, parts.join('\n\n'));
         return NextResponse.json({ success: true, result });
       }
+    }
+
+    // ---------- Environment 单场景完整 Bible(按需钻取) ----------
+    if (mode === 'envScene') {
+      const { sceneName, novel, beatSheet, charBible, input } = body;
+      if (!sceneName || !String(sceneName).trim()) {
+        return NextResponse.json({ error: '缺少场景名称' }, { status: 400 });
+      }
+      const parts: string[] = [];
+      parts.push(`【要生成完整 Bible 的场景】\n${String(sceneName).trim()}`);
+      if (novel && String(novel).trim()) parts.push(`【小说】\n${String(novel).trim()}`);
+      if (beatSheet && String(beatSheet).trim()) parts.push(`【Beat Sheet】\n${String(beatSheet).trim()}`);
+      if (charBible && String(charBible).trim()) parts.push(`【Character Bible(参考人物,但本场景不描写人物)】\n${String(charBible).trim()}`);
+      if (input && String(input).trim()) parts.push(`【用户补充要求】\n${String(input).trim()}`);
+      const result = await callModel(ENV_SCENE_PROMPT, parts.join('\n\n'));
+      return NextResponse.json({ success: true, result });
     }
 
     // ---------- 阶段生成 ----------

@@ -6,8 +6,8 @@ import { getUserId } from '../lib/api';
 import {
   PHASE_LABELS, PHASE_LABELS_CN, emptyProject, loadDraftLocal, saveDraftLocal,
   loadProject, saveProject, generatePhase, generateAssetBible, generateAssetSheet,
-  generateCostume, parseAssets, parseCharacters,
-  type ScriptProject, type ParsedAsset, type ParsedCharacter,
+  generateCostume, generateEnvScene, parseAssets, parseCharacters, parseEnvironments,
+  type ScriptProject, type ParsedAsset, type ParsedCharacter, type ParsedEnv,
 } from '../lib/scriptStudio';
 
 // ============================================================
@@ -48,6 +48,8 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
   const [sheetBusy, setSheetBusy] = useState<string | null>(null); // 正在生成 Sheet 的 key:`${assetKey}|breakdown|exploration`
   const [openChar, setOpenChar] = useState<string | null>(null);   // 展开查看的角色 key
   const [costumeBusy, setCostumeBusy] = useState<string | null>(null); // 正在生成服装的 key:`${charName}|bible|sheet`
+  const [openScene, setOpenScene] = useState<string | null>(null); // 展开查看的场景 name
+  const [sceneBusy, setSceneBusy] = useState<string | null>(null); // 正在生成完整 Bible 的场景 name
   const composing = useRef(false);
   const cloudTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const userIdRef = useRef<string | undefined>(undefined);
@@ -154,18 +156,48 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
     flashTip('已发送到画布(文本卡)');
   };
 
-  // ④Environment Bible 的资产清单(从输出文本解析)
-  const assets: ParsedAsset[] = active + 1 === ENV_PHASE ? parseAssets(project.phases[active] || '') : [];
+  // ④ 第一步:场景清单(从 phase 输出解析);点单个场景才生成完整 Bible
+  const scenes: ParsedEnv[] = active + 1 === ENV_PHASE ? parseEnvironments(project.phases[active] || '') : [];
 
-  // 生成单个资产的 Asset Bible(按需钻取)
-  const handleAssetBible = async (asset: ParsedAsset) => {
+  // 生成单个场景的完整 Environment Bible(11节,含多视角)
+  const handleEnvScene = async (scene: ParsedEnv) => {
+    const key = scene.name;
+    if (sceneBusy) return;
+    setSceneBusy(key);
+    try {
+      const result = await generateEnvScene(
+        scene.name,
+        project.phases[0] || '',   // 小说
+        project.phases[1] || '',   // Beat Sheet
+        project.phases[2] || '',   // Character Bible
+        '',
+        userIdRef.current,
+      );
+      setProject((p) => {
+        const next = { ...p, envScenes: { ...p.envScenes, [key]: result } };
+        persist(next);
+        return next;
+      });
+      setOpenScene(key);
+    } catch (e: any) {
+      alert('生成场景 Bible 失败: ' + (e?.message || e));
+    } finally {
+      setSceneBusy(null);
+    }
+  };
+
+  // 某场景 Bible 里解析出的资产清单(资产钻取基于该场景的 Bible)
+  const assetsOfScene = (sceneName: string): ParsedAsset[] => parseAssets(project.envScenes[sceneName] || '');
+
+  // 生成单个资产的 Asset Bible(按需钻取);envBible 用该场景的完整 Bible 上下文
+  const handleAssetBible = async (asset: ParsedAsset, sceneName: string) => {
     const key = asset.id || asset.name;
     if (assetBusy) return;
     setAssetBusy(key);
     try {
       const result = await generateAssetBible(
         `${asset.id} ${asset.name}（${asset.note}）`,
-        project.phases[ENV_PHASE - 1] || '',
+        project.envScenes[sceneName] || '',
         '',
         userIdRef.current,
       );
@@ -210,7 +242,7 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
     try {
       const result = await generateAssetSheet(
         kind, `${asset.id} ${asset.name}`, bible,
-        project.phases[ENV_PHASE - 1] || '', userIdRef.current,
+        '', userIdRef.current,
       );
       setProject((p) => {
         const field = kind === 'breakdown' ? 'assetBreakdowns' : 'assetExplorations';
@@ -377,90 +409,129 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
               </button>
             </div>
 
-            {/* ④ Environment Bible:资产清单 + 按需钻取 Asset Bible */}
-            {active + 1 === ENV_PHASE && assets.length > 0 && (
+            {/* ④ 场景清单:点单个场景按需生成完整 Bible(含多视角);场景里再钻取资产 */}
+            {active + 1 === ENV_PHASE && scenes.length > 0 && (
               <div style={{ marginTop: 18, borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 14 }}>
                 <div style={{ fontSize: 13, color: '#e4e4e7', fontWeight: 600, marginBottom: 4 }}>
-                  资产清单 Asset Registry
+                  场景清单 Environments
                   <span style={{ fontSize: 11, color: '#71717a', fontWeight: 400, marginLeft: 8 }}>
-                    点资产按需生成 Asset Bible(不会一次性全生成)
+                    点场景按需生成完整 Bible(含多视角),避免一次性超时
                   </span>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8 }}>
-                  {assets.map((a) => {
-                    const key = a.id || a.name;
-                    const bible = project.assetBibles[key];
-                    const isOpen = openAsset === key;
-                    const busy = assetBusy === key;
+                  {scenes.map((sc) => {
+                    const sceneBible = project.envScenes[sc.name];
+                    const isSceneOpen = openScene === sc.name;
+                    const scBusy = sceneBusy === sc.name;
+                    const sceneAssets = sceneBible ? assetsOfScene(sc.name) : [];
                     return (
-                      <div key={key} style={assetRow}>
+                      <div key={sc.name} style={assetRow}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          {a.id && a.id !== a.name && (
-                            <span style={assetId}>{a.id}</span>
-                          )}
-                          <span style={{ color: '#e4e4e7', fontSize: 13, fontWeight: 500 }}>{a.name}</span>
-                          {a.category && <span style={{ fontSize: 10, color: '#71717a' }}>{a.category}</span>}
-                          {a.note && <span style={{ fontSize: 11, color: '#8b8b92', flex: 1 }}>· {a.note}</span>}
+                          <span style={{ color: '#e4e4e7', fontSize: 13, fontWeight: 600 }}>{sc.name}</span>
+                          {sc.note && <span style={{ fontSize: 11, color: '#8b8b92', flex: 1 }}>· {sc.note}</span>}
                           <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-                            {bible ? (
-                              <button style={assetSmallBtn} onClick={() => setOpenAsset(isOpen ? null : key)}>
-                                {isOpen ? '收起' : '查看 Bible'}
+                            {sceneBible ? (
+                              <button style={assetSmallBtn} onClick={() => setOpenScene(isSceneOpen ? null : sc.name)}>
+                                {isSceneOpen ? '收起' : '查看场景'}
                               </button>
                             ) : (
-                              <button style={{ ...assetSmallBtn, color: busy ? '#c4b5fd' : '#a78bfa', cursor: busy ? 'wait' : 'pointer' }}
-                                onClick={() => handleAssetBible(a)} disabled={!!assetBusy}>
-                                {busy ? '生成中…' : '生成 Asset Bible'}
+                              <button style={{ ...assetSmallBtn, color: scBusy ? '#c4b5fd' : '#a78bfa', cursor: scBusy ? 'wait' : 'pointer' }}
+                                onClick={() => handleEnvScene(sc)} disabled={!!sceneBusy}>
+                                {scBusy ? '生成中…' : '生成场景 Bible'}
                               </button>
                             )}
                           </div>
                         </div>
-                        {bible && isOpen && (
+                        {sceneBible && isSceneOpen && (
                           <div style={{ marginTop: 8 }}>
-                            <textarea
-                              className="cv2-scroll"
-                              value={bible}
-                              onChange={(e) => updateAssetBible(key, e.target.value)}
+                            {/* 场景完整 Bible(含多视角) */}
+                            <textarea className="cv2-scroll" value={sceneBible}
+                              onChange={(e) => updateRecordField('envScenes' as any, sc.name, e.target.value)}
                               onCompositionStart={() => { composing.current = true; }}
-                              onCompositionEnd={(e) => { composing.current = false; updateAssetBible(key, (e.target as HTMLTextAreaElement).value); }}
-                              style={{ ...outputArea, minHeight: 180, flex: 'none' }}
-                            />
+                              onCompositionEnd={(e) => { composing.current = false; updateRecordField('envScenes' as any, sc.name, (e.target as HTMLTextAreaElement).value); }}
+                              style={{ ...outputArea, minHeight: 220, flex: 'none' }} />
                             <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-                              <button style={assetSmallBtn} onClick={() => { navigator.clipboard.writeText(bible).then(() => flashTip('已复制')).catch(() => {}); }}>复制</button>
-                              <button style={assetSmallBtn} onClick={() => sendAssetToCanvas(key)}>➤ 发送到画布</button>
-                              <button style={{ ...assetSmallBtn, color: '#a78bfa' }} onClick={() => handleAssetBible(a)} disabled={!!assetBusy}>重新生成</button>
+                              <button style={assetSmallBtn} onClick={() => { navigator.clipboard.writeText(sceneBible).then(() => flashTip('已复制')).catch(() => {}); }}>复制</button>
+                              <button style={assetSmallBtn} onClick={() => sendTextToCanvas(sceneBible, '已发送到画布')}>➤ 发送到画布</button>
+                              <button style={{ ...assetSmallBtn, color: '#a78bfa' }} onClick={() => handleEnvScene(sc)} disabled={!!sceneBusy}>重新生成</button>
                             </div>
 
-                            {/* 下游两个 Sheet:技术拆解 + 多角度探索 */}
-                            {(['breakdown', 'exploration'] as const).map((sk) => {
-                              const field = sk === 'breakdown' ? 'assetBreakdowns' : 'assetExplorations';
-                              const label = sk === 'breakdown' ? 'Breakdown Sheet 拆解图(技术验证)' : 'Exploration Sheet 探索图(9宫格多角度)';
-                              const sheet = (project as any)[field][key] as string | undefined;
-                              const sbusy = sheetBusy === `${key}|${sk}`;
-                              return (
-                                <div key={sk} style={{ marginTop: 10, paddingLeft: 10, borderLeft: '2px solid rgba(124,58,237,0.3)' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <span style={{ fontSize: 12, color: '#c4b5fd' }}>{label}</span>
-                                    <button style={{ ...assetSmallBtn, marginLeft: 'auto', color: sbusy ? '#c4b5fd' : '#a78bfa', cursor: sbusy ? 'wait' : 'pointer' }}
-                                      onClick={() => handleAssetSheet(a, sk)} disabled={!!sheetBusy}>
-                                      {sbusy ? '生成中…' : (sheet ? '重新生成' : '生成')}
-                                    </button>
-                                  </div>
-                                  {sheet && (
-                                    <div style={{ marginTop: 6 }}>
-                                      <textarea className="cv2-scroll" value={sheet}
-                                        onChange={(e) => updateRecordField(field as any, key, e.target.value)}
-                                        onCompositionStart={() => { composing.current = true; }}
-                                        onCompositionEnd={(e) => { composing.current = false; updateRecordField(field as any, key, (e.target as HTMLTextAreaElement).value); }}
-                                        style={{ ...outputArea, minHeight: 140, flex: 'none' }} />
-                                      <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-                                        <button style={assetSmallBtn} onClick={() => { navigator.clipboard.writeText(sheet).then(() => flashTip('已复制')).catch(() => {}); }}>复制</button>
-                                        <button style={assetSmallBtn} onClick={() => sendTextToCanvas(sheet, '已发送到画布')}>➤ 发送到画布</button>
+                            {/* 该场景的资产清单 → 按需钻取 Asset Bible / Breakdown / Exploration */}
+                            {sceneAssets.length > 0 && (
+                              <div style={{ marginTop: 12, paddingTop: 8, borderTop: '1px dashed rgba(255,255,255,0.1)' }}>
+                                <div style={{ fontSize: 12, color: '#c4b5fd', marginBottom: 6 }}>资产清单(点资产按需生成 Asset Bible)</div>
+                                {sceneAssets.map((a) => {
+                                  const key = a.id || a.name;
+                                  const bible = project.assetBibles[key];
+                                  const isOpen = openAsset === key;
+                                  const busy = assetBusy === key;
+                                  return (
+                                    <div key={key} style={{ ...assetRow, marginBottom: 6 }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        {a.id && a.id !== a.name && <span style={assetId}>{a.id}</span>}
+                                        <span style={{ color: '#e4e4e7', fontSize: 13, fontWeight: 500 }}>{a.name}</span>
+                                        {a.category && <span style={{ fontSize: 10, color: '#71717a' }}>{a.category}</span>}
+                                        {a.note && <span style={{ fontSize: 11, color: '#8b8b92', flex: 1 }}>· {a.note}</span>}
+                                        <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+                                          {bible ? (
+                                            <button style={assetSmallBtn} onClick={() => setOpenAsset(isOpen ? null : key)}>{isOpen ? '收起' : '查看 Bible'}</button>
+                                          ) : (
+                                            <button style={{ ...assetSmallBtn, color: busy ? '#c4b5fd' : '#a78bfa', cursor: busy ? 'wait' : 'pointer' }}
+                                              onClick={() => handleAssetBible(a, sc.name)} disabled={!!assetBusy}>
+                                              {busy ? '生成中…' : '生成 Asset Bible'}
+                                            </button>
+                                          )}
+                                        </div>
                                       </div>
+                                      {bible && isOpen && (
+                                        <div style={{ marginTop: 8 }}>
+                                          <textarea className="cv2-scroll" value={bible}
+                                            onChange={(e) => updateAssetBible(key, e.target.value)}
+                                            onCompositionStart={() => { composing.current = true; }}
+                                            onCompositionEnd={(e) => { composing.current = false; updateAssetBible(key, (e.target as HTMLTextAreaElement).value); }}
+                                            style={{ ...outputArea, minHeight: 160, flex: 'none' }} />
+                                          <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                                            <button style={assetSmallBtn} onClick={() => { navigator.clipboard.writeText(bible).then(() => flashTip('已复制')).catch(() => {}); }}>复制</button>
+                                            <button style={assetSmallBtn} onClick={() => sendAssetToCanvas(key)}>➤ 发送到画布</button>
+                                            <button style={{ ...assetSmallBtn, color: '#a78bfa' }} onClick={() => handleAssetBible(a, sc.name)} disabled={!!assetBusy}>重新生成</button>
+                                          </div>
+                                          {(['breakdown', 'exploration'] as const).map((sk) => {
+                                            const field = sk === 'breakdown' ? 'assetBreakdowns' : 'assetExplorations';
+                                            const label = sk === 'breakdown' ? 'Breakdown 拆解图(技术验证)' : 'Exploration 探索图(9宫格多角度)';
+                                            const sheet = (project as any)[field][key] as string | undefined;
+                                            const sbusy = sheetBusy === `${key}|${sk}`;
+                                            return (
+                                              <div key={sk} style={{ marginTop: 10, paddingLeft: 10, borderLeft: '2px solid rgba(124,58,237,0.3)' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                  <span style={{ fontSize: 12, color: '#c4b5fd' }}>{label}</span>
+                                                  <button style={{ ...assetSmallBtn, marginLeft: 'auto', color: sbusy ? '#c4b5fd' : '#a78bfa', cursor: sbusy ? 'wait' : 'pointer' }}
+                                                    onClick={() => handleAssetSheet(a, sk)} disabled={!!sheetBusy}>
+                                                    {sbusy ? '生成中…' : (sheet ? '重新生成' : '生成')}
+                                                  </button>
+                                                </div>
+                                                {sheet && (
+                                                  <div style={{ marginTop: 6 }}>
+                                                    <textarea className="cv2-scroll" value={sheet}
+                                                      onChange={(e) => updateRecordField(field as any, key, e.target.value)}
+                                                      onCompositionStart={() => { composing.current = true; }}
+                                                      onCompositionEnd={(e) => { composing.current = false; updateRecordField(field as any, key, (e.target as HTMLTextAreaElement).value); }}
+                                                      style={{ ...outputArea, minHeight: 140, flex: 'none' }} />
+                                                    <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                                                      <button style={assetSmallBtn} onClick={() => { navigator.clipboard.writeText(sheet).then(() => flashTip('已复制')).catch(() => {}); }}>复制</button>
+                                                      <button style={assetSmallBtn} onClick={() => sendTextToCanvas(sheet, '已发送到画布')}>➤ 发送到画布</button>
+                                                    </div>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
                                     </div>
-                                  )}
-                                </div>
-                              );
-                            })}
+                                  );
+                                })}
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>

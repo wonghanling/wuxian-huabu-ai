@@ -30,6 +30,7 @@ export interface ScriptProject {
   assetExplorations: Record<string, string>; // Asset Exploration Sheet(镜头验证9宫格)
   costumeBibles: Record<string, string>;     // Character Costume & Equipment Bible(key=角色名)
   costumeSheets: Record<string, string>;     // Character Costume Sheet(动态格数服装装备表)
+  envScenes: Record<string, string>;         // Environment 单场景完整 Bible(key=场景名)
 }
 
 const LS_KEY = 'script_studio_draft';
@@ -39,7 +40,7 @@ export function emptyProject(): ScriptProject {
     id: null, title: '未命名剧本',
     phases: Array(N).fill(''), inputs: Array(N).fill(''),
     assetBibles: {}, assetBreakdowns: {}, assetExplorations: {},
-    costumeBibles: {}, costumeSheets: {},
+    costumeBibles: {}, costumeSheets: {}, envScenes: {},
   };
 }
 
@@ -69,6 +70,7 @@ export function loadDraftLocal(): ScriptProject | null {
       assetExplorations: (o.assetExplorations && typeof o.assetExplorations === 'object') ? o.assetExplorations : {},
       costumeBibles: (o.costumeBibles && typeof o.costumeBibles === 'object') ? o.costumeBibles : {},
       costumeSheets: (o.costumeSheets && typeof o.costumeSheets === 'object') ? o.costumeSheets : {},
+      envScenes: (o.envScenes && typeof o.envScenes === 'object') ? o.envScenes : {},
     };
   } catch { return null; }
 }
@@ -94,6 +96,7 @@ export async function loadProject(): Promise<ScriptProject | null> {
     const explorationObj = (r.asset_explorations && typeof r.asset_explorations === 'object') ? r.asset_explorations : {};
     const costumeBibleObj = (r.costume_bibles && typeof r.costume_bibles === 'object') ? r.costume_bibles : {};
     const costumeSheetObj = (r.costume_sheets && typeof r.costume_sheets === 'object') ? r.costume_sheets : {};
+    const envSceneObj = (r.env_scenes && typeof r.env_scenes === 'object') ? r.env_scenes : {};
     return {
       id: r.id,
       title: r.title ?? '未命名剧本',
@@ -105,6 +108,7 @@ export async function loadProject(): Promise<ScriptProject | null> {
       assetExplorations: explorationObj,
       costumeBibles: costumeBibleObj,
       costumeSheets: costumeSheetObj,
+      envScenes: envSceneObj,
     };
   } catch { return null; }
 }
@@ -128,6 +132,7 @@ export async function saveProject(p: ScriptProject): Promise<string | null> {
       asset_explorations: p.assetExplorations || {},
       costume_bibles: p.costumeBibles || {},
       costume_sheets: p.costumeSheets || {},
+      env_scenes: p.envScenes || {},
       updated_at: new Date().toISOString(),
     };
     if (p.id) {
@@ -218,6 +223,50 @@ export async function generateCostume(
   const data = await res.json();
   if (!res.ok || data.error) throw new Error(data.error || `生成失败(${res.status})`);
   return data.result || '';
+}
+
+// ---------- Environment 单场景完整 Bible(按需钻取) ----------
+export async function generateEnvScene(
+  sceneName: string,
+  novel: string,
+  beatSheet: string,
+  charBible: string,
+  input: string,
+  userId?: string,
+): Promise<string> {
+  const res = await fetch('/api/gem/generate-script', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mode: 'envScene', sceneName, novel, beatSheet, charBible, input, userId }),
+  });
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error || `生成失败(${res.status})`);
+  return data.result || '';
+}
+
+// ---------- 从 ④场景清单文本解析场景列表 ----------
+// 匹配「Environment N：名称 | 一句话」
+export interface ParsedEnv {
+  name: string;   // 场景名
+  note: string;   // 一句话定位
+}
+
+export function parseEnvironments(listText: string): ParsedEnv[] {
+  if (!listText) return [];
+  const out: ParsedEnv[] = [];
+  const seen = new Set<string>();
+  const re = /Environment\s*\d+\s*[:：]\s*(.+)/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(listText)) !== null) {
+    const body = (m[1] || '').trim();
+    const parts = body.split(/\s*\|\s*/);
+    let name = (parts[0] || '').trim();
+    const note = (parts[1] || '').trim();
+    // 去掉名字里可能的括号说明尾巴(保留主名)
+    name = name.replace(/\s+$/, '');
+    if (name && !seen.has(name)) { seen.add(name); out.push({ name, note }); }
+  }
+  return out;
 }
 
 // ---------- 从 Character Bible 文本解析角色清单 ----------
