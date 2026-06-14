@@ -138,6 +138,8 @@ interface CanvasState {
   // 剧本工作室"发送到画布"：在画布上新建一张预填内容的卡片(不自动连线/生成)
   // 返回新卡 id;多张连续发送时按 index 错位铺开
   addCardFromStudio: (kind: 'text' | 'character' | 'image', prefillText: string, index?: number) => string;
+  // 涂鸦编辑:用涂鸦图当参考图新建图片卡,返回新卡 id
+  addImageCardWithRef: (refUrl: string, prompt: string, model: string) => string;
 }
 
 export const useCanvasStore = create<CanvasState>((set, get) => ({
@@ -293,6 +295,28 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         outputUrl: null,
         text: isText ? prefillText : '',
         config: baseConfig,
+      },
+    };
+    set({ nodes: [...get().nodes, newNode], selectedId: newId });
+    return newId;
+  },
+
+  // 涂鸦编辑:用涂鸦合成图当参考图,新建一张图片卡(预填 model/prompt/refImages,empty 态由用户点生成)
+  addImageCardWithRef: (refUrl, prompt, model) => {
+    const newId = `i${Date.now()}`;
+    const src = get().nodes.find((n) => n.id === get().selectedId);
+    const baseX = src ? src.position.x + 360 : (get().nodes.length ? Math.max(...get().nodes.map((n) => n.position.x)) + 380 : 120);
+    const baseY = src ? src.position.y + 40 : 120;
+    const newNode: CardNode = {
+      id: newId,
+      type: 'card',
+      position: { x: baseX, y: baseY },
+      data: {
+        kind: 'image',
+        status: 'empty',
+        outputUrl: null,
+        text: '',
+        config: { model: model || 'nano-banana-pro', prompt: prompt || '', ratio: '1:1', imageQuality: '2k', refImages: [refUrl] },
       },
     };
     set({ nodes: [...get().nodes, newNode], selectedId: newId });

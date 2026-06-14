@@ -14,6 +14,7 @@ import { RefThumb } from './RefThumb';
 import { PromptTools } from './PromptTools';
 import { PromptArea } from './PromptArea';
 import { Lightbox, downloadFile } from './Lightbox';
+import { DoodleModal } from './DoodleModal';
 import { uploadImageToStorage, generateImage, getUserId, softCompressImage, mirrorOutput } from '../lib/api';
 import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 
@@ -39,12 +40,14 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
   const updateCard = useCanvasStore((s) => s.updateCard);
   const updateConfig = useCanvasStore((s) => s.updateConfig);
+  const addImageCardWithRef = useCanvasStore((s) => s.addImageCardWithRef);
 
   const [editing, setEditing] = useState(false);
   const [spawnOpen, setSpawnOpen] = useState(false);
   const [sub, setSub] = useState<SubPanel>(null);
   const [uploading, setUploading] = useState(false);   // 上传中指示(照原网 setIsUploadingMulti)
   const [lightbox, setLightbox] = useState(false);      // 画布内查看放大
+  const [doodleOpen, setDoodleOpen] = useState(false);  // 涂鸦编辑弹窗
   const editRef = useRef<HTMLTextAreaElement>(null);
 
   const model = IMAGE_MODELS.find((m) => m.id === data.config.model) ?? IMAGE_MODELS[0];
@@ -341,6 +344,9 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               <button onClick={() => updateCard(id, { status: 'empty', outputUrl: null })} style={toolBtnWide} title="删除图片">
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>× 删除</span>
               </button>
+              <button onClick={() => setDoodleOpen(true)} style={toolBtnWide} title="涂鸦编辑(标注需求改图)">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>✏ 涂鸦</span>
+              </button>
               <button onClick={() => updateCard(id, { enlarged: !enlarged })} style={toolBtnWide} title={enlarged ? '还原' : '放大卡片'}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>{enlarged ? <IconShrink size={16} /> : <IconExpand size={16} />}{enlarged ? '还原' : '放大'}</span>
               </button>
@@ -360,6 +366,16 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
         </div>
       </NodeToolbar>
       {lightbox && displayImg && <Lightbox url={displayImg} kind="image" onClose={() => setLightbox(false)} />}
+      {doodleOpen && displayImg && (
+        <DoodleModal
+          imageUrl={displayImg}
+          onClose={() => setDoodleOpen(false)}
+          onConfirm={({ doodleUrl, model: m, prompt }) => {
+            addImageCardWithRef(doodleUrl, prompt, m);
+            (window as any).saveCanvasV2Now?.();
+          }}
+        />
+      )}
     </>
   );
 
