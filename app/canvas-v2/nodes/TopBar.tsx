@@ -207,7 +207,7 @@ export function TopBar({ saveStatus, switchCanvas, getCurrentCanvasId }: Props) 
         {/* 剧本工作室入口 */}
         <button
           onClick={() => setShowScriptStudio(true)}
-          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-violet-600/30 backdrop-blur-md border border-violet-500/40 text-violet-200 hover:bg-violet-600/50 hover:border-violet-500/60 transition-all"
+          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-emerald-600/30 backdrop-blur-md border border-emerald-500/40 text-emerald-200 hover:bg-emerald-600/50 hover:border-emerald-500/60 transition-all"
           title="剧本工作室:从想法到拍摄剧本"
         >
           <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">

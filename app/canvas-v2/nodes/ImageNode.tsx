@@ -330,7 +330,7 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
         </div>
       </NodeToolbar>
       {/* ===== 顶部工具栏(上传 + 放大) ===== */}
-      <NodeToolbar isVisible={selected && !editing && !spawnOpen && !lightbox && (!sub || !!displayImg)} position={Position.Top} offset={12}>
+      <NodeToolbar isVisible={selected && !editing && !spawnOpen && !lightbox && !doodleOpen && (!sub || !!displayImg)} position={Position.Top} offset={12}>
         <div style={toolRow} onClick={(e) => e.stopPropagation()}>
           {displayImg ? (
             <>
@@ -370,8 +370,8 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
         <DoodleModal
           imageUrl={displayImg}
           onClose={() => setDoodleOpen(false)}
-          onConfirm={({ doodleUrl, model: m, prompt }) => {
-            addImageCardWithRef(doodleUrl, prompt, m);
+          onConfirm={({ doodleUrl }) => {
+            addImageCardWithRef(doodleUrl, '', 'nano-banana-pro');
             (window as any).saveCanvasV2Now?.();
           }}
         />
