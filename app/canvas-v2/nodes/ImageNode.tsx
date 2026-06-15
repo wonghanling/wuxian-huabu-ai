@@ -260,14 +260,14 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                 {OTHER_PRESETS.map((p) => (
                   <button key={p.label}
                     onClick={() => { updateConfig(id, { prompt: p.prompt, preset: p.label }); setSub(null); }}
-                    style={{ ...presetChip, borderColor: p.accent === 'purple' ? 'rgba(168,85,247,0.5)' : 'rgba(59,130,246,0.5)', color: p.accent === 'purple' ? '#c4b5fd' : '#93c5fd' }}>
+                    style={{ ...presetChip, borderColor: p.accent === 'purple' ? 'rgba(255,255,255,0.3)' : 'rgba(59,130,246,0.5)', color: p.accent === 'purple' ? '#d4d4d8' : '#93c5fd' }}>
                     {p.label}
                   </button>
                 ))}
               </div>
             </ParamTag>
             {model.supportsImage && (
-              <ParamTag label={<>参考图 {connectedImages.length + (data.config.refImages?.length ?? 0)}/{refImageMax(model.id)}{connectedImages.length > 0 && <span style={{ marginLeft: 4, color: '#a78bfa' }}>(含{connectedImages.length}连接)</span>}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</>} open={sub === 'ref'} onToggle={() => setSub(sub === 'ref' ? null : 'ref')} width={300}>
+              <ParamTag label={<>参考图 {connectedImages.length + (data.config.refImages?.length ?? 0)}/{refImageMax(model.id)}{connectedImages.length > 0 && <span style={{ marginLeft: 4, color: '#a1a1aa' }}>(含{connectedImages.length}连接)</span>}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</>} open={sub === 'ref'} onToggle={() => setSub(sub === 'ref' ? null : 'ref')} width={300}>
                 <label style={{ ...uploadBtn, ...(uploading ? { opacity: 0.6, pointerEvents: 'none' } : {}) }}>
                   <IconPlus size={13} />
                   <span>{uploading ? '上传中…' : `上传图片（还能传 ${Math.max(0, refImageMax(model.id) - connectedImages.length - (data.config.refImages?.length ?? 0))} 张）`}</span>
@@ -284,7 +284,7 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                 {/* 来自连接的上游图(实时显示,照原网"来自连接";连线动态来,不可删) */}
                 {connectedImages.length > 0 && (
                   <>
-                    <div style={{ fontSize: 10, color: '#a78bfa', padding: '6px 6px 4px' }}>来自连接 · {connectedImages.length} 张</div>
+                    <div style={{ fontSize: 10, color: '#a1a1aa', padding: '6px 6px 4px' }}>来自连接 · {connectedImages.length} 张</div>
                     <div style={refGrid}>
                       {connectedImages.map((url, i) => (
                         <RefThumb key={`c${i}`} url={url} index={i} onRemove={() => {}} />

@@ -296,7 +296,7 @@ function AudioNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                         <button onClick={() => { set({ voiceId: v.voiceId }); setSub(null); }}
                           style={{ flex: 1, textAlign: 'left', background: voiceId === v.voiceId ? 'rgba(59,130,246,0.2)' : 'transparent', border: 'none', cursor: 'pointer', borderRadius: 6, padding: '2px 4px' }}>
                           <span style={{ fontSize: 11, color: '#e4e4e7' }}>{v.name || v.voiceId.slice(0, 18)}</span>
-                          <span style={{ fontSize: 9, marginLeft: 6, color: v.source === 'design' ? '#86efac' : v.source === 'clone' ? '#c4b5fd' : '#71717a' }}>{v.source === 'design' ? '设计' : v.source === 'clone' ? '复刻' : '收藏'}</span>
+                          <span style={{ fontSize: 9, marginLeft: 6, color: v.source === 'design' ? '#d4d4d8' : v.source === 'clone' ? '#d4d4d8' : '#71717a' }}>{v.source === 'design' ? '设计' : v.source === 'clone' ? '复刻' : '收藏'}</span>
                         </button>
                         <button onClick={async () => { const nn = prompt('重命名音色', v.name || ''); if (nn !== null) { await renameVoice(v.voiceId, nn); await refreshVoices(); } }} title="改名" style={{ fontSize: 10, color: '#a1a1aa', background: 'none', border: 'none', cursor: 'pointer' }}>✎</button>
                         <button onClick={async () => { if (confirm('从音色库删除?')) { await deleteVoice(v.voiceId); await refreshVoices(); } }} title="删除" style={{ fontSize: 11, color: '#f87171', background: 'none', border: 'none', cursor: 'pointer' }}>×</button>

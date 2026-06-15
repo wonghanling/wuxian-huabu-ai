@@ -218,7 +218,7 @@ function CharacterNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
             {/* 参考图(1张必填,可来自连接) */}
             <ParamTag
-              label={<>参考图{effRefDisplay ? <span style={greenDot} /> : ' (必填)'}{!refImage && connectedImage && <span style={{ marginLeft: 4, color: '#a78bfa' }}>来自连接</span>}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</>}
+              label={<>参考图{effRefDisplay ? <span style={greenDot} /> : ' (必填)'}{!refImage && connectedImage && <span style={{ marginLeft: 4, color: '#a1a1aa' }}>来自连接</span>}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</>}
               open={sub === 'ref'} onToggle={() => setSub(sub === 'ref' ? null : 'ref')} width={220}
             >
               <label style={{ ...uploadBtn, ...(uploading ? { opacity: 0.6, pointerEvents: 'none' } : {}) }}>
@@ -231,7 +231,7 @@ function CharacterNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                   {refImage ? (
                     <button style={refDel} onClick={() => updateConfig(id, { refImages: [] })}>×</button>
                   ) : (
-                    <span style={{ position: 'absolute', top: 4, left: 4, fontSize: 9, color: '#fff', background: 'rgba(124,58,237,0.85)', padding: '1px 6px', borderRadius: 99 }}>来自连接</span>
+                    <span style={{ position: 'absolute', top: 4, left: 4, fontSize: 9, color: '#fff', background: 'rgba(82,82,91,0.9)', padding: '1px 6px', borderRadius: 99 }}>来自连接</span>
                   )}
                 </div>
               )}
@@ -380,7 +380,7 @@ const subItem: React.CSSProperties = {
   color: '#d4d4d8', fontSize: 13, cursor: 'pointer', textAlign: 'left', whiteSpace: 'nowrap',
 };
 const subPrice: React.CSSProperties = { fontSize: 11, color: '#71717a', flexShrink: 0 };
-const greenDot: React.CSSProperties = { width: 6, height: 6, borderRadius: '50%', background: '#34d399', display: 'inline-block', marginLeft: 4 };
+const greenDot: React.CSSProperties = { width: 6, height: 6, borderRadius: '50%', background: '#e4e4e7', display: 'inline-block', marginLeft: 4 };
 const uploadBtn: React.CSSProperties = {
   display: 'flex', alignItems: 'center', gap: 6, width: '100%', padding: '8px 10px', marginBottom: 4,
   borderRadius: 8, border: '1px dashed rgba(255,255,255,0.18)', background: 'rgba(255,255,255,0.04)',

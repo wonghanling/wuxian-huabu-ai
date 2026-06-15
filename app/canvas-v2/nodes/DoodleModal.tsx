@@ -190,13 +190,13 @@ export function DoodleModal({ imageUrl, onClose, onConfirm }: Props) {
           <span style={{ fontSize: 12, color: '#8b8b92', marginRight: 2 }}>颜色</span>
           {COLORS.map((c) => (
             <button key={c} onClick={() => setColor(c)}
-              style={{ ...swatch, background: c, outline: color === c ? '2px solid #10b981' : '1px solid rgba(255,255,255,0.2)', outlineOffset: 1 }} />
+              style={{ ...swatch, background: c, outline: color === c ? '2px solid #e4e4e7' : '1px solid rgba(255,255,255,0.2)', outlineOffset: 1 }} />
           ))}
           <span style={divider} />
           <span style={{ fontSize: 12, color: '#8b8b92', marginRight: 2 }}>粗细</span>
           {SIZES.map((s) => (
             <button key={s} onClick={() => setSize(s)}
-              style={{ ...sizeBtn, outline: size === s ? '2px solid #10b981' : '1px solid rgba(255,255,255,0.15)' }}>
+              style={{ ...sizeBtn, outline: size === s ? '2px solid #e4e4e7' : '1px solid rgba(255,255,255,0.15)' }}>
               <span style={{ width: s, height: s, borderRadius: '50%', background: '#e4e4e7', display: 'block' }} />
             </button>
           ))}
@@ -261,9 +261,9 @@ export function DoodleModal({ imageUrl, onClose, onConfirm }: Props) {
 
 const toolBtnStyle = (active: boolean): React.CSSProperties => ({
   padding: '8px 15px', borderRadius: 10, fontSize: 12.5, fontWeight: 500, cursor: 'pointer',
-  border: active ? '1px solid rgba(16,185,129,0.55)' : '1px solid rgba(255,255,255,0.14)',
-  background: active ? 'rgba(16,185,129,0.16)' : 'rgba(255,255,255,0.05)',
-  color: active ? '#6ee7b7' : '#d4d4d8', transition: 'all .15s',
+  border: active ? '1px solid rgba(255,255,255,0.4)' : '1px solid rgba(255,255,255,0.14)',
+  background: active ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.05)',
+  color: active ? '#fafafa' : '#d4d4d8', transition: 'all .15s',
 });
 
 const overlay: React.CSSProperties = {
@@ -319,6 +319,6 @@ const cancelBtn: React.CSSProperties = {
 };
 const genBtn: React.CSSProperties = {
   padding: '11px 26px', borderRadius: 12, border: 'none',
-  background: 'linear-gradient(135deg,#10b981,#059669)', color: '#fff', fontSize: 14, fontWeight: 600,
-  boxShadow: '0 8px 24px -6px rgba(16,185,129,0.6)',
+  background: 'linear-gradient(135deg,#e4e4e7,#a1a1aa)', color: '#0a0a0a', fontSize: 14, fontWeight: 600,
+  boxShadow: '0 8px 24px -6px rgba(255,255,255,0.25)',
 };

@@ -161,7 +161,7 @@ export function SaveTemplateModal({ onClose }: { onClose: () => void }) {
             <div>
               <label className="text-gray-300 text-xs mb-1 block">标题 <span className="text-red-400">*</span></label>
               <input
-                className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500/50"
+                className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-white/30"
                 placeholder="例如：AI 分镜工作流"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -173,7 +173,7 @@ export function SaveTemplateModal({ onClose }: { onClose: () => void }) {
             <div>
               <label className="text-gray-300 text-xs mb-1 block">描述</label>
               <textarea
-                className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-sm resize-none focus:outline-none focus:border-purple-500/50"
+                className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-sm resize-none focus:outline-none focus:border-white/30"
                 rows={3}
                 placeholder="简短描述模板用途..."
                 value={description}
@@ -193,7 +193,7 @@ export function SaveTemplateModal({ onClose }: { onClose: () => void }) {
                     disabled={loading}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                       category === c
-                        ? 'bg-purple-600 text-white'
+                        ? 'bg-white text-black'
                         : 'bg-white/5 text-gray-400 hover:bg-white/10'
                     }`}
                   >
@@ -207,7 +207,7 @@ export function SaveTemplateModal({ onClose }: { onClose: () => void }) {
             <div>
               <label className="text-gray-300 text-xs mb-1 block">标签（逗号分隔）</label>
               <input
-                className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500/50"
+                className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-white/30"
                 placeholder="分镜, AI, Kling"
                 value={tagsInput}
                 onChange={(e) => setTagsInput(e.target.value)}
@@ -277,7 +277,7 @@ export function SaveTemplateModal({ onClose }: { onClose: () => void }) {
               <button
                 onClick={handleSave}
                 disabled={loading || !title.trim() || !videoFile || !coverBase64}
-                className="flex-1 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium transition-all"
+                className="flex-1 py-2 rounded-lg bg-gradient-to-r from-zinc-200 to-zinc-400 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-black text-sm font-medium transition-all"
               >
                 {loading ? '保存中...' : '保存模板'}
               </button>

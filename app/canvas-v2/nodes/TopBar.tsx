@@ -103,7 +103,7 @@ export function TopBar({ saveStatus, switchCanvas, getCurrentCanvasId }: Props) 
           {memberLoading ? (
             <span className="text-white/30">···</span>
           ) : isMember ? (
-            <span className="text-violet-400 font-semibold cursor-pointer hover:text-violet-300 transition-colors" onClick={() => setShowAccountModal(true)}>会员</span>
+            <span className="text-zinc-200 font-semibold cursor-pointer hover:text-white transition-colors" onClick={() => setShowAccountModal(true)}>会员</span>
           ) : (
             <button
               className="text-yellow-400 hover:text-yellow-300 transition-colors"
@@ -126,7 +126,7 @@ export function TopBar({ saveStatus, switchCanvas, getCurrentCanvasId }: Props) 
         {isAdmin(userEmail) && (
           <button
             onClick={() => setShowSaveTemplateModal(true)}
-            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-purple-600/30 backdrop-blur-md border border-purple-500/40 text-purple-200 hover:bg-purple-600/50 hover:border-purple-500/60 transition-all"
+            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-white/5 backdrop-blur-md border border-white/15 text-zinc-200 hover:bg-white/10 hover:border-white/25 transition-all"
             title="保存当前画布为工作流模板"
           >
             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -210,7 +210,7 @@ export function TopBar({ saveStatus, switchCanvas, getCurrentCanvasId }: Props) 
         {/* 剧本工作室入口 */}
         <button
           onClick={() => setShowScriptStudio(true)}
-          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-emerald-600/30 backdrop-blur-md border border-emerald-500/40 text-emerald-200 hover:bg-emerald-600/50 hover:border-emerald-500/60 transition-all"
+          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-white/5 backdrop-blur-md border border-white/15 text-zinc-200 hover:bg-white/10 hover:border-white/25 transition-all"
           title="剧本工作室:从想法到拍摄剧本"
         >
           <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -222,7 +222,7 @@ export function TopBar({ saveStatus, switchCanvas, getCurrentCanvasId }: Props) 
         {/* 涂鸦工作台入口 */}
         <button
           onClick={() => setShowDoodle(true)}
-          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-emerald-600/30 backdrop-blur-md border border-emerald-500/40 text-emerald-200 hover:bg-emerald-600/50 hover:border-emerald-500/60 transition-all"
+          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-white/5 backdrop-blur-md border border-white/15 text-zinc-200 hover:bg-white/10 hover:border-white/25 transition-all"
           title="涂鸦工作台:上传图片涂抹标注后发送到画布"
         >
           <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">

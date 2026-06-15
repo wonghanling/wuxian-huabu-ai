@@ -299,7 +299,7 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
             </ParamTag>
 
             {/* 参考图:故事模式最多9张;时空模式仅首帧+尾帧2张 */}
-            <ParamTag label={<>{isCinematic ? '首尾帧' : '参考图'}{refImages.length > 0 ? ` ${refImages.length}` : (isCinematic ? '' : ' 可选')}{connImages.length > 0 && <span style={{ marginLeft: 4, color: '#a78bfa' }}>+{connImages.length}连</span>}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</>} open={sub === 'ref'} onToggle={() => setSub(sub === 'ref' ? null : 'ref')} width={300}>
+            <ParamTag label={<>{isCinematic ? '首尾帧' : '参考图'}{refImages.length > 0 ? ` ${refImages.length}` : (isCinematic ? '' : ' 可选')}{connImages.length > 0 && <span style={{ marginLeft: 4, color: '#a1a1aa' }}>+{connImages.length}连</span>}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</>} open={sub === 'ref'} onToggle={() => setSub(sub === 'ref' ? null : 'ref')} width={300}>
               {refImages.length < refMax && (
                 <label style={{ ...uploadBtn, ...(uploading ? { opacity: 0.6, pointerEvents: 'none' } : {}) }}>
                   <IconPlus size={13} /> <span>{uploading ? '上传中…' : isCinematic ? (refImages.length === 0 ? '上传首帧' : '上传尾帧') : `上传图片（还能传 ${refMax - refImages.length} 张）`}</span>
@@ -325,7 +325,7 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               {/* 来自连接的上游图(实时,不可删) */}
               {connImages.length > 0 && (
                 <>
-                  <div style={{ fontSize: 10, color: '#a78bfa', margin: '6px 0 4px' }}>来自连接 · {connImages.length} 张</div>
+                  <div style={{ fontSize: 10, color: '#a1a1aa', margin: '6px 0 4px' }}>来自连接 · {connImages.length} 张</div>
                   <div style={refGrid}>
                     {connImages.map((url, i) => (
                       <RefThumb key={`c${i}`} url={url} index={i} onRemove={() => {}} />
@@ -497,7 +497,7 @@ const modeBtnBase: React.CSSProperties = {
   background: 'rgba(255,255,255,0.06)', color: '#d4d4d8', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap',
 };
 const modeBtnActive: React.CSSProperties = { background: 'rgba(59,130,246,0.3)', color: '#93c5fd' };
-const modeBtnActivePurple: React.CSSProperties = { background: 'rgba(168,85,247,0.3)', color: '#d8b4fe' };
+const modeBtnActivePurple: React.CSSProperties = { background: 'rgba(255,255,255,0.12)', color: '#d4d4d8' };
 // hover 说明 tooltip(深色风格,从按钮下方弹出)
 const inlineTooltip: React.CSSProperties = {
   position: 'absolute', top: 'calc(100% + 6px)', left: 0, whiteSpace: 'nowrap',

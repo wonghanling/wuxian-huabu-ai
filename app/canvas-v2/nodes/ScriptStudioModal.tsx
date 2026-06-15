@@ -382,7 +382,7 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
                 style={{ ...genBtn, opacity: canGenerate ? 1 : 0.45, cursor: generating ? 'wait' : (canGenerate ? 'pointer' : 'not-allowed') }}>
                 {generating ? '生成中…' : `生成${PHASE_LABELS[active]}`}
               </button>
-              {depHint && <span style={{ fontSize: 12, color: '#a78bfa' }}>{depHint}</span>}
+              {depHint && <span style={{ fontSize: 12, color: '#a1a1aa' }}>{depHint}</span>}
               {sentTip && <span style={{ fontSize: 12, color: '#86efac' }}>{sentTip}</span>}
             </div>
 
@@ -435,7 +435,7 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
                                 {isSceneOpen ? '收起' : '查看场景'}
                               </button>
                             ) : (
-                              <button style={{ ...assetSmallBtn, color: scBusy ? '#c4b5fd' : '#a78bfa', cursor: scBusy ? 'wait' : 'pointer' }}
+                              <button style={{ ...assetSmallBtn, color: scBusy ? '#d4d4d8' : '#a1a1aa', cursor: scBusy ? 'wait' : 'pointer' }}
                                 onClick={() => handleEnvScene(sc)} disabled={!!sceneBusy}>
                                 {scBusy ? '生成中…' : '生成场景 Bible'}
                               </button>
@@ -453,13 +453,13 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
                             <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                               <button style={assetSmallBtn} onClick={() => { navigator.clipboard.writeText(sceneBible).then(() => flashTip('已复制')).catch(() => {}); }}>复制</button>
                               <button style={assetSmallBtn} onClick={() => sendTextToCanvas(sceneBible, '已发送到画布')}>➤ 发送到画布</button>
-                              <button style={{ ...assetSmallBtn, color: '#a78bfa' }} onClick={() => handleEnvScene(sc)} disabled={!!sceneBusy}>重新生成</button>
+                              <button style={{ ...assetSmallBtn, color: '#a1a1aa' }} onClick={() => handleEnvScene(sc)} disabled={!!sceneBusy}>重新生成</button>
                             </div>
 
                             {/* 该场景的资产清单 → 按需钻取 Asset Bible / Breakdown / Exploration */}
                             {sceneAssets.length > 0 && (
                               <div style={{ marginTop: 12, paddingTop: 8, borderTop: '1px dashed rgba(255,255,255,0.1)' }}>
-                                <div style={{ fontSize: 12, color: '#c4b5fd', marginBottom: 6 }}>资产清单(点资产按需生成 Asset Bible)</div>
+                                <div style={{ fontSize: 12, color: '#d4d4d8', marginBottom: 6 }}>资产清单(点资产按需生成 Asset Bible)</div>
                                 {sceneAssets.map((a) => {
                                   const key = a.id || a.name;
                                   const bible = project.assetBibles[key];
@@ -476,7 +476,7 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
                                           {bible ? (
                                             <button style={assetSmallBtn} onClick={() => setOpenAsset(isOpen ? null : key)}>{isOpen ? '收起' : '查看 Bible'}</button>
                                           ) : (
-                                            <button style={{ ...assetSmallBtn, color: busy ? '#c4b5fd' : '#a78bfa', cursor: busy ? 'wait' : 'pointer' }}
+                                            <button style={{ ...assetSmallBtn, color: busy ? '#d4d4d8' : '#a1a1aa', cursor: busy ? 'wait' : 'pointer' }}
                                               onClick={() => handleAssetBible(a, sc.name)} disabled={!!assetBusy}>
                                               {busy ? '生成中…' : '生成 Asset Bible'}
                                             </button>
@@ -493,7 +493,7 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
                                           <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                                             <button style={assetSmallBtn} onClick={() => { navigator.clipboard.writeText(bible).then(() => flashTip('已复制')).catch(() => {}); }}>复制</button>
                                             <button style={assetSmallBtn} onClick={() => sendAssetToCanvas(key)}>➤ 发送到画布</button>
-                                            <button style={{ ...assetSmallBtn, color: '#a78bfa' }} onClick={() => handleAssetBible(a, sc.name)} disabled={!!assetBusy}>重新生成</button>
+                                            <button style={{ ...assetSmallBtn, color: '#a1a1aa' }} onClick={() => handleAssetBible(a, sc.name)} disabled={!!assetBusy}>重新生成</button>
                                           </div>
                                           {(['breakdown', 'exploration'] as const).map((sk) => {
                                             const field = sk === 'breakdown' ? 'assetBreakdowns' : 'assetExplorations';
@@ -501,10 +501,10 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
                                             const sheet = (project as any)[field][key] as string | undefined;
                                             const sbusy = sheetBusy === `${key}|${sk}`;
                                             return (
-                                              <div key={sk} style={{ marginTop: 10, paddingLeft: 10, borderLeft: '2px solid rgba(124,58,237,0.3)' }}>
+                                              <div key={sk} style={{ marginTop: 10, paddingLeft: 10, borderLeft: '2px solid rgba(255,255,255,0.15)' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                  <span style={{ fontSize: 12, color: '#c4b5fd' }}>{label}</span>
-                                                  <button style={{ ...assetSmallBtn, marginLeft: 'auto', color: sbusy ? '#c4b5fd' : '#a78bfa', cursor: sbusy ? 'wait' : 'pointer' }}
+                                                  <span style={{ fontSize: 12, color: '#d4d4d8' }}>{label}</span>
+                                                  <button style={{ ...assetSmallBtn, marginLeft: 'auto', color: sbusy ? '#d4d4d8' : '#a1a1aa', cursor: sbusy ? 'wait' : 'pointer' }}
                                                     onClick={() => handleAssetSheet(a, sk)} disabled={!!sheetBusy}>
                                                     {sbusy ? '生成中…' : (sheet ? '重新生成' : '生成')}
                                                   </button>
@@ -568,7 +568,7 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
                                 {isOpen ? '收起' : '查看服装装备'}
                               </button>
                             ) : (
-                              <button style={{ ...assetSmallBtn, color: bbusy ? '#c4b5fd' : '#a78bfa', cursor: bbusy ? 'wait' : 'pointer' }}
+                              <button style={{ ...assetSmallBtn, color: bbusy ? '#d4d4d8' : '#a1a1aa', cursor: bbusy ? 'wait' : 'pointer' }}
                                 onClick={() => handleCostumeBible(ch)} disabled={!!costumeBusy}>
                                 {bbusy ? '生成中…' : '生成 Costume & Equipment Bible'}
                               </button>
@@ -578,7 +578,7 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
                         {cb && isOpen && (
                           <div style={{ marginTop: 8 }}>
                             {/* Costume & Equipment Bible */}
-                            <div style={{ fontSize: 12, color: '#c4b5fd', marginBottom: 4 }}>Costume & Equipment Bible(服装装备定义)</div>
+                            <div style={{ fontSize: 12, color: '#d4d4d8', marginBottom: 4 }}>Costume & Equipment Bible(服装装备定义)</div>
                             <textarea className="cv2-scroll" value={cb}
                               onChange={(e) => updateRecordField('costumeBibles', key, e.target.value)}
                               onCompositionStart={() => { composing.current = true; }}
@@ -587,14 +587,14 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
                             <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                               <button style={assetSmallBtn} onClick={() => { navigator.clipboard.writeText(cb).then(() => flashTip('已复制')).catch(() => {}); }}>复制</button>
                               <button style={assetSmallBtn} onClick={() => sendTextToCanvas(cb, '已发送到画布')}>➤ 发送到画布</button>
-                              <button style={{ ...assetSmallBtn, color: '#a78bfa' }} onClick={() => handleCostumeBible(ch)} disabled={!!costumeBusy}>重新生成</button>
+                              <button style={{ ...assetSmallBtn, color: '#a1a1aa' }} onClick={() => handleCostumeBible(ch)} disabled={!!costumeBusy}>重新生成</button>
                             </div>
 
                             {/* Costume Sheet(动态格数) */}
-                            <div style={{ marginTop: 10, paddingLeft: 10, borderLeft: '2px solid rgba(124,58,237,0.3)' }}>
+                            <div style={{ marginTop: 10, paddingLeft: 10, borderLeft: '2px solid rgba(255,255,255,0.15)' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <span style={{ fontSize: 12, color: '#c4b5fd' }}>Costume Sheet 服装装备表(动态格数)</span>
-                                <button style={{ ...assetSmallBtn, marginLeft: 'auto', color: sbusy ? '#c4b5fd' : '#a78bfa', cursor: sbusy ? 'wait' : 'pointer' }}
+                                <span style={{ fontSize: 12, color: '#d4d4d8' }}>Costume Sheet 服装装备表(动态格数)</span>
+                                <button style={{ ...assetSmallBtn, marginLeft: 'auto', color: sbusy ? '#d4d4d8' : '#a1a1aa', cursor: sbusy ? 'wait' : 'pointer' }}
                                   onClick={() => handleCostumeSheet(ch)} disabled={!!costumeBusy}>
                                   {sbusy ? '生成中…' : (cs ? '重新生成' : '生成')}
                                 </button>
@@ -659,7 +659,7 @@ const stepItem: React.CSSProperties = {
   color: '#a1a1aa', cursor: 'pointer', fontSize: 13, transition: 'background .15s',
 };
 const stepActive: React.CSSProperties = {
-  background: 'rgba(124,58,237,0.16)', border: '1px solid rgba(124,58,237,0.4)', color: '#fff',
+  background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.25)', color: '#fff',
 };
 const stepNum: React.CSSProperties = {
   width: 22, height: 22, flexShrink: 0, borderRadius: '50%',
@@ -684,7 +684,7 @@ const outputArea: React.CSSProperties = {
 };
 const genBtn: React.CSSProperties = {
   padding: '9px 18px', borderRadius: 10, border: 'none',
-  background: 'linear-gradient(135deg,#7c3aed,#4f46e5)', color: '#fff',
+  background: 'linear-gradient(135deg,#e4e4e7,#a1a1aa)', color: '#fff',
   fontSize: 13, fontWeight: 600,
 };
 const actBtn: React.CSSProperties = {
@@ -692,16 +692,16 @@ const actBtn: React.CSSProperties = {
   background: 'rgba(255,255,255,0.05)', color: '#e4e4e7', cursor: 'pointer', fontSize: 13,
 };
 const sendBtn: React.CSSProperties = {
-  padding: '8px 18px', borderRadius: 9, border: '1px solid rgba(124,58,237,0.4)',
-  background: 'rgba(124,58,237,0.2)', color: '#c4b5fd', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+  padding: '8px 18px', borderRadius: 9, border: '1px solid rgba(255,255,255,0.25)',
+  background: 'rgba(255,255,255,0.08)', color: '#d4d4d8', cursor: 'pointer', fontSize: 13, fontWeight: 600,
 };
 const assetRow: React.CSSProperties = {
   background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
   borderRadius: 10, padding: '8px 12px',
 };
 const assetId: React.CSSProperties = {
-  fontSize: 10, fontWeight: 700, color: '#a78bfa', background: 'rgba(124,58,237,0.16)',
-  border: '1px solid rgba(124,58,237,0.35)', borderRadius: 5, padding: '1px 6px', flexShrink: 0,
+  fontSize: 10, fontWeight: 700, color: '#a1a1aa', background: 'rgba(255,255,255,0.06)',
+  border: '1px solid rgba(255,255,255,0.2)', borderRadius: 5, padding: '1px 6px', flexShrink: 0,
 };
 const assetSmallBtn: React.CSSProperties = {
   padding: '4px 10px', borderRadius: 7, border: '1px solid rgba(255,255,255,0.14)',

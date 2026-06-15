@@ -42,7 +42,7 @@ export function PromptTools({ value, onPaste }: { value: string; onPaste: (text:
     <div style={wrap} onClick={(e) => e.stopPropagation()}>
       <button style={btn} onClick={copy} title="复制 prompt"><IconCopy size={13} /></button>
       <button style={btn} onClick={paste} title="粘贴到 prompt"><IconPaste size={13} /></button>
-      <button style={{ ...btn, width: 'auto', padding: '0 7px', fontSize: 11, color: translating ? '#c4b5fd' : '#a1a1aa', cursor: translating ? 'wait' : 'pointer' }}
+      <button style={{ ...btn, width: 'auto', padding: '0 7px', fontSize: 11, color: translating ? '#d4d4d8' : '#a1a1aa', cursor: translating ? 'wait' : 'pointer' }}
         onClick={translate} disabled={translating} title="中英互译">
         {translating ? '…' : '译'}
       </button>

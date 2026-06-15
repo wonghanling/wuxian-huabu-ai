@@ -191,7 +191,7 @@ function KlingNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
           {/* 参数标签行:源视频 + 音频(各自从按钮正上方弹出) */}
           <div style={tagsRow}>
-            <ParamTag label={<>源视频{dispVideo && <span style={greenDot} />}{videoFromConn && <span style={{ marginLeft: 4, color: '#a78bfa' }}>来自连接</span>}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</>} open={sub === 'video'} onToggle={() => setSub(sub === 'video' ? null : 'video')} width={260}>
+            <ParamTag label={<>源视频{dispVideo && <span style={greenDot} />}{videoFromConn && <span style={{ marginLeft: 4, color: '#a1a1aa' }}>来自连接</span>}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</>} open={sub === 'video'} onToggle={() => setSub(sub === 'video' ? null : 'video')} width={260}>
               <label style={{ ...uploadBtn, ...(uploading ? { opacity: 0.6, pointerEvents: 'none' } : {}) }}>
                 <IconUpload size={13} /> <span>{uploading ? '上传中…' : KLING_VIDEO_HINT}</span>
                 <input type="file" accept="video/mp4,video/quicktime" disabled={uploading} style={{ display: 'none' }} onChange={(e) => { uploadSrcVideo(e.target.files); e.currentTarget.value = ''; }} />
@@ -205,7 +205,7 @@ function KlingNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               ) : videoFromConn ? (
                 <div style={fileRow}>
                   <IconVideo size={13} />
-                  <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#a78bfa' }}>来自连接的视频</span>
+                  <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#a1a1aa' }}>来自连接的视频</span>
                 </div>
               ) : null}
             </ParamTag>
@@ -362,7 +362,7 @@ const tagBtn: React.CSSProperties = {
   background: 'rgba(255,255,255,0.07)', color: '#e4e4e7', fontSize: 14, cursor: 'pointer', whiteSpace: 'nowrap',
 };
 const tagActive: React.CSSProperties = { background: 'rgba(192,192,192,0.18)', color: '#fff', borderColor: 'rgba(192,192,192,0.4)' };
-const greenDot: React.CSSProperties = { width: 6, height: 6, borderRadius: '50%', background: '#34d399', display: 'inline-block', marginLeft: 4 };
+const greenDot: React.CSSProperties = { width: 6, height: 6, borderRadius: '50%', background: '#e4e4e7', display: 'inline-block', marginLeft: 4 };
 const generateBtn: React.CSSProperties = {
   marginLeft: 'auto', padding: '11px 26px', border: 'none', borderRadius: 12,
   background: 'linear-gradient(135deg, #f4f4f5, #c0c0c0)', color: '#18181b', fontWeight: 700,

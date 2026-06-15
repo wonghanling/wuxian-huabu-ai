@@ -109,14 +109,14 @@ export function PromptArea({ connectedText, value, onChange, onGenerate, placeho
       />
       {/* @ 素材选择弹窗(照同类产品:输入@即弹,选中插入光标处) */}
       {mentionOpen && mentionItems && mentionItems.length > 0 && (
-        <div className="nodrag nowheel cv2-scroll" style={{ position: 'absolute', bottom: '100%', left: 8, zIndex: 40, marginBottom: 6, background: 'rgba(28,28,32,0.98)', border: '1px solid rgba(124,58,237,0.4)', borderRadius: 12, padding: 6, maxHeight: 220, overflowY: 'auto', boxShadow: '0 14px 44px rgba(0,0,0,0.65)', minWidth: 180 }}
+        <div className="nodrag nowheel cv2-scroll" style={{ position: 'absolute', bottom: '100%', left: 8, zIndex: 40, marginBottom: 6, background: 'rgba(28,28,32,0.98)', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 12, padding: 6, maxHeight: 220, overflowY: 'auto', boxShadow: '0 14px 44px rgba(0,0,0,0.65)', minWidth: 180 }}
           onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.preventDefault()}>
-          <div style={{ fontSize: 10, color: '#a78bfa', padding: '2px 6px 6px' }}>选择要引用的参考图</div>
+          <div style={{ fontSize: 10, color: '#a1a1aa', padding: '2px 6px 6px' }}>选择要引用的参考图</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
             {mentionItems.map((m) => (
               <button key={m.ref} onClick={() => pickMention(m.ref)}
                 style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: 4, borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', color: '#e4e4e7', cursor: 'pointer' }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(124,58,237,0.25)')}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.12)')}
                 onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.04)')}>
                 {m.thumb && <img src={m.thumb} alt="" style={{ width: '100%', aspectRatio: '1', borderRadius: 6, objectFit: 'cover' }} />}
                 <span style={{ fontSize: 10 }}>{m.label}</span>
@@ -126,7 +126,7 @@ export function PromptArea({ connectedText, value, onChange, onGenerate, placeho
         </div>
       )}
       {prefix && (
-        <div style={{ fontSize: 10, color: '#a78bfa', marginTop: 2, marginBottom: 4 }}>· 开头文案来自连接卡片,在下方空行输入你的内容</div>
+        <div style={{ fontSize: 10, color: '#a1a1aa', marginTop: 2, marginBottom: 4 }}>· 开头文案来自连接卡片,在下方空行输入你的内容</div>
       )}
     </div>
   );

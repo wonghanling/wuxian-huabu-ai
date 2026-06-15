@@ -666,7 +666,7 @@ const popPanel: React.CSSProperties = {
   border: '1px solid rgba(255,255,255,0.12)', borderRadius: 13, padding: 10,
   boxShadow: '0 18px 55px rgba(0,0,0,0.65)', zIndex: 9999,
 };
-const greenDot: React.CSSProperties = { width: 6, height: 6, borderRadius: '50%', background: '#34d399', display: 'inline-block', marginLeft: 4 };
+const greenDot: React.CSSProperties = { width: 6, height: 6, borderRadius: '50%', background: '#e4e4e7', display: 'inline-block', marginLeft: 4 };
 const subItem: React.CSSProperties = {
   display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, width: '100%',
   padding: '8px 11px', borderRadius: 8, border: 'none', background: 'transparent',

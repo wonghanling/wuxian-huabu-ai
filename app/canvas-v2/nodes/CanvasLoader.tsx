@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 // ============================================================
 // 画布加载动画(overlay 覆盖在 ReactFlow 上,不阻断挂载)
 // loading=true 显示;loading 转 false 后淡出再卸载(衔接画布黑底)
-// 纯 UI,绿色光晕脉冲,无功能逻辑
+// 纯 UI,黑白灰光晕脉冲,无功能逻辑
 // ============================================================
 
 export function CanvasLoader({ loading }: { loading: boolean }) {
@@ -27,13 +27,13 @@ export function CanvasLoader({ loading }: { loading: boolean }) {
       <style>{KEYFRAMES}</style>
       <div style={ring}>
         <div style={{ ...orbit, animationDelay: '0s' }} />
-        <div style={{ ...orbit, animationDelay: '-0.6s', opacity: 0.6 }} />
+        <div style={{ ...orbit, animationDelay: '-0.6s', opacity: 0.5 }} />
         <div style={core} />
       </div>
       <div style={label}>
-        <span style={{ color: '#6ee7b7', fontWeight: 800, letterSpacing: 3 }}>BOLUOLAB</span>
-        <span style={{ color: '#10b981', margin: '0 8px', opacity: 0.6 }}>·</span>
-        <span style={{ color: '#d1fae5', fontWeight: 500, letterSpacing: 2 }}>filmavo</span>
+        <span style={{ color: '#f4f4f5', fontWeight: 800, letterSpacing: 5 }}>BOLUOLAB</span>
+        <span style={{ color: '#71717a', margin: '0 12px' }}>·</span>
+        <span style={{ color: '#a1a1aa', fontWeight: 500, letterSpacing: 3 }}>filmavo</span>
       </div>
       <div style={dots}>
         <span style={{ ...dot, animationDelay: '0s' }} />
@@ -47,41 +47,41 @@ export function CanvasLoader({ loading }: { loading: boolean }) {
 const KEYFRAMES = `
 @keyframes cv2loader-spin { to { transform: rotate(360deg); } }
 @keyframes cv2loader-pulse { 0%,100% { transform: scale(0.82); opacity: 0.5; } 50% { transform: scale(1); opacity: 1; } }
-@keyframes cv2loader-bounce { 0%,100% { transform: translateY(0); opacity: 0.4; } 50% { transform: translateY(-6px); opacity: 1; } }
+@keyframes cv2loader-bounce { 0%,100% { transform: translateY(0); opacity: 0.35; } 50% { transform: translateY(-6px); opacity: 1; } }
 `;
 
 const wrap: React.CSSProperties = {
   position: 'absolute', inset: 0, zIndex: 50,
-  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 22,
-  background: 'radial-gradient(circle at 50% 42%, #0f1512 0%, #080a09 60%, #050605 100%)',
+  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 30,
+  background: 'radial-gradient(circle at 50% 42%, #121212 0%, #0a0a0a 60%, #000 100%)',
   transition: 'opacity 0.45s ease', pointerEvents: 'none',
 };
 
 const ring: React.CSSProperties = {
-  position: 'relative', width: 84, height: 84,
+  position: 'relative', width: 96, height: 96,
   display: 'flex', alignItems: 'center', justifyContent: 'center',
 };
 
 const orbit: React.CSSProperties = {
   position: 'absolute', inset: 0, borderRadius: '50%',
-  border: '2px solid transparent', borderTopColor: '#10b981', borderRightColor: '#34d399',
+  border: '2px solid transparent', borderTopColor: '#e4e4e7', borderRightColor: '#a1a1aa',
   animation: 'cv2loader-spin 1.1s linear infinite',
-  boxShadow: '0 0 24px rgba(16,185,129,0.35)',
+  boxShadow: '0 0 22px rgba(255,255,255,0.12)',
 };
 
 const core: React.CSSProperties = {
-  width: 30, height: 30, borderRadius: '50%',
-  background: 'radial-gradient(circle, #6ee7b7 0%, #10b981 70%)',
-  boxShadow: '0 0 28px rgba(16,185,129,0.6)',
+  width: 32, height: 32, borderRadius: '50%',
+  background: 'radial-gradient(circle, #ffffff 0%, #a1a1aa 70%)',
+  boxShadow: '0 0 26px rgba(255,255,255,0.35)',
   animation: 'cv2loader-pulse 1.4s ease-in-out infinite',
 };
 
 const label: React.CSSProperties = {
-  fontSize: 17, display: 'flex', alignItems: 'center',
+  fontSize: 30, display: 'flex', alignItems: 'center',
 };
 
-const dots: React.CSSProperties = { display: 'flex', gap: 7 };
+const dots: React.CSSProperties = { display: 'flex', gap: 8 };
 const dot: React.CSSProperties = {
-  width: 6, height: 6, borderRadius: '50%', background: '#10b981',
+  width: 7, height: 7, borderRadius: '50%', background: '#d4d4d8',
   display: 'block', animation: 'cv2loader-bounce 1s ease-in-out infinite',
 };

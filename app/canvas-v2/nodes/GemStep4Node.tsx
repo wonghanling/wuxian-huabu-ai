@@ -152,7 +152,7 @@ function GemStep4NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
         <Ports />
         <div onClick={toggleCollapse} style={collapsedCard(selected)}>
           <div style={collapsedIconWrap}>
-            <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+            <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#a1a1aa" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
               <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
             </svg>
@@ -511,7 +511,7 @@ const modeBtn: React.CSSProperties = {
   flex: 1, padding: '8px 4px', borderRadius: 9, border: '1px solid rgba(255,255,255,0.1)',
   background: 'rgba(255,255,255,0.04)', color: '#d4d4d8', fontSize: 13, cursor: 'pointer',
 };
-const modeBtnActive: React.CSSProperties = { background: 'rgba(139,92,246,0.25)', color: '#c4b5fd', borderColor: 'rgba(139,92,246,0.4)' };
+const modeBtnActive: React.CSSProperties = { background: 'rgba(255,255,255,0.12)', color: '#d4d4d8', borderColor: 'rgba(255,255,255,0.25)' };
 const inputStyle: React.CSSProperties = {
   width: '100%', padding: '8px 10px', border: '1px solid rgba(255,255,255,0.08)',
   borderRadius: 8, background: 'rgba(0,0,0,0.3)', color: '#d4d4d8', fontSize: 12,
@@ -522,7 +522,7 @@ const promptInput: React.CSSProperties = {
   color: '#e4e4e7', fontSize: 14, fontFamily: 'inherit', resize: 'none', outline: 'none',
   lineHeight: 1.55, userSelect: 'text', WebkitUserSelect: 'text', cursor: 'text',
 };
-const greenDot: React.CSSProperties = { width: 6, height: 6, borderRadius: '50%', background: '#34d399', display: 'inline-block', marginLeft: 4 };
+const greenDot: React.CSSProperties = { width: 6, height: 6, borderRadius: '50%', background: '#e4e4e7', display: 'inline-block', marginLeft: 4 };
 const tagsRow: React.CSSProperties = { display: 'flex', flexWrap: 'wrap', gap: 8, padding: '6px 8px 4px' };
 const tagBtn: React.CSSProperties = {
   padding: '9px 14px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.12)',

@@ -508,7 +508,7 @@ const subItem: React.CSSProperties = {
 };
 const subPrice: React.CSSProperties = { fontSize: 11, color: '#71717a', flexShrink: 0 };
 const greenDot: React.CSSProperties = {
-  width: 6, height: 6, borderRadius: '50%', background: '#34d399',
+  width: 6, height: 6, borderRadius: '50%', background: '#e4e4e7',
   display: 'inline-block', marginLeft: 4,
 };
 

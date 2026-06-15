@@ -668,7 +668,7 @@ function RefPanel({ images, videos, videoNames, audioName, counts, uploading, co
       {/* 来自连接的图(实时,照原网"来自连接";连线动态来,不可删) */}
       {connImages && connImages.length > 0 && (
         <>
-          <div style={{ fontSize: 10, color: '#a78bfa', margin: '6px 0 4px' }}>来自连接 · {connImages.length} 张图</div>
+          <div style={{ fontSize: 10, color: '#a1a1aa', margin: '6px 0 4px' }}>来自连接 · {connImages.length} 张图</div>
           <div style={refGrid}>
             {connImages.map((img, i) => (
               <RefThumb key={`c${i}`} url={img} index={i} onRemove={() => {}} />
@@ -678,15 +678,15 @@ function RefPanel({ images, videos, videoNames, audioName, counts, uploading, co
       )}
       {/* 来自连接的视频(视频卡/Seedance 连进来,实时显示) */}
       {connVideos && connVideos.length > 0 && connVideos.map((v, i) => (
-        <div key={`cv${i}`} style={{ ...refFileRow, borderColor: 'rgba(124,58,237,0.4)' }}>
+        <div key={`cv${i}`} style={{ ...refFileRow, borderColor: 'rgba(255,255,255,0.25)' }}>
           <IconVideo size={13} />
-          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#a78bfa' }}>来自连接的视频 {i + 1}</span>
+          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#a1a1aa' }}>来自连接的视频 {i + 1}</span>
         </div>
       ))}
       {/* 来自连接的音频(语音卡连进来) */}
       {connAudio && (
-        <div style={{ ...refFileRow, borderColor: 'rgba(124,58,237,0.4)' }}>
-          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#a78bfa' }}>🎙 来自连接的音频</span>
+        <div style={{ ...refFileRow, borderColor: 'rgba(255,255,255,0.25)' }}>
+          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#a1a1aa' }}>🎙 来自连接的音频</span>
         </div>
       )}
       {/* 参考视频列表 */}
@@ -869,7 +869,7 @@ const subItem: React.CSSProperties = {
   color: '#d4d4d8', fontSize: 12.5, cursor: 'pointer', textAlign: 'left',
 };
 const subHint: React.CSSProperties = { fontSize: 10, color: '#71717a', flexShrink: 0 };
-const greenDot: React.CSSProperties = { width: 6, height: 6, borderRadius: '50%', background: '#34d399', display: 'inline-block', marginLeft: 4 };
+const greenDot: React.CSSProperties = { width: 6, height: 6, borderRadius: '50%', background: '#e4e4e7', display: 'inline-block', marginLeft: 4 };
 const priceLine: React.CSSProperties = { fontSize: 10, color: '#a1a1aa', whiteSpace: 'nowrap' };
 const refUploadBtn: React.CSSProperties = {
   padding: '12px 20px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.14)',

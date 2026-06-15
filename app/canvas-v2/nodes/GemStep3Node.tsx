@@ -110,7 +110,7 @@ function GemStep3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
         <Ports />
         <div onClick={toggleCollapse} style={collapsedCard(selected)}>
           <div style={collapsedIconWrap}>
-            <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+            <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#e4e4e7" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="5 3 19 12 5 21 5 3"/>
             </svg>
           </div>
@@ -202,7 +202,7 @@ function GemStep3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           {/* 参数按钮行 — 参考图按钮(首帧+尾帧,可来自连接) */}
           <div style={tagsRow}>
             <ParamTag
-              label={<>参考图{(dispStart || dispEnd) ? <span style={greenDot} /> : ' (首帧+尾帧)'}{(startFromConn || endFromConn) && <span style={{ marginLeft: 4, color: '#a78bfa' }}>来自连接</span>}</>}
+              label={<>参考图{(dispStart || dispEnd) ? <span style={greenDot} /> : ' (首帧+尾帧)'}{(startFromConn || endFromConn) && <span style={{ marginLeft: 4, color: '#a1a1aa' }}>来自连接</span>}</>}
               open={sub === 'ref'}
               onToggle={() => setSub(sub === 'ref' ? null : 'ref')}
               width={300}
@@ -367,7 +367,7 @@ const popPanel: React.CSSProperties = {
   boxShadow: '0 18px 55px rgba(0,0,0,0.65)', zIndex: 9999,
 };
 const greenDot: React.CSSProperties = {
-  width: 6, height: 6, borderRadius: '50%', background: '#34d399',
+  width: 6, height: 6, borderRadius: '50%', background: '#e4e4e7',
   display: 'inline-block', marginLeft: 4,
 };
 
