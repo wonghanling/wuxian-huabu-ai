@@ -4,94 +4,151 @@ import { useState, useEffect, useRef } from 'react';
 
 // ============================================================
 // 涂鸦标注 · 功能演示(主页)
-// 自包含 CSS 动画:底图上逐步画出标注(圈/箭头/文字)→ "发送到画布"
+// 自包含 CSS 动画:标注图淡入 → 点击发送 → 整图飞入画布化为一张卡片
 // 纯展示,无后端;循环播放,点击可重播
+// phase: 0 空 / 1 标注图淡入 / 2 蓄势(显示发送) / 3 飞入画布 / 4 落定为卡片
 // ============================================================
 
-const STEPS = ['上传图片', '圈出要改的地方', '写下你的需求', '发送到画布'];
+const STEPS = ['上传图片', '涂抹标注', '发送到画布', '生成新卡片'];
 
 export function DoodleDemo() {
-  const [phase, setPhase] = useState(0);   // 0上传 1圈选 2文字 3发送
+  const [phase, setPhase] = useState(0);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const run = () => {
     timers.current.forEach(clearTimeout);
     timers.current = [];
     setPhase(0);
-    timers.current.push(setTimeout(() => setPhase(1), 900));
-    timers.current.push(setTimeout(() => setPhase(2), 2000));
-    timers.current.push(setTimeout(() => setPhase(3), 3300));
-    timers.current.push(setTimeout(run, 6200));   // 循环
+    timers.current.push(setTimeout(() => setPhase(1), 400));   // 标注图淡入
+    timers.current.push(setTimeout(() => setPhase(2), 1700));  // 显示"发送"按钮
+    timers.current.push(setTimeout(() => setPhase(3), 2700));  // 飞入画布
+    timers.current.push(setTimeout(() => setPhase(4), 3600));  // 落定为卡片
+    timers.current.push(setTimeout(run, 6400));                // 循环
   };
 
   useEffect(() => { run(); return () => timers.current.forEach(clearTimeout); }, []);
+
+  const flying = phase >= 3;   // 开始飞入
+  const landed = phase >= 4;   // 已落定
 
   return (
     <div className="grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
       {/* 左:动画演示舞台 */}
       <div className="reveal">
         <div
-          className="relative rounded-2xl overflow-hidden border border-white/10 bg-black/40 cursor-pointer select-none"
+          className="relative rounded-2xl overflow-hidden border border-white/10 cursor-pointer select-none"
           onClick={run}
           title="点击重播"
+          style={{ aspectRatio: '4 / 3', background: 'radial-gradient(circle at 50% 40%, #15171a 0%, #0a0b0c 70%)' }}
         >
-          {/* 真实涂鸦标注图(底图已含标注) */}
-          <img src="/tuyabiaozhu.webp" alt="涂鸦标注演示" className="w-full h-auto block" draggable={false} />
-
-          {/* 扫描揭示遮罩:从上往下揭开,模拟"正在标注" */}
+          {/* 画布背景网格(目的地) */}
           <div
-            className="absolute inset-x-0 top-0 bg-black"
+            className="absolute inset-0"
             style={{
-              height: phase >= 1 ? '0%' : '100%',
-              transition: 'height 1.1s cubic-bezier(.4,0,.2,1)',
-            }}
-          />
-          {/* 扫描线 */}
-          <div
-            className="absolute inset-x-0 h-[2px]"
-            style={{
-              top: phase >= 1 ? '100%' : '0%',
-              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.9), transparent)',
-              boxShadow: '0 0 14px rgba(255,255,255,0.7)',
-              opacity: phase === 0 || phase >= 2 ? 0 : 1,
-              transition: 'top 1.1s cubic-bezier(.4,0,.2,1), opacity 0.3s ease',
+              backgroundImage:
+                'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)',
+              backgroundSize: '34px 34px',
+              opacity: 0.6,
             }}
           />
 
-          {/* "已发送到画布" 提示 */}
+          {/* 落定后的卡片框(图飞到这里变成一张画布卡片) */}
           <div
-            className="absolute left-1/2"
+            className="absolute rounded-xl border-2 border-dashed"
             style={{
-              bottom: '6%',
-              transform: `translateX(-50%) translateY(${phase >= 3 ? '0' : '14px'})`,
-              opacity: phase >= 3 ? 1 : 0,
-              transition: 'all 0.5s cubic-bezier(.2,.8,.2,1)',
+              right: '8%', bottom: '12%', width: '34%', aspectRatio: '3 / 4',
+              borderColor: landed ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.12)',
+              opacity: phase >= 2 && !landed ? 0.7 : 0,
+              transition: 'opacity 0.4s ease, border-color 0.4s ease',
+            }}
+          />
+
+          {/* 主标注图:居中淡入 → 飞向右下角缩小为卡片 */}
+          <div
+            className="absolute"
+            style={{
+              left: '50%', top: '46%',
+              width: flying ? '34%' : '78%',
+              transform: `translate(-50%,-50%) ${flying ? 'translate(125%, 70%)' : ''}`,
+              opacity: phase >= 1 ? 1 : 0,
+              transition: 'all 0.9s cubic-bezier(.45,.05,.2,1)',
+              filter: phase >= 1 ? 'none' : 'blur(6px)',
+            }}
+          >
+            <div
+              className="relative rounded-xl overflow-hidden border shadow-2xl"
+              style={{ borderColor: landed ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.15)' }}
+            >
+              <img src="/tuyabiaozhu.webp" alt="涂鸦标注演示" className="w-full h-auto block" draggable={false} />
+              {/* 落定后卡片右上角出现"完成"勾 */}
+              <div
+                className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-white text-black flex items-center justify-center text-sm font-bold shadow-lg"
+                style={{ opacity: landed ? 1 : 0, transform: landed ? 'scale(1)' : 'scale(0.4)', transition: 'all 0.4s cubic-bezier(.2,.8,.2,1) 0.2s' }}
+              >
+                ✓
+              </div>
+            </div>
+            {/* 卡片标题(落定后) */}
+            <div
+              className="mt-1.5 text-[11px] text-zinc-400 text-center"
+              style={{ opacity: landed ? 1 : 0, transition: 'opacity 0.4s ease 0.3s' }}
+            >
+              标注图 · 参考卡片
+            </div>
+          </div>
+
+          {/* "发送到画布"按钮(蓄势阶段出现,飞行时隐藏) */}
+          <div
+            className="absolute left-1/2 -translate-x-1/2"
+            style={{
+              bottom: '7%',
+              opacity: phase === 2 ? 1 : 0,
+              transform: `translateX(-50%) translateY(${phase === 2 ? '0' : '12px'})`,
+              transition: 'all 0.4s cubic-bezier(.2,.8,.2,1)',
             }}
           >
             <div className="px-5 py-2.5 rounded-full bg-white text-black text-sm font-semibold shadow-2xl flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-black/70 inline-block" />
-              已发送到画布
+              发送到画布
+              <span className="text-base leading-none">→</span>
+            </div>
+          </div>
+
+          {/* 落定提示 */}
+          <div
+            className="absolute left-1/2 -translate-x-1/2"
+            style={{
+              top: '8%',
+              opacity: landed ? 1 : 0,
+              transform: `translateX(-50%) translateY(${landed ? '0' : '-10px'})`,
+              transition: 'all 0.5s cubic-bezier(.2,.8,.2,1)',
+            }}
+          >
+            <div className="px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-white text-xs font-medium backdrop-blur-sm">
+              已添加到画布 · 可连线生成
             </div>
           </div>
         </div>
 
         {/* 步骤指示 */}
         <div className="flex items-center justify-center gap-2 mt-5">
-          {STEPS.map((s, i) => (
-            <div key={s} className="flex items-center gap-2">
-              <span
-                className="text-xs px-2.5 py-1 rounded-full border transition-all duration-300"
-                style={{
-                  borderColor: phase >= i ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.1)',
-                  background: phase >= i ? 'rgba(255,255,255,0.12)' : 'transparent',
-                  color: phase >= i ? '#fff' : '#71717a',
-                }}
-              >
-                {s}
-              </span>
-              {i < STEPS.length - 1 && <span className="text-zinc-700 text-xs">→</span>}
-            </div>
-          ))}
+          {STEPS.map((s, i) => {
+            const on = phase >= i + 1;
+            return (
+              <div key={s} className="flex items-center gap-2">
+                <span
+                  className="text-xs px-2.5 py-1 rounded-full border transition-all duration-300"
+                  style={{
+                    borderColor: on ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.1)',
+                    background: on ? 'rgba(255,255,255,0.12)' : 'transparent',
+                    color: on ? '#fff' : '#71717a',
+                  }}
+                >
+                  {s}
+                </span>
+                {i < STEPS.length - 1 && <span className="text-zinc-700 text-xs">→</span>}
+              </div>
+            );
+          })}
         </div>
       </div>
 
