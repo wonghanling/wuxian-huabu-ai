@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { uploadImageToStorage } from '../lib/api';
 
 // ============================================================
-// 涂鸦编辑弹窗(Doodle Edit)
-// 在图片上涂抹/画圈/写文字标注 → 「保存涂鸦」合成为一张新图片卡(不扣费,不自动生成)
-// 用户之后自己连线到图片生成卡,或在新卡上点生成。
-// 双层 canvas:底层原图 + 上层涂鸦(线条+文字);图用 fetch→blob 加载规避跨域污染
+// 涂鸦工作台(Doodle Studio)
+// 从画布顶栏打开的大弹窗:上传图片 → 涂抹/画圈/写文字 → 发送到画布(新建图片卡)
+// portal 渲染到 body,规避 React Flow 节点 transform 导致 fixed 定位错乱
+// 双层 canvas:底层原图 + 上层涂鸦;图用 fetch→blob 加载规避跨域污染
 // ============================================================
 
 const COLORS = ['#ff3b30', '#ffcc00', '#34c759', '#0a84ff', '#ffffff', '#000000'];
@@ -16,7 +17,7 @@ const SIZES = [4, 8, 16];
 type Tool = 'pen' | 'eraser' | 'text';
 
 interface Props {
-  imageUrl: string;
+  imageUrl?: string;   // 可选:从图片卡带入的图;不传则显示上传入口
   onClose: () => void;
   onConfirm: (args: { doodleUrl: string }) => void;
 }
@@ -25,6 +26,7 @@ export function DoodleModal({ imageUrl, onClose, onConfirm }: Props) {
   const baseRef = useRef<HTMLCanvasElement>(null);   // 底图层
   const drawRef = useRef<HTMLCanvasElement>(null);   // 涂鸦层(线条+文字)
   const [imgEl, setImgEl] = useState<HTMLImageElement | null>(null);
+  const [srcUrl, setSrcUrl] = useState<string | undefined>(imageUrl); // 当前底图来源(上传后更新)
   const [color, setColor] = useState(COLORS[0]);
   const [size, setSize] = useState(SIZES[1]);
   const [tool, setTool] = useState<Tool>('pen');
@@ -37,10 +39,11 @@ export function DoodleModal({ imageUrl, onClose, onConfirm }: Props) {
 
   // 加载图片(fetch→blob→objectURL,规避跨域污染)
   useEffect(() => {
+    if (!srcUrl) { setImgEl(null); return; }
     let revoked = '';
     (async () => {
       try {
-        const res = await fetch(imageUrl, { mode: 'cors' });
+        const res = await fetch(srcUrl, { mode: 'cors' });
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
         revoked = url;
@@ -51,11 +54,18 @@ export function DoodleModal({ imageUrl, onClose, onConfirm }: Props) {
         const img = new Image();
         img.crossOrigin = 'anonymous';
         img.onload = () => setImgEl(img);
-        img.src = imageUrl;
+        img.src = srcUrl;
       }
     })();
     return () => { if (revoked) URL.revokeObjectURL(revoked); };
-  }, [imageUrl]);
+  }, [srcUrl]);
+
+  // 上传图片(本地文件 → objectURL 当底图)
+  const handleUpload = (files: FileList | null) => {
+    const f = files?.[0];
+    if (!f) return;
+    setSrcUrl(URL.createObjectURL(f));
+  };
 
   // 图片加载后画底图(等比,最长边 1024)
   useEffect(() => {
@@ -155,7 +165,7 @@ export function DoodleModal({ imageUrl, onClose, onConfirm }: Props) {
     }
   }, [busy, onConfirm, onClose]);
 
-  return (
+  return createPortal((
     <div
       className="nodrag nopan nowheel"
       style={overlay}
@@ -165,13 +175,18 @@ export function DoodleModal({ imageUrl, onClose, onConfirm }: Props) {
     >
       <div className="nodrag nopan nowheel" style={panel} onClick={(e) => e.stopPropagation()}>
         <div style={header}>
-          <span style={{ fontWeight: 700, fontSize: 16, color: '#fff' }}>涂鸦编辑</span>
-          <span style={{ fontSize: 12, color: '#8b8b92' }}>涂抹/画圈/写文字标注,保存后连线到图片生成卡使用</span>
+          <span style={{ fontWeight: 700, fontSize: 16, color: '#fff' }}>涂鸦工作台</span>
+          <span style={{ fontSize: 12, color: '#8b8b92' }}>上传图片,涂抹/画圈/写文字标注,发送到画布</span>
           <button onClick={onClose} style={closeBtn} title="关闭">✕</button>
         </div>
 
         {/* 工具条 */}
         <div style={toolbar}>
+          <label style={{ ...textBtn, cursor: 'pointer' }}>
+            上传图片
+            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleUpload(e.target.files)} />
+          </label>
+          <span style={divider} />
           <span style={{ fontSize: 12, color: '#8b8b92', marginRight: 2 }}>颜色</span>
           {COLORS.map((c) => (
             <button key={c} onClick={() => setColor(c)}
@@ -186,54 +201,62 @@ export function DoodleModal({ imageUrl, onClose, onConfirm }: Props) {
             </button>
           ))}
           <span style={divider} />
-          <button onClick={() => setTool('pen')} style={toolBtnStyle(tool === 'pen')}>✏ 画笔</button>
-          <button onClick={() => setTool('text')} style={toolBtnStyle(tool === 'text')}>T 文字</button>
+          <button onClick={() => setTool('pen')} style={toolBtnStyle(tool === 'pen')}>画笔</button>
+          <button onClick={() => setTool('text')} style={toolBtnStyle(tool === 'text')}>文字</button>
           <button onClick={() => setTool('eraser')} style={toolBtnStyle(tool === 'eraser')}>橡皮擦</button>
           <button onClick={clearDoodle} style={textBtn}>清空</button>
         </div>
 
         {/* 画布区:图片直接铺,无容器无滚动条 */}
         <div style={canvasWrap}>
-          <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0, verticalAlign: 'top' }}>
-            <canvas ref={baseRef} style={{ display: 'block', maxWidth: '90vw', maxHeight: '80vh', borderRadius: 8 }} />
-            <canvas ref={drawRef}
-              onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerLeave={onUp}
-              style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', cursor: tool === 'text' ? 'text' : 'crosshair', touchAction: 'none' }} />
-            {/* 文字输入浮层(相对画布定位) */}
-            {textInput && (
-              <input
-                ref={textRef}
-                value={textInput.value}
-                onChange={(e) => setTextInput({ ...textInput, value: e.target.value })}
-                onBlur={commitText}
-                onKeyDown={(e) => { if (e.key === 'Enter') commitText(); if (e.key === 'Escape') setTextInput(null); }}
-                placeholder="输入文字,回车确认"
-                style={{
-                  position: 'absolute', left: textInput.cx, top: textInput.cy,
-                  font: `bold ${Math.max(15, size * 2.5)}px sans-serif`, color, lineHeight: 1.2,
-                  background: 'rgba(0,0,0,0.6)', border: `1px solid ${color}`, borderRadius: 6,
-                  padding: '2px 6px', outline: 'none', width: 180, maxWidth: '60%', zIndex: 5,
-                }}
-              />
-            )}
-            {!imgEl && <div style={{ padding: 60, color: '#71717a', fontSize: 13 }}>加载图片中…</div>}
-          </div>
+          {srcUrl ? (
+            <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0, verticalAlign: 'top' }}>
+              <canvas ref={baseRef} style={{ display: 'block', maxWidth: '90vw', maxHeight: '80vh', borderRadius: 8 }} />
+              <canvas ref={drawRef}
+                onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerLeave={onUp}
+                style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', cursor: tool === 'text' ? 'text' : 'crosshair', touchAction: 'none' }} />
+              {/* 文字输入浮层(相对画布定位) */}
+              {textInput && (
+                <input
+                  ref={textRef}
+                  value={textInput.value}
+                  onChange={(e) => setTextInput({ ...textInput, value: e.target.value })}
+                  onBlur={commitText}
+                  onKeyDown={(e) => { if (e.key === 'Enter') commitText(); if (e.key === 'Escape') setTextInput(null); }}
+                  placeholder="输入文字,回车确认"
+                  style={{
+                    position: 'absolute', left: textInput.cx, top: textInput.cy,
+                    font: `bold ${Math.max(15, size * 2.5)}px sans-serif`, color, lineHeight: 1.2,
+                    background: 'rgba(0,0,0,0.6)', border: `1px solid ${color}`, borderRadius: 6,
+                    padding: '2px 6px', outline: 'none', width: 180, maxWidth: '60%', zIndex: 5,
+                  }}
+                />
+              )}
+              {!imgEl && <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#71717a', fontSize: 13 }}>加载图片中…</div>}
+            </div>
+          ) : (
+            <label style={uploadDrop}>
+              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => handleUpload(e.target.files)} />
+              <div style={{ fontSize: 15, color: '#e4e4e7', marginBottom: 6 }}>点击上传图片</div>
+              <div style={{ fontSize: 12, color: '#71717a' }}>上传后即可在图上涂抹、画圈、写文字标注</div>
+            </label>
+          )}
         </div>
 
-        {/* 底部:保存(不扣费) */}
+        {/* 底部:发送到画布(不扣费) */}
         <div style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, borderTop: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
           <span style={{ fontSize: 12, color: '#8b8b92', flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            保存为新图片卡(免费 · 不生成),之后连线到图片生成卡使用
+            发送到画布(免费 · 不生成),作为新图片卡,可连线到图片生成卡使用
           </span>
           <button onClick={onClose} style={cancelBtn}>取消</button>
-          <button onClick={handleSave} disabled={busy || !imgEl}
-            style={{ ...genBtn, opacity: (busy || !imgEl) ? 0.5 : 1, cursor: busy ? 'wait' : 'pointer', whiteSpace: 'nowrap' }}>
-            {busy ? '保存中…' : '保存涂鸦'}
+          <button onClick={handleSave} disabled={busy || !imgEl || !srcUrl}
+            style={{ ...genBtn, opacity: (busy || !imgEl || !srcUrl) ? 0.5 : 1, cursor: busy ? 'wait' : 'pointer', whiteSpace: 'nowrap' }}>
+            {busy ? '处理中…' : '发送到画布'}
           </button>
         </div>
       </div>
     </div>
-  );
+  ), document.body);
 }
 
 const toolBtnStyle = (active: boolean): React.CSSProperties => ({
@@ -283,6 +306,12 @@ const textBtn: React.CSSProperties = {
 const canvasWrap: React.CSSProperties = {
   padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
   background: '#0e100e',
+};
+const uploadDrop: React.CSSProperties = {
+  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+  width: 'min(680px,80vw)', height: 'min(440px,60vh)', cursor: 'pointer',
+  border: '2px dashed rgba(255,255,255,0.18)', borderRadius: 16, background: 'rgba(255,255,255,0.02)',
+  textAlign: 'center',
 };
 const cancelBtn: React.CSSProperties = {
   padding: '11px 24px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.14)',

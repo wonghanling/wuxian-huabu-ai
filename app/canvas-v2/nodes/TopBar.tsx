@@ -8,6 +8,8 @@ import { listCanvases, createCanvas, deleteCanvas } from '@/lib/canvas-storage';
 import AccountModal from '@/app/canvas/AccountModal';
 import { SaveTemplateModal } from './SaveTemplateModal';
 import { ScriptStudioModal } from './ScriptStudioModal';
+import { DoodleModal } from './DoodleModal';
+import { useCanvasStore } from '../store';
 
 // ============================================================
 // 画布右上角状态栏(照原网 fixed top-4 right-4，1:1 复刻样式)
@@ -26,6 +28,7 @@ export function TopBar({ saveStatus, switchCanvas, getCurrentCanvasId }: Props) 
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
   const [showScriptStudio, setShowScriptStudio] = useState(false);
+  const [showDoodle, setShowDoodle] = useState(false);
   const [canvases, setCanvases] = useState<{ id: string; title: string; updated_at: string }[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -216,6 +219,18 @@ export function TopBar({ saveStatus, switchCanvas, getCurrentCanvasId }: Props) 
           <span>剧本工作室</span>
         </button>
 
+        {/* 涂鸦工作台入口 */}
+        <button
+          onClick={() => setShowDoodle(true)}
+          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-emerald-600/30 backdrop-blur-md border border-emerald-500/40 text-emerald-200 hover:bg-emerald-600/50 hover:border-emerald-500/60 transition-all"
+          title="涂鸦工作台:上传图片涂抹标注后发送到画布"
+        >
+          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+          </svg>
+          <span>涂鸦</span>
+        </button>
+
         {/* 返回主页按钮 */}
         <button
           onClick={goHome}
@@ -247,6 +262,17 @@ export function TopBar({ saveStatus, switchCanvas, getCurrentCanvasId }: Props) 
       {/* 剧本工作室全屏弹窗 */}
       {showScriptStudio && (
         <ScriptStudioModal onClose={() => setShowScriptStudio(false)} />
+      )}
+
+      {/* 涂鸦工作台 */}
+      {showDoodle && (
+        <DoodleModal
+          onClose={() => setShowDoodle(false)}
+          onConfirm={({ doodleUrl }) => {
+            useCanvasStore.getState().addImageCardWithRef(doodleUrl, '', 'nano-banana-pro');
+            (window as any).saveCanvasV2Now?.();
+          }}
+        />
       )}
     </>
   );
