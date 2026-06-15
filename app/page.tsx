@@ -433,10 +433,6 @@ export default function Home() {
                   alt="剧本工作室"
                   className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
-                <div className="absolute bottom-5 left-6 right-6">
-                  <p className="text-white text-lg font-semibold drop-shadow-lg">每一帧,都从严谨的剧本开始</p>
-                </div>
               </div>
             </div>
 

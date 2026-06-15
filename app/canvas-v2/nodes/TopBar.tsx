@@ -235,12 +235,12 @@ export function TopBar({ saveStatus, switchCanvas, getCurrentCanvasId }: Props) 
         <button
           onClick={() => setShowDoodle(true)}
           className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-white/5 backdrop-blur-md border border-white/15 text-zinc-200 hover:bg-white/10 hover:border-white/25 transition-all"
-          title="涂鸦工作台:上传图片涂抹标注后发送到画布"
+          title="草图涂鸦:上传图片涂抹标注后发送到画布"
         >
           <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
           </svg>
-          <span>涂鸦</span>
+          <span>涂鸦标注</span>
         </button>
 
         {/* 返回主页按钮 */}

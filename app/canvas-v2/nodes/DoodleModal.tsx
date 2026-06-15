@@ -175,7 +175,7 @@ export function DoodleModal({ imageUrl, onClose, onConfirm }: Props) {
     >
       <div className="nodrag nopan nowheel" style={panel} onClick={(e) => e.stopPropagation()}>
         <div style={header}>
-          <span style={{ fontWeight: 700, fontSize: 16, color: '#fff' }}>涂鸦工作台</span>
+          <span style={{ fontWeight: 700, fontSize: 16, color: '#fff' }}>涂鸦标注</span>
           <span style={{ fontSize: 12, color: '#8b8b92' }}>上传图片,涂抹/画圈/写文字标注,发送到画布</span>
           <button onClick={onClose} style={closeBtn} title="关闭">✕</button>
         </div>

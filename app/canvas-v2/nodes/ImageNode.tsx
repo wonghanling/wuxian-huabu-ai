@@ -110,10 +110,11 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   };
 
   const handleGenerate = async () => {
-    // 连线传参:连接文案在前 + prompt(已含预设前缀+用户输入)在后(照原网顺序)
+    // 连线传参:JSON控制(系统级)在最前 + 连接文案 + prompt(已含预设前缀+用户输入)
     const upstream = getUpstreamOutputs(id);
     const connectedPrompt = upstream.texts.length > 0 ? upstream.texts.join('\n') : '';
-    const effPrompt = [connectedPrompt, data.config.prompt].filter(Boolean).join('\n').trim();
+    const ctrlJson = (data.config.controlJson || '').trim();
+    const effPrompt = [ctrlJson, connectedPrompt, data.config.prompt].filter(Boolean).join('\n').trim();
     if (!effPrompt.trim() && upstream.images.length === 0) return;
     updateCard(id, { status: 'generating', progress: 15 });
     // 进度条动画(真实任务无确切进度,用渐进动画到 90% 等结果)
@@ -227,7 +228,8 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
       {/* ===== 底部一体式 prompt 栏(仅空卡片出现;已有图则不出) ===== */}
       <NodeToolbar isVisible={selected && !editing && !spawnOpen && !displayImg} position={Position.Bottom} offset={16}>
         <div className="nodrag nopan" style={promptBar} onClick={(e) => e.stopPropagation()} onDoubleClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
-          <PromptTools value={data.config.prompt} onPaste={(t) => updateConfig(id, { prompt: t })} />
+          <PromptTools value={data.config.prompt} onPaste={(t) => updateConfig(id, { prompt: t })}
+            jsonControl={{ value: data.config.controlJson || '', onChange: (j) => updateConfig(id, { controlJson: j }) }} />
           <PromptArea
             connectedText={connectedTexts.length > 0 ? connectedTexts.join('\n') : undefined}
             value={data.config.prompt}

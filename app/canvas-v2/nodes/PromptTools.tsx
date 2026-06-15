@@ -1,14 +1,139 @@
 'use client';
 
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { IconCopy, IconPaste } from './icons';
 
 // ============ prompt 框的复制/粘贴/翻译按钮(各卡共用) ============
 // 一键复制当前 prompt;一键粘贴剪贴板内容到 prompt;一键中英互译
 // 翻译:仅替换输入框文本(用户手动点),不改任何生成/传参逻辑
+// jsonControl:可选,仅图片卡传入 → 在复制按钮左边显示「{}」JSON 控制按钮
+//   点击弹窗输入 JSON,保存到 config.controlJson,生成时作系统级前缀注入(不解析、纯文本)
 
-export function PromptTools({ value, onPaste }: { value: string; onPaste: (text: string) => void }) {
+interface JsonControl {
+  value: string;
+  onChange: (json: string) => void;
+}
+
+// JSON 控制快捷注入模板(点击填入输入框,用户可再改)
+const JSON_PRESETS: { label: string; json: string }[] = [
+  {
+    label: '服装装备设计',
+    json: `{
+  "agent_name": "Costume & Equipment Technical Designer",
+  "identity": {
+    "role": "World-Class Costume Designer, Equipment Designer, Wardrobe Technical Designer and Production Design Specialist",
+    "expertise": [
+      "film costume design",
+      "wardrobe design",
+      "technical apparel design",
+      "industrial workwear design",
+      "equipment design",
+      "gear system design",
+      "loadout design",
+      "product design",
+      "concept art design",
+      "production design"
+    ]
+  },
+  "mission": "Design professional costume systems, equipment systems, accessories, tools and wearable gear as production-ready technical design sheets.",
+  "design_principles": [
+    "function first",
+    "silhouette clarity",
+    "realistic construction",
+    "manufacturing plausibility",
+    "material consistency",
+    "equipment hierarchy",
+    "visual readability",
+    "professional technical presentation",
+    "production-ready design",
+    "high-detail breakdown"
+  ],
+  "required_output": {
+    "costume_system": {
+      "headgear": "",
+      "upper_body": "",
+      "inner_layer": "",
+      "lower_body": "",
+      "footwear": "",
+      "gloves": "",
+      "belt_system": "",
+      "accessories": ""
+    },
+    "equipment_system": {
+      "primary_equipment": [],
+      "secondary_equipment": [],
+      "tools": [],
+      "safety_equipment": [],
+      "communication_devices": [],
+      "utility_items": []
+    },
+    "material_system": {
+      "fabric_types": [],
+      "metal_parts": [],
+      "plastic_parts": [],
+      "rubber_parts": [],
+      "reflective_materials": [],
+      "surface_finish": []
+    },
+    "color_system": {
+      "primary_color": "",
+      "secondary_color": "",
+      "accent_color": "",
+      "safety_color": ""
+    },
+    "visual_signature": {
+      "recognizable_elements": [],
+      "signature_shapes": [],
+      "signature_accessories": []
+    }
+  },
+  "image_sheet_requirements": {
+    "front_view": true,
+    "back_view": true,
+    "side_view": true,
+    "equipment_breakdown": true,
+    "material_breakdown": true,
+    "detail_callouts": true,
+    "white_background": true,
+    "technical_annotations": true,
+    "production_design_board": true
+  },
+  "sheet_layout": {
+    "top_row": ["front_view", "side_view", "back_view"],
+    "middle_row": ["helmet", "equipment", "tools"],
+    "bottom_row": ["material_details", "fastening_system", "accessory_details"]
+  },
+  "style_keywords": [
+    "costume technical sheet",
+    "equipment breakdown board",
+    "industrial design board",
+    "production design sheet",
+    "concept design sheet",
+    "product design presentation",
+    "white background",
+    "technical drawing layout",
+    "high detail",
+    "professional annotations"
+  ],
+  "forbidden": [
+    "character posing",
+    "environment scene",
+    "dramatic lighting",
+    "cinematic composition",
+    "action shot",
+    "story illustration",
+    "background landscape",
+    "full character artwork"
+  ]
+}`,
+  },
+];
+
+export function PromptTools({ value, onPaste, jsonControl }: { value: string; onPaste: (text: string) => void; jsonControl?: JsonControl }) {
   const [translating, setTranslating] = useState(false);
+  const [jsonOpen, setJsonOpen] = useState(false);
+  const [draft, setDraft] = useState('');
   const copy = async (e: React.MouseEvent) => {
     e.stopPropagation();
     try { await navigator.clipboard.writeText(value || ''); } catch {}
@@ -38,14 +163,69 @@ export function PromptTools({ value, onPaste }: { value: string; onPaste: (text:
     } catch {}
     finally { setTranslating(false); }
   };
+  const openJson = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDraft(jsonControl?.value || '');
+    setJsonOpen(true);
+  };
+  const saveJson = () => { jsonControl?.onChange(draft.trim()); setJsonOpen(false); };
+  const hasJson = !!(jsonControl?.value || '').trim();
   return (
     <div style={wrap} onClick={(e) => e.stopPropagation()}>
+      {jsonControl && (
+        <button
+          style={{ ...btn, width: 'auto', padding: '0 7px', fontSize: 11, fontWeight: 700,
+            color: hasJson ? '#fafafa' : '#a1a1aa',
+            background: hasJson ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.05)',
+            borderColor: hasJson ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.12)' }}
+          onClick={openJson} title="JSON 控制(每次生成按此 JSON,作系统级前缀)">
+          {'{ }'}
+        </button>
+      )}
       <button style={btn} onClick={copy} title="复制 prompt"><IconCopy size={13} /></button>
       <button style={btn} onClick={paste} title="粘贴到 prompt"><IconPaste size={13} /></button>
       <button style={{ ...btn, width: 'auto', padding: '0 7px', fontSize: 11, color: translating ? '#d4d4d8' : '#a1a1aa', cursor: translating ? 'wait' : 'pointer' }}
         onClick={translate} disabled={translating} title="中英互译">
         {translating ? '…' : '译'}
       </button>
+
+      {jsonOpen && jsonControl && createPortal((
+        <div className="nodrag nopan nowheel" style={ovl} onClick={() => setJsonOpen(false)}
+          onPointerDown={(e) => e.stopPropagation()} onWheel={(e) => e.stopPropagation()}>
+          <div className="nodrag nopan nowheel" style={modal} onClick={(e) => e.stopPropagation()}>
+            <div style={modalHead}>
+              <span style={{ fontWeight: 700, fontSize: 15, color: '#fff' }}>JSON 控制</span>
+              <button onClick={() => setJsonOpen(false)} style={xBtn} title="关闭">✕</button>
+            </div>
+            <div style={{ fontSize: 12, color: '#8b8b92', padding: '0 18px 10px' }}>
+              填入 JSON 形式的生成控制(如画风、构图、参数约束)。每次生成都会作为系统级指令注入,优先于下方 prompt。留空则不生效。
+            </div>
+            {/* 快捷注入:点击填入模板,用户可再改 */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '0 18px 12px' }}>
+              <span style={{ fontSize: 11, color: '#71717a', alignSelf: 'center' }}>快捷注入</span>
+              {JSON_PRESETS.map((p) => (
+                <button key={p.label} onClick={() => setDraft(p.json)} style={presetChip} title={`填入「${p.label}」模板`}>
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            <textarea
+              className="cv2-scroll"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder={'{\n  "style": "cinematic",\n  "lighting": "soft",\n  "composition": "rule of thirds"\n}'}
+              spellCheck={false}
+              style={ta}
+            />
+            <div style={modalFoot}>
+              <button onClick={() => { setDraft(''); }} style={ghostBtn}>清空</button>
+              <div style={{ flex: 1 }} />
+              <button onClick={() => setJsonOpen(false)} style={ghostBtn}>取消</button>
+              <button onClick={saveJson} style={saveBtn}>保存</button>
+            </div>
+          </div>
+        </div>
+      ), document.body)}
     </div>
   );
 }
@@ -58,4 +238,45 @@ const btn: React.CSSProperties = {
   borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)',
   background: 'rgba(255,255,255,0.05)', color: '#a1a1aa', cursor: 'pointer',
   transition: 'background .15s, color .15s',
+};
+
+const ovl: React.CSSProperties = {
+  position: 'fixed', inset: 0, zIndex: 2147483647,
+  background: 'rgba(0,0,0,0.62)', backdropFilter: 'blur(3px)',
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+};
+const modal: React.CSSProperties = {
+  width: 'min(560px,92vw)', maxHeight: '86vh', display: 'flex', flexDirection: 'column',
+  background: 'linear-gradient(180deg,#1a1a1c 0%,#141415 100%)',
+  border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16,
+  boxShadow: '0 30px 90px rgba(0,0,0,0.8)', overflow: 'hidden',
+};
+const modalHead: React.CSSProperties = {
+  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+  padding: '16px 18px 10px',
+};
+const xBtn: React.CSSProperties = {
+  width: 28, height: 28, borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)',
+  background: 'rgba(255,255,255,0.05)', color: '#d4d4d8', cursor: 'pointer', fontSize: 13,
+};
+const ta: React.CSSProperties = {
+  margin: '0 18px', minHeight: 220, padding: 12, resize: 'vertical',
+  background: '#0c0c0d', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10,
+  color: '#e4e4e7', fontSize: 13, fontFamily: 'ui-monospace, Menlo, Consolas, monospace',
+  lineHeight: 1.6, outline: 'none',
+};
+const modalFoot: React.CSSProperties = {
+  display: 'flex', alignItems: 'center', gap: 10, padding: 16,
+};
+const ghostBtn: React.CSSProperties = {
+  padding: '8px 16px', borderRadius: 9, border: '1px solid rgba(255,255,255,0.14)',
+  background: 'rgba(255,255,255,0.05)', color: '#d4d4d8', cursor: 'pointer', fontSize: 13,
+};
+const saveBtn: React.CSSProperties = {
+  padding: '8px 22px', borderRadius: 9, border: 'none',
+  background: 'linear-gradient(135deg,#e4e4e7,#a1a1aa)', color: '#0a0a0a', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+};
+const presetChip: React.CSSProperties = {
+  padding: '5px 12px', borderRadius: 99, fontSize: 12, cursor: 'pointer',
+  border: '1px solid rgba(255,255,255,0.18)', background: 'rgba(255,255,255,0.06)', color: '#d4d4d8',
 };

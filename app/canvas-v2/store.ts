@@ -95,6 +95,7 @@ export interface CardData extends Record<string, unknown> {
     imageQuality?: string;      // 清晰度/画质 2k|4k|medium|high
     preset?: string;            // 预设参数(风格)
     refImages?: string[];       // 参考图 URL 数组
+    controlJson?: string;       // 图片卡 JSON 控制(用户自填,生成时作系统级前缀注入 prompt)
     // 视频卡片专用
     audio?: boolean;            // 音频开关(生成视频是否带音频)
     firstFrame?: string;        // 首帧图 URL
