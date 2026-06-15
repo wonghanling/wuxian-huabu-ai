@@ -16,7 +16,7 @@ interface Stage {
   title: string;
   en: string;
   desc: string;
-  kind: 'text' | 'image';
+  kind: 'text' | 'image' | 'asset';
   image?: string;
   caption?: string;
   lines?: string[];           // 文字阶段:逐行打字
@@ -47,23 +47,26 @@ const STAGES: Stage[] = [
     ],
   },
   {
-    key: 'character', no: '03', title: '人物设计', en: 'Character Bible', kind: 'image',
+    key: 'character', no: '03', title: '人物设计', en: 'Character Bible', kind: 'asset',
     desc: '角色三视图定妆 + 服装装备连续性表，锁定跨镜头一致性',
-    image: '/image-imqdffnvn2.jpg',
-    caption: '主角 · 三视角定妆设计稿',
+    assets: [
+      { label: '主角设计', image: '/renwusheji1.webp', caption: '主角 · 三视角定妆设计稿' },
+      { label: '配角设计', image: '/renwusheji3.webp', caption: '配角 · 角色设定稿' },
+    ],
   },
   {
     key: 'scene', no: '04', title: '场景设计', en: 'Environment Bible', kind: 'image',
     desc: '场景世界观 + 多视角概念图，定义每一处空间的光影与质感',
-    image: '/image-imqddcza90.jpg',
+    image: '/changjingsheji.webp',
     caption: '核心场景 · 概念设计图',
   },
   {
-    key: 'asset', no: '05', title: '资产分解', en: 'Asset Bible', kind: 'text',
+    key: 'asset', no: '05', title: '资产分解', en: 'Asset Bible', kind: 'asset',
     desc: '场景与人物里的每件资产，都能钻取出独立的技术分解图',
     assets: [
-      { label: '装备分解', image: '/image-imqduo6a60.jpg', caption: '装备系统 · 技术分解板' },
-      { label: '近塔分解', image: '/image-imqddcza90.jpg', caption: '场景资产 · 近塔结构分解' },
+      { label: '装备分解', image: '/zhuangbeifenjie.webp', caption: '装备系统 · 技术分解板' },
+      { label: '近塔分解 ①', image: '/jintafenjie1.webp', caption: '场景资产 · 近塔结构分解' },
+      { label: '近塔分解 ②', image: '/jintafenjie2.webp', caption: '场景资产 · 近塔细节分解' },
     ],
   },
   {
@@ -141,7 +144,7 @@ function StageScreen({ stage, assetIdx, setAssetIdx }: { stage: Stage; assetIdx:
     return <DemoImage key={stage.key} src={stage.image} caption={stage.caption} />;
   }
   if (stage.assets) {
-    const a = stage.assets[assetIdx];
+    const a = stage.assets[Math.min(assetIdx, stage.assets.length - 1)];
     return (
       <div>
         <div className="flex flex-wrap gap-2.5 mb-5">
