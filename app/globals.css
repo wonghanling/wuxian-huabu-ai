@@ -233,3 +233,7 @@ body::-webkit-scrollbar {
 .react-flow pre::-webkit-scrollbar-thumb:hover {
   background: rgba(82,82,91,0.95) !important;
 }
+
+/* 剧本演示打字机光标闪烁 */
+.cursor-blink { animation: cursor-blink 1s step-end infinite; }
+@keyframes cursor-blink { 50% { opacity: 0; } }
