@@ -30,7 +30,11 @@ export function CanvasLoader({ loading }: { loading: boolean }) {
         <div style={{ ...orbit, animationDelay: '-0.6s', opacity: 0.6 }} />
         <div style={core} />
       </div>
-      <div style={label}>正在加载画布</div>
+      <div style={label}>
+        <span style={{ color: '#6ee7b7', fontWeight: 800, letterSpacing: 3 }}>BOLUOLAB</span>
+        <span style={{ color: '#10b981', margin: '0 8px', opacity: 0.6 }}>·</span>
+        <span style={{ color: '#d1fae5', fontWeight: 500, letterSpacing: 2 }}>filmavo</span>
+      </div>
       <div style={dots}>
         <span style={{ ...dot, animationDelay: '0s' }} />
         <span style={{ ...dot, animationDelay: '0.18s' }} />
@@ -73,7 +77,7 @@ const core: React.CSSProperties = {
 };
 
 const label: React.CSSProperties = {
-  fontSize: 14, letterSpacing: 2, color: '#d1fae5', fontWeight: 500,
+  fontSize: 17, display: 'flex', alignItems: 'center',
 };
 
 const dots: React.CSSProperties = { display: 'flex', gap: 7 };
