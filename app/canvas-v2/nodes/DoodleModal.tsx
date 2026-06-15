@@ -208,7 +208,7 @@ export function DoodleModal({ imageUrl, onClose, onConfirm }: Props) {
         </div>
 
         {/* 画布区:图片直接铺,无容器无滚动条 */}
-        <div style={canvasWrap}>
+        <div style={canvasWrap} className="cv2-scroll">
           {srcUrl ? (
             <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0, verticalAlign: 'top' }}>
               <canvas ref={baseRef} style={{ display: 'block', maxWidth: '90vw', maxHeight: '80vh', borderRadius: 8 }} />
@@ -304,6 +304,7 @@ const textBtn: React.CSSProperties = {
   background: 'rgba(255,255,255,0.05)', color: '#d4d4d8', cursor: 'pointer', fontSize: 12.5, fontWeight: 500,
 };
 const canvasWrap: React.CSSProperties = {
+  flex: 1, minHeight: 0, overflow: 'auto',
   padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
   background: '#0e100e',
 };

@@ -35,55 +35,36 @@ export function DoodleDemo() {
           onClick={run}
           title="点击重播"
         >
-          {/* 底图 */}
-          <img src="/renwusheji1.webp" alt="涂鸦标注演示" className="w-full h-auto block opacity-90" draggable={false} />
+          {/* 真实涂鸦标注图(底图已含标注) */}
+          <img src="/tuyabiaozhu.webp" alt="涂鸦标注演示" className="w-full h-auto block" draggable={false} />
 
-          {/* 标注层 */}
-          <div className="absolute inset-0 pointer-events-none">
-            {/* 圈选(手绘椭圆) */}
-            <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 w-full h-full">
-              <ellipse
-                cx="50" cy="38" rx="22" ry="26"
-                fill="none" stroke="#ff4d4f" strokeWidth="0.9" strokeLinecap="round"
-                strokeDasharray="170" strokeDashoffset={phase >= 1 ? 0 : 170}
-                style={{ transition: 'stroke-dashoffset 0.9s ease', filter: 'drop-shadow(0 0 4px rgba(255,77,79,0.5))' }}
-              />
-              {/* 指示箭头 */}
-              <line
-                x1="80" y1="74" x2="62" y2="52"
-                stroke="#ffd666" strokeWidth="0.8" strokeLinecap="round"
-                strokeDasharray="30" strokeDashoffset={phase >= 1 ? 0 : 30}
-                style={{ transition: 'stroke-dashoffset 0.6s ease 0.4s' }}
-              />
-              <polygon points="62,52 66,56 60,57"
-                fill="#ffd666"
-                style={{ opacity: phase >= 1 ? 1 : 0, transition: 'opacity 0.3s ease 0.9s' }}
-              />
-            </svg>
-
-            {/* 文字标注气泡 */}
-            <div
-              className="absolute"
-              style={{
-                right: '6%', bottom: '14%',
-                opacity: phase >= 2 ? 1 : 0,
-                transform: phase >= 2 ? 'translateY(0)' : 'translateY(10px)',
-                transition: 'all 0.5s ease',
-              }}
-            >
-              <div className="px-3 py-1.5 rounded-lg text-xs font-medium text-white shadow-lg"
-                style={{ background: 'rgba(255,77,79,0.92)' }}>
-                把头发改成银白色
-              </div>
-            </div>
-          </div>
-
-          {/* "发送到画布" 飞出提示 */}
+          {/* 扫描揭示遮罩:从上往下揭开,模拟"正在标注" */}
           <div
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+            className="absolute inset-x-0 top-0 bg-black"
             style={{
+              height: phase >= 1 ? '0%' : '100%',
+              transition: 'height 1.1s cubic-bezier(.4,0,.2,1)',
+            }}
+          />
+          {/* 扫描线 */}
+          <div
+            className="absolute inset-x-0 h-[2px]"
+            style={{
+              top: phase >= 1 ? '100%' : '0%',
+              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.9), transparent)',
+              boxShadow: '0 0 14px rgba(255,255,255,0.7)',
+              opacity: phase === 0 || phase >= 2 ? 0 : 1,
+              transition: 'top 1.1s cubic-bezier(.4,0,.2,1), opacity 0.3s ease',
+            }}
+          />
+
+          {/* "已发送到画布" 提示 */}
+          <div
+            className="absolute left-1/2"
+            style={{
+              bottom: '6%',
+              transform: `translateX(-50%) translateY(${phase >= 3 ? '0' : '14px'})`,
               opacity: phase >= 3 ? 1 : 0,
-              transform: `translate(-50%,-50%) scale(${phase >= 3 ? 1 : 0.8})`,
               transition: 'all 0.5s cubic-bezier(.2,.8,.2,1)',
             }}
           >
