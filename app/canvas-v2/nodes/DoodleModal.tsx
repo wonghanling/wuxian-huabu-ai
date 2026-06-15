@@ -194,12 +194,12 @@ export function DoodleModal({ imageUrl, onClose, onConfirm }: Props) {
 
         {/* 画布区 */}
         <div style={canvasWrap} className="cv2-scroll">
-          <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0 }}>
-            <canvas ref={baseRef} style={{ display: 'block', maxWidth: '100%', maxHeight: '64vh', borderRadius: 10 }} />
+          <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0, verticalAlign: 'top' }}>
+            <canvas ref={baseRef} style={{ display: 'block', maxWidth: '88vw', maxHeight: '76vh', borderRadius: 10 }} />
             <canvas ref={drawRef}
               onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerLeave={onUp}
-              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', cursor: tool === 'text' ? 'text' : 'crosshair', touchAction: 'none' }} />
-            {/* 文字输入浮层 */}
+              style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', cursor: tool === 'text' ? 'text' : 'crosshair', touchAction: 'none' }} />
+            {/* 文字输入浮层(相对画布定位) */}
             {textInput && (
               <input
                 ref={textRef}
@@ -210,9 +210,9 @@ export function DoodleModal({ imageUrl, onClose, onConfirm }: Props) {
                 placeholder="输入文字,回车确认"
                 style={{
                   position: 'absolute', left: textInput.cx, top: textInput.cy,
-                  font: `bold ${Math.max(16, size * 3)}px sans-serif`, color,
-                  background: 'rgba(0,0,0,0.5)', border: `1px solid ${color}`, borderRadius: 6,
-                  padding: '2px 6px', outline: 'none', minWidth: 120, zIndex: 5,
+                  font: `bold ${Math.max(15, size * 2.5)}px sans-serif`, color, lineHeight: 1.2,
+                  background: 'rgba(0,0,0,0.6)', border: `1px solid ${color}`, borderRadius: 6,
+                  padding: '2px 6px', outline: 'none', width: 180, maxWidth: '60%', zIndex: 5,
                 }}
               />
             )}
@@ -221,11 +221,13 @@ export function DoodleModal({ imageUrl, onClose, onConfirm }: Props) {
         </div>
 
         {/* 底部:保存(不扣费) */}
-        <div style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
-          <span style={{ fontSize: 12, color: '#8b8b92', flex: 1 }}>保存为新图片卡(免费,不生成);之后连线到图片生成卡或在新卡点生成</span>
+        <div style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, borderTop: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
+          <span style={{ fontSize: 12, color: '#8b8b92', flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            保存为新图片卡(免费 · 不生成),之后连线到图片生成卡使用
+          </span>
           <button onClick={onClose} style={cancelBtn}>取消</button>
           <button onClick={handleSave} disabled={busy || !imgEl}
-            style={{ ...genBtn, opacity: (busy || !imgEl) ? 0.5 : 1, cursor: busy ? 'wait' : 'pointer' }}>
+            style={{ ...genBtn, opacity: (busy || !imgEl) ? 0.5 : 1, cursor: busy ? 'wait' : 'pointer', whiteSpace: 'nowrap' }}>
             {busy ? '保存中…' : '保存涂鸦'}
           </button>
         </div>
@@ -247,10 +249,10 @@ const overlay: React.CSSProperties = {
   display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
 };
 const panel: React.CSSProperties = {
-  width: 'min(1200px, 96vw)', height: 'min(900px, 95vh)',
+  width: 'auto', maxWidth: '96vw', maxHeight: '95vh',
   background: 'linear-gradient(180deg,#1a1d1b 0%,#141613 100%)',
   border: '1px solid rgba(255,255,255,0.1)',
-  borderRadius: 22, boxShadow: '0 40px 120px rgba(0,0,0,0.85), 0 0 0 1px rgba(16,185,129,0.06) inset',
+  borderRadius: 20, boxShadow: '0 40px 120px rgba(0,0,0,0.85), 0 0 0 1px rgba(16,185,129,0.06) inset',
   display: 'flex', flexDirection: 'column', overflow: 'hidden',
 };
 const header: React.CSSProperties = {
@@ -279,9 +281,8 @@ const textBtn: React.CSSProperties = {
   background: 'rgba(255,255,255,0.05)', color: '#d4d4d8', cursor: 'pointer', fontSize: 12.5, fontWeight: 500,
 };
 const canvasWrap: React.CSSProperties = {
-  padding: 24, overflow: 'auto', textAlign: 'center',
+  padding: 16, overflow: 'auto', textAlign: 'center',
   background: 'repeating-conic-gradient(#191c1a 0% 25%, #1f231f 0% 50%) 50% / 26px 26px',
-  flex: 1, minHeight: 0,
 };
 const cancelBtn: React.CSSProperties = {
   padding: '11px 24px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.14)',

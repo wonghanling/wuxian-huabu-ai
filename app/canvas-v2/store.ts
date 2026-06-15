@@ -301,7 +301,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     return newId;
   },
 
-  // 涂鸦编辑:用涂鸦合成图当参考图,新建一张图片卡(预填 model/prompt/refImages,empty 态由用户点生成)
+  // 涂鸦编辑:把涂鸦合成图作为新图片卡的成品显示(done态),同时存进 refImages 供连线给生成卡当参考
   addImageCardWithRef: (refUrl, prompt, model) => {
     const newId = `i${Date.now()}`;
     const src = get().nodes.find((n) => n.id === get().selectedId);
@@ -313,8 +313,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       position: { x: baseX, y: baseY },
       data: {
         kind: 'image',
-        status: 'empty',
-        outputUrl: null,
+        status: 'done',           // 涂鸦图本身即成品,卡面直接显示
+        outputUrl: refUrl,        // 卡面显示涂鸦后的图
         text: '',
         config: { model: model || 'nano-banana-pro', prompt: prompt || '', ratio: '1:1', imageQuality: '2k', refImages: [refUrl] },
       },
