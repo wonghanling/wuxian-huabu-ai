@@ -60,7 +60,7 @@ export function DoodleModal({ imageUrl, onClose, onConfirm }: Props) {
   // 图片加载后画底图(等比,最长边 1024)
   useEffect(() => {
     if (!imgEl || !baseRef.current || !drawRef.current) return;
-    const maxSide = 1024;
+    const maxSide = 1600;
     const scale = Math.min(1, maxSide / Math.max(imgEl.naturalWidth, imgEl.naturalHeight));
     const w = Math.round(imgEl.naturalWidth * scale);
     const h = Math.round(imgEl.naturalHeight * scale);
@@ -192,10 +192,10 @@ export function DoodleModal({ imageUrl, onClose, onConfirm }: Props) {
           <button onClick={clearDoodle} style={textBtn}>清空</button>
         </div>
 
-        {/* 画布区 */}
-        <div style={canvasWrap} className="cv2-scroll">
+        {/* 画布区:图片直接铺,无容器无滚动条 */}
+        <div style={canvasWrap}>
           <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0, verticalAlign: 'top' }}>
-            <canvas ref={baseRef} style={{ display: 'block', maxWidth: '88vw', maxHeight: '76vh', borderRadius: 10 }} />
+            <canvas ref={baseRef} style={{ display: 'block', maxWidth: '90vw', maxHeight: '80vh', borderRadius: 8 }} />
             <canvas ref={drawRef}
               onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerLeave={onUp}
               style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', cursor: tool === 'text' ? 'text' : 'crosshair', touchAction: 'none' }} />
@@ -281,8 +281,8 @@ const textBtn: React.CSSProperties = {
   background: 'rgba(255,255,255,0.05)', color: '#d4d4d8', cursor: 'pointer', fontSize: 12.5, fontWeight: 500,
 };
 const canvasWrap: React.CSSProperties = {
-  padding: 16, overflow: 'auto', textAlign: 'center',
-  background: 'repeating-conic-gradient(#191c1a 0% 25%, #1f231f 0% 50%) 50% / 26px 26px',
+  padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
+  background: '#0e100e',
 };
 const cancelBtn: React.CSSProperties = {
   padding: '11px 24px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.14)',
