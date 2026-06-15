@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { TemplateGallery } from './_components/TemplateGallery';
 import { ScriptStudioDemo } from './_components/ScriptStudioDemo';
+import { DoodleDemo } from './_components/DoodleDemo';
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);
@@ -442,6 +443,13 @@ export default function Home() {
               </button>
             </Link>
           </div>
+        </div>
+      </section>
+
+      {/* 涂鸦标注 · 功能介绍 */}
+      <section className="py-32 border-t border-white/5 relative z-10">
+        <div className="max-w-7xl mx-auto px-6">
+          <DoodleDemo />
         </div>
       </section>
 
