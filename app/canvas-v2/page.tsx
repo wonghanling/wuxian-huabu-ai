@@ -19,6 +19,7 @@ import { useCanvasStore, type CardNode } from './store';
 import { CardDispatch } from './nodes/CardDispatch';
 import { DeletableEdge } from './nodes/DeletableEdge';
 import { ImageSplitModal } from './nodes/ImageSplitModal';
+import { CanvasLoader } from './nodes/CanvasLoader';
 import { ZoomControls } from './nodes/ZoomControls';
 import { TopBar } from './nodes/TopBar';
 import { TbText, TbImage, TbVideo, TbCharacter, TbTimeline, TbController, TbGem, TbDirector, TbAudio, TbExtend, TbScissors, TbChevron } from './nodes/ToolIcons';
@@ -352,6 +353,7 @@ function CanvasV2Inner() {
 
   return (
     <div style={{ width: '100vw', height: '100vh', background: '#000' }} onContextMenu={(e) => e.preventDefault()}>
+      <CanvasLoader loading={canvasLoading} />
       <ReactFlow
         nodes={nodes}
         edges={edges}
