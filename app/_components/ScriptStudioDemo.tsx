@@ -169,13 +169,14 @@ function StageScreen({ stage, assetIdx, setAssetIdx }: { stage: Stage; assetIdx:
   return null;
 }
 
-// 打字机:逐行浮现,最后省略号
+// 打字机:逐行浮现,最后省略号 + 发送到画布
 function Typewriter({ lines }: { lines: string[] }) {
   const [shown, setShown] = useState(0);
+  const [sent, setSent] = useState(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => {
-    setShown(0);
+    setShown(0); setSent(false);
     timers.current.forEach(clearTimeout);
     timers.current = [];
     lines.forEach((_, i) => {
@@ -183,6 +184,8 @@ function Typewriter({ lines }: { lines: string[] }) {
     });
     return () => { timers.current.forEach(clearTimeout); };
   }, [lines]);
+
+  const done = shown >= lines.length;
 
   return (
     <div className="font-mono text-[15px] leading-[2] text-zinc-200 min-h-[240px]">
@@ -195,16 +198,34 @@ function Typewriter({ lines }: { lines: string[] }) {
           {ln}
         </div>
       ))}
-      <span className="inline-block text-zinc-500 transition-opacity duration-500" style={{ opacity: shown >= lines.length ? 1 : 0 }}>
+      <span className="inline-block text-zinc-500 transition-opacity duration-500" style={{ opacity: done ? 1 : 0 }}>
         ……<span className="cursor-blink">▋</span>
       </span>
+
+      {/* 发送到画布(文字卡) */}
+      <div className="mt-6 flex items-center gap-3" style={{ opacity: done ? 1 : 0, transition: 'opacity 0.5s ease' }}>
+        <button
+          onClick={() => { setSent(true); setTimeout(() => setSent(false), 1600); }}
+          className="px-3.5 py-1.5 rounded-full bg-white/10 border border-white/20 text-zinc-200 text-xs font-medium hover:bg-white/15 transition-all font-sans"
+        >
+          ➤ 发送到画布
+        </button>
+        <span
+          className="text-xs text-zinc-400 font-sans"
+          style={{ opacity: sent ? 1 : 0, transform: sent ? 'translateX(0)' : 'translateX(-6px)', transition: 'all 0.4s cubic-bezier(.2,.8,.2,1)' }}
+        >
+          ✓ 已发送到画布(文本卡)
+        </span>
+      </div>
     </div>
   );
 }
 
-// 图片淡入展示
+// 图片淡入展示 + 发送到画布交互
 function DemoImage({ src, caption }: { src: string; caption?: string }) {
   const [loaded, setLoaded] = useState(false);
+  const [sent, setSent] = useState(false);
+  useEffect(() => { setSent(false); }, [src]);
   return (
     <figure className="m-0">
       <div className="relative rounded-xl overflow-hidden border border-white/10 bg-black/30 max-w-2xl">
@@ -215,8 +236,23 @@ function DemoImage({ src, caption }: { src: string; caption?: string }) {
           className="w-full h-auto max-h-[420px] object-contain transition-all duration-700"
           style={{ opacity: loaded ? 1 : 0, transform: loaded ? 'scale(1)' : 'scale(1.03)' }}
         />
+        {/* 发送成功飞入提示 */}
+        <div
+          className="absolute top-3 left-1/2 -translate-x-1/2 px-3.5 py-1.5 rounded-full bg-white text-black text-xs font-semibold shadow-xl pointer-events-none"
+          style={{ opacity: sent ? 1 : 0, transform: `translateX(-50%) translateY(${sent ? '0' : '-8px'})`, transition: 'all 0.4s cubic-bezier(.2,.8,.2,1)' }}
+        >
+          ✓ 已发送到画布
+        </div>
       </div>
-      {caption && <figcaption className="mt-3 text-sm text-zinc-500">{caption}</figcaption>}
+      <div className="mt-3 flex items-center gap-3">
+        {caption && <figcaption className="text-sm text-zinc-500 flex-1">{caption}</figcaption>}
+        <button
+          onClick={() => { setSent(true); setTimeout(() => setSent(false), 1600); }}
+          className="px-3.5 py-1.5 rounded-full bg-white/10 border border-white/20 text-zinc-200 text-xs font-medium hover:bg-white/15 transition-all whitespace-nowrap"
+        >
+          ➤ 发送到画布
+        </button>
+      </div>
     </figure>
   );
 }

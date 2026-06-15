@@ -4,9 +4,9 @@ import { useState, useEffect, useRef } from 'react';
 
 // ============================================================
 // 涂鸦标注 · 功能演示(主页)
-// 自包含 CSS 动画:标注图淡入 → 点击发送 → 整图飞入画布化为一张卡片
-// 纯展示,无后端;循环播放,点击可重播
-// phase: 0 空 / 1 标注图淡入 / 2 蓄势(显示发送) / 3 飞入画布 / 4 落定为卡片
+// 自包含动画:标注图完整淡入 → 点"发送到画布" → 缩小移到一角并落定为卡片
+// 关键:容器不固定比例,图片始终完整可见(object-contain),绝不裁切
+// phase: 0 空 / 1 标注图淡入 / 2 显示发送按钮 / 3 飞向角落 / 4 落定为卡片
 // ============================================================
 
 const STEPS = ['上传图片', '涂抹标注', '发送到画布', '生成新卡片'];
@@ -19,97 +19,100 @@ export function DoodleDemo() {
     timers.current.forEach(clearTimeout);
     timers.current = [];
     setPhase(0);
-    timers.current.push(setTimeout(() => setPhase(1), 400));   // 标注图淡入
-    timers.current.push(setTimeout(() => setPhase(2), 1700));  // 显示"发送"按钮
-    timers.current.push(setTimeout(() => setPhase(3), 2700));  // 飞入画布
-    timers.current.push(setTimeout(() => setPhase(4), 3600));  // 落定为卡片
-    timers.current.push(setTimeout(run, 6400));                // 循环
+    timers.current.push(setTimeout(() => setPhase(1), 400));
+    timers.current.push(setTimeout(() => setPhase(2), 1800));
+    timers.current.push(setTimeout(() => setPhase(3), 2900));
+    timers.current.push(setTimeout(() => setPhase(4), 3900));
+    timers.current.push(setTimeout(run, 6800));
   };
 
   useEffect(() => { run(); return () => timers.current.forEach(clearTimeout); }, []);
 
-  const flying = phase >= 3;   // 开始飞入
-  const landed = phase >= 4;   // 已落定
+  const flying = phase >= 3;
+  const landed = phase >= 4;
 
   return (
     <div className="grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
-      {/* 左:动画演示舞台 */}
+      {/* 左:动画舞台 — 高度自适应,图片完整不裁切 */}
       <div className="reveal">
         <div
           className="relative rounded-2xl overflow-hidden border border-white/10 cursor-pointer select-none"
           onClick={run}
           title="点击重播"
-          style={{ aspectRatio: '4 / 3', background: 'radial-gradient(circle at 50% 40%, #15171a 0%, #0a0b0c 70%)' }}
+          style={{ background: 'radial-gradient(circle at 50% 40%, #15171a 0%, #0a0b0c 70%)' }}
         >
-          {/* 画布背景网格(目的地) */}
+          {/* 画布网格背景 */}
           <div
             className="absolute inset-0"
             style={{
               backgroundImage:
                 'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)',
               backgroundSize: '34px 34px',
-              opacity: 0.6,
+              opacity: landed ? 0.7 : 0.25,
+              transition: 'opacity 0.6s ease',
             }}
           />
 
-          {/* 落定后的卡片框(图飞到这里变成一张画布卡片) */}
-          <div
-            className="absolute rounded-xl border-2 border-dashed"
-            style={{
-              right: '8%', bottom: '12%', width: '34%', aspectRatio: '3 / 4',
-              borderColor: landed ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.12)',
-              opacity: phase >= 2 && !landed ? 0.7 : 0,
-              transition: 'opacity 0.4s ease, border-color 0.4s ease',
-            }}
-          />
-
-          {/* 主标注图:居中淡入 → 飞向右下角缩小为卡片 */}
-          <div
-            className="absolute"
-            style={{
-              left: '50%', top: '46%',
-              width: flying ? '34%' : '78%',
-              transform: `translate(-50%,-50%) ${flying ? 'translate(125%, 70%)' : ''}`,
-              opacity: phase >= 1 ? 1 : 0,
-              transition: 'all 0.9s cubic-bezier(.45,.05,.2,1)',
-              filter: phase >= 1 ? 'none' : 'blur(6px)',
-            }}
-          >
+          {/* 图片包裹:用 padding 留边,图片本体始终 object-contain 完整显示 */}
+          <div className="relative p-5" style={{ minHeight: 360 }}>
             <div
-              className="relative rounded-xl overflow-hidden border shadow-2xl"
-              style={{ borderColor: landed ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.15)' }}
+              className="mx-auto"
+              style={{
+                width: flying ? '40%' : '100%',
+                transform: flying ? 'translateX(28%)' : 'translateX(0)',
+                transition: 'all 0.9s cubic-bezier(.45,.05,.2,1)',
+              }}
             >
-              <img src="/tuyabiaozhu.webp" alt="涂鸦标注演示" className="w-full h-auto block" draggable={false} />
-              {/* 落定后卡片右上角出现"完成"勾 */}
               <div
-                className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-white text-black flex items-center justify-center text-sm font-bold shadow-lg"
-                style={{ opacity: landed ? 1 : 0, transform: landed ? 'scale(1)' : 'scale(0.4)', transition: 'all 0.4s cubic-bezier(.2,.8,.2,1) 0.2s' }}
+                className="relative rounded-xl overflow-hidden border shadow-2xl"
+                style={{
+                  borderColor: landed ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.15)',
+                  opacity: phase >= 1 ? 1 : 0,
+                  filter: phase >= 1 ? 'none' : 'blur(8px)',
+                  transition: 'opacity 0.7s ease, filter 0.7s ease, border-color 0.4s ease',
+                }}
               >
-                ✓
+                <img
+                  src="/tuyabiaozhu.webp"
+                  alt="涂鸦标注演示"
+                  className="w-full h-auto block max-h-[460px] object-contain"
+                  draggable={false}
+                />
+                {/* 落定后右上角完成勾 */}
+                <div
+                  className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white text-black flex items-center justify-center text-sm font-bold shadow-lg"
+                  style={{
+                    opacity: landed ? 1 : 0,
+                    transform: landed ? 'scale(1)' : 'scale(0.4)',
+                    transition: 'all 0.4s cubic-bezier(.2,.8,.2,1) 0.2s',
+                  }}
+                >
+                  ✓
+                </div>
               </div>
-            </div>
-            {/* 卡片标题(落定后) */}
-            <div
-              className="mt-1.5 text-[11px] text-zinc-400 text-center"
-              style={{ opacity: landed ? 1 : 0, transition: 'opacity 0.4s ease 0.3s' }}
-            >
-              标注图 · 参考卡片
+              {/* 卡片标题(落定后) */}
+              <div
+                className="mt-2 text-[11px] text-zinc-400 text-center"
+                style={{ opacity: landed ? 1 : 0, transition: 'opacity 0.4s ease 0.3s' }}
+              >
+                标注图 · 参考卡片
+              </div>
             </div>
           </div>
 
-          {/* "发送到画布"按钮(蓄势阶段出现,飞行时隐藏) */}
+          {/* "发送到画布"按钮(蓄势出现,飞行时隐藏) */}
           <div
             className="absolute left-1/2 -translate-x-1/2"
             style={{
-              bottom: '7%',
+              bottom: '6%',
               opacity: phase === 2 ? 1 : 0,
               transform: `translateX(-50%) translateY(${phase === 2 ? '0' : '12px'})`,
               transition: 'all 0.4s cubic-bezier(.2,.8,.2,1)',
+              pointerEvents: 'none',
             }}
           >
             <div className="px-5 py-2.5 rounded-full bg-white text-black text-sm font-semibold shadow-2xl flex items-center gap-2">
-              发送到画布
-              <span className="text-base leading-none">→</span>
+              发送到画布 <span className="text-base leading-none">→</span>
             </div>
           </div>
 
@@ -117,7 +120,7 @@ export function DoodleDemo() {
           <div
             className="absolute left-1/2 -translate-x-1/2"
             style={{
-              top: '8%',
+              top: '6%',
               opacity: landed ? 1 : 0,
               transform: `translateX(-50%) translateY(${landed ? '0' : '-10px'})`,
               transition: 'all 0.5s cubic-bezier(.2,.8,.2,1)',
@@ -130,7 +133,7 @@ export function DoodleDemo() {
         </div>
 
         {/* 步骤指示 */}
-        <div className="flex items-center justify-center gap-2 mt-5">
+        <div className="flex items-center justify-center gap-2 mt-5 flex-wrap">
           {STEPS.map((s, i) => {
             const on = phase >= i + 1;
             return (
