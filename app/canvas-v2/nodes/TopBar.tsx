@@ -68,6 +68,18 @@ export function TopBar({ saveStatus, switchCanvas, getCurrentCanvasId }: Props) 
 
   useEffect(() => { refreshList(); }, [refreshList]);
 
+  // 主页"剧本工作室"入口:带 ?studio=true 进画布 → 自动打开剧本工作室,并清掉参数
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('studio') === 'true') {
+      setShowScriptStudio(true);
+      params.delete('studio');
+      const qs = params.toString();
+      window.history.replaceState({}, '', window.location.pathname + (qs ? `?${qs}` : ''));
+    }
+  }, []);
+
   const onNew = async () => {
     if (!userId) return;
     const c = await createCanvas(userId);

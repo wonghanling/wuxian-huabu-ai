@@ -413,6 +413,75 @@ export default function Home() {
         <TemplateGallery />
       </div>
 
+      {/* 剧本工作室 · 重点功能介绍 */}
+      <section className="py-32 border-t border-white/5 relative z-10 bg-zinc-950/40">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-16 reveal">
+            <p className="text-sm tracking-[0.3em] text-zinc-500 uppercase mb-4">Feature · 核心功能</p>
+            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">剧本工作室</h2>
+            <p className="text-lg text-zinc-400 max-w-2xl mx-auto">
+              从一个想法到一部可拍摄的电影,完整覆盖电影工业的每一道工序
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* 左:配图 */}
+            <div className="reveal">
+              <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl group">
+                <img
+                  src="/jubengongzuoshi.png"
+                  alt="剧本工作室"
+                  className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
+                <div className="absolute bottom-5 left-6 right-6">
+                  <p className="text-white text-lg font-semibold drop-shadow-lg">每一帧,都从严谨的剧本开始</p>
+                </div>
+              </div>
+            </div>
+
+            {/* 右:文案 + 流程 */}
+            <div className="reveal">
+              <p className="text-zinc-300 leading-relaxed mb-8 text-[15px]">
+                剧本工作室不是简单的"AI 写故事"。它把好莱坞电影工业的创作方法论拆解成六个环环相扣的阶段——
+                每一步都基于前一步的产出,层层递进,确保人物、世界观、视觉资产到最终镜头的连续性与一致性。
+              </p>
+
+              <div className="space-y-3 mb-9">
+                {[
+                  { n: '01', t: 'Novel Bible 小说', d: '把想法扩写成有主题、人物弧光、冲突升级的完整故事' },
+                  { n: '02', t: 'Beat Sheet 节拍表', d: 'Save the Cat 十五拍结构,精准控制情绪与节奏' },
+                  { n: '03', t: 'Character Bible 人物设定', d: '角色定妆 + 服装装备连续性表,锁定跨镜头一致性' },
+                  { n: '04', t: 'Environment Bible 场景世界', d: '场景多视角 + 资产拆解(道具/建筑/自然/背景)' },
+                  { n: '05', t: 'Screenplay 正式剧本', d: '标准电影剧本格式,可表演、可拍摄' },
+                  { n: '06', t: 'Shooting Script 拍摄剧本', d: '分镜 + 关键帧 + 图像/视频提示词,直接出片' },
+                ].map((s) => (
+                  <div key={s.n} className="flex gap-4 items-start group">
+                    <span className="text-sm font-bold text-zinc-600 group-hover:text-zinc-300 transition-colors pt-0.5 w-7 shrink-0">{s.n}</span>
+                    <div>
+                      <span className="text-white font-medium text-[15px]">{s.t}</span>
+                      <span className="text-zinc-500 text-sm ml-2">{s.d}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap gap-3 mb-9">
+                {['资产连续性管理', '场景多视角', '服装装备表', '镜头级提示词', '一键发送到画布'].map((tag) => (
+                  <span key={tag} className="px-3 py-1.5 text-xs rounded-full bg-white/5 border border-white/10 text-zinc-300">{tag}</span>
+                ))}
+              </div>
+
+              <Link href="/canvas?studio=true">
+                <button className="px-7 py-3.5 rounded-full bg-white text-black font-semibold text-sm hover:bg-zinc-200 transition-all hover:-translate-y-0.5 shadow-lg shadow-white/10">
+                  进入剧本工作室 →
+                </button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Features Section */}
       <section className="py-32 relative z-10">
         <div className="max-w-7xl mx-auto px-6">
