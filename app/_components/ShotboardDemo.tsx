@@ -28,26 +28,10 @@ const STEP4_IMAGES = ['/step4-1.webp', '/step4-2.webp', '/step4-3.webp'];
 
 export function ShotboardDemo() {
   const [mode, setMode] = useState<'story' | 'cinematic'>('story');
-  const [typed, setTyped] = useState(0);
   const [shot, setShot] = useState(0);   // step4 当前展示第几张
-  const typeTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const shotTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const lines = mode === 'story' ? STORY_LINES : CINEMATIC_LINES;
-  const fullText = lines.join('\n');
-
-  // Step2 打字机(切模式时重打)
-  useEffect(() => {
-    setTyped(0);
-    if (typeTimer.current) clearInterval(typeTimer.current);
-    let i = 0;
-    typeTimer.current = setInterval(() => {
-      i += 4;
-      setTyped(Math.min(i, fullText.length));
-      if (i >= fullText.length && typeTimer.current) clearInterval(typeTimer.current);
-    }, 26);
-    return () => { if (typeTimer.current) clearInterval(typeTimer.current); };
-  }, [mode]);
 
   // 模式自动切换
   useEffect(() => {
@@ -114,10 +98,9 @@ export function ShotboardDemo() {
             <span className="text-xs font-mono text-zinc-500">STEP 2</span>
             <span className="text-sm text-zinc-300">分镜提示词 · {mode === 'story' ? '故事模式' : '时空模式'}</span>
           </div>
-          <div className="p-4 min-h-[170px]">
+          <div className="p-4" style={{ height: 184 }}>
             <pre className="text-[12.5px] leading-[1.8] font-mono text-zinc-200 whitespace-pre-wrap break-words m-0">
-              {fullText.slice(0, typed)}
-              <span className="cursor-blink text-zinc-500">▋</span>
+              {lines.join('\n')}
             </pre>
           </div>
         </div>
