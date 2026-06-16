@@ -28,11 +28,7 @@ const INPUT_PORT = 'rgba(59,130,246,0.9)';
 const OUTPUT_PORT = 'rgba(156,163,175,0.9)';
 
 const TRYON_RATIOS = [
-  { value: '3:4', label: '3:4 竖' },
-  { value: '1:1', label: '1:1 方' },
-  { value: '16:9', label: '16:9 横' },
   { value: '9:16', label: '9:16 竖' },
-  { value: '4:3', label: '4:3 横' },
 ];
 
 // 二级弹窗类型
@@ -53,7 +49,7 @@ function TryOnNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [lightbox, setLightbox] = useState(false);      // 画布内查看放大
   const editRef = useRef<HTMLTextAreaElement>(null);
 
-  const ratio = data.config.ratio ?? '3:4';
+  const ratio = data.config.ratio ?? '9:16';
   const preservePose = data.config.preservePose ?? true;
   // 连线实时:上游图→人物图(照图片卡 getConnectedGeneratedImage)
   const upstreamLive = useUpstream(id);
@@ -107,7 +103,10 @@ function TryOnNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   };
 
   const handleGenerate = async () => {
-    if (!effPerson || !clothingImage) return;
+    // 连线逻辑:生成时实时取上游图作人物图(照图片卡 getUpstreamOutputs),其次本地上传
+    const upstream = getUpstreamOutputs(id);
+    const personUrl = personImage || upstream.images[0];
+    if (!personUrl || !clothingImage) return;
     updateCard(id, { status: 'generating', progress: 15 });
     let p = 15;
     const timer = setInterval(() => {
@@ -118,7 +117,7 @@ function TryOnNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     try {
       const userId = await getUserId();
       const imageUrl = await generateTryOn({
-        personImageUrl: effPerson,
+        personImageUrl: personUrl,
         clothingImageUrl: clothingImage,
         preservePose,
         aspectRatio: ratio,

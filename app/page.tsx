@@ -10,6 +10,7 @@ import { ScriptStudioDemo } from './_components/ScriptStudioDemo';
 import { DoodleDemo } from './_components/DoodleDemo';
 import { JsonConfigDemo } from './_components/JsonConfigDemo';
 import { ShotboardDemo } from './_components/ShotboardDemo';
+import { TryOnDemo } from './_components/TryOnDemo';
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);
@@ -466,6 +467,13 @@ export default function Home() {
       <section className="py-32 border-t border-white/5 relative z-10">
         <div className="max-w-7xl mx-auto px-6">
           <ShotboardDemo />
+        </div>
+      </section>
+
+      {/* 角色换衣(虚拟试衣)· 功能介绍 */}
+      <section className="py-32 border-t border-white/5 relative z-10 bg-zinc-950/40">
+        <div className="max-w-7xl mx-auto px-6">
+          <TryOnDemo />
         </div>
       </section>
 
