@@ -163,25 +163,24 @@ export function JsonConfigDemo() {
           </div>
         </div>
 
-        {/* 成果图:按此 JSON 生成出的装备分解图(保存后淡入) */}
-        <div
-          className="mt-4 rounded-2xl border border-white/10 bg-black/30 overflow-hidden"
-          style={{
-            opacity: phase >= 3 ? 1 : 0,
-            transform: phase >= 3 ? 'translateY(0)' : 'translateY(12px)',
-            transition: 'all 0.6s cubic-bezier(.2,.8,.2,1)',
-          }}
-        >
+        {/* 成果图:按此 JSON 生成出的装备分解图(保存后淡入,固定高度容器不撑页面) */}
+        <div className="mt-4 rounded-2xl border border-white/10 bg-black/30 overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/8">
             <span className="w-2 h-2 rounded-full bg-white/60" />
             <span className="text-xs text-zinc-400">按此 JSON 生成 · 装备技术分解图</span>
           </div>
-          <img
-            src="/zhuangbeifenjie2.webp"
-            alt="装备分解成果图"
-            className="w-full h-auto block max-h-[300px] object-contain bg-black/20"
-            draggable={false}
-          />
+          <div className="relative bg-black/20" style={{ height: 260 }}>
+            <img
+              src="/zhuangbeifenjie2.webp"
+              alt="装备分解成果图"
+              className="absolute inset-0 w-full h-full object-contain"
+              style={{ opacity: phase >= 3 ? 1 : 0, transition: 'opacity 0.6s ease' }}
+              draggable={false}
+            />
+            {phase < 3 && (
+              <div className="absolute inset-0 flex items-center justify-center text-zinc-600 text-xs">生成中…</div>
+            )}
+          </div>
         </div>
       </div>
     </div>

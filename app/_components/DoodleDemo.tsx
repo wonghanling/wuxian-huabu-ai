@@ -39,7 +39,7 @@ export function DoodleDemo() {
           className="relative rounded-2xl overflow-hidden border border-white/10 cursor-pointer select-none"
           onClick={run}
           title="点击重播"
-          style={{ background: 'radial-gradient(circle at 50% 40%, #15171a 0%, #0a0b0c 70%)' }}
+          style={{ height: 460, background: 'radial-gradient(circle at 50% 40%, #15171a 0%, #0a0b0c 70%)' }}
         >
           {/* 画布网格背景 */}
           <div
@@ -53,49 +53,41 @@ export function DoodleDemo() {
             }}
           />
 
-          {/* 图片包裹:用 padding 留边,图片本体始终 object-contain 完整显示 */}
-          <div className="relative p-5" style={{ minHeight: 360 }}>
+          {/* 图片:绝对定位居中,用 transform scale/translate 做飞入(不影响布局高度,永不抖) */}
+          <div
+            className="absolute"
+            style={{
+              left: '50%', top: '50%',
+              transformOrigin: 'center center',
+              transform: flying
+                ? 'translate(-50%,-50%) scale(0.4) translate(70%, 0)'
+                : 'translate(-50%,-50%) scale(1)',
+              opacity: phase >= 1 ? 1 : 0,
+              filter: phase >= 1 ? 'none' : 'blur(8px)',
+              transition: 'transform 0.9s cubic-bezier(.45,.05,.2,1), opacity 0.7s ease, filter 0.7s ease',
+              width: '74%',
+            }}
+          >
             <div
-              className="mx-auto"
-              style={{
-                width: flying ? '40%' : '100%',
-                transform: flying ? 'translateX(28%)' : 'translateX(0)',
-                transition: 'all 0.9s cubic-bezier(.45,.05,.2,1)',
-              }}
+              className="relative rounded-xl overflow-hidden border shadow-2xl"
+              style={{ borderColor: landed ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.15)', transition: 'border-color 0.4s ease' }}
             >
+              <img
+                src="/tuyabiaozhu.webp"
+                alt="涂鸦标注演示"
+                className="w-full h-auto block"
+                draggable={false}
+              />
+              {/* 落定后右上角完成勾 */}
               <div
-                className="relative rounded-xl overflow-hidden border shadow-2xl"
+                className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white text-black flex items-center justify-center text-base font-bold shadow-lg"
                 style={{
-                  borderColor: landed ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.15)',
-                  opacity: phase >= 1 ? 1 : 0,
-                  filter: phase >= 1 ? 'none' : 'blur(8px)',
-                  transition: 'opacity 0.7s ease, filter 0.7s ease, border-color 0.4s ease',
+                  opacity: landed ? 1 : 0,
+                  transform: landed ? 'scale(1)' : 'scale(0.4)',
+                  transition: 'all 0.4s cubic-bezier(.2,.8,.2,1) 0.2s',
                 }}
               >
-                <img
-                  src="/tuyabiaozhu.webp"
-                  alt="涂鸦标注演示"
-                  className="w-full h-auto block max-h-[460px] object-contain"
-                  draggable={false}
-                />
-                {/* 落定后右上角完成勾 */}
-                <div
-                  className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white text-black flex items-center justify-center text-sm font-bold shadow-lg"
-                  style={{
-                    opacity: landed ? 1 : 0,
-                    transform: landed ? 'scale(1)' : 'scale(0.4)',
-                    transition: 'all 0.4s cubic-bezier(.2,.8,.2,1) 0.2s',
-                  }}
-                >
-                  ✓
-                </div>
-              </div>
-              {/* 卡片标题(落定后) */}
-              <div
-                className="mt-2 text-[11px] text-zinc-400 text-center"
-                style={{ opacity: landed ? 1 : 0, transition: 'opacity 0.4s ease 0.3s' }}
-              >
-                标注图 · 参考卡片
+                ✓
               </div>
             </div>
           </div>
@@ -106,8 +98,7 @@ export function DoodleDemo() {
             style={{
               background: 'linear-gradient(to top, rgba(0,0,0,0.55), transparent)',
               opacity: phase === 2 ? 1 : 0,
-              transform: `translateY(${phase === 2 ? '0' : '12px'})`,
-              transition: 'all 0.4s cubic-bezier(.2,.8,.2,1)',
+              transition: 'opacity 0.4s ease',
               pointerEvents: 'none',
             }}
           >
@@ -122,8 +113,7 @@ export function DoodleDemo() {
             style={{
               background: 'linear-gradient(to bottom, rgba(0,0,0,0.5), transparent)',
               opacity: landed ? 1 : 0,
-              transform: `translateY(${landed ? '0' : '-10px'})`,
-              transition: 'all 0.5s cubic-bezier(.2,.8,.2,1)',
+              transition: 'opacity 0.5s ease',
               pointerEvents: 'none',
             }}
           >
