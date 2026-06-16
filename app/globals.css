@@ -237,3 +237,6 @@ body::-webkit-scrollbar {
 /* 剧本演示打字机光标闪烁 */
 .cursor-blink { animation: cursor-blink 1s step-end infinite; }
 @keyframes cursor-blink { 50% { opacity: 0; } }
+
+/* 剧本演示自动播放进度条 */
+@keyframes ssd-progress { from { width: 0; } to { width: 100%; } }

@@ -100,13 +100,13 @@ export function DoodleDemo() {
             </div>
           </div>
 
-          {/* "发送到画布"按钮(蓄势出现,飞行时隐藏) */}
+          {/* "发送到画布"按钮(蓄势出现,飞行时隐藏)— 贴底部边缘,带渐变托底不挡图 */}
           <div
-            className="absolute left-1/2 -translate-x-1/2"
+            className="absolute inset-x-0 bottom-0 flex justify-center pb-3 pt-10"
             style={{
-              bottom: '6%',
+              background: 'linear-gradient(to top, rgba(0,0,0,0.55), transparent)',
               opacity: phase === 2 ? 1 : 0,
-              transform: `translateX(-50%) translateY(${phase === 2 ? '0' : '12px'})`,
+              transform: `translateY(${phase === 2 ? '0' : '12px'})`,
               transition: 'all 0.4s cubic-bezier(.2,.8,.2,1)',
               pointerEvents: 'none',
             }}
@@ -116,17 +116,18 @@ export function DoodleDemo() {
             </div>
           </div>
 
-          {/* 落定提示 */}
+          {/* 落定提示 — 贴顶部边缘 */}
           <div
-            className="absolute left-1/2 -translate-x-1/2"
+            className="absolute inset-x-0 top-0 flex justify-center pt-3 pb-10"
             style={{
-              top: '6%',
+              background: 'linear-gradient(to bottom, rgba(0,0,0,0.5), transparent)',
               opacity: landed ? 1 : 0,
-              transform: `translateX(-50%) translateY(${landed ? '0' : '-10px'})`,
+              transform: `translateY(${landed ? '0' : '-10px'})`,
               transition: 'all 0.5s cubic-bezier(.2,.8,.2,1)',
+              pointerEvents: 'none',
             }}
           >
-            <div className="px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-white text-xs font-medium backdrop-blur-sm">
+            <div className="px-4 py-1.5 rounded-full bg-white/15 border border-white/25 text-white text-xs font-medium backdrop-blur-md">
               已添加到画布 · 可连线生成
             </div>
           </div>

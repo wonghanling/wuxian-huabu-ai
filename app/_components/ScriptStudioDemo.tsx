@@ -86,6 +86,23 @@ export function ScriptStudioDemo() {
   const [active, setActive] = useState<StageKey>('novel');
   const stage = STAGES.find((s) => s.key === active)!;
   const [assetIdx, setAssetIdx] = useState(0);
+  const [auto, setAuto] = useState(true);   // 自动轮播,用户点击后暂停
+
+  // 自动按顺序播放 6 个阶段(文字阶段停久点等打字,图片阶段短些)
+  useEffect(() => {
+    if (!auto) return;
+    const cur = STAGES.find((s) => s.key === active)!;
+    const dwell = cur.kind === 'text' ? 4200 : 3200;
+    const t = setTimeout(() => {
+      const idx = STAGES.findIndex((s) => s.key === active);
+      const next = STAGES[(idx + 1) % STAGES.length];
+      setActive(next.key);
+      setAssetIdx(0);
+    }, dwell);
+    return () => clearTimeout(t);
+  }, [active, auto]);
+
+  const pick = (k: StageKey) => { setAuto(false); setActive(k); setAssetIdx(0); };
 
   return (
     <div className="grid lg:grid-cols-[300px_1fr] gap-6 lg:gap-8">
@@ -96,13 +113,21 @@ export function ScriptStudioDemo() {
           return (
             <button
               key={s.key}
-              onClick={() => { setActive(s.key); setAssetIdx(0); }}
-              className={`text-left px-4 py-3.5 rounded-xl border transition-all duration-300 group ${
+              onClick={() => pick(s.key)}
+              className={`text-left px-4 py-3.5 rounded-xl border transition-all duration-300 group relative overflow-hidden ${
                 on
                   ? 'bg-white/10 border-white/25 shadow-lg shadow-black/30'
                   : 'bg-white/[0.02] border-white/8 hover:bg-white/5 hover:border-white/15'
               }`}
             >
+              {/* 自动播放进度条(当前项底部) */}
+              {on && auto && (
+                <span
+                  key={active}
+                  className="absolute left-0 bottom-0 h-[2px] bg-white/50"
+                  style={{ animation: `ssd-progress ${stage.kind === 'text' ? 4.2 : 3.2}s linear forwards` }}
+                />
+              )}
               <div className="flex items-center gap-3">
                 <span className={`text-xs font-bold tracking-wider transition-colors ${on ? 'text-white' : 'text-zinc-600 group-hover:text-zinc-400'}`}>{s.no}</span>
                 <div className="min-w-0">
