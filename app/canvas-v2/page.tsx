@@ -126,9 +126,22 @@ function makeCharacterNode(i: string | number, x: number, y: number): CardNode {
   };
 }
 
-function makeGemNode(i: string | number, x: number, y: number): CardNode {
+function makeTryOnNode(i: string | number, x: number, y: number): CardNode {
   return {
-    id: 'g' + i,
+    id: 'to' + i,
+    type: 'card',
+    position: { x, y },
+    data: {
+      kind: 'tryon',
+      status: 'empty',
+      outputUrl: null,
+      config: { model: 'virtual-try-on', prompt: '', refImages: [], preservePose: true },
+    },
+  };
+}
+
+function makeGemNode(i: string | number, x: number, y: number): CardNode {
+  return {    id: 'g' + i,
     type: 'card',
     position: { x, y },
     data: {
@@ -328,6 +341,7 @@ function CanvasV2Inner() {
   const addExtendCard = useCallback(() => addCard(makeExtendNode), [addCard]);
   const addGemCard = useCallback(() => addCard(makeGemNode), [addCard]);
   const addCharacterCard = useCallback(() => addCard(makeCharacterNode), [addCard]);
+  const addTryOnCard = useCallback(() => addCard(makeTryOnNode), [addCard]);
   const addKlingCard = useCallback(() => addCard(makeKlingNode), [addCard]);
   const addAudioCard = useCallback(() => addCard(makeAudioNode), [addCard]);
   const addShotCard = useCallback(() => addCard(makeShotNode), [addCard]);
@@ -414,6 +428,10 @@ function CanvasV2Inner() {
                 </div>
                 {/* 4 角色设计 */}
                 <button onClick={addCharacterCard} style={toolIconBtn} title="角色设计卡片"><TbCharacter size={18} /></button>
+                {/* 4.5 虚拟试衣 */}
+                <button onClick={addTryOnCard} style={toolIconBtn} title="虚拟试衣(人物+衣服→试穿)">
+                  <span style={{ fontSize: 17, lineHeight: 1 }}>👕</span>
+                </button>
                 {/* 5 导演流程时间刻度条 */}
                 <button onClick={addTimelineCard} style={toolIconBtn} title="导演流程时间刻度条"><TbTimeline size={18} /></button>
                 {/* 6 电影控制器 */}

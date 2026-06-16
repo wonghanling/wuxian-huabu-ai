@@ -178,6 +178,59 @@ export async function generateImage(params: ImageGenParams): Promise<string> {
   throw new Error('未获取到图片');
 }
 
+// ============ 虚拟试衣 ============
+// POST /api/tryon → 返回 pending+requestId+endpoint,复用 /api/image/fal-query 轮询
+export interface TryOnParams {
+  personImageUrl: string;
+  clothingImageUrl: string;
+  preservePose?: boolean;
+  aspectRatio?: string;
+  userId?: string;
+}
+
+export async function generateTryOn(params: TryOnParams): Promise<string> {
+  const res = await fetch('/api/tryon', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      personImageUrl: params.personImageUrl,
+      clothingImageUrl: params.clothingImageUrl,
+      preservePose: params.preservePose ?? true,
+      aspectRatio: params.aspectRatio || '3:4',
+      userId: params.userId || undefined,
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || '虚拟试衣失败');
+
+  if (data.imageUrl && !data.pending) return data.imageUrl;
+
+  if (data.pending && data.requestId) {
+    const endpoint = data.endpoint || 'fal-ai/image-apps-v2/virtual-try-on';
+    let attempts = 0;
+    const poll = async (): Promise<string> => {
+      attempts++;
+      await new Promise((r) => setTimeout(r, 3000));
+      try {
+        const qRes = await fetch(`/api/image/fal-query?requestId=${encodeURIComponent(data.requestId)}&endpoint=${encodeURIComponent(endpoint)}`);
+        const qData = await qRes.json();
+        if (qData.success && qData.imageUrl) return qData.imageUrl;
+        if (qData.error) throw new Error(qData.error);
+        if (attempts > 60) throw new Error('生成超时');
+        return poll();
+      } catch (e: any) {
+        if (e.message && (e.message.includes('超时') || e.message.includes('error'))) throw e;
+        if (attempts > 60) throw new Error('生成超时');
+        await new Promise((r) => setTimeout(r, 5000));
+        return poll();
+      }
+    };
+    return poll();
+  }
+
+  throw new Error('未获取到试穿图');
+}
+
 // ============ 输出 mirror 转存 ============
 // 第三方生成 URL 会过期,转存到自己 Supabase 拿永久 URL(照原网 mirrorUrlToStorage)
 // 失败保留原 URL 兜底,不阻塞

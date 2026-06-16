@@ -13,7 +13,7 @@ import {
 } from '@xyflow/react';
 
 // ============ 节点数据模型 ============
-export type NodeKind = 'image' | 'video' | 'text' | 'seedance' | 'kling' | 'character' | 'gem' | 'extend' | 'gem3' | 'gem4' | 'upload' | 'audio' | 'shot' | 'timeline';
+export type NodeKind = 'image' | 'video' | 'text' | 'seedance' | 'kling' | 'character' | 'gem' | 'extend' | 'gem3' | 'gem4' | 'upload' | 'audio' | 'shot' | 'timeline' | 'tryon';
 export type NodeStatus = 'empty' | 'generating' | 'done' | 'error';
 
 // 端口加号菜单功能(照原网"继续创建下游卡片")
@@ -52,6 +52,7 @@ const VIDEO_OUTPUT_ACTIONS: SpawnAction[] = ['seedanceMM', 'kling'];
 const SPAWN_RULES: Record<NodeKind, SpawnAction[]> = {
   image:     IMAGE_OUTPUT_ACTIONS,
   character: IMAGE_OUTPUT_ACTIONS,
+  tryon:     IMAGE_OUTPUT_ACTIONS,   // 虚拟试衣输出图→图片卡菜单
   extend:    IMAGE_OUTPUT_ACTIONS,
   upload:    IMAGE_OUTPUT_ACTIONS,   // 素材上传卡=图片卡菜单(照原网 mediaUploadCardOptions)
   video:     VIDEO_OUTPUT_ACTIONS,
@@ -96,6 +97,8 @@ export interface CardData extends Record<string, unknown> {
     preset?: string;            // 预设参数(风格)
     refImages?: string[];       // 参考图 URL 数组
     controlJson?: string;       // 图片卡 JSON 控制(用户自填,生成时作系统级前缀注入 prompt)
+    clothingImage?: string;     // 虚拟试衣:衣服图 URL(人物图复用 refImages[0])
+    preservePose?: boolean;     // 虚拟试衣:保留人物姿势
     // 视频卡片专用
     audio?: boolean;            // 音频开关(生成视频是否带音频)
     firstFrame?: string;        // 首帧图 URL

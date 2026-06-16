@@ -17,6 +17,7 @@ import { UploadNode } from './UploadNode';
 import { AudioNode } from './AudioNode';
 import { ShotNode } from './ShotNode';
 import { TimelineNode } from './TimelineNode';
+import { TryOnNode } from './TryOnNode';
 
 // 调度:按 data.kind 渲染对应卡片(统一 type='card')
 // 这样 spawnFrom/splitStory 生成的卡片自动用对的组件
@@ -35,6 +36,7 @@ function CardDispatchComponent(props: NodeProps<CardNode>) {
   if (kind === 'audio') return <AudioNode {...props} />;
   if (kind === 'shot') return <ShotNode {...props} />;
   if (kind === 'timeline') return <TimelineNode {...props} />;
+  if (kind === 'tryon') return <TryOnNode {...props} />;
   return <TextNode {...props} />;
 }
 
