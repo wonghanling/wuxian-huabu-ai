@@ -208,6 +208,9 @@ export function PromptTools({ value, onPaste, jsonControl }: { value: string; on
                   {p.label}
                 </button>
               ))}
+              <span style={{ ...presetChip, color: '#71717a', borderStyle: 'dashed', cursor: 'default', opacity: 0.7 }}>
+                更多模板开发中…
+              </span>
             </div>
             <textarea
               className="cv2-scroll"
