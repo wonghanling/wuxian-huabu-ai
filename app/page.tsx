@@ -192,6 +192,10 @@ export default function Home() {
           </div>
 
           <div className="hidden md:flex space-x-8 text-sm text-zinc-400 font-medium">
+            <a href="/boluotv" className="transition-colors flex flex-col items-center" style={{ color: '#10805a' }}>
+              <span className="font-semibold">BOLUOTV</span>
+              <span className="text-xs" style={{ color: '#0c5f43' }}>作品广场</span>
+            </a>
             <a href="#" className="hover:text-white transition-colors flex flex-col items-center">
               <span>Platform</span>
               <span className="text-xs text-zinc-500">平台</span>

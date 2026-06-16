@@ -36,9 +36,9 @@ export function TryOnDemo() {
       {/* 顶部标题(居中) */}
       <div className="text-center mb-14 reveal">
         <p className="text-sm tracking-[0.3em] text-zinc-500 uppercase mb-4">Feature · 角色换衣</p>
-        <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">上传人物和衣服，秒速换装</h2>
+        <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">想穿什么，一秒上身</h2>
         <p className="text-lg text-zinc-400 max-w-2xl mx-auto">
-          一张人物图、一张衣服图，AI 自动把衣服穿到人物身上，保留姿势与身形
+          人物图 + 衣服图，AI 自动换装、保留姿势身形。一次只要 0.3 元，多换几套挑最满意的那张
         </p>
       </div>
 

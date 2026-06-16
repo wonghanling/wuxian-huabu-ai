@@ -12,6 +12,7 @@ export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
     const category = url.searchParams.get('category');
+    const engine = url.searchParams.get('engine');   // 'react-flow' 只返回新引擎作品
     const limit = Math.min(parseInt(url.searchParams.get('limit') || '30'), 100);
 
     let query = supabaseAdmin
@@ -23,6 +24,8 @@ export async function GET(req: Request) {
       .limit(limit);
 
     if (category) query = query.eq('category', category);
+    // 只返回 React Flow 新引擎作品(快照 engine='react-flow');旧 tldraw 作品不显示
+    if (engine) query = query.eq('snapshot_json->>engine', engine);
 
     const { data, error } = await query;
     if (error) throw new Error(error.message);
