@@ -8,7 +8,7 @@ import { useState, useEffect, useRef } from 'react';
 // 纯展示,无后端;循环高亮"服装装备设计"快捷键 → 文本区打字注入
 // ============================================================
 
-const PRESETS = ['服装装备设计', '场景资产设计', '人物设定', '镜头风格'];
+const PRESETS = ['服装装备设计'];
 
 const SAMPLE = `{
   "agent_name": "Costume & Equipment Designer",
@@ -161,6 +161,27 @@ export function JsonConfigDemo() {
               </span>
             </div>
           </div>
+        </div>
+
+        {/* 成果图:按此 JSON 生成出的装备分解图(保存后淡入) */}
+        <div
+          className="mt-4 rounded-2xl border border-white/10 bg-black/30 overflow-hidden"
+          style={{
+            opacity: phase >= 3 ? 1 : 0,
+            transform: phase >= 3 ? 'translateY(0)' : 'translateY(12px)',
+            transition: 'all 0.6s cubic-bezier(.2,.8,.2,1)',
+          }}
+        >
+          <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/8">
+            <span className="w-2 h-2 rounded-full bg-white/60" />
+            <span className="text-xs text-zinc-400">按此 JSON 生成 · 装备技术分解图</span>
+          </div>
+          <img
+            src="/zhuangbeifenjie2.webp"
+            alt="装备分解成果图"
+            className="w-full h-auto block max-h-[300px] object-contain bg-black/20"
+            draggable={false}
+          />
         </div>
       </div>
     </div>
