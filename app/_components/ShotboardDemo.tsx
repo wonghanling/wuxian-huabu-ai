@@ -24,13 +24,12 @@ const CINEMATIC_LINES = [
   '…分析首尾帧，补全中间帧提示词',
 ];
 
-const STEP4_IMAGES = ['/step4-1.webp', '/step4-2.webp', '/step4-3.webp'];
+const STEP4_IMAGES = ['/step4-1.webp', '/step4-3.webp'];
 
 export function ShotboardDemo() {
   const [mode, setMode] = useState<'story' | 'cinematic'>('story');
   const [shot, setShot] = useState(0);   // step4 当前展示第几张
   const [shown, setShown] = useState(0); // step2 文字逐行淡入(容器固定高,不抖)
-  const [zoom, setZoom] = useState<string | null>(null);  // step4 点击放大查看
   const shotTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const lineTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -130,24 +129,24 @@ export function ShotboardDemo() {
           连接图片卡生成 · 整理为导演级分镜表 <span className="text-zinc-600">↓</span>
         </div>
 
-        {/* Step4 成果图轮播 */}
+        {/* Step4 成果图轮播(鼠标悬停放大查看文字) */}
         <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-zinc-900/60 to-black/40 overflow-hidden">
           <div className="flex items-center justify-between px-5 py-3 border-b border-white/8 bg-white/[0.02]">
-            <span className="text-sm text-zinc-300"><span className="font-mono text-zinc-500 mr-2">STEP 4</span>导演级分镜表格 <span className="text-xs text-zinc-500 ml-1">点击放大</span></span>
+            <span className="text-sm text-zinc-300"><span className="font-mono text-zinc-500 mr-2">STEP 4</span>导演级分镜表格 <span className="text-xs text-zinc-500 ml-1">悬停放大</span></span>
             <div className="flex gap-1.5">
               {STEP4_IMAGES.map((_, i) => (
                 <span key={i} className="w-1.5 h-1.5 rounded-full transition-all" style={{ background: i === shot ? '#fff' : 'rgba(255,255,255,0.25)' }} />
               ))}
             </div>
           </div>
-          <div className="relative bg-black/30 cursor-zoom-in" style={{ minHeight: 220 }} onClick={() => setZoom(STEP4_IMAGES[shot])}>
+          <div className="relative bg-black/30 overflow-hidden group" style={{ minHeight: 220 }}>
             {STEP4_IMAGES.map((src, i) => (
               <img
                 key={src}
                 src={src}
                 alt={`导演级分镜表格 ${i + 1}`}
-                className="absolute inset-0 w-full h-full max-h-[300px] object-contain transition-opacity duration-700"
-                style={{ opacity: i === shot ? 1 : 0 }}
+                className="absolute inset-0 w-full h-full max-h-[300px] object-contain transition-all duration-700 group-hover:scale-[1.8]"
+                style={{ opacity: i === shot ? 1 : 0, transformOrigin: 'center center' }}
                 draggable={false}
               />
             ))}
@@ -156,23 +155,6 @@ export function ShotboardDemo() {
           </div>
         </div>
       </div>
-
-      {/* 点击放大查看(看清表格文字) */}
-      {zoom && (
-        <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-6 cursor-zoom-out"
-          style={{ background: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(4px)' }}
-          onClick={() => setZoom(null)}
-        >
-          <img src={zoom} alt="导演级分镜表格(放大)" className="max-w-[95vw] max-h-[92vh] object-contain rounded-lg shadow-2xl" draggable={false} />
-          <button
-            onClick={() => setZoom(null)}
-            className="absolute top-5 right-5 w-10 h-10 rounded-full bg-white/10 border border-white/20 text-white text-lg hover:bg-white/20 transition-all"
-          >
-            ✕
-          </button>
-        </div>
-      )}
     </div>
   );
 }
