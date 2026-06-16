@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
       person_image_url: personImageUrl,
       clothing_image_url: clothingImageUrl,
       preserve_pose: !!preservePose,
-      aspect_ratio: aspectRatio,
+      aspect_ratio: { ratio: aspectRatio },   // fal 要求对象格式 { ratio: "3:4" }
     };
     const submitted = await fal.queue.submit(ENDPOINT, { input: input as any });
     const requestId = submitted.request_id;

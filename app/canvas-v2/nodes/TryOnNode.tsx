@@ -21,6 +21,7 @@ const GLASS_BORDER = 'rgba(255,255,255,0.12)';
 const SEL_BORDER = 'rgba(192,192,192,0.45)';
 const INPUT_PORT = 'rgba(59,130,246,0.9)';
 const OUTPUT_PORT = 'rgba(156,163,175,0.9)';
+const RATIOS = ['3:4', '1:1', '16:9', '9:16', '4:3'];
 
 function TryOnNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const collapsed = data.collapsed ?? false;
@@ -38,12 +39,13 @@ function TryOnNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const personImage = data.config.refImages?.[0];
   const clothingImage = data.config.clothingImage;
   const preservePose = data.config.preservePose ?? true;
+  const ratio = data.config.ratio ?? '3:4';
   // 连线:上游图作人物图
   const connectedImage = useUpstream(id).images[0];
   const effPerson = personImage || connectedImage;
 
-  const mult = enlarged ? 1.5 : 1;
-  const W = 340 * mult;
+  const mult = enlarged ? 1.4 : 1;
+  const W = 480 * mult;
 
   const toggleCollapse = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -74,7 +76,7 @@ function TryOnNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
         personImageUrl: effPerson,
         clothingImageUrl: clothingImage,
         preservePose,
-        aspectRatio: '3:4',
+        aspectRatio: ratio,
         userId,
       });
       clearInterval(timer);
@@ -187,6 +189,27 @@ function TryOnNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                 保留人物姿势
               </label>
 
+              {/* 输出比例 */}
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontSize: 11, color: '#a1a1aa', marginBottom: 6 }}>输出比例</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {RATIOS.map((r) => {
+                    const on = ratio === r;
+                    return (
+                      <button key={r} onClick={() => updateConfig(id, { ratio: r })}
+                        style={{
+                          padding: '5px 11px', borderRadius: 8, fontSize: 12, cursor: 'pointer',
+                          border: `1px solid ${on ? 'rgba(255,255,255,0.5)' : GLASS_BORDER}`,
+                          background: on ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.04)',
+                          color: on ? '#fff' : '#a1a1aa', fontWeight: on ? 600 : 400,
+                        }}>
+                        {r}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* 生成按钮 */}
               <button
                 onClick={handleGenerate}
@@ -197,7 +220,7 @@ function TryOnNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                   cursor: data.status === 'generating' ? 'wait' : 'pointer',
                 }}
               >
-                {data.status === 'generating' ? `试穿中… ${data.progress ?? 0}%` : '开始试穿'}
+                {data.status === 'generating' ? `试穿中… ${data.progress ?? 0}%` : '开始试穿 · ¥0.3/次'}
               </button>
               {(!effPerson || !clothingImage) && (
                 <div style={{ color: '#71717a', fontSize: 11, marginTop: 8, textAlign: 'center' }}>
@@ -235,7 +258,7 @@ function Slot({ label, img, uploading, fromLink, onUpload, onClear }: {
     <div style={{ flex: 1 }}>
       <div style={{ fontSize: 11, color: '#a1a1aa', marginBottom: 6 }}>{label}{fromLink ? '(来自连接)' : ''}</div>
       {img ? (
-        <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', border: `1px solid ${GLASS_BORDER}`, aspectRatio: '3/4', background: '#0c0c0d' }}>
+        <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', border: `1px solid ${GLASS_BORDER}`, aspectRatio: '1/1', background: '#0c0c0d' }}>
           <img src={img} alt={label} style={{ width: '100%', height: '100%', objectFit: 'cover' }} draggable={false} />
           {!fromLink && (
             <button onClick={onClear} style={slotClear} title="移除">✕</button>
@@ -255,8 +278,10 @@ function Slot({ label, img, uploading, fromLink, onUpload, onClear }: {
 // ===== 样式 =====
 function portCircle(c: string): React.CSSProperties {
   return {
-    width: 13, height: 13, borderRadius: '50%', background: c,
-    border: '2px solid rgba(0,0,0,0.5)', top: '50%', transform: 'translateY(-50%)',
+    width: 20, height: 20, minWidth: 20, minHeight: 20,
+    display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%',
+    background: 'rgba(24,24,27,0.95)', border: `2px solid ${c}`,
+    boxShadow: `0 0 10px ${c}, 0 0 0 4px rgba(0,0,0,0.25)`, color: '#e4e4e7', zIndex: 5,
   };
 }
 const portPlusIcon: React.CSSProperties = { pointerEvents: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' };
@@ -284,7 +309,7 @@ const floatMinus: React.CSSProperties = {
 };
 const slotEmpty: React.CSSProperties = {
   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4,
-  aspectRatio: '3/4', borderRadius: 12, cursor: 'pointer',
+  aspectRatio: '1/1', borderRadius: 12, cursor: 'pointer',
   border: `1px dashed rgba(255,255,255,0.2)`, background: 'rgba(255,255,255,0.02)',
 };
 const slotClear: React.CSSProperties = {
