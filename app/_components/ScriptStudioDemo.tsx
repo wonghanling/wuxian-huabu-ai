@@ -51,6 +51,7 @@ const STAGES: Stage[] = [
     desc: '角色三视图定妆 + 服装装备连续性表，锁定跨镜头一致性',
     assets: [
       { label: '主角设计', image: '/renwusheji1.webp', caption: '主角 · 三视角定妆设计稿' },
+      { label: '机甲设计', image: '/renwusheji2.webp', caption: '机甲角色 · 三视图 + 头部细节' },
       { label: '配角设计', image: '/renwusheji3.webp', caption: '配角 · 角色设定稿' },
     ],
   },
@@ -88,19 +89,23 @@ export function ScriptStudioDemo() {
   const [assetIdx, setAssetIdx] = useState(0);
   const [auto, setAuto] = useState(true);   // 自动轮播,用户点击后暂停
 
-  // 自动按顺序播放 6 个阶段(文字阶段停久点等打字,图片阶段短些)
+  // 自动播放:文字/单图阶段停一会切下个阶段;多图(asset)阶段先逐张播完再切下个阶段
   useEffect(() => {
     if (!auto) return;
     const cur = STAGES.find((s) => s.key === active)!;
-    const dwell = cur.kind === 'text' ? 4200 : 3200;
+    const isAsset = cur.kind === 'asset' && !!cur.assets;
+    const dwell = cur.kind === 'text' ? 4200 : isAsset ? 2600 : 3200;
     const t = setTimeout(() => {
-      const idx = STAGES.findIndex((s) => s.key === active);
-      const next = STAGES[(idx + 1) % STAGES.length];
-      setActive(next.key);
-      setAssetIdx(0);
+      if (isAsset && assetIdx < cur.assets!.length - 1) {
+        setAssetIdx((i) => i + 1);                 // 还有下一张图,先切图
+      } else {
+        const idx = STAGES.findIndex((s) => s.key === active);
+        setActive(STAGES[(idx + 1) % STAGES.length].key);  // 切下个阶段
+        setAssetIdx(0);
+      }
     }, dwell);
     return () => clearTimeout(t);
-  }, [active, auto]);
+  }, [active, assetIdx, auto]);
 
   const pick = (k: StageKey) => { setAuto(false); setActive(k); setAssetIdx(0); };
 
@@ -120,12 +125,12 @@ export function ScriptStudioDemo() {
                   : 'bg-white/[0.02] border-white/8 hover:bg-white/5 hover:border-white/15'
               }`}
             >
-              {/* 自动播放进度条(当前项底部) */}
+              {/* 自动播放进度条(当前项底部,每次停留重新计时) */}
               {on && auto && (
                 <span
-                  key={active}
+                  key={`${active}-${assetIdx}`}
                   className="absolute left-0 bottom-0 h-[2px] bg-white/50"
-                  style={{ animation: `ssd-progress ${stage.kind === 'text' ? 4.2 : 3.2}s linear forwards` }}
+                  style={{ animation: `ssd-progress ${stage.kind === 'text' ? 4.2 : stage.kind === 'asset' ? 2.6 : 3.2}s linear forwards` }}
                 />
               )}
               <div className="flex items-center gap-3">
