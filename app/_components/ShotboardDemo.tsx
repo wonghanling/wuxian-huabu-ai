@@ -29,9 +29,22 @@ const STEP4_IMAGES = ['/step4-1.webp', '/step4-2.webp', '/step4-3.webp'];
 export function ShotboardDemo() {
   const [mode, setMode] = useState<'story' | 'cinematic'>('story');
   const [shot, setShot] = useState(0);   // step4 当前展示第几张
+  const [shown, setShown] = useState(0); // step2 文字逐行淡入(容器固定高,不抖)
   const shotTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lineTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const lines = mode === 'story' ? STORY_LINES : CINEMATIC_LINES;
+
+  // Step2 逐行淡入(切模式时重播)
+  useEffect(() => {
+    setShown(0);
+    lineTimers.current.forEach(clearTimeout);
+    lineTimers.current = [];
+    lines.forEach((_, i) => {
+      lineTimers.current.push(setTimeout(() => setShown((n) => Math.max(n, i + 1)), 280 * (i + 1)));
+    });
+    return () => { lineTimers.current.forEach(clearTimeout); };
+  }, [mode]);
 
   // 模式自动切换
   useEffect(() => {
@@ -98,10 +111,16 @@ export function ShotboardDemo() {
             <span className="text-xs font-mono text-zinc-500">STEP 2</span>
             <span className="text-sm text-zinc-300">分镜提示词 · {mode === 'story' ? '故事模式' : '时空模式'}</span>
           </div>
-          <div className="p-4" style={{ height: 184 }}>
-            <pre className="text-[12.5px] leading-[1.8] font-mono text-zinc-200 whitespace-pre-wrap break-words m-0">
-              {lines.join('\n')}
-            </pre>
+          <div className="p-4 font-mono text-[12.5px] leading-[1.8] text-zinc-200" style={{ height: 184, overflow: 'hidden' }}>
+            {lines.map((ln, i) => (
+              <div
+                key={i}
+                className="transition-opacity duration-500 whitespace-pre-wrap break-words"
+                style={{ opacity: i < shown ? 1 : 0 }}
+              >
+                {ln}
+              </div>
+            ))}
           </div>
         </div>
 

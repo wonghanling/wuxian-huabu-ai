@@ -218,12 +218,12 @@ function Typewriter({ lines }: { lines: string[] }) {
   const done = shown >= lines.length;
 
   return (
-    <div className="font-mono text-[15px] leading-[2] text-zinc-200 min-h-[240px]">
+    <div className="font-mono text-[15px] leading-[2] text-zinc-200 h-[300px] overflow-hidden">
       {lines.map((ln, i) => (
         <div
           key={i}
-          className="transition-all duration-500"
-          style={{ opacity: i < shown ? 1 : 0, transform: i < shown ? 'translateY(0)' : 'translateY(8px)' }}
+          className="transition-opacity duration-500"
+          style={{ opacity: i < shown ? 1 : 0 }}
         >
           {ln}
         </div>
