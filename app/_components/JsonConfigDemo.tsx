@@ -11,19 +11,12 @@ import { useState, useEffect, useRef } from 'react';
 const PRESETS = ['服装装备设计'];
 
 const SAMPLE = `{
-  "agent_name": "Costume & Equipment Designer",
-  "mission": "design production-ready costume
-   and equipment technical sheets",
-  "required_output": {
-    "costume_system": { "headgear", "upper_body",
-      "footwear", "belt_system", "accessories" },
-    "equipment_system": { "primary", "tools",
-      "safety", "utility_items" },
-    "material_system": { "fabric", "metal", "rubber" }
-  },
-  "image_sheet": { "front", "back", "side",
-    "equipment_breakdown", "material_breakdown" },
-  "style": "technical design board, white background"
+  "agent": "服装装备设计师",
+  "costume": ["头部", "上装", "下装", "鞋靴", "配件"],
+  "equipment": ["主装备", "工具", "防护"],
+  "material": ["织物", "金属", "橡胶"],
+  "sheet": ["正视", "背视", "侧视", "材质拆解"],
+  "style": "导演级设计板 · 白底"
 }`;
 
 export function JsonConfigDemo() {
@@ -135,8 +128,8 @@ export function JsonConfigDemo() {
               <span className="text-xs px-3 py-1.5 rounded-full border border-dashed border-white/12 text-zinc-600">更多开发中…</span>
             </div>
 
-            {/* JSON 文本区 */}
-            <div className="rounded-xl border border-white/12 bg-[#0c0c0d] p-4 min-h-[260px]">
+            {/* JSON 文本区 — 固定高度,超出隐藏,永不撑高 */}
+            <div className="rounded-xl border border-white/12 bg-[#0c0c0d] p-4 overflow-hidden" style={{ height: 220 }}>
               {phase < 2 ? (
                 <span className="text-zinc-700 text-[13px] font-mono">点击上方「服装装备设计」一键注入，或在此输入你的 JSON…</span>
               ) : (
