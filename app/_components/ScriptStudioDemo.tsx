@@ -145,18 +145,18 @@ export function ScriptStudioDemo() {
         })}
       </div>
 
-      {/* 右:屏幕 */}
-      <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-zinc-900/60 to-black/40 overflow-hidden min-h-[440px] flex flex-col">
+      {/* 右:屏幕 — 固定高度,内容切换不改变外框高度(防页面浮动) */}
+      <div className="rounded-2xl border border-white/10 bg-gradient-to-b from-zinc-900/60 to-black/40 overflow-hidden h-[520px] flex flex-col">
         {/* 顶栏:窗口点 + 标题 */}
-        <div className="flex items-center gap-2 px-5 py-3.5 border-b border-white/8 bg-white/[0.02]">
+        <div className="flex items-center gap-2 px-5 py-3.5 border-b border-white/8 bg-white/[0.02] shrink-0">
           <span className="w-3 h-3 rounded-full bg-white/15" />
           <span className="w-3 h-3 rounded-full bg-white/10" />
           <span className="w-3 h-3 rounded-full bg-white/8" />
           <span className="ml-3 text-sm text-zinc-400">{stage.title} · {stage.en}</span>
         </div>
 
-        {/* 屏幕内容 */}
-        <div className="flex-1 p-6 lg:p-8">
+        {/* 屏幕内容 — 溢出内部滚动,不撑高外框 */}
+        <div className="flex-1 min-h-0 overflow-auto p-6 lg:p-8 cv2-scroll">
           <p className="text-sm text-zinc-500 mb-5">{stage.desc}</p>
           <StageScreen stage={stage} assetIdx={assetIdx} setAssetIdx={setAssetIdx} />
         </div>
