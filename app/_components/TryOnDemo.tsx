@@ -60,8 +60,29 @@ export function TryOnDemo() {
         ))}
       </div>
 
+      {/* 三步说明(居中三列) */}
+      <div className="reveal grid sm:grid-cols-3 gap-6 max-w-4xl mx-auto mt-14">
+        {[
+          { t: '人物图 + 衣服图', d: '人物可上传或从画布连线，衣服图上传即可' },
+          { t: '保留姿势换装', d: 'AI 分析人物身形姿态，衣服自然贴合' },
+          { t: '结果可连线复用', d: '换装结果作为新图，继续连给其它卡片创作' },
+        ].map((s) => (
+          <div key={s.t} className="text-center">
+            <div className="text-white font-medium text-[15px] mb-1.5">{s.t}</div>
+            <div className="text-zinc-500 text-sm leading-relaxed">{s.d}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* 特性标签 */}
+      <div className="flex flex-wrap justify-center gap-3 mt-10">
+        {['一键换装', '保留姿势', '快速预览', '电商上身', '服装打样'].map((tag) => (
+          <span key={tag} className="px-3 py-1.5 text-xs rounded-full bg-white/5 border border-white/10 text-zinc-300">{tag}</span>
+        ))}
+      </div>
+
       {/* 委婉提示 */}
-      <p className="text-center text-xs text-zinc-500 mt-6">
+      <p className="text-center text-xs text-zinc-500 mt-8">
         换装侧重快速预览与灵感参考，多换几套挑选最满意的效果 · ¥0.3/次
       </p>
     </div>
