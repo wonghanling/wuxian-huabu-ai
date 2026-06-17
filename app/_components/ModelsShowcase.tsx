@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 const COLS = [
   [{ src: '/model-nanobanana.webp', name: 'Nano Banana Pro' }],
-  [{ src: '/model-gptimage.webp', name: 'ChatGPT Image 2' }, { src: '/model-flux.webp', name: 'FLUX' }],
+  [{ src: '/model-gptimage.webp', name: 'ChatGPT Image 2' }, { src: '/model-flux.webp', name: 'FLUX' }, { src: '/model-interior.webp', name: 'FLUX · 室内设计' }],
   [{ src: '/model-midjourney.webp', name: 'Midjourney' }],
 ];
 
