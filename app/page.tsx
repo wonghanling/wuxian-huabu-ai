@@ -419,10 +419,8 @@ export default function Home() {
       </main>
 
       {/* 顶尖模型展示 */}
-      <section className="py-32 border-t border-white/5 relative z-10">
-        <div className="max-w-7xl mx-auto px-6">
-          <ModelsShowcase />
-        </div>
+      <section className="py-24 border-t border-white/5 relative z-10">
+        <ModelsShowcase />
       </section>
 
       {/* Workflow Templates Gallery */}
