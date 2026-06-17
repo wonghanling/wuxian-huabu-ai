@@ -108,6 +108,7 @@ export interface CardData extends Record<string, unknown> {
     refVideoNames?: string[];   // 参考视频名数组
     refAudio?: string;          // 参考音频 URL
     refAudioName?: string;      // 参考音频名
+    editVideo?: string;         // wan2.7/happyhorse 视频编辑:待编辑视频 URL
     // 文本卡提示词优化专用
     textDuration?: string;      // 优化时长(4-8秒/9-12秒/13-15秒/>15秒)
     // 视频剪辑(方案A:区间标记,播放只循环此段,下载按段录制)

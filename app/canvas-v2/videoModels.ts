@@ -6,7 +6,7 @@
 
 import { calcVideoPrice } from '@/lib/pricing';
 
-export type VideoMode = 't2v' | 'i2v' | 'firstLastFrame';
+export type VideoMode = 't2v' | 'i2v' | 'firstLastFrame' | 'r2v' | 'videoedit';
 
 export interface VideoModel {
   id: string;
@@ -48,15 +48,22 @@ export const VIDEO_MODELS: VideoModel[] = [
 
   // —— HappyHorse(阿里云 dashscope-intl,文生视频)——
   { id: 'happyhorse-1.0-t2v', label: '快乐马 文生', mode: 't2v', durations: [5, 10], aspectRatios: ['16:9','9:16','1:1','4:3'], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '会员 720P¥6.25/1080P¥10.0 起 · 含自动音频' },
+  { id: 'happyhorse-1.0-i2v', label: '快乐马 首帧', mode: 'i2v', durations: [5, 10], aspectRatios: [], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '会员 720P¥6.25/1080P¥10.0 起 · 含自动音频' },
+  { id: 'happyhorse-1.0-r2v', label: '快乐马 参考内容', mode: 'r2v', durations: [5, 10], aspectRatios: ['16:9','9:16','1:1','4:3'], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '会员 720P¥6.25/1080P¥10.0 起 · 含自动音频' },
+  { id: 'happyhorse-1.0-video-edit', label: '快乐马 视频编辑', mode: 'videoedit', durations: [5, 10], aspectRatios: [], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '会员 720P¥6.25/1080P¥10.0 起 · 含自动音频' },
+
+  // —— Wan 2.7 参考内容 / 视频编辑 ——
+  { id: 'wan2.7-r2v', label: 'Wan 2.7 参考内容', mode: 'r2v', durations: [5, 10], aspectRatios: ['16:9','9:16','1:1','4:3'], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '会员 720P¥4.65/1080P¥6.5 起 · 含自动音频' },
+  { id: 'wan2.7-videoedit', label: 'Wan 2.7 视频编辑', mode: 'videoedit', durations: [5, 10], aspectRatios: [], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '会员 720P¥4.65/1080P¥6.5 起 · 含自动音频' },
 ];
 
 export const DEFAULT_VIDEO_MODEL = 'jimeng-i2v';
 
 // 模式 → 帧上传需求
 export function frameNeed(mode: VideoMode): { first: boolean; last: boolean } {
-  if (mode === 't2v') return { first: false, last: false };        // 文生:无参考图
   if (mode === 'i2v') return { first: true, last: false };          // 首帧:1张
-  return { first: true, last: true };                               // 首尾:2张
+  if (mode === 'firstLastFrame') return { first: true, last: true }; // 首尾:2张
+  return { first: false, last: false };                             // t2v/r2v/videoedit:不走首尾帧UI
 }
 
 // 计算价格(直接复用原网 calcVideoPrice;自动兼容 720p/720P 大小写)

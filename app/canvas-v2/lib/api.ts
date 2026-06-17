@@ -257,6 +257,9 @@ export interface VideoGenParams {
   generateAudio?: boolean;
   startFrameImage?: string;   // 首帧(URL 或 base64)
   endFrameImage?: string;     // 尾帧
+  refImages?: string[];       // r2v 参考图(URL)
+  refVideos?: string[];       // r2v 参考视频(URL)
+  editVideo?: string;         // 视频编辑 待编辑视频(URL)
   cameraTemplate?: string;    // jimeng-camera 专用
   cameraStrength?: string;
   userId?: string;
@@ -283,6 +286,9 @@ export async function generateVideo(
       generateAudio: params.generateAudio ?? false,
       startFrameImage: params.startFrameImage,
       endFrameImage: params.endFrameImage,
+      refImages: params.refImages,
+      refVideos: params.refVideos,
+      editVideo: params.editVideo,
       cameraTemplate: params.cameraTemplate,
       cameraStrength: params.cameraStrength,
       userId: params.userId || undefined,

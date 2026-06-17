@@ -27,7 +27,7 @@ const SEL_BORDER = 'rgba(192,192,192,0.45)';
 const INPUT_PORT = 'rgba(59,130,246,0.9)';
 const OUTPUT_PORT = 'rgba(156,163,175,0.9)';
 
-type SubPanel = 'model' | 'ratio' | 'duration' | 'quality' | 'ref' | null;
+type SubPanel = 'model' | 'ratio' | 'duration' | 'quality' | 'ref' | 'refContent' | 'editVid' | null;
 
 function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const collapsed = data.collapsed ?? false;
@@ -111,6 +111,58 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     } finally {
       setUploading(false);
     }
+  };
+
+  // r2v 参考内容:加参考图(本地+连线总≤5)
+  const addRefImage = async (fileList: FileList | null) => {
+    const files = Array.from(fileList ?? []);
+    if (!files.length) return;
+    const cur = data.config.refImages ?? [];
+    const connCount = (model.mode === 'r2v') ? useUpstream(id).images.length : 0;
+    const room = Math.max(0, 5 - cur.length - (data.config.refVideos?.length ?? 0) - connCount);
+    setUploading(true);
+    try {
+      for (const f of files.slice(0, room)) {
+        const url = await uploadImageToStorage(f);
+        if (url) {
+          const latest = useCanvasStore.getState().nodes.find((n) => n.id === id)?.data.config.refImages ?? [];
+          updateConfig(id, { refImages: [...latest, url] });
+        }
+      }
+    } finally { setUploading(false); }
+  };
+  const removeRefImage = (i: number) => {
+    const cur = [...(data.config.refImages ?? [])];
+    cur.splice(i, 1);
+    updateConfig(id, { refImages: cur });
+  };
+  // r2v:加参考视频
+  const addRefVideo = async (fileList: FileList | null) => {
+    const f = fileList?.[0]; if (!f) return;
+    setUploading(true);
+    try {
+      const url = await uploadFileToStorage(f, 'video');
+      if (url) {
+        const cur = data.config.refVideos ?? [];
+        const curN = data.config.refVideoNames ?? [];
+        updateConfig(id, { refVideos: [...cur, url], refVideoNames: [...curN, f.name] });
+      }
+    } finally { setUploading(false); }
+  };
+  const removeRefVideo = (i: number) => {
+    const cur = [...(data.config.refVideos ?? [])];
+    const curN = [...(data.config.refVideoNames ?? [])];
+    cur.splice(i, 1); curN.splice(i, 1);
+    updateConfig(id, { refVideos: cur, refVideoNames: curN });
+  };
+  // videoedit:上传待编辑视频
+  const uploadEditVideo = async (fileList: FileList | null) => {
+    const f = fileList?.[0]; if (!f) return;
+    setUploading(true);
+    try {
+      const url = await uploadFileToStorage(f, 'video');
+      if (url) updateConfig(id, { editVideo: url });
+    } finally { setUploading(false); }
   };
 
   // 剪辑:开启剪辑条(初始化区间为整段)
@@ -222,7 +274,24 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     const effPrompt = upstream.texts.length > 0
       ? `${upstream.texts.join('\n')}\n${data.config.prompt}`.trim()
       : data.config.prompt;
-    if (!effPrompt.trim() && need.first && !effFirst) return;
+
+    // r2v 参考内容:本地参考图/视频 + 上游连线图/视频(去重)
+    let effRefImages: string[] | undefined;
+    let effRefVideos: string[] | undefined;
+    let effEditVideo: string | undefined;
+    if (model.mode === 'r2v') {
+      const localImgs = data.config.refImages ?? [];
+      const localVids = data.config.refVideos ?? [];
+      effRefImages = [...localImgs, ...upstream.images.filter((u) => !localImgs.includes(u))];
+      effRefVideos = [...localVids, ...upstream.videos.filter((u) => !localVids.includes(u))];
+      if (effRefImages.length === 0 && effRefVideos.length === 0) return;
+    } else if (model.mode === 'videoedit') {
+      effEditVideo = data.config.editVideo || upstream.videos[0];
+      if (!effEditVideo) return;
+    } else {
+      if (!effPrompt.trim() && need.first && !effFirst) return;
+    }
+
     updateCard(id, { status: 'generating', progress: 12 });
     try {
       const userId = await getUserId();
@@ -236,6 +305,9 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           generateAudio: !!data.config.audio,
           startFrameImage: effFirst,
           endFrameImage: effLast,
+          refImages: effRefImages,
+          refVideos: effRefVideos,
+          editVideo: effEditVideo,
           userId,
         },
         (progress) => updateCard(id, { progress }),
@@ -384,6 +456,82 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                     {need.last && (
                       <FrameSlot label="尾帧" url={dispLast} uploading={uploading}
                         onUpload={(fl) => uploadFrame('lastFrame', fl)} onClear={() => updateConfig(id, { lastFrame: undefined })} />
+                    )}
+                  </div>
+                </ParamTag>
+              );
+            })()}
+
+            {/* r2v 参考内容:参考图(≤5)+参考视频,上传+连线 */}
+            {model.mode === 'r2v' && (() => {
+              const imgs = data.config.refImages ?? [];
+              const vids = data.config.refVideos ?? [];
+              const vNames = data.config.refVideoNames ?? [];
+              const connImgs = upstreamLive.images.filter((u) => !imgs.includes(u));
+              const connVids = upstreamLive.videos.filter((u) => !vids.includes(u));
+              const total = imgs.length + vids.length + connImgs.length + connVids.length;
+              const has = total > 0;
+              return (
+                <ParamTag label={<>参考内容 {total}/5{has && <span style={greenDot} />}</>} open={sub === 'refContent'} onToggle={() => setSub(sub === 'refContent' ? null : 'refContent')} width={300}>
+                  <div style={{ fontSize: 11, color: '#a1a1aa', padding: '4px 6px 6px' }}>参考图/视频共 ≤5;prompt 里用"图1/视频1"指代</div>
+                  {/* 参考图 */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '0 6px 6px' }}>
+                    {imgs.map((u, i) => (
+                      <div key={`ri${i}`} style={{ position: 'relative' }}>
+                        <HoverZoomImg url={u} style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 8 }} />
+                        <button onClick={() => removeRefImage(i)} style={refRm}>✕</button>
+                      </div>
+                    ))}
+                    {connImgs.map((u, i) => (
+                      <div key={`ci${i}`} style={{ position: 'relative' }} title="来自连接">
+                        <HoverZoomImg url={u} style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 8, opacity: 0.85 }} />
+                      </div>
+                    ))}
+                    {total < 5 && (
+                      <label style={refAddBtn}>
+                        <IconPlus size={14} />
+                        <input type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={(e) => addRefImage(e.target.files)} />
+                      </label>
+                    )}
+                  </div>
+                  {/* 参考视频 */}
+                  <div style={{ padding: '0 6px 6px' }}>
+                    {vids.map((u, i) => (
+                      <div key={`rv${i}`} style={refVidRow}>
+                        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>🎬 {vNames[i] || `视频${i + 1}`}</span>
+                        <button onClick={() => removeRefVideo(i)} style={{ ...refRm, position: 'static' }}>✕</button>
+                      </div>
+                    ))}
+                    {connVids.map((_, i) => (
+                      <div key={`cv${i}`} style={{ ...refVidRow, opacity: 0.85 }}>🎬 连接视频{i + 1}</div>
+                    ))}
+                    {total < 5 && (
+                      <label style={{ ...refVidRow, cursor: 'pointer', justifyContent: 'center', color: '#a1a1aa' }}>
+                        {uploading ? '上传中…' : '+ 上传参考视频'}
+                        <input type="file" accept="video/*" style={{ display: 'none' }} onChange={(e) => addRefVideo(e.target.files)} />
+                      </label>
+                    )}
+                  </div>
+                </ParamTag>
+              );
+            })()}
+
+            {/* videoedit 待编辑视频:上传+连线 */}
+            {model.mode === 'videoedit' && (() => {
+              const editV = data.config.editVideo || upstreamLive.videos[0];
+              return (
+                <ParamTag label={<>待编辑视频{editV && <span style={greenDot} />}</>} open={sub === 'editVid'} onToggle={() => setSub(sub === 'editVid' ? null : 'editVid')} width={240}>
+                  <div style={{ padding: 6 }}>
+                    {editV ? (
+                      <div style={refVidRow}>
+                        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>🎬 {data.config.editVideo ? '已上传待编辑视频' : '来自连接的视频'}</span>
+                        {data.config.editVideo && <button onClick={() => updateConfig(id, { editVideo: undefined })} style={{ ...refRm, position: 'static' }}>✕</button>}
+                      </div>
+                    ) : (
+                      <label style={{ ...refVidRow, cursor: 'pointer', justifyContent: 'center', color: '#a1a1aa' }}>
+                        {uploading ? '上传中…' : '+ 上传待编辑视频'}
+                        <input type="file" accept="video/*" style={{ display: 'none' }} onChange={(e) => uploadEditVideo(e.target.files)} />
+                      </label>
                     )}
                   </div>
                 </ParamTag>
@@ -667,6 +815,9 @@ const popPanel: React.CSSProperties = {
   boxShadow: '0 18px 55px rgba(0,0,0,0.65)', zIndex: 9999,
 };
 const greenDot: React.CSSProperties = { width: 6, height: 6, borderRadius: '50%', background: '#e4e4e7', display: 'inline-block', marginLeft: 4 };
+const refRm: React.CSSProperties = { position: 'absolute', top: 2, right: 2, width: 16, height: 16, borderRadius: 5, border: 'none', background: 'rgba(0,0,0,0.6)', color: '#fff', cursor: 'pointer', fontSize: 9, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' };
+const refAddBtn: React.CSSProperties = { width: 56, height: 56, borderRadius: 8, border: '1px dashed rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.04)', color: '#a1a1aa', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' };
+const refVidRow: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 6, padding: '6px 8px', marginBottom: 4, borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)', fontSize: 11.5, color: '#d4d4d8' };
 const subItem: React.CSSProperties = {
   display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, width: '100%',
   padding: '8px 11px', borderRadius: 8, border: 'none', background: 'transparent',

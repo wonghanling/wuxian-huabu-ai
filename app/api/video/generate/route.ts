@@ -30,7 +30,7 @@ const supabaseAdmin = createClient(
 type ModelConfig = {
   name: string;
   endpoint: string;
-  mode: 't2v' | 'i2v' | 'firstLastFrame';
+  mode: 't2v' | 'i2v' | 'firstLastFrame' | 'r2v' | 'videoedit';
   durations: number[];
   aspectRatios: string[];
   resolutions: string[];
@@ -198,6 +198,88 @@ const VIDEO_MODELS: Record<string, ModelConfig> = {
     imageParamName: 'image_url',
     endImageParamName: 'end_image_url',
     i2vNoAspectRatio: true,
+  },
+  // wan2.7 参考内容(r2v):media reference_image/reference_video
+  'wan2.7-r2v': {
+    name: 'Wan 2.7 参考内容',
+    endpoint: 'dashscope27',
+    dashscopeModel: 'wan2.7-r2v',
+    provider: 'dashscope',
+    mode: 'r2v',
+    durations: [5, 10],
+    aspectRatios: ['16:9', '9:16', '1:1', '4:3'],
+    resolutions: ['720P', '1080P'],
+    defaultResolution: '720P',
+    supportsAudio: true,
+    audioBuiltIn: false,
+    supportsEndFrame: false,
+    durationFormat: 'number',
+  },
+  // wan2.7 视频编辑:media type=video
+  'wan2.7-videoedit': {
+    name: 'Wan 2.7 视频编辑',
+    endpoint: 'dashscope27',
+    dashscopeModel: 'wan2.7-videoedit',
+    provider: 'dashscope',
+    mode: 'videoedit',
+    durations: [5, 10],
+    aspectRatios: [],
+    resolutions: ['720P', '1080P'],
+    defaultResolution: '720P',
+    supportsAudio: true,
+    audioBuiltIn: false,
+    supportsEndFrame: false,
+    durationFormat: 'number',
+  },
+  // HappyHorse 首帧(i2v):media first_frame
+  'happyhorse-1.0-i2v': {
+    name: 'HappyHorse 图生视频',
+    endpoint: 'dashscope27',
+    dashscopeModel: 'happyhorse-1.0-i2v',
+    provider: 'dashscope',
+    mode: 'i2v',
+    durations: [5, 10],
+    aspectRatios: [],
+    resolutions: ['720P', '1080P'],
+    defaultResolution: '720P',
+    supportsAudio: true,
+    audioBuiltIn: false,
+    supportsEndFrame: false,
+    durationFormat: 'number',
+    imageParamName: 'image_url',
+    i2vNoAspectRatio: true,
+  },
+  // HappyHorse 参考内容(r2v)
+  'happyhorse-1.0-r2v': {
+    name: 'HappyHorse 参考内容',
+    endpoint: 'dashscope27',
+    dashscopeModel: 'happyhorse-1.0-r2v',
+    provider: 'dashscope',
+    mode: 'r2v',
+    durations: [5, 10],
+    aspectRatios: ['16:9', '9:16', '1:1', '4:3'],
+    resolutions: ['720P', '1080P'],
+    defaultResolution: '720P',
+    supportsAudio: true,
+    audioBuiltIn: false,
+    supportsEndFrame: false,
+    durationFormat: 'number',
+  },
+  // HappyHorse 视频编辑
+  'happyhorse-1.0-video-edit': {
+    name: 'HappyHorse 视频编辑',
+    endpoint: 'dashscope27',
+    dashscopeModel: 'happyhorse-1.0-video-edit',
+    provider: 'dashscope',
+    mode: 'videoedit',
+    durations: [5, 10],
+    aspectRatios: [],
+    resolutions: ['720P', '1080P'],
+    defaultResolution: '720P',
+    supportsAudio: true,
+    audioBuiltIn: false,
+    supportsEndFrame: false,
+    durationFormat: 'number',
   },
   // HappyHorse 文生视频(阿里云 dashscope-intl,同 wan 账号池)
   'happyhorse-1.0-t2v': {
@@ -489,6 +571,9 @@ export async function POST(req: NextRequest) {
       generateAudio = false,
       startFrameImage,
       endFrameImage,
+      refImages,
+      refVideos,
+      editVideo,
       userId,
       canvasId,
       cameraTemplate,
@@ -681,12 +766,35 @@ export async function POST(req: NextRequest) {
       let dsErr: any = null;
       try {
         const media: Record<string, string>[] = [];
-        // 首帧
-        const firstFrame = input['image_url'] || input['img_url'];
-        if (firstFrame) media.push({ type: 'first_frame', url: firstFrame as string });
-        // 尾帧（首尾帧模式）
-        const lastFrame = input['end_image_url'];
-        if (lastFrame) media.push({ type: 'last_frame', url: lastFrame as string });
+        if (cfg.mode === 'r2v') {
+          // 参考内容:参考图 reference_image + 参考视频 reference_video(总≤5)
+          const imgs: string[] = Array.isArray(refImages) ? refImages : [];
+          const vids: string[] = Array.isArray(refVideos) ? refVideos : [];
+          for (const u of imgs) {
+            const url = await toPublicUrl(u);
+            if (url) media.push({ type: 'reference_image', url });
+          }
+          for (const u of vids) {
+            const url = await toPublicUrl(u);
+            if (url) media.push({ type: 'reference_video', url });
+          }
+          if (media.length === 0) {
+            return NextResponse.json({ error: '参考内容模式需至少一张参考图或一个参考视频' }, { status: 400 });
+          }
+        } else if (cfg.mode === 'videoedit') {
+          // 视频编辑:待编辑视频 type=video
+          if (!editVideo) {
+            return NextResponse.json({ error: '视频编辑模式需上传待编辑视频' }, { status: 400 });
+          }
+          const url = await toPublicUrl(editVideo);
+          media.push({ type: 'video', url });
+        } else {
+          // i2v/firstLastFrame:首帧/尾帧
+          const firstFrame = input['image_url'] || input['img_url'];
+          if (firstFrame) media.push({ type: 'first_frame', url: firstFrame as string });
+          const lastFrame = input['end_image_url'];
+          if (lastFrame) media.push({ type: 'last_frame', url: lastFrame as string });
+        }
 
         const dsInput: Record<string, unknown> = { prompt };
         if (media.length > 0) dsInput.media = media;

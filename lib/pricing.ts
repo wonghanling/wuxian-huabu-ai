@@ -206,12 +206,42 @@ export const VIDEO_PRICING: Record<string, VideoModelPrice> = {
       '1080P': tier(1.10),
     },
   },
+  'wan2.7-r2v': {
+    resolutions: {
+      '720P':  tier(0.73),
+      '1080P': tier(1.10),
+    },
+  },
+  'wan2.7-videoedit': {
+    resolutions: {
+      '720P':  tier(0.73),
+      '1080P': tier(1.10),
+    },
+  },
 
   // ── HappyHorse（成本¥1.05/s 720P / ¥1.80/s 1080P）──────
   'happyhorse-1.0-t2v': {
     resolutions: {
       '720P':  tier(1.05),  // 会员¥1.25 / 普通¥1.45
       '1080P': tier(1.80),  // 会员¥2.00 / 普通¥2.20
+    },
+  },
+  'happyhorse-1.0-i2v': {
+    resolutions: {
+      '720P':  tier(1.05),
+      '1080P': tier(1.80),
+    },
+  },
+  'happyhorse-1.0-r2v': {
+    resolutions: {
+      '720P':  tier(1.05),
+      '1080P': tier(1.80),
+    },
+  },
+  'happyhorse-1.0-video-edit': {
+    resolutions: {
+      '720P':  tier(1.05),
+      '1080P': tier(1.80),
     },
   },
 
