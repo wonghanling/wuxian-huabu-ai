@@ -118,8 +118,9 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     const files = Array.from(fileList ?? []);
     if (!files.length) return;
     const cur = data.config.refImages ?? [];
-    const connCount = (model.mode === 'r2v') ? useUpstream(id).images.length : 0;
+    const connCount = upstreamLive.images.length + upstreamLive.videos.length;
     const room = Math.max(0, 5 - cur.length - (data.config.refVideos?.length ?? 0) - connCount);
+    if (room <= 0) return;
     setUploading(true);
     try {
       for (const f of files.slice(0, room)) {
