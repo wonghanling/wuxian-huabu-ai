@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { TemplateGallery } from './_components/TemplateGallery';
+import { ModelsShowcase } from './_components/ModelsShowcase';
 import { ScriptStudioDemo } from './_components/ScriptStudioDemo';
 import { DoodleDemo } from './_components/DoodleDemo';
 import { JsonConfigDemo } from './_components/JsonConfigDemo';
@@ -416,6 +417,13 @@ export default function Home() {
           </div>
         </div>
       </main>
+
+      {/* 顶尖模型展示 */}
+      <section className="py-32 border-t border-white/5 relative z-10">
+        <div className="max-w-7xl mx-auto px-6">
+          <ModelsShowcase />
+        </div>
+      </section>
 
       {/* Workflow Templates Gallery */}
       <div id="workflow-templates">
