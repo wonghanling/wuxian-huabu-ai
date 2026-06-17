@@ -142,7 +142,7 @@ export async function GET(request: NextRequest) {
 
       const data = await res.json();
       const taskStatus = data?.output?.task_status;
-      console.log('DashScope 状态:', taskStatus);
+      console.log('DashScope 状态:', taskStatus, '完整响应:', JSON.stringify(data).slice(0, 800));
 
       if (taskStatus === 'SUCCEEDED') {
         const rawUrl = data?.output?.video_url || null;

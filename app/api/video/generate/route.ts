@@ -149,6 +149,21 @@ const VIDEO_MODELS: Record<string, ModelConfig> = {
     i2vNoAspectRatio: true,
   },
   // wan2.7 新协议(input.media 数组格式,endpoint=dashscope27)
+  'wan2.7-t2v': {
+    name: 'Wan 2.7 文生视频',
+    endpoint: 'dashscope',
+    dashscopeModel: 'wan2.7-t2v',
+    provider: 'dashscope',
+    mode: 't2v',
+    durations: [5, 10],
+    aspectRatios: ['16:9', '9:16', '1:1'],
+    resolutions: ['720P', '1080P'],
+    defaultResolution: '720P',
+    supportsAudio: true,
+    audioBuiltIn: false,
+    supportsEndFrame: false,
+    durationFormat: 'number',
+  },
   'wan2.7-i2v': {
     name: 'Wan 2.7 图生视频',
     endpoint: 'dashscope27',
@@ -163,6 +178,7 @@ const VIDEO_MODELS: Record<string, ModelConfig> = {
     audioBuiltIn: false,
     supportsEndFrame: false,
     durationFormat: 'number',
+    imageParamName: 'image_url',
     i2vNoAspectRatio: true,
   },
   'wan2.7-kf2v': {
@@ -179,6 +195,8 @@ const VIDEO_MODELS: Record<string, ModelConfig> = {
     audioBuiltIn: false,
     supportsEndFrame: true,
     durationFormat: 'number',
+    imageParamName: 'image_url',
+    endImageParamName: 'end_image_url',
     i2vNoAspectRatio: true,
   },
   // HappyHorse 文生视频(阿里云 dashscope-intl,同 wan 账号池)

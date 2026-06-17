@@ -188,6 +188,12 @@ export const VIDEO_PRICING: Record<string, VideoModelPrice> = {
   },
 
   // ── Wan 2.7（新协议,成本¥0.73/s 720P / ¥1.10/s 1080P）──
+  'wan2.7-t2v': {
+    resolutions: {
+      '720P':  tier(0.73),
+      '1080P': tier(1.10),
+    },
+  },
   'wan2.7-i2v': {
     resolutions: {
       '720P':  tier(0.73),  // 会员¥0.93 / 普通¥1.13
