@@ -32,6 +32,8 @@ export const VIDEO_MODELS: VideoModel[] = [
   { id: 'jimeng-pro-i2v', label: '即梦 3.0 Pro 首帧', mode: 'i2v', durations: [5, 10], aspectRatios: [], resolutions: ['1080p'], defaultResolution: '1080p', supportsAudio: false, price: '¥1.00/秒' },
 
   // —— Wan ——
+  { id: 'wan2.7-i2v', label: 'Wan 2.7 首帧', mode: 'i2v', durations: [5, 10], aspectRatios: [], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '会员 720P¥4.65/1080P¥6.5 起 · 含自动音频' },
+  { id: 'wan2.7-kf2v', label: 'Wan 2.7 首尾帧', mode: 'firstLastFrame', durations: [5, 10], aspectRatios: [], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '会员 720P¥4.65/1080P¥6.5 起 · 含自动音频' },
   { id: 'wan2.6-t2v', label: 'Wan 2.6 文生', mode: 't2v', durations: [5, 10], aspectRatios: ['16:9','9:16','1:1'], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '会员 720P¥0.9/1080P¥1.3 起' },
   { id: 'wan2.6-i2v', label: 'Wan 2.6 首帧', mode: 'i2v', durations: [5, 10, 15], aspectRatios: [], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '会员 720P¥0.8/1080P¥1.2 起' },
   { id: 'wan2.6-i2v-flash', label: 'Wan 2.6 首帧 Flash', mode: 'i2v', durations: [5, 10, 15], aspectRatios: [], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: true, price: '会员 720P无声¥0.35起' },
@@ -42,6 +44,9 @@ export const VIDEO_MODELS: VideoModel[] = [
   // —— Pixverse v6(fal,自带音频,无音频开关;720p/1080p)——
   { id: 'pixverse-t2v', label: 'Pixverse v6 文生', mode: 't2v', durations: [5, 8], aspectRatios: ['16:9','9:16','1:1'], resolutions: ['720p','1080p'], defaultResolution: '720p', supportsAudio: false, price: '会员 720P¥0.6/1080P¥0.9 起' },
   { id: 'pixverse-i2v', label: 'Pixverse v6 首帧', mode: 'i2v', durations: [5, 8], aspectRatios: [], resolutions: ['720p','1080p'], defaultResolution: '720p', supportsAudio: false, price: '会员 720P¥0.6/1080P¥0.9 起' },
+
+  // —— HappyHorse(阿里云 dashscope-intl,文生视频)——
+  { id: 'happyhorse-1.0-t2v', label: '快乐马 文生', mode: 't2v', durations: [5, 10], aspectRatios: ['16:9','9:16','1:1','4:3'], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '会员 720P¥6.25/1080P¥10.0 起 · 含自动音频' },
 ];
 
 export const DEFAULT_VIDEO_MODEL = 'jimeng-i2v';

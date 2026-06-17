@@ -181,9 +181,31 @@ export const VIDEO_PRICING: Record<string, VideoModelPrice> = {
   'wan2.2-kf2v-flash': {
     fixedSeconds: 5,
     resolutions: {
-      '480P':  tier(0.10), // 会员5s¥2.50 / 普通5s¥3.50
-      '720P':  tier(0.20), // 会员5s¥3.00 / 普通5s¥4.00
-      '1080P': tier(0.48), // 会员5s¥4.40 / 普通5s¥5.40
+      '480P':  tier(0.10),
+      '720P':  tier(0.20),
+      '1080P': tier(0.48),
+    },
+  },
+
+  // ── Wan 2.7（新协议,成本¥0.73/s 720P / ¥1.10/s 1080P）──
+  'wan2.7-i2v': {
+    resolutions: {
+      '720P':  tier(0.73),  // 会员¥0.93 / 普通¥1.13
+      '1080P': tier(1.10),  // 会员¥1.30 / 普通¥1.50
+    },
+  },
+  'wan2.7-kf2v': {
+    resolutions: {
+      '720P':  tier(0.73),
+      '1080P': tier(1.10),
+    },
+  },
+
+  // ── HappyHorse（成本¥1.05/s 720P / ¥1.80/s 1080P）──────
+  'happyhorse-1.0-t2v': {
+    resolutions: {
+      '720P':  tier(1.05),  // 会员¥1.25 / 普通¥1.45
+      '1080P': tier(1.80),  // 会员¥2.00 / 普通¥2.20
     },
   },
 

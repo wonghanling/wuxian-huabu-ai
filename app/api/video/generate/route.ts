@@ -148,6 +148,55 @@ const VIDEO_MODELS: Record<string, ModelConfig> = {
     imageParamName: 'image_url',
     i2vNoAspectRatio: true,
   },
+  // wan2.7 新协议(input.media 数组格式,endpoint=dashscope27)
+  'wan2.7-i2v': {
+    name: 'Wan 2.7 图生视频',
+    endpoint: 'dashscope27',
+    dashscopeModel: 'wan2.7-i2v-2026-04-25',
+    provider: 'dashscope',
+    mode: 'i2v',
+    durations: [5, 10],
+    aspectRatios: [],
+    resolutions: ['720P', '1080P'],
+    defaultResolution: '720P',
+    supportsAudio: true,
+    audioBuiltIn: false,
+    supportsEndFrame: false,
+    durationFormat: 'number',
+    i2vNoAspectRatio: true,
+  },
+  'wan2.7-kf2v': {
+    name: 'Wan 2.7 首尾帧',
+    endpoint: 'dashscope27',
+    dashscopeModel: 'wan2.7-i2v-2026-04-25',
+    provider: 'dashscope',
+    mode: 'firstLastFrame',
+    durations: [5, 10],
+    aspectRatios: [],
+    resolutions: ['720P', '1080P'],
+    defaultResolution: '720P',
+    supportsAudio: true,
+    audioBuiltIn: false,
+    supportsEndFrame: true,
+    durationFormat: 'number',
+    i2vNoAspectRatio: true,
+  },
+  // HappyHorse 文生视频(阿里云 dashscope-intl,同 wan 账号池)
+  'happyhorse-1.0-t2v': {
+    name: 'HappyHorse 文生视频',
+    endpoint: 'dashscope',
+    dashscopeModel: 'happyhorse-1.0-t2v',
+    provider: 'dashscope',
+    mode: 't2v',
+    durations: [5, 10],
+    aspectRatios: ['16:9', '9:16', '1:1', '4:3'],
+    resolutions: ['720P', '1080P'],
+    defaultResolution: '720P',
+    supportsAudio: false,
+    audioBuiltIn: false,
+    supportsEndFrame: false,
+    durationFormat: 'number',
+  },
   'wan2.6-t2v': {
     name: 'Wan 2.6 文生视频',
     endpoint: 'dashscope',
@@ -605,6 +654,66 @@ export async function POST(req: NextRequest) {
         throw err;
       } finally {
         await releaseKey(jmKeyInfo.keyId, jmSuccess, jmSuccess ? undefined : categorizeError(jmErr));
+      }
+
+    } else if (cfg.endpoint === 'dashscope27') {
+      // wan2.7 新协议：input.media 数组格式（与旧版 input.image_url 不同）
+      const dsKeyInfo = await pickKey('dashscope');
+      let dsSuccess = false;
+      let dsErr: any = null;
+      try {
+        const media: Record<string, string>[] = [];
+        // 首帧
+        const firstFrame = input['image_url'] || input['img_url'];
+        if (firstFrame) media.push({ type: 'first_frame', url: firstFrame as string });
+        // 尾帧（首尾帧模式）
+        const lastFrame = input['end_image_url'];
+        if (lastFrame) media.push({ type: 'last_frame', url: lastFrame as string });
+
+        const dsInput: Record<string, unknown> = { prompt };
+        if (media.length > 0) dsInput.media = media;
+
+        const dsParams: Record<string, unknown> = { prompt_extend: true };
+        if (duration) dsParams.duration = Number(duration);
+        if (resolution) dsParams.resolution = resolution;
+
+        const dsRes = await fetch(
+          'https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/video-generation/video-synthesis',
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${dsKeyInfo.keyValue}`,
+              'Content-Type': 'application/json',
+              'X-DashScope-Async': 'enable',
+            },
+            body: JSON.stringify({
+              model: cfg.dashscopeModel,
+              input: dsInput,
+              parameters: dsParams,
+            }),
+          }
+        );
+
+        if (!dsRes.ok) {
+          const err = await dsRes.text();
+          dsErr = new Error(`wan2.7 提交失败: ${err}`);
+          (dsErr as any).status = dsRes.status;
+          throw dsErr;
+        }
+
+        const dsData = await dsRes.json();
+        taskId = dsData.output?.task_id;
+        if (!taskId) {
+          dsErr = new Error(`wan2.7 未返回 task_id: ${JSON.stringify(dsData)}`);
+          throw dsErr;
+        }
+        taskEndpoint = `dashscope:${cfg.dashscopeModel}`;
+        dsSuccess = true;
+      } catch (err) {
+        if (!dsErr) dsErr = err;
+        throw err;
+      } finally {
+        await releaseKey(dsKeyInfo.keyId, dsSuccess, dsSuccess ? undefined : categorizeError(dsErr));
       }
 
     } else if (cfg.provider === 'dashscope') {
