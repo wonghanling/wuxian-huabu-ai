@@ -309,7 +309,7 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               ))}
             </ParamTag>
             {(model.qualityOptions || model.useSizeNotRatio) && (
-              <ParamTag label={<>清晰度 {data.config.imageQuality ?? (model.useSizeNotRatio ? 'medium' : '2k')}</>} open={sub === 'quality'} onToggle={() => setSub(sub === 'quality' ? null : 'quality')} width={180}>
+              <ParamTag label={<>清晰度</>} open={sub === 'quality'} onToggle={() => setSub(sub === 'quality' ? null : 'quality')} width={180}>
                 {(model.useSizeNotRatio ? QUALITY_OPTIONS : model.qualityOptions!).map((opt) => (
                   <SubItem key={opt.value} active={opt.value === (data.config.imageQuality ?? (model.useSizeNotRatio ? 'medium' : '2k'))} onClick={() => { updateConfig(id, { imageQuality: opt.value }); setSub(null); }}>
                     <span>{opt.label}</span>
