@@ -2,6 +2,7 @@
 export const ADMIN_EMAILS = [
   '1825221780@qq.com',
   '3866855423@qq.com',
+  '1796370017@qq.com',
 ];
 
 export function isAdmin(email: string | null | undefined): boolean {
