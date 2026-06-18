@@ -16,11 +16,36 @@ const VIDEOS = [
 ];
 
 const MODELS = [
-  { name: '即梦 3.0', tags: ['国产', '720P', '1080P'], desc: '字节跳动出品，中文理解强，运动自然流畅' },
-  { name: 'Wan 2.7', tags: ['阿里', '多模态', '参考内容'], desc: '首尾帧 / 参考内容 / 视频编辑，全模式覆盖' },
-  { name: 'Seedance 2.0', tags: ['多模态', '原生音频'], desc: '多输入融合，原生带音频，适合叙事短片' },
-  { name: 'Pixverse v6', tags: ['动感', '音效'], desc: '动态强劲，自带音效，适合社交内容创作' },
-  { name: '快乐马', tags: ['写实', '高清'], desc: '物理真实，运动流畅，1080P 高清输出' },
+  {
+    name: '即梦 3.0',
+    tags: ['国产首选', '720P', '1080P'],
+    desc: '字节跳动出品，中文场景理解最强，运动自然，支持运镜控制',
+    highlight: '中文理解最佳',
+  },
+  {
+    name: 'Wan 2.7',
+    tags: ['全模式', '参考内容', '视频编辑'],
+    desc: '阿里云出品，首帧/首尾帧/参考人物/视频续写四合一，最全能',
+    highlight: '模式最全面',
+  },
+  {
+    name: 'Seedance 2.0',
+    tags: ['原生音频', '多模态'],
+    desc: '字节出品，生成视频自带背景音乐与音效，无需额外配音',
+    highlight: '自带原生音频',
+  },
+  {
+    name: 'Pixverse v6',
+    tags: ['动感强', '音效'],
+    desc: '动态效果最强烈，画面冲击力大，适合短视频与社交内容',
+    highlight: '动感冲击最强',
+  },
+  {
+    name: '快乐马',
+    tags: ['物理写实', '高清'],
+    desc: '物理仿真精准，人物动作自然逼真，1080P 高清输出',
+    highlight: '写实度最高',
+  },
 ];
 
 function VideoCell({ src, inView }: { src: string; inView: boolean }) {
@@ -40,12 +65,12 @@ function VideoCell({ src, inView }: { src: string; inView: boolean }) {
 
   return (
     <div
-      className="relative rounded-xl ring-1 ring-white/10 bg-black cursor-pointer group overflow-hidden"
-      style={{ aspectRatio: '9/16' }}
+      className="rounded-xl overflow-hidden bg-zinc-900 cursor-pointer"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {inView && (
+      {/* video 自然撑开宽度，高度随视频原始比例自动决定，不裁剪不变形 */}
+      {inView ? (
         <video
           ref={ref}
           src={src}
@@ -53,24 +78,11 @@ function VideoCell({ src, inView }: { src: string; inView: boolean }) {
           loop
           playsInline
           preload="none"
-          // object-contain 保留原始比例，黑底填充空白，不裁剪
-          className="absolute inset-0 w-full h-full object-contain"
+          className="w-full h-auto block"
         />
-      )}
-      {/* hover 遮罩：播放时微亮 */}
-      <div
-        className="absolute inset-0 transition-opacity duration-400 pointer-events-none"
-        style={{ background: 'rgba(0,0,0,0.35)', opacity: hovered ? 0 : 1 }}
-      />
-      {/* 静止时播放图标 */}
-      {!hovered && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="w-9 h-9 rounded-full bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur-sm">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="white">
-              <polygon points="2,1 11,6 2,11" />
-            </svg>
-          </div>
-        </div>
+      ) : (
+        // 占位：16:9 灰色块，避免 inView=false 时格子塌陷
+        <div className="w-full bg-zinc-900" style={{ aspectRatio: '16/9' }} />
       )}
     </div>
   );
@@ -92,71 +104,74 @@ export function VideoModelsShowcase() {
   }, []);
 
   return (
-    <div ref={sectionRef} className="relative w-full overflow-hidden">
-      {/* 背景光晕 */}
-      <div className="pointer-events-none absolute inset-0">
-        <div
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] rounded-full blur-[160px] opacity-10"
-          style={{ background: 'radial-gradient(circle,#10805a,transparent 70%)' }}
-        />
-      </div>
+    <div ref={sectionRef} className="relative w-full">
 
       {/* 标题 */}
-      <div className="relative text-center mb-14 px-6">
-        <p className="text-sm tracking-[0.4em] uppercase mb-5" style={{ color: '#10b07a' }}>
+      <div className="text-center mb-14 px-6">
+        <p className="text-sm tracking-[0.4em] uppercase mb-5" style={{ color: '#2d6a4f' }}>
           Generated · 生成案例
         </p>
         <h2 className="text-4xl md:text-6xl font-bold tracking-tight mb-5 leading-tight">
-          真实生成，不是演示
+          顶尖视频模型<br />
+          <span className="text-zinc-400 font-normal text-3xl md:text-4xl">全部接入，随时切换</span>
         </h2>
         <p className="text-lg text-zinc-400 max-w-2xl mx-auto leading-relaxed">
-          以下视频均由 Aura Canvas 调用各模型实际生成，悬停预览
+          悬停预览——以下均为平台实际生成效果
         </p>
       </div>
 
-      {/* 视频网格：5列等宽，9:16 比例，原始比例不裁剪 */}
-      <div className="relative px-4 md:px-10 grid grid-cols-3 md:grid-cols-5 gap-3 md:gap-4">
+      {/* 视频网格：3列，视频原始比例自然撑开 */}
+      <div className="px-4 md:px-10 grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
         {VIDEOS.map((src) => (
           <VideoCell key={src} src={src} inView={inView} />
         ))}
       </div>
 
-      {/* 分隔线 */}
+      {/* 分隔 */}
       <div className="mt-16 mb-12 mx-4 md:mx-10 border-t border-white/5" />
 
-      {/* 模型卡片：独立区域，与网格完全分开 */}
-      <div className="relative px-4 md:px-10">
+      {/* 模型卡片 */}
+      <div className="px-4 md:px-10">
         <p className="text-xs tracking-[0.3em] uppercase text-zinc-500 mb-6">接入模型</p>
         <div className="flex gap-3 md:gap-4 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
-          {MODELS.map((m) => (
+          {MODELS.map((m, i) => (
             <div
               key={m.name}
-              className="flex-shrink-0 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-emerald-500/30 transition-all duration-300 p-5"
-              style={{ minWidth: 210 }}
+              className="flex-shrink-0 rounded-2xl border border-white/8 bg-white/[0.03] hover:bg-white/[0.06] transition-all duration-300 p-5"
+              style={{ minWidth: 220 }}
             >
-              <div className="flex flex-wrap gap-1.5 mb-3">
+              {/* highlight 标签：每张不同底色深度 */}
+              <div
+                className="inline-block text-[10px] font-semibold px-2.5 py-1 rounded-full mb-3"
+                style={{
+                  background: `rgba(45,106,79,${0.12 + i * 0.04})`,
+                  border: '1px solid rgba(45,106,79,0.35)',
+                  color: '#6db891',
+                }}
+              >
+                {m.highlight}
+              </div>
+              <div className="text-white font-semibold text-sm mb-2">{m.name}</div>
+              <div className="text-zinc-500 text-xs leading-relaxed mb-3">{m.desc}</div>
+              <div className="flex flex-wrap gap-1">
                 {m.tags.map((t) => (
-                  <span
-                    key={t}
-                    className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
-                  >{t}</span>
+                  <span key={t} className="text-[10px] px-1.5 py-0.5 rounded bg-white/5 text-zinc-500">{t}</span>
                 ))}
               </div>
-              <div className="text-white font-semibold text-sm mb-1.5">{m.name}</div>
-              <div className="text-zinc-500 text-xs leading-relaxed">{m.desc}</div>
             </div>
           ))}
         </div>
       </div>
 
       {/* CTA */}
-      <div className="relative mt-12 flex justify-center">
+      <div className="mt-12 flex justify-center">
         <Link href="/canvas">
-          <button className="px-8 py-3.5 rounded-full bg-white text-black font-semibold text-sm hover:bg-zinc-200 transition-all hover:-translate-y-0.5 shadow-lg shadow-white/10">
+          <button className="px-8 py-3.5 rounded-full bg-white text-black font-semibold text-sm hover:bg-zinc-200 transition-all hover:-translate-y-0.5">
             开始生成 →
           </button>
         </Link>
       </div>
+
     </div>
   );
 }
