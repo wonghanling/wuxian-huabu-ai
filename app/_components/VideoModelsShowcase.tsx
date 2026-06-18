@@ -64,9 +64,13 @@ const MODELS = [
 
 // 瀑布流：4列，15个视频均匀分配
 function VideoWall({ inView }: { inView: boolean }) {
-  const NUM_COLS = 4;
-  const cols: number[][] = Array.from({ length: NUM_COLS }, () => []);
-  VIDEOS.forEach((_, i) => cols[i % NUM_COLS].push(i));
+  // 手动分列，index 16 放第2列，避免单独成行
+  const cols = [
+    [0, 4, 8,  12],
+    [1, 5, 9,  13, 16],
+    [2, 6, 10, 14],
+    [3, 7, 11, 15],
+  ];
 
   return (
     <div className="px-4 md:px-10 flex gap-3 md:gap-4 items-start">
