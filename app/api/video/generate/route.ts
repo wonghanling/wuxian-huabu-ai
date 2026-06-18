@@ -572,9 +572,8 @@ export async function POST(req: NextRequest) {
       startFrameImage,
       endFrameImage,
       refImages,
-      refImageVoices,
+      refVoices,
       refVideos,
-      refVideoVoices,
       editVideo,
       userId,
       canvasId,
@@ -773,26 +772,26 @@ export async function POST(req: NextRequest) {
           // 参考内容:参考图 reference_image + 参考视频 reference_video(总≤5)
           const imgs: string[] = Array.isArray(refImages) ? refImages : [];
           const vids: string[] = Array.isArray(refVideos) ? refVideos : [];
-          // 音色仅 wan2.7-r2v 支持(happyhorse-1.0-r2v 无音色字段);reference_voice 挂在对应 media 上
+          // 音色仅 wan2.7-r2v 支持:按参考素材顺序(图先视频后)依次分配 refVoices
           const isWan27R2v = cfg.dashscopeModel === 'wan2.7-r2v';
-          const imgVoices: string[] = isWan27R2v && Array.isArray(refImageVoices) ? refImageVoices : [];
-          const vidVoices: string[] = isWan27R2v && Array.isArray(refVideoVoices) ? refVideoVoices : [];
-          for (let i = 0; i < imgs.length; i++) {
-            const url = await toPublicUrl(imgs[i]);
+          const voicePool: string[] = isWan27R2v && Array.isArray(refVoices) ? [...refVoices] : [];
+          let voiceIdx = 0;
+          for (const u of imgs) {
+            const url = await toPublicUrl(u);
             if (!url) continue;
             const item: Record<string, string> = { type: 'reference_image', url };
-            const voice = imgVoices[i];
+            const voice = voicePool[voiceIdx++];
             if (voice) {
               const voiceUrl = await toPublicUrl(voice);
               if (voiceUrl) item.reference_voice = voiceUrl;
             }
             media.push(item);
           }
-          for (let i = 0; i < vids.length; i++) {
-            const url = await toPublicUrl(vids[i]);
+          for (const u of vids) {
+            const url = await toPublicUrl(u);
             if (!url) continue;
             const item: Record<string, string> = { type: 'reference_video', url };
-            const voice = vidVoices[i];
+            const voice = voicePool[voiceIdx++];
             if (voice) {
               const voiceUrl = await toPublicUrl(voice);
               if (voiceUrl) item.reference_voice = voiceUrl;

@@ -135,27 +135,7 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const removeRefImage = (i: number) => {
     const cur = [...(data.config.refImages ?? [])];
     cur.splice(i, 1);
-    const voices = [...(data.config.refImageVoices ?? [])];
-    voices.splice(i, 1);
-    updateConfig(id, { refImages: cur, refImageVoices: voices });
-  };
-  // wan2.7-r2v:给第 i 张参考图配/换音色(wav/mp3,1-10s)
-  const setRefImageVoice = async (i: number, fileList: FileList | null) => {
-    const f = fileList?.[0]; if (!f) return;
-    setUploading(true);
-    try {
-      const url = await uploadFileToStorage(f, 'audio');
-      if (url) {
-        const voices = [...(data.config.refImageVoices ?? [])];
-        while (voices.length <= i) voices.push('');
-        voices[i] = url;
-        updateConfig(id, { refImageVoices: voices });
-      }
-    } finally { setUploading(false); }
-  };
-  const removeRefImageVoice = (i: number) => {
-    const voices = [...(data.config.refImageVoices ?? [])];
-    if (i < voices.length) { voices[i] = ''; updateConfig(id, { refImageVoices: voices }); }
+    updateConfig(id, { refImages: cur });
   };
   // r2v:加参考视频
   const addRefVideo = async (fileList: FileList | null) => {
@@ -174,27 +154,24 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     const cur = [...(data.config.refVideos ?? [])];
     const curN = [...(data.config.refVideoNames ?? [])];
     cur.splice(i, 1); curN.splice(i, 1);
-    const voices = [...(data.config.refVideoVoices ?? [])];
-    voices.splice(i, 1);
-    updateConfig(id, { refVideos: cur, refVideoNames: curN, refVideoVoices: voices });
+    updateConfig(id, { refVideos: cur, refVideoNames: curN });
   };
-  // wan2.7-r2v:给第 i 个参考视频配/换音色
-  const setRefVideoVoice = async (i: number, fileList: FileList | null) => {
+  // wan2.7-r2v:上传一段音色音频(可多段,按顺序分配给参考素材:图先视频后)
+  const addRefVoice = async (fileList: FileList | null) => {
     const f = fileList?.[0]; if (!f) return;
     setUploading(true);
     try {
       const url = await uploadFileToStorage(f, 'audio');
       if (url) {
-        const voices = [...(data.config.refVideoVoices ?? [])];
-        while (voices.length <= i) voices.push('');
-        voices[i] = url;
-        updateConfig(id, { refVideoVoices: voices });
+        const cur = data.config.refVoices ?? [];
+        updateConfig(id, { refVoices: [...cur, url] });
       }
     } finally { setUploading(false); }
   };
-  const removeRefVideoVoice = (i: number) => {
-    const voices = [...(data.config.refVideoVoices ?? [])];
-    if (i < voices.length) { voices[i] = ''; updateConfig(id, { refVideoVoices: voices }); }
+  const removeRefVoice = (i: number) => {
+    const cur = [...(data.config.refVoices ?? [])];
+    cur.splice(i, 1);
+    updateConfig(id, { refVoices: cur });
   };
   // videoedit:上传待编辑视频
   const uploadEditVideo = async (fileList: FileList | null) => {
@@ -319,6 +296,8 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     // r2v 参考内容:本地参考图/视频 + 上游连线图/视频(去重)
     let effRefImages: string[] | undefined;
     let effRefVideos: string[] | undefined;
+    let effRefImageVoices: string[] | undefined;
+    let effRefVideoVoices: string[] | undefined;
     let effEditVideo: string | undefined;
     if (model.mode === 'r2v') {
       const localImgs = data.config.refImages ?? [];
@@ -326,6 +305,15 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
       effRefImages = [...localImgs, ...upstream.images.filter((u) => !localImgs.includes(u))];
       effRefVideos = [...localVids, ...upstream.videos.filter((u) => !localVids.includes(u))];
       if (effRefImages.length === 0 && effRefVideos.length === 0) return;
+      // 音色仅 wan2.7-r2v:按参考素材顺序(图先视频后)依次分配,本地上传(refVoices)优先,连线语音(语音卡)补在后面
+      if (model.id === 'wan2.7-r2v') {
+        const pool = [...(data.config.refVoices ?? []), ...upstream.audios];
+        if (pool.length > 0) {
+          let k = 0;
+          effRefImageVoices = effRefImages.map(() => pool[k++] || '');
+          effRefVideoVoices = effRefVideos.map(() => pool[k++] || '');
+        }
+      }
     } else if (model.mode === 'videoedit') {
       effEditVideo = data.config.editVideo || upstream.videos[0];
       if (!effEditVideo) return;
@@ -347,9 +335,10 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           startFrameImage: effFirst,
           endFrameImage: effLast,
           refImages: effRefImages,
-          refImageVoices: model.id === 'wan2.7-r2v' ? data.config.refImageVoices : undefined,
+          refVoices: effRefImageVoices && effRefVideoVoices
+            ? [...effRefImageVoices, ...effRefVideoVoices].filter(Boolean)
+            : undefined,
           refVideos: effRefVideos,
-          refVideoVoices: model.id === 'wan2.7-r2v' ? data.config.refVideoVoices : undefined,
           editVideo: effEditVideo,
           userId,
         },
@@ -510,27 +499,22 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               const imgs = data.config.refImages ?? [];
               const vids = data.config.refVideos ?? [];
               const vNames = data.config.refVideoNames ?? [];
-              const imgVoices = data.config.refImageVoices ?? [];
-              const vidVoices = data.config.refVideoVoices ?? [];
               const connImgs = upstreamLive.images.filter((u) => !imgs.includes(u));
               const connVids = upstreamLive.videos.filter((u) => !vids.includes(u));
               const total = imgs.length + vids.length + connImgs.length + connVids.length;
               const has = total > 0;
               const showVoice = model.id === 'wan2.7-r2v';  // 音色仅 wan2.7-r2v 支持
+              const voices = data.config.refVoices ?? [];
+              const connAudioN = upstreamLive.audios.length;  // 连线音频(语音卡)数,自动当音色
               return (
                 <ParamTag label={<>参考内容 {total}/5{has && <span style={greenDot} />}</>} open={sub === 'refContent'} onToggle={() => setSub(sub === 'refContent' ? null : 'refContent')} width={300}>
-                  <div style={{ fontSize: 11, color: '#a1a1aa', padding: '4px 6px 6px' }}>参考图/视频共 ≤5;prompt 里用"图1/视频1"指代{showVoice && '。🎤 可给本地素材配音色(wav/mp3,1-10秒)'}</div>
+                  <div style={{ fontSize: 11, color: '#a1a1aa', padding: '4px 6px 6px' }}>参考图/视频共 ≤5;prompt 里用"图1/视频1"指代</div>
                   {/* 参考图 */}
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '0 6px 6px' }}>
                     {imgs.map((u, i) => (
                       <div key={`ri${i}`} style={{ position: 'relative' }}>
                         <HoverZoomImg url={u} style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 8 }} />
                         <button onClick={() => removeRefImage(i)} style={refRm}>✕</button>
-                        {showVoice && (
-                          imgVoices[i]
-                            ? <button onClick={() => removeRefImageVoice(i)} title="已配音色,点击移除" style={voiceBtnOn}>🎤</button>
-                            : <label title="配音色(wav/mp3)" style={voiceBtnOff}>🎤<input type="file" accept="audio/*,.wav,.mp3" style={{ display: 'none' }} onChange={(e) => setRefImageVoice(i, e.target.files)} /></label>
-                        )}
                       </div>
                     ))}
                     {connImgs.map((u, i) => (
@@ -550,11 +534,6 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                     {vids.map((u, i) => (
                       <div key={`rv${i}`} style={refVidRow}>
                         <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>🎬 {vNames[i] || `视频${i + 1}`}</span>
-                        {showVoice && (
-                          vidVoices[i]
-                            ? <button onClick={() => removeRefVideoVoice(i)} title="已配音色,点击移除" style={{ ...voiceRowBtn, color: '#22c55e' }}>🎤</button>
-                            : <label title="配音色(wav/mp3)" style={voiceRowBtn}>🎤<input type="file" accept="audio/*,.wav,.mp3" style={{ display: 'none' }} onChange={(e) => setRefVideoVoice(i, e.target.files)} /></label>
-                        )}
                         <button onClick={() => removeRefVideo(i)} style={{ ...refRm, position: 'static' }}>✕</button>
                       </div>
                     ))}
@@ -568,6 +547,22 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                       </label>
                     )}
                   </div>
+                  {/* 音色(仅 wan2.7-r2v):本地上传音频 + 连线语音,按参考素材顺序(图先视频后)分配 */}
+                  {showVoice && (
+                    <div style={{ padding: '4px 6px 6px', borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: 2 }}>
+                      <div style={{ fontSize: 11, color: '#a1a1aa', paddingBottom: 6 }}>🎤 音色音频(wav/mp3,1-10秒,可选):按参考素材顺序依次分配{connAudioN > 0 && `;另有 ${connAudioN} 个连线语音自动接在后面`}</div>
+                      {voices.map((_, i) => (
+                        <div key={`vo${i}`} style={refVidRow}>
+                          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>🎤 音色{i + 1}</span>
+                          <button onClick={() => removeRefVoice(i)} style={{ ...refRm, position: 'static' }}>✕</button>
+                        </div>
+                      ))}
+                      <label style={{ ...refVidRow, cursor: 'pointer', justifyContent: 'center', color: '#a1a1aa' }}>
+                        {uploading ? '上传中…' : '+ 上传音色音频'}
+                        <input type="file" accept="audio/*,.wav,.mp3" style={{ display: 'none' }} onChange={(e) => addRefVoice(e.target.files)} />
+                      </label>
+                    </div>
+                  )}
                 </ParamTag>
               );
             })()}
@@ -874,10 +869,6 @@ const greenDot: React.CSSProperties = { width: 6, height: 6, borderRadius: '50%'
 const refRm: React.CSSProperties = { position: 'absolute', top: 2, right: 2, width: 16, height: 16, borderRadius: 5, border: 'none', background: 'rgba(0,0,0,0.6)', color: '#fff', cursor: 'pointer', fontSize: 9, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' };
 const refAddBtn: React.CSSProperties = { width: 56, height: 56, borderRadius: 8, border: '1px dashed rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.04)', color: '#a1a1aa', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' };
 const refVidRow: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 6, padding: '6px 8px', marginBottom: 4, borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)', fontSize: 11.5, color: '#d4d4d8' };
-// wan2.7-r2v 音色按钮:参考图左下角小麦克风(off=灰,on=绿)
-const voiceBtnOff: React.CSSProperties = { position: 'absolute', bottom: 2, left: 2, width: 18, height: 18, borderRadius: 5, border: 'none', background: 'rgba(0,0,0,0.6)', color: '#a1a1aa', cursor: 'pointer', fontSize: 10, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' };
-const voiceBtnOn: React.CSSProperties = { ...voiceBtnOff, color: '#22c55e', background: 'rgba(0,0,0,0.75)' };
-const voiceRowBtn: React.CSSProperties = { border: 'none', background: 'transparent', color: '#a1a1aa', cursor: 'pointer', fontSize: 13, lineHeight: 1, padding: '0 2px' };
 const subItem: React.CSSProperties = {
   display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, width: '100%',
   padding: '8px 11px', borderRadius: 8, border: 'none', background: 'transparent',

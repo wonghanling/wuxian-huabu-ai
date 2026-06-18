@@ -96,7 +96,7 @@ export interface CardData extends Record<string, unknown> {
     imageQuality?: string;      // 清晰度/画质 2k|4k|medium|high
     preset?: string;            // 预设参数(风格)
     refImages?: string[];       // 参考图 URL 数组
-    refImageVoices?: string[];  // wan2.7-r2v 音色:与 refImages 一一对应,空串=无音色(每张参考图可单独配音色)
+    refVoices?: string[];       // wan2.7-r2v 音色:按参考素材顺序(图先视频后)依次分配,本地上传优先,连线语音补空缺
     controlJson?: string;       // 图片卡 JSON 控制(用户自填,生成时作系统级前缀注入 prompt)
     clothingImage?: string;     // 虚拟试衣:衣服图 URL(人物图复用 refImages[0])
     preservePose?: boolean;     // 虚拟试衣:保留人物姿势
@@ -106,7 +106,6 @@ export interface CardData extends Record<string, unknown> {
     lastFrame?: string;         // 尾帧图 URL(首尾帧模式)
     // Seedance 多模态专用
     refVideos?: string[];       // 参考视频 URL 数组(最多 3 个)
-    refVideoVoices?: string[];  // wan2.7-r2v 音色:与 refVideos 一一对应,空串=无音色
     refVideoNames?: string[];   // 参考视频名数组
     refAudio?: string;          // 参考音频 URL
     refAudioName?: string;      // 参考音频名
