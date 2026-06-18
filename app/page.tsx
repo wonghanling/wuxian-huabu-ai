@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { TemplateGallery } from './_components/TemplateGallery';
 import { ModelsShowcase } from './_components/ModelsShowcase';
+import { VideoModelsShowcase } from './_components/VideoModelsShowcase';
 import { ScriptStudioDemo } from './_components/ScriptStudioDemo';
 import { DoodleDemo } from './_components/DoodleDemo';
 import { JsonConfigDemo } from './_components/JsonConfigDemo';
@@ -421,6 +422,11 @@ export default function Home() {
       {/* 顶尖模型展示 */}
       <section className="py-24 border-t border-white/5 relative z-10">
         <ModelsShowcase />
+      </section>
+
+      {/* 视频模型展示 */}
+      <section className="py-24 border-t border-white/5 relative z-10 bg-zinc-950/40">
+        <VideoModelsShowcase />
       </section>
 
       {/* Workflow Templates Gallery */}
