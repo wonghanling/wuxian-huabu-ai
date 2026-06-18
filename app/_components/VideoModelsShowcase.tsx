@@ -16,14 +16,66 @@ const VIDEOS = [
 ];
 
 const MODELS = [
-  { name: '即梦 3.0',    label: '中文理解最佳',   sub: '字节跳动 · 运镜控制' },
-  { name: 'Wan 2.7',    label: '四模式全覆盖',   sub: '阿里云 · 参考内容/编辑' },
-  { name: 'Seedance',   label: '原生音频输出',   sub: '字节跳动 · 多模态' },
-  { name: 'Pixverse v6', label: '动感冲击最强',  sub: '自带音效 · 社交内容' },
-  { name: '快乐马',      label: '写实度最高',    sub: '物理仿真 · 1080P' },
+  {
+    name: 'Jimeng 3.0',
+    nameZh: '即梦',
+    type: 'Video',
+    desc: 'Best Chinese scene understanding, smooth motion with camera control',
+    icon: '🎬',
+  },
+  {
+    name: 'Wan 2.7',
+    nameZh: '万象',
+    type: 'Video',
+    desc: 'Four modes in one: i2v, first/last frame, reference, video editing',
+    icon: '🎞',
+  },
+  {
+    name: 'Seedance 2.0',
+    nameZh: 'Seedance',
+    type: 'Video',
+    desc: 'Multimodal input, native audio output, top-tier professional production',
+    icon: '🎵',
+  },
+  {
+    name: 'Pixverse v6',
+    nameZh: 'Pixverse',
+    type: 'Video',
+    desc: 'Maximum motion intensity, built-in sound effects, social-first content',
+    icon: '⚡',
+  },
+  {
+    name: 'HappyHorse 1.0',
+    nameZh: '快乐马',
+    type: 'Video',
+    desc: 'Physics-accurate simulation, natural human motion, 1080P output',
+    icon: '🐎',
+  },
 ];
 
-function VideoCell({ src, inView }: { src: string; inView: boolean }) {
+// 瀑布流：3列，视频按原始比例自然撑高，用 CSS columns 实现
+function VideoWall({ inView }: { inView: boolean }) {
+  // 把9个视频分3列
+  const cols = [
+    [0, 3, 6],
+    [1, 4, 7],
+    [2, 5, 8],
+  ];
+
+  return (
+    <div className="px-4 md:px-10 flex gap-3 md:gap-4 items-start">
+      {cols.map((colIndices, ci) => (
+        <div key={ci} className="flex-1 flex flex-col gap-3 md:gap-4">
+          {colIndices.map((idx) => (
+            <VideoItem key={idx} src={VIDEOS[idx]} inView={inView} />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function VideoItem({ src, inView }: { src: string; inView: boolean }) {
   const ref = useRef<HTMLVideoElement>(null);
   const [hovered, setHovered] = useState(false);
 
@@ -35,27 +87,30 @@ function VideoCell({ src, inView }: { src: string; inView: boolean }) {
   }, [hovered, inView]);
 
   return (
-    // aspect-ratio 固定 16/9，视频 object-cover 填满，无空白无变形
     <div
-      className="relative rounded-xl overflow-hidden bg-zinc-900 cursor-pointer group"
-      style={{ aspectRatio: '16/9' }}
+      className="rounded-xl overflow-hidden bg-zinc-900 cursor-pointer"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {inView && (
+      {/*
+        width: 100% — 填满列宽
+        height: auto — 由视频原始比例决定高度，完全不裁剪
+        display: block — 去掉 inline 底部间隙
+        用 <video> 自身的 intrinsic size 撑开容器，无需设 aspect-ratio
+        preload="metadata" 让浏览器拿到尺寸，h-auto 才能正确撑高
+      */}
+      {inView ? (
         <video
           ref={ref}
           src={src}
           muted loop playsInline
           preload="metadata"
-          className="absolute inset-0 w-full h-full object-cover"
+          style={{ width: '100%', height: 'auto', display: 'block' }}
         />
+      ) : (
+        // 占位块，等比例撑高避免布局跳动
+        <div style={{ width: '100%', aspectRatio: '16/9', background: '#18181b' }} />
       )}
-      {/* 静止时半透明遮罩，hover 时消失 */}
-      <div
-        className="absolute inset-0 bg-black transition-opacity duration-300"
-        style={{ opacity: hovered ? 0 : 0.25 }}
-      />
     </div>
   );
 }
@@ -92,38 +147,25 @@ export function VideoModelsShowcase() {
         </p>
       </div>
 
-      {/* 视频网格 3列，aspect-ratio 16/9 固定比例 */}
-      <div className="px-4 md:px-10 grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-        {VIDEOS.map((src) => (
-          <VideoCell key={src} src={src} inView={inView} />
-        ))}
-      </div>
+      {/* 视频瀑布流 */}
+      <VideoWall inView={inView} />
 
-      {/* 模型 pill 列表 */}
-      <div className="mt-12 px-4 md:px-10 flex flex-wrap gap-3">
-        {MODELS.map((m) => (
-          <div
-            key={m.name}
-            className="flex items-center gap-3 px-4 py-3 rounded-2xl border border-white/8 bg-white/[0.03] hover:bg-white/[0.06] transition-colors duration-200"
-          >
-            {/* 竖线色块 */}
-            <div className="w-0.5 h-8 rounded-full flex-shrink-0" style={{ background: 'rgba(45,106,79,0.7)' }} />
-            <div>
-              <div className="text-white text-sm font-semibold leading-tight">{m.name}</div>
-              <div className="text-zinc-500 text-xs mt-0.5">{m.sub}</div>
-            </div>
-            <span
-              className="ml-2 text-[10px] px-2 py-0.5 rounded-full flex-shrink-0"
-              style={{ background: 'rgba(45,106,79,0.15)', border: '1px solid rgba(45,106,79,0.3)', color: '#5a9e76' }}
-            >
-              {m.label}
-            </span>
-          </div>
-        ))}
+      {/* 模型卡片：照截图风格 */}
+      <div className="mt-14 px-4 md:px-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {MODELS.slice(0, 3).map((m) => (
+            <ModelCard key={m.name} model={m} />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 md:max-w-[66.66%]">
+          {MODELS.slice(3).map((m) => (
+            <ModelCard key={m.name} model={m} />
+          ))}
+        </div>
       </div>
 
       {/* CTA */}
-      <div className="mt-10 flex justify-center">
+      <div className="mt-12 flex justify-center">
         <Link href="/canvas">
           <button className="px-8 py-3.5 rounded-full bg-white text-black font-semibold text-sm hover:bg-zinc-200 transition-all hover:-translate-y-0.5">
             开始生成 →
@@ -131,6 +173,44 @@ export function VideoModelsShowcase() {
         </Link>
       </div>
 
+    </div>
+  );
+}
+
+function ModelCard({ model }: { model: typeof MODELS[0] }) {
+  return (
+    <div
+      className="rounded-2xl p-6 flex flex-col justify-between"
+      style={{
+        background: '#111113',
+        border: '1px solid rgba(255,255,255,0.07)',
+        minHeight: 160,
+      }}
+    >
+      {/* 顶部：立即创作 + 类型标签 */}
+      <div className="flex items-center justify-between mb-6">
+        <Link href="/canvas">
+          <span className="text-xs font-medium hover:underline" style={{ color: '#2d6a4f' }}>立即创作</span>
+        </Link>
+        <div className="flex items-center gap-2">
+          <span className="text-lg">{model.icon}</span>
+          <span
+            className="text-xs px-2 py-0.5 rounded"
+            style={{ background: 'rgba(255,255,255,0.06)', color: '#71717a' }}
+          >
+            {model.type}
+          </span>
+        </div>
+      </div>
+      {/* 底部：模型名 + 描述 */}
+      <div>
+        <div className="text-base font-semibold mb-1.5" style={{ color: '#4ade80' }}>
+          {model.name}
+        </div>
+        <div className="text-xs leading-relaxed" style={{ color: '#52525b' }}>
+          {model.desc}
+        </div>
+      </div>
     </div>
   );
 }
