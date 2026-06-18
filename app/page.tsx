@@ -300,7 +300,11 @@ export default function Home() {
               Drag Freely · Expand Infinitely · Extend Creativity · Connect Freely · Ultimate Creative Freedom
             </p>
           </div>
-          <div className="relative group mt-10">
+        </div>
+
+        {/* 预览框：移出 max-w-5xl，全宽展示 */}
+        <div className="relative z-10 w-full px-4 md:px-10 mt-10">
+          <div className="relative group">
             <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-[32px] blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
             <div className="relative glass-card p-2 md:p-4 aspect-video overflow-hidden shadow-2xl">
               <div className="w-full h-full rounded-2xl bg-zinc-900 overflow-hidden relative">

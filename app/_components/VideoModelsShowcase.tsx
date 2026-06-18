@@ -30,35 +30,30 @@ const MODELS = [
     nameZh: '即梦',
     type: 'Video',
     desc: 'Best Chinese scene understanding, smooth motion with camera control',
-    icon: '🎬',
   },
   {
     name: 'Wan 2.7',
     nameZh: '万象',
     type: 'Video',
     desc: 'Four modes in one: i2v, first/last frame, reference, video editing',
-    icon: '🎞',
   },
   {
     name: 'Seedance 2.0',
     nameZh: 'Seedance',
     type: 'Video',
     desc: 'Multimodal input, native audio output, top-tier professional production',
-    icon: '🎵',
   },
   {
     name: 'Pixverse v6',
     nameZh: 'Pixverse',
     type: 'Video',
     desc: 'Maximum motion intensity, built-in sound effects, social-first content',
-    icon: '⚡',
   },
   {
     name: 'HappyHorse 1.0',
     nameZh: '快乐马',
     type: 'Video',
     desc: 'Physics-accurate simulation, natural human motion, 1080P output',
-    icon: '🐎',
   },
 ];
 
@@ -67,8 +62,8 @@ function VideoWall({ inView }: { inView: boolean }) {
   // 手动分列，index 16 放第2列，避免单独成行
   const cols = [
     [0, 4, 8,  12],
-    [1, 5, 9,  13, 16],
-    [2, 6, 10, 14],
+    [1, 5, 9,  13],
+    [2, 6, 10, 14, 16],
     [3, 7, 11, 15],
   ];
 
@@ -202,15 +197,12 @@ function ModelCard({ model }: { model: typeof MODELS[0] }) {
         <Link href="/canvas">
           <span className="text-xs font-medium hover:underline" style={{ color: '#2d6a4f' }}>立即创作</span>
         </Link>
-        <div className="flex items-center gap-2">
-          <span className="text-lg">{model.icon}</span>
-          <span
-            className="text-xs px-2 py-0.5 rounded"
-            style={{ background: 'rgba(255,255,255,0.06)', color: '#71717a' }}
-          >
-            {model.type}
-          </span>
-        </div>
+        <span
+          className="text-xs px-2 py-0.5 rounded"
+          style={{ background: 'rgba(255,255,255,0.06)', color: '#71717a' }}
+        >
+          {model.type}
+        </span>
       </div>
       {/* 底部：模型名 + 描述 */}
       <div>
