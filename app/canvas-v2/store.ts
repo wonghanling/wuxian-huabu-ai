@@ -62,7 +62,7 @@ const SPAWN_RULES: Record<NodeKind, SpawnAction[]> = {
   gem3:      [],                     // Step3 原网无加号
   gem4:      IMAGE_OUTPUT_ACTIONS, // Step4 输出分镜图→可建 Seedance/视频/Step2 等下游
   text:      [],                     // 文本卡原网无加号
-  audio:     VIDEO_OUTPUT_ACTIONS,   // 语音卡输出音频→连 Seedance/Kling 配音
+  audio:     [...VIDEO_OUTPUT_ACTIONS, 'video'],  // 语音卡→Seedance/Kling 配音,也可连视频卡(wan2.7-r2v 音色)
   shot:      VIDEO_OUTPUT_ACTIONS,   // 电影控制器输出指令→连视频/Seedance/Kling(照原网连视频卡)
   timeline:  [],                     // 时间刻度条:形式上的,无下游菜单(仅手动拖线)
 };

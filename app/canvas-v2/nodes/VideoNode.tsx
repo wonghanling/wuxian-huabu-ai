@@ -550,11 +550,16 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                   {/* 音色(仅 wan2.7-r2v):本地上传音频 + 连线语音,按参考素材顺序(图先视频后)分配 */}
                   {showVoice && (
                     <div style={{ padding: '4px 6px 6px', borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: 2 }}>
-                      <div style={{ fontSize: 11, color: '#a1a1aa', paddingBottom: 6 }}>🎤 音色音频(wav/mp3,1-10秒,可选):按参考素材顺序依次分配{connAudioN > 0 && `;另有 ${connAudioN} 个连线语音自动接在后面`}</div>
+                      <div style={{ fontSize: 11, color: '#a1a1aa', paddingBottom: 6 }}>🎤 音色(可选,wav/mp3):按参考素材顺序依次分配</div>
                       {voices.map((_, i) => (
                         <div key={`vo${i}`} style={refVidRow}>
-                          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>🎤 音色{i + 1}</span>
+                          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>🎤 本地音色{i + 1}</span>
                           <button onClick={() => removeRefVoice(i)} style={{ ...refRm, position: 'static' }}>✕</button>
+                        </div>
+                      ))}
+                      {upstreamLive.audios.map((_, i) => (
+                        <div key={`ca${i}`} style={{ ...refVidRow, opacity: 0.85 }}>
+                          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>🎤 连接音色{i + 1}</span>
                         </div>
                       ))}
                       <label style={{ ...refVidRow, cursor: 'pointer', justifyContent: 'center', color: '#a1a1aa' }}>
