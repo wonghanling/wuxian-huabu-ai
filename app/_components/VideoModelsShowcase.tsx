@@ -13,6 +13,15 @@ const VIDEOS = [
   'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/20ce33c8-6a71-41a1-804e-4997b4d95476/1781061618463-5o5zmecrr7x.mp4',
   'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/20ce33c8-6a71-41a1-804e-4997b4d95476/1781698964217-wmzgsxkp1ki.mp4',
   'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/1773218894859-q2m2x3mfhfc.mp4',
+  // Seedance
+  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/seedance/1775944856863-qs8oz4jd72.mp4',
+  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/seedance/1775985214215-s1v2mstoaks.mp4',
+  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/seedance/1777614109362-gzq4dlfmrk6.mp4',
+  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/seedance/1776672667524-epths4fwdv.mp4',
+  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/seedance/1776390740271-2yivvu3r09.mp4',
+  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/seedance/1776390143680-695vp6vfoxw.mp4',
+  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/20ce33c8-6a71-41a1-804e-4997b4d95476/1781695664266-5k6kcgp4zbt.mp4',
+  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/seedance/1781176221581-r7enzj89qc.mp4',
 ];
 
 const MODELS = [
@@ -53,14 +62,11 @@ const MODELS = [
   },
 ];
 
-// 瀑布流：3列，视频按原始比例自然撑高，用 CSS columns 实现
+// 瀑布流：4列，15个视频均匀分配
 function VideoWall({ inView }: { inView: boolean }) {
-  // 把9个视频分3列
-  const cols = [
-    [0, 3, 6],
-    [1, 4, 7],
-    [2, 5, 8],
-  ];
+  const NUM_COLS = 4;
+  const cols: number[][] = Array.from({ length: NUM_COLS }, () => []);
+  VIDEOS.forEach((_, i) => cols[i % NUM_COLS].push(i));
 
   return (
     <div className="px-4 md:px-10 flex gap-3 md:gap-4 items-start">
