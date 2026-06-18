@@ -572,7 +572,9 @@ export async function POST(req: NextRequest) {
       startFrameImage,
       endFrameImage,
       refImages,
+      refImageVoices,
       refVideos,
+      refVideoVoices,
       editVideo,
       userId,
       canvasId,
@@ -771,13 +773,31 @@ export async function POST(req: NextRequest) {
           // 参考内容:参考图 reference_image + 参考视频 reference_video(总≤5)
           const imgs: string[] = Array.isArray(refImages) ? refImages : [];
           const vids: string[] = Array.isArray(refVideos) ? refVideos : [];
-          for (const u of imgs) {
-            const url = await toPublicUrl(u);
-            if (url) media.push({ type: 'reference_image', url });
+          // 音色仅 wan2.7-r2v 支持(happyhorse-1.0-r2v 无音色字段);reference_voice 挂在对应 media 上
+          const isWan27R2v = cfg.dashscopeModel === 'wan2.7-r2v';
+          const imgVoices: string[] = isWan27R2v && Array.isArray(refImageVoices) ? refImageVoices : [];
+          const vidVoices: string[] = isWan27R2v && Array.isArray(refVideoVoices) ? refVideoVoices : [];
+          for (let i = 0; i < imgs.length; i++) {
+            const url = await toPublicUrl(imgs[i]);
+            if (!url) continue;
+            const item: Record<string, string> = { type: 'reference_image', url };
+            const voice = imgVoices[i];
+            if (voice) {
+              const voiceUrl = await toPublicUrl(voice);
+              if (voiceUrl) item.reference_voice = voiceUrl;
+            }
+            media.push(item);
           }
-          for (const u of vids) {
-            const url = await toPublicUrl(u);
-            if (url) media.push({ type: 'reference_video', url });
+          for (let i = 0; i < vids.length; i++) {
+            const url = await toPublicUrl(vids[i]);
+            if (!url) continue;
+            const item: Record<string, string> = { type: 'reference_video', url };
+            const voice = vidVoices[i];
+            if (voice) {
+              const voiceUrl = await toPublicUrl(voice);
+              if (voiceUrl) item.reference_voice = voiceUrl;
+            }
+            media.push(item);
           }
           if (media.length === 0) {
             return NextResponse.json({ error: '参考内容模式需至少一张参考图或一个参考视频' }, { status: 400 });

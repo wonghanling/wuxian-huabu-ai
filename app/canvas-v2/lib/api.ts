@@ -258,7 +258,9 @@ export interface VideoGenParams {
   startFrameImage?: string;   // 首帧(URL 或 base64)
   endFrameImage?: string;     // 尾帧
   refImages?: string[];       // r2v 参考图(URL)
+  refImageVoices?: string[];  // wan2.7-r2v 音色:与 refImages 一一对应,空串=无
   refVideos?: string[];       // r2v 参考视频(URL)
+  refVideoVoices?: string[];  // wan2.7-r2v 音色:与 refVideos 一一对应,空串=无
   editVideo?: string;         // 视频编辑 待编辑视频(URL)
   cameraTemplate?: string;    // jimeng-camera 专用
   cameraStrength?: string;
@@ -287,7 +289,9 @@ export async function generateVideo(
       startFrameImage: params.startFrameImage,
       endFrameImage: params.endFrameImage,
       refImages: params.refImages,
+      refImageVoices: params.refImageVoices,
       refVideos: params.refVideos,
+      refVideoVoices: params.refVideoVoices,
       editVideo: params.editVideo,
       cameraTemplate: params.cameraTemplate,
       cameraStrength: params.cameraStrength,
