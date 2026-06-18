@@ -691,6 +691,7 @@ export async function POST(req: NextRequest) {
     }
     let taskId: string;
     let taskEndpoint: string;
+    let taskKeyId: string | null = null;   // dashscope 任务必须用创建它的同一 key 查询
 
     if (cfg.provider === 'jimeng') {
       // 即梦 火山引擎 API（账号池：每次请求取一组双 key 动态创建 volcService）
@@ -834,6 +835,7 @@ export async function POST(req: NextRequest) {
           throw dsErr;
         }
         taskEndpoint = `dashscope:${cfg.dashscopeModel}`;
+        taskKeyId = dsKeyInfo.keyId;
         dsSuccess = true;
       } catch (err) {
         if (!dsErr) dsErr = err;
@@ -897,6 +899,7 @@ export async function POST(req: NextRequest) {
         throw dsErr;
       }
       taskEndpoint = `dashscope:${cfg.dashscopeModel}`;
+      taskKeyId = dsKeyInfo.keyId;
       dsSuccess = true;
       } catch (err) {
         if (!dsErr) dsErr = err;
@@ -949,6 +952,7 @@ export async function POST(req: NextRequest) {
       success: true,
       taskId,
       endpoint: taskEndpoint,
+      keyId: taskKeyId,
       status: 'queued',
     });
 

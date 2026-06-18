@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Service } from '@volcengine/openapi';
 import { createClient } from '@supabase/supabase-js';
-import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
+import { pickKey, pickKeyById, releaseKey, categorizeError } from '@/lib/api-key-pool';
 
 const FAL_KEY = process.env.FAL_KEY!;
 const DASHSCOPE_KEY = process.env.DASHSCOPE_API_KEY!;
@@ -39,6 +39,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const taskId   = searchParams.get('taskId');
     const endpoint = searchParams.get('endpoint');
+    const keyId    = searchParams.get('keyId');  // dashscope 创建任务的同一把 key
 
     if (!taskId || !endpoint) {
       return NextResponse.json({ error: '缺少 taskId 或 endpoint' }, { status: 400 });
@@ -118,7 +119,8 @@ export async function GET(request: NextRequest) {
       }
     } else if (endpoint.startsWith('dashscope:')) {
       // DashScope 官方 API 查询（账号池）
-      const dsQKeyInfo = await pickKey('dashscope');
+      // 关键:task_id 只能用创建它的同一把 key 查询,否则查不到 → 用 keyId 锁定
+      const dsQKeyInfo = keyId ? await pickKeyById(keyId, 'dashscope') : await pickKey('dashscope');
       let dsQSuccess = false;
       let dsQErr: any = null;
       let res: Response;

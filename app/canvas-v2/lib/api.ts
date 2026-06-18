@@ -301,6 +301,7 @@ export async function generateVideo(
   const data = await res.json();
   const taskId = data.taskId;
   const endpoint = data.endpoint;
+  const keyId = data.keyId;  // dashscope 必须用创建任务的同一把 key 查询
   if (!taskId) throw new Error('未返回 taskId');
 
   // 轮询(5秒间隔,60次超时,照原网)
@@ -309,7 +310,7 @@ export async function generateVideo(
     if (attempts >= 60) throw new Error('视频生成超时,请稍后重试');
     attempts++;
     await new Promise((r) => setTimeout(r, 5000));
-    const qRes = await fetch(`/api/video/query?taskId=${encodeURIComponent(taskId)}&endpoint=${encodeURIComponent(endpoint || '')}`, {
+    const qRes = await fetch(`/api/video/query?taskId=${encodeURIComponent(taskId)}&endpoint=${encodeURIComponent(endpoint || '')}&keyId=${encodeURIComponent(keyId || '')}`, {
       headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
     });
     if (!qRes.ok) return poll();
