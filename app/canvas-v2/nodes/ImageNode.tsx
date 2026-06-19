@@ -372,10 +372,13 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           imageUrl={displayImg}
           onClose={() => setEditOpen(false)}
           onResult={(newUrl) => {
+            // 先显示 fal 结果图，再后台 mirror 成永久 URL
             updateCard(id, { status: 'done', outputUrl: newUrl });
             setEditOpen(false);
-            // 后台 mirror（editDesignImage 已转存，这里直接保存画布）
-            (window as any).saveCanvasV2Now?.();
+            mirrorOutput(newUrl, 'image').then((permUrl) => {
+              if (permUrl && permUrl !== newUrl) updateCard(id, { outputUrl: permUrl });
+              (window as any).saveCanvasV2Now?.();
+            });
           }}
         />
       )}

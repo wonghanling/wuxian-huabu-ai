@@ -1,16 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fal as falSingleton, createFalClient } from '@fal-ai/client';
 import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { calcImagePrice } from '@/lib/pricing';
 import { deductBalance, refundBalance } from '@/lib/billing';
 
 export const maxDuration = 300;
-
-const supabaseAdmin = createSupabaseClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 falSingleton.config({ credentials: process.env.FAL_KEY! });
 
@@ -24,7 +18,6 @@ falSingleton.config({ credentials: process.env.FAL_KEY! });
 type EditMode = 'region-edit' | 'remove' | 'replace' | 'expand';
 
 interface AdapterInput {
-  fal: ReturnType<typeof createFalClient>;
   imageUrl: string;
   maskUrl?: string;
   prompt: string;
@@ -32,34 +25,36 @@ interface AdapterInput {
   ratio?: string;
 }
 
+// Adapter 只决定 endpoint + input，提交走异步队列（避免 Vercel/Azure 函数超时 504）
+interface AdapterPlan {
+  endpoint: string;
+  input: Record<string, unknown>;
+}
+
 // ── fal: region-edit（局部重绘）─────────────────────────────
 // mask 极性已由客户端按 model 处理好，服务端只透传
-async function falRegionEdit(input: AdapterInput): Promise<string> {
-  const { fal, imageUrl, maskUrl, prompt, model } = input;
+function falRegionEdit(input: AdapterInput): AdapterPlan {
+  const { imageUrl, maskUrl, prompt, model } = input;
   if (!maskUrl) throw new Error('局部重绘需要 mask');
 
   if (model === 'flux-inpainting') {
     // fal-ai/flux-lora/inpainting：白=重绘，黑=保留
-    const res: any = await fal.subscribe('fal-ai/flux-lora/inpainting', {
+    return {
+      endpoint: 'fal-ai/flux-lora/inpainting',
       input: { image_url: imageUrl, mask_url: maskUrl, prompt, num_images: 1 },
-    });
-    const url = res?.data?.images?.[0]?.url || res?.images?.[0]?.url;
-    if (!url) throw new Error('flux-inpainting 未返回结果图');
-    return url;
+    };
   }
 
   // 默认 ideogram/v2/edit：黑=重绘，白=保留（mask 已在客户端反转）
-  const res: any = await fal.subscribe('fal-ai/ideogram/v2/edit', {
+  return {
+    endpoint: 'fal-ai/ideogram/v2/edit',
     input: { image_url: imageUrl, mask_url: maskUrl, prompt },
-  });
-  const url = res?.data?.images?.[0]?.url || res?.images?.[0]?.url;
-  if (!url) throw new Error('ideogram-edit 未返回结果图');
-  return url;
+  };
 }
 
-// Adapter 注册表：provider → mode → 实现
+// Adapter 注册表：provider → mode → 实现（返回 endpoint+input，统一异步提交）
 // 未来 remove/replace/expand、openrouter/replicate 平行添加，不动现有
-const ADAPTERS: Record<string, Partial<Record<EditMode, (i: AdapterInput) => Promise<string>>>> = {
+const ADAPTERS: Record<string, Partial<Record<EditMode, (i: AdapterInput) => AdapterPlan>>> = {
   fal: {
     'region-edit': falRegionEdit,
     // 'expand':   falExpand,    // V1.5
@@ -67,20 +62,6 @@ const ADAPTERS: Record<string, Partial<Record<EditMode, (i: AdapterInput) => Pro
     // 'replace':  falReplace,   // V3
   },
 };
-
-// 结果图转存 Supabase 永久存储
-async function mirrorToStorage(sourceUrl: string, userId: string): Promise<string> {
-  const res = await fetch(sourceUrl);
-  if (!res.ok) throw new Error(`下载结果图失败: ${res.status}`);
-  const buffer = Buffer.from(await res.arrayBuffer());
-  const filename = `design/${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
-  const { error } = await supabaseAdmin.storage
-    .from('assets')
-    .upload(filename, buffer, { contentType: 'image/jpeg', upsert: false });
-  if (error) throw new Error(`转存失败: ${error.message}`);
-  const { data } = supabaseAdmin.storage.from('assets').getPublicUrl(filename);
-  return data.publicUrl;
-}
 
 export async function POST(req: NextRequest) {
   let body: any = {};
@@ -123,33 +104,25 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // ── 账号池取 key 执行 ──────────────────────────────────────
+    // ── 账号池取 key，异步提交（立即返回 requestId，前端轮询 fal-query）──
+    const plan = adapter({ imageUrl, maskUrl, prompt, model, ratio });
     const keyInfo = await pickKey('fal');
     const fal = createFalClient({ credentials: keyInfo.keyValue });
     let falSuccess = false;
     let falErr: any = null;
-    let resultUrl = '';
     try {
-      resultUrl = await adapter({ fal, imageUrl, maskUrl, prompt, model, ratio });
+      const submitted = await fal.queue.submit(plan.endpoint, { input: plan.input });
+      const requestId = submitted.request_id;
+      if (!requestId) throw new Error('fal.ai 未返回 requestId');
       falSuccess = true;
+      // 返回 pending + requestId + endpoint，前端轮询 /api/image/fal-query
+      return NextResponse.json({ success: true, pending: true, requestId, endpoint: plan.endpoint, mode, provider });
     } catch (e) {
       falErr = e;
       throw e;
     } finally {
       await releaseKey(keyInfo.keyId, falSuccess, falSuccess ? undefined : categorizeError(falErr));
     }
-
-    // mirror 到 Supabase（失败则用原 URL 兜底）
-    let finalUrl = resultUrl;
-    if (userId) {
-      try {
-        finalUrl = await mirrorToStorage(resultUrl, userId);
-      } catch (e) {
-        console.error('design edit mirror 失败，用原 URL:', e);
-      }
-    }
-
-    return NextResponse.json({ success: true, imageUrl: finalUrl, mode, provider });
   } catch (error: any) {
     console.error('Design edit API error:', error);
     if (body?.userId) {

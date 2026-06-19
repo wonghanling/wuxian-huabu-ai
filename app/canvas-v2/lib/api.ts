@@ -669,7 +669,7 @@ export async function uploadMaskToStorage(blob: Blob): Promise<string | null> {
 
 export type DesignEditMode = 'region-edit' | 'remove' | 'replace' | 'expand';
 
-// 调用 /api/design/edit，返回结果图 URL
+// 调用 /api/design/edit，异步提交后轮询 fal-query，返回结果图 URL
 export async function editDesignImage(params: {
   imageUrl: string;
   maskUrl?: string;
@@ -696,5 +696,32 @@ export async function editDesignImage(params: {
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || '编辑失败');
-  return data.imageUrl as string;
+
+  // 同步直接返回（兼容）
+  if (data.imageUrl && !data.pending) return data.imageUrl;
+
+  // 异步：轮询 /api/image/fal-query（复用现有通用 fal 轮询）
+  if (data.pending && data.requestId && data.endpoint) {
+    let attempts = 0;
+    const poll = async (): Promise<string> => {
+      attempts++;
+      await new Promise((r) => setTimeout(r, 3000));
+      try {
+        const qRes = await fetch(`/api/image/fal-query?requestId=${encodeURIComponent(data.requestId)}&endpoint=${encodeURIComponent(data.endpoint)}`);
+        const qData = await qRes.json();
+        if (qData.success && qData.imageUrl) return qData.imageUrl;
+        if (qData.error) throw new Error(qData.error);
+        if (attempts > 80) throw new Error('编辑超时');
+        return poll();
+      } catch (e: any) {
+        if (e.message && (e.message.includes('超时') || e.message.includes('未返回'))) throw e;
+        if (attempts > 80) throw new Error('编辑超时');
+        await new Promise((r) => setTimeout(r, 5000));
+        return poll();
+      }
+    };
+    return poll();
+  }
+
+  throw new Error('编辑失败：未返回结果');
 }
