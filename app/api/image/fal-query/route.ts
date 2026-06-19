@@ -26,12 +26,22 @@ export async function GET(req: NextRequest) {
 
     if (status.status === 'COMPLETED') {
       const result = await fal.queue.result(endpoint, { requestId });
-      console.log('[fal-query] result:', JSON.stringify(result).slice(0, 300));
-      const images = (result.data as any)?.images;
-      const imageUrl = images?.[0]?.url;
+      console.log('[fal-query] result:', JSON.stringify(result).slice(0, 500));
+      const d = result.data as any;
+      // 多路径兜底：不同端点返回结构不同
+      // - 标准 fal: data.images[0].url
+      // - GPT Image 2 edit: data.image.url 或 data.images[0].url
+      // - 部分端点: data.image_url
+      const imageUrl =
+        d?.images?.[0]?.url ||
+        d?.image?.url ||
+        d?.image_url ||
+        d?.output?.[0] ||
+        null;
       if (!imageUrl) {
-        success = true; // fal 通讯成功，只是无图（审核拒绝），不算 key 失败
-        return NextResponse.json({ error: 'fal.ai 未返回图片' }, { status: 500 });
+        success = true;
+        console.error('[fal-query] 无法解析图片 URL，完整 data:', JSON.stringify(d).slice(0, 400));
+        return NextResponse.json({ error: `fal.ai 未返回图片 URL (data keys: ${Object.keys(d || {}).join(',')})` }, { status: 500 });
       }
       success = true;
       return NextResponse.json({ success: true, imageUrl });
