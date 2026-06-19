@@ -83,10 +83,10 @@ function falRegionEdit(input: AdapterInput): AdapterPlan {
   }
 
   if (model === 'gpt-image-edit') {
-    // openai/gpt-image-2 edit via fal（注意：无 fal-ai/ 前缀）：白=重绘，黑=保留
+    // openai/gpt-image-2/edit via fal：image_urls(数组)，白=重绘，黑=保留
     return {
       endpoint: 'openai/gpt-image-2/edit',
-      input: { image_url: imageUrl, mask_url: maskUrl, prompt },
+      input: { image_urls: [imageUrl], mask_url: maskUrl, prompt },
     };
   }
 
