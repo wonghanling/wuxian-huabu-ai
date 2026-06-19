@@ -8,6 +8,35 @@ export const maxDuration = 300;
 
 falSingleton.config({ credentials: process.env.FAL_KEY! });
 
+const YUNWU_BASE_URL = 'https://api.n1n.ai';
+const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
+
+// 检测中文并自动翻译成英文（走 n1n gpt-4o-mini，速度快成本低）
+async function ensureEnglishPrompt(prompt: string): Promise<string> {
+  const hasChinese = /[一-鿿]/.test(prompt);
+  if (!hasChinese) return prompt;
+  try {
+    const res = await fetch(`${YUNWU_BASE_URL}/v1/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${YUNWU_API_KEY}` },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: 'Translate the following image editing instruction to English. Output only the translated text, no explanation.' },
+          { role: 'user', content: prompt },
+        ],
+        max_tokens: 300,
+      }),
+    });
+    const data = await res.json();
+    const translated = data?.choices?.[0]?.message?.content?.trim();
+    if (translated) return translated;
+  } catch (e) {
+    console.error('[design/edit] prompt 翻译失败，使用原文:', e);
+  }
+  return prompt;
+}
+
 // ============================================================
 // Design Workflow 统一编辑入口
 // 架构：provider × capability(mode) 两层 Adapter，按 model 选具体实现
@@ -54,9 +83,9 @@ function falRegionEdit(input: AdapterInput): AdapterPlan {
   }
 
   if (model === 'gpt-image-edit') {
-    // openai/gpt-image-2 edit via fal：白=重绘，黑=保留
+    // openai/gpt-image-2 edit via fal（注意：无 fal-ai/ 前缀）：白=重绘，黑=保留
     return {
-      endpoint: 'fal-ai/openai/gpt-image-2/edit',
+      endpoint: 'openai/gpt-image-2/edit',
       input: { image_url: imageUrl, mask_url: maskUrl, prompt },
     };
   }
@@ -121,7 +150,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ── 账号池取 key，异步提交（立即返回 requestId，前端轮询 fal-query）──
-    const plan = adapter({ imageUrl, maskUrl, prompt, model, ratio });
+    const plan = adapter({ imageUrl, maskUrl, prompt: await ensureEnglishPrompt(prompt), model, ratio });
     const keyInfo = await pickKey('fal');
     const fal = createFalClient({ credentials: keyInfo.keyValue });
     let falSuccess = false;
