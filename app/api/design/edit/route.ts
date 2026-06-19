@@ -45,6 +45,22 @@ function falRegionEdit(input: AdapterInput): AdapterPlan {
     };
   }
 
+  if (model === 'flux-fill') {
+    // fal-ai/flux-pro/v1/fill：白=重绘，黑=保留（同 flux-inpainting 极性）
+    return {
+      endpoint: 'fal-ai/flux-pro/v1/fill',
+      input: { image_url: imageUrl, mask_url: maskUrl, prompt, num_images: 1 },
+    };
+  }
+
+  if (model === 'gpt-image-edit') {
+    // openai/gpt-image-2 edit via fal：白=重绘，黑=保留
+    return {
+      endpoint: 'fal-ai/openai/gpt-image-2/edit',
+      input: { image_url: imageUrl, mask_url: maskUrl, prompt },
+    };
+  }
+
   // 默认 ideogram/v2/edit：黑=重绘，白=保留（mask 已在客户端反转）
   return {
     endpoint: 'fal-ai/ideogram/v2/edit',

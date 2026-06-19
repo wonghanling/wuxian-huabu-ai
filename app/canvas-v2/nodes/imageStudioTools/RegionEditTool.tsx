@@ -78,7 +78,7 @@ export function RegionEditTool(ctx: ToolContext) {
   };
 
   // 按 model 极性导出 mask（黑底）。用户涂区=重绘区
-  // ideogram: 黑=重绘 → 反转；flux: 白=重绘 → 直接
+  // ideogram: 黑=重绘 → 反转；其余(flux/gpt): 白=重绘 → 直接
   const exportMaskBlob = (): Promise<Blob> => {
     return new Promise((resolve, reject) => {
       const src = maskCanvasRef.current!;

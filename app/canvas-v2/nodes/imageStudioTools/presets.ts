@@ -30,15 +30,27 @@ export const IMAGE_PRESETS: ImagePreset[] = [
   {
     id: 'fast-edit',
     label: '快速编辑',
-    desc: '通用局部重绘，速度快',
+    desc: '通用局部重绘，速度快，适合人像/场景',
     provider: 'fal',
     model: 'flux-inpainting',
     supportsMask: true,
   },
-  // 未来挂入（需各自确认 mask/接口）：
-  // 自然替换 → flux-kontext（无 mask，属 Replace 工具）
-  // 产品摄影 → recraft / nano-banana
-  // 角色编辑 / Logo 排版 → 待接
+  {
+    id: 'flux-fill',
+    label: 'Flux Fill 专业',
+    desc: '高质量局部填充，细节保留好，适合产品图',
+    provider: 'fal',
+    model: 'flux-fill',
+    supportsMask: true,
+  },
+  {
+    id: 'gpt-image-edit',
+    label: 'GPT Image 编辑',
+    desc: 'OpenAI 出品，理解力强，适合复杂指令编辑',
+    provider: 'fal',
+    model: 'gpt-image-edit',
+    supportsMask: true,
+  },
 ];
 
 // 取支持 mask 的预设（Region Edit 用）
