@@ -161,7 +161,7 @@ async function falExpand(input: AdapterInput): Promise<AdapterPlan> {
 
   return {
     endpoint: 'fal-ai/bria/expand',
-    input: { image_url: imageUrl, canvas_size: { width: targetW, height: targetH } },
+    input: { image_url: imageUrl, canvas_size: [targetW, targetH] },
   };
 }
 
