@@ -60,6 +60,8 @@ interface AdapterPlan {
   input: Record<string, unknown>;
 }
 
+type AdapterFn = (i: AdapterInput) => AdapterPlan | Promise<AdapterPlan>;
+
 // ── fal: region-edit（局部重绘）─────────────────────────────
 // mask 极性已由客户端按 model 处理好，服务端只透传
 function falRegionEdit(input: AdapterInput): AdapterPlan {
@@ -98,18 +100,62 @@ function falRegionEdit(input: AdapterInput): AdapterPlan {
 }
 
 // ── fal: expand（扩图）────────────────────────────────────────
-// 使用 bria/expand，传 aspect_ratio，原图居中，AI 自动补全四周
-function falExpand(input: AdapterInput): AdapterPlan {
+// bria/expand 需要 canvas_size（目标像素尺寸），不接受 aspect_ratio 字符串
+// 策略：先下载原图拿到宽高，再按比例算出目标 canvas_size（长边 1280）
+async function falExpand(input: AdapterInput): Promise<AdapterPlan> {
   const { imageUrl, ratio } = input;
   if (!ratio) throw new Error('扩图需要指定目标比例');
+
+  // 解析比例 "16:9" → {w:16, h:9}
+  const [rw, rh] = ratio.split(':').map(Number);
+  if (!rw || !rh) throw new Error('比例格式错误');
+
+  // 下载原图拿到原始尺寸（用 HEAD 请求不行，fal bria 需要精确像素）
+  // 用 fetch + arrayBuffer 解析图片尺寸（PNG/JPEG 头部）
+  const imgRes = await fetch(imageUrl);
+  if (!imgRes.ok) throw new Error('无法获取原图');
+  const buf = Buffer.from(await imgRes.arrayBuffer());
+
+  let origW = 1024, origH = 1024;
+  // JPEG: FF D8 FF，宽高在 SOF0/SOF2 段
+  if (buf[0] === 0xFF && buf[1] === 0xD8) {
+    let i = 2;
+    while (i < buf.length - 8) {
+      if (buf[i] === 0xFF && (buf[i+1] === 0xC0 || buf[i+1] === 0xC2)) {
+        origH = (buf[i+5] << 8) | buf[i+6];
+        origW = (buf[i+7] << 8) | buf[i+8];
+        break;
+      }
+      i += 2 + ((buf[i+2] << 8) | buf[i+3]);
+    }
+  } else if (buf[1] === 0x50 && buf[2] === 0x4E && buf[3] === 0x47) {
+    // PNG: 宽高在字节 16-23
+    origW = (buf[16]<<24)|(buf[17]<<16)|(buf[18]<<8)|buf[19];
+    origH = (buf[20]<<24)|(buf[21]<<16)|(buf[22]<<8)|buf[23];
+  }
+
+  // 目标 canvas：保持长边 ≥ 原图最长边，按目标比例计算
+  const longSide = Math.max(origW, origH, 1024);
+  let targetW: number, targetH: number;
+  if (rw >= rh) {
+    targetW = Math.round(longSide * rw / Math.max(rw, rh));
+    targetH = Math.round(targetW * rh / rw);
+  } else {
+    targetH = Math.round(longSide * rh / Math.max(rw, rh));
+    targetW = Math.round(targetH * rw / rh);
+  }
+  // 确保是 8 的倍数
+  targetW = Math.round(targetW / 8) * 8;
+  targetH = Math.round(targetH / 8) * 8;
+
   return {
     endpoint: 'fal-ai/bria/expand',
-    input: { image_url: imageUrl, aspect_ratio: ratio },
+    input: { image_url: imageUrl, canvas_size: { width: targetW, height: targetH } },
   };
 }
 
 // Adapter 注册表：provider → mode → 实现（返回 endpoint+input，统一异步提交）
-const ADAPTERS: Record<string, Partial<Record<EditMode, (i: AdapterInput) => AdapterPlan>>> = {
+const ADAPTERS: Record<string, Partial<Record<EditMode, AdapterFn>>> = {
   fal: {
     'region-edit': falRegionEdit,
     'expand': falExpand,
@@ -160,7 +206,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ── 账号池取 key，异步提交（立即返回 requestId，前端轮询 fal-query）──
-    const plan = adapter({ imageUrl, maskUrl, prompt: await ensureEnglishPrompt(prompt), model, ratio });
+    const plan = await adapter({ imageUrl, maskUrl, prompt: await ensureEnglishPrompt(prompt), model, ratio });
     const keyInfo = await pickKey('fal');
     const fal = createFalClient({ credentials: keyInfo.keyValue });
     let falSuccess = false;
