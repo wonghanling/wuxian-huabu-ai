@@ -4,13 +4,13 @@ import { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { editDesignImage, uploadMaskToStorage, getUserId, type DesignEditMode } from '../../lib/api';
 import type { ToolContext } from './types';
+import { MASK_PRESETS } from './presets';
 
 // ============================================================
 // Region Edit 工具 — 涂抹区域 + prompt 局部重绘
-// 迁移自 EditModal：MaskCanvas 涂抹 + 按 model 反转导出 + editDesignImage
+// 用户选"预设(任务)"，内部映射 provider/model；mask 极性按所选模型反转
 // ============================================================
 
-type ModelKey = 'ideogram-v2-edit' | 'flux-inpainting';
 const BRUSH_SIZES = [16, 32, 64];
 
 export function RegionEditTool(ctx: ToolContext) {
@@ -20,9 +20,11 @@ export function RegionEditTool(ctx: ToolContext) {
   const [brushSize, setBrushSize] = useState(32);
   const [eraser, setEraser] = useState(false);
   const [prompt, setPrompt] = useState('');
-  const [model, setModel] = useState<ModelKey>('ideogram-v2-edit');
+  const [presetId, setPresetId] = useState(MASK_PRESETS[0]?.id ?? '');
   const [hasMask, setHasMask] = useState(false);
   const drawing = useRef(false);
+
+  const preset = MASK_PRESETS.find((p) => p.id === presetId) ?? MASK_PRESETS[0];
 
   // imgNatural 确定后初始化 mask canvas（与原图等像素）
   useEffect(() => {
@@ -85,7 +87,7 @@ export function RegionEditTool(ctx: ToolContext) {
       const ctx2 = out.getContext('2d')!;
       const srcData = src.getContext('2d')!.getImageData(0, 0, src.width, src.height);
       const outData = ctx2.createImageData(src.width, src.height);
-      const invert = model === 'ideogram-v2-edit';
+      const invert = preset.model === 'ideogram-v2-edit';
       for (let i = 0; i < srcData.data.length; i += 4) {
         const painted = srcData.data[i + 3] > 10;
         const v = invert ? (painted ? 0 : 255) : (painted ? 255 : 0);
@@ -111,8 +113,8 @@ export function RegionEditTool(ctx: ToolContext) {
         maskUrl,
         prompt: prompt.trim(),
         mode: 'region-edit' as DesignEditMode,
-        provider: 'fal',
-        model,
+        provider: preset.provider,
+        model: preset.model,
         userId,
       });
       pushVersion(newUrl);
@@ -165,11 +167,13 @@ export function RegionEditTool(ctx: ToolContext) {
         />
       </div>
       <div>
-        <div style={lbl}>模型</div>
-        <select value={model} onChange={(e) => setModel(e.target.value as ModelKey)} style={select}>
-          <option value="ideogram-v2-edit">Ideogram V2（海报/文字，推荐）</option>
-          <option value="flux-inpainting">Flux Inpainting（纯图像）</option>
+        <div style={lbl}>预设能力</div>
+        <select value={presetId} onChange={(e) => setPresetId(e.target.value)} style={select}>
+          {MASK_PRESETS.map((p) => (
+            <option key={p.id} value={p.id}>{p.label}</option>
+          ))}
         </select>
+        <p style={{ color: '#a1a1aa', fontSize: 11, margin: '6px 0 0' }}>{preset?.desc}</p>
       </div>
       <button onClick={handleGenerate} disabled={busy} style={genBtn(busy)}>
         {busy ? '生成中…' : '生成（0.5元/次）'}
