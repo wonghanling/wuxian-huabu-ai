@@ -97,12 +97,22 @@ function falRegionEdit(input: AdapterInput): AdapterPlan {
   };
 }
 
+// ── fal: expand（扩图）────────────────────────────────────────
+// 使用 bria/expand，传 aspect_ratio，原图居中，AI 自动补全四周
+function falExpand(input: AdapterInput): AdapterPlan {
+  const { imageUrl, ratio } = input;
+  if (!ratio) throw new Error('扩图需要指定目标比例');
+  return {
+    endpoint: 'fal-ai/bria/expand',
+    input: { image_url: imageUrl, aspect_ratio: ratio },
+  };
+}
+
 // Adapter 注册表：provider → mode → 实现（返回 endpoint+input，统一异步提交）
-// 未来 remove/replace/expand、openrouter/replicate 平行添加，不动现有
 const ADAPTERS: Record<string, Partial<Record<EditMode, (i: AdapterInput) => AdapterPlan>>> = {
   fal: {
     'region-edit': falRegionEdit,
-    // 'expand':   falExpand,    // V1.5
+    'expand': falExpand,
     // 'remove':   falRemove,    // V2
     // 'replace':  falReplace,   // V3
   },
