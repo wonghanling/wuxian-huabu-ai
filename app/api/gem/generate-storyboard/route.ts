@@ -619,11 +619,24 @@ export async function POST(req: NextRequest) {
       : `The first image is the START frame. The second image is the END frame.\n\ngrid_layout: ${gridLayout}\nselected_image_model: NanoBananaPro\n${script ? `\nUser action guide: ${script}\n` : ''}\nOutput ONLY this exact JSON structure with ${shotCount} shots filled in:\n{\n  "image_generation_model": "NanoBananaPro",\n  "grid_layout": "${gridLayout}",\n  "grid_aspect_ratio": "16:9",\n  "grid_generation_prompt": "",\n  "global_watermark": { "position": "bottom_center", "size": "extremely small" },\n  "shots": [\n${shotExamples}\n  ]\n}`;
 
     // 构建 parts：如果有图片则先放图片
+    // 支持 base64 和 HTTP URL 两种格式（URL 先下载转 base64）
     const parts: any[] = [];
     for (const img of images) {
       const match = img.match(/^data:(image\/\w+);base64,(.+)$/);
       if (match) {
         parts.push({ inline_data: { mime_type: match[1], data: match[2] } });
+      } else if (img.startsWith('http')) {
+        try {
+          const r = await fetch(img);
+          if (r.ok) {
+            const buf = await r.arrayBuffer();
+            const mime = r.headers.get('content-type') || 'image/jpeg';
+            const b64 = Buffer.from(buf).toString('base64');
+            parts.push({ inline_data: { mime_type: mime.split(';')[0], data: b64 } });
+          }
+        } catch (e) {
+          console.error('[gem/storyboard] 图片下载失败，跳过:', img, e);
+        }
       }
     }
     parts.push({ text: userMessage });
