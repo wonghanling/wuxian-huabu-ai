@@ -44,7 +44,7 @@ async function ensureEnglishPrompt(prompt: string): Promise<string> {
 // 新能力=新 mode，新供应商=新 provider，新模型=新 model
 // ============================================================
 
-type EditMode = 'region-edit' | 'remove' | 'replace' | 'expand';
+type EditMode = 'region-edit' | 'remove' | 'replace' | 'expand' | 'bg-replace';
 
 interface AdapterInput {
   imageUrl: string;
@@ -96,6 +96,17 @@ function falRegionEdit(input: AdapterInput): AdapterPlan {
   return {
     endpoint: 'fal-ai/ideogram/v2/edit',
     input: { image_url: imageUrl, mask_url: maskUrl, prompt },
+  };
+}
+
+// ── fal: bg-replace（换背景）──────────────────────────────────
+// bria/product-shot：一步换背景，自动识别主体，无需 mask
+function falBgReplace(input: AdapterInput): AdapterPlan {
+  const { imageUrl, prompt } = input;
+  if (!prompt) throw new Error('换背景需要描述新背景');
+  return {
+    endpoint: 'fal-ai/bria/product-shot',
+    input: { image_url: imageUrl, scene_description: prompt },
   };
 }
 
@@ -184,6 +195,7 @@ const ADAPTERS: Record<string, Partial<Record<EditMode, AdapterFn>>> = {
     'expand':      falExpand,
     'remove':      falRemove,
     'replace':     falReplace,
+    'bg-replace':  falBgReplace,
   },
 };
 
