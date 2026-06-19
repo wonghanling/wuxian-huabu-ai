@@ -99,6 +99,17 @@ function falRegionEdit(input: AdapterInput): AdapterPlan {
   };
 }
 
+// ── fal: remove（消除对象）──────────────────────────────────
+// bria/eraser：涂白=要删除区域，背景自动填充，不需要 prompt
+function falRemove(input: AdapterInput): AdapterPlan {
+  const { imageUrl, maskUrl } = input;
+  if (!maskUrl) throw new Error('消除需要涂抹选区');
+  return {
+    endpoint: 'fal-ai/bria/eraser',
+    input: { image_url: imageUrl, mask_url: maskUrl },
+  };
+}
+
 // ── fal: expand（扩图）────────────────────────────────────────
 // bria/expand 需要 canvas_size（目标像素尺寸），不接受 aspect_ratio 字符串
 // 策略：先下载原图拿到宽高，再按比例算出目标 canvas_size（长边 1280）
@@ -158,8 +169,8 @@ async function falExpand(input: AdapterInput): Promise<AdapterPlan> {
 const ADAPTERS: Record<string, Partial<Record<EditMode, AdapterFn>>> = {
   fal: {
     'region-edit': falRegionEdit,
-    'expand': falExpand,
-    // 'remove':   falRemove,    // V2
+    'expand':      falExpand,
+    'remove':      falRemove,
     // 'replace':  falReplace,   // V3
   },
 };
