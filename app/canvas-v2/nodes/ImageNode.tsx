@@ -14,6 +14,7 @@ import { RefThumb } from './RefThumb';
 import { PromptTools } from './PromptTools';
 import { PromptArea } from './PromptArea';
 import { Lightbox, downloadFile } from './Lightbox';
+import { EditModal } from './EditModal';
 import { uploadImageToStorage, generateImage, getUserId, softCompressImage, mirrorOutput } from '../lib/api';
 import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 
@@ -45,6 +46,7 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [sub, setSub] = useState<SubPanel>(null);
   const [uploading, setUploading] = useState(false);   // 上传中指示(照原网 setIsUploadingMulti)
   const [lightbox, setLightbox] = useState(false);      // 画布内查看放大
+  const [editOpen, setEditOpen] = useState(false);      // AI Edit 局部重绘弹窗
   const editRef = useRef<HTMLTextAreaElement>(null);
 
   const model = IMAGE_MODELS.find((m) => m.id === data.config.model) ?? IMAGE_MODELS[0];
@@ -340,6 +342,9 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               <button onClick={() => downloadFile(displayImg, `image-${id}.jpg`)} style={toolBtnWide} title="下载">
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>↓ 下载</span>
               </button>
+              <button onClick={() => setEditOpen(true)} style={toolBtnWide} title="AI 局部重绘">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>✎ AI Edit</span>
+              </button>
               <button onClick={() => updateCard(id, { status: 'empty', outputUrl: null })} style={toolBtnWide} title="删除图片">
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>× 删除</span>
               </button>
@@ -362,6 +367,18 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
         </div>
       </NodeToolbar>
       {lightbox && displayImg && <Lightbox url={displayImg} kind="image" onClose={() => setLightbox(false)} />}
+      {editOpen && displayImg && (
+        <EditModal
+          imageUrl={displayImg}
+          onClose={() => setEditOpen(false)}
+          onResult={(newUrl) => {
+            updateCard(id, { status: 'done', outputUrl: newUrl });
+            setEditOpen(false);
+            // 后台 mirror（editDesignImage 已转存，这里直接保存画布）
+            (window as any).saveCanvasV2Now?.();
+          }}
+        />
+      )}
     </>
   );
 

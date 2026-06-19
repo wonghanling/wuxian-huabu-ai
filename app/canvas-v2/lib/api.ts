@@ -644,3 +644,57 @@ export async function optimizePrompt(params: {
   if (!res.ok) throw new Error(data.error || '优化失败');
   return data.optimizedPrompt as string;
 }
+
+// ============================================================
+// Design Workflow — 统一编辑入口
+// 接口长期不变：mode + provider + model，新能力只加值不改签名
+// ============================================================
+
+// 上传 mask PNG 到 Supabase storage（masks/{userId}/），返回公开 URL
+export async function uploadMaskToStorage(blob: Blob): Promise<string | null> {
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { alert('请先登录'); return null; }
+    const filename = `masks/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.png`;
+    const { error } = await supabase.storage.from('assets').upload(filename, blob, { contentType: 'image/png', upsert: false });
+    if (error) throw new Error(`mask 上传失败: ${error.message}`);
+    const { data } = supabase.storage.from('assets').getPublicUrl(filename);
+    return data.publicUrl;
+  } catch (err: any) {
+    alert('mask 上传失败: ' + err.message);
+    return null;
+  }
+}
+
+export type DesignEditMode = 'region-edit' | 'remove' | 'replace' | 'expand';
+
+// 调用 /api/design/edit，返回结果图 URL
+export async function editDesignImage(params: {
+  imageUrl: string;
+  maskUrl?: string;
+  prompt: string;
+  mode: DesignEditMode;
+  provider?: string;   // 默认 fal
+  model?: string;      // 默认 ideogram-v2-edit
+  ratio?: string;      // expand 专用
+  userId?: string;
+}): Promise<string> {
+  const res = await fetch('/api/design/edit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      imageUrl: params.imageUrl,
+      maskUrl: params.maskUrl || undefined,
+      prompt: params.prompt,
+      mode: params.mode,
+      provider: params.provider || 'fal',
+      model: params.model || undefined,
+      ratio: params.ratio || undefined,
+      userId: params.userId || undefined,
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || '编辑失败');
+  return data.imageUrl as string;
+}

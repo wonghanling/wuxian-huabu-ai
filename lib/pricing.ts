@@ -55,6 +55,12 @@ export const IMAGE_PRICING: Record<string, number> = {
   'flux-2-pro-edit-2k-square':   1.18,
   'flux-2-pro-edit-4k-wide':     2.26,
   'flux-2-pro-edit-4k-square':   3.88,
+
+  // Design Workflow（设计编辑能力，按次，会员/普通同价）
+  'region-edit': 0.5,   // 局部重绘
+  'remove':      0.5,   // 删除对象
+  'replace':     0.5,   // 替换
+  'expand':      0.5,   // 扩图
 };
 
 // ============================================================
