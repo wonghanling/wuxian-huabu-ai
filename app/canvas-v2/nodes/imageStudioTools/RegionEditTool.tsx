@@ -174,6 +174,7 @@ export function RegionEditTool(ctx: ToolContext) {
           ))}
         </select>
         <p style={{ color: '#a1a1aa', fontSize: 11, margin: '6px 0 0' }}>{preset?.desc}</p>
+        <p style={{ color: '#c4c4c8', fontSize: 10, margin: '3px 0 0' }}>模型：{preset?.model}</p>
       </div>
       <button onClick={handleGenerate} disabled={busy} style={genBtn(busy)}>
         {busy ? '生成中…' : '生成（0.5元/次）'}
