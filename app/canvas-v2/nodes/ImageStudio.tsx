@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { RegionEditTool } from './imageStudioTools/RegionEditTool';
 import { ExpandTool } from './imageStudioTools/ExpandTool';
 import { RemoveTool } from './imageStudioTools/RemoveTool';
+import { ReplaceTool } from './imageStudioTools/ReplaceTool';
 import type { ImageTool, ToolContext } from './imageStudioTools/types';
 
 // ============================================================
@@ -24,7 +25,7 @@ const TOOLS: ImageTool[] = [
   { id: 'region-edit', label: '局部重绘', enabled: true,  render: (ctx) => <RegionEditTool {...ctx} /> },
   { id: 'expand',      label: '扩图',    enabled: true,  render: (ctx) => <ExpandTool {...ctx} /> },
   { id: 'remove',      label: '消除',    enabled: true,  render: (ctx) => <RemoveTool {...ctx} /> },
-  { id: 'replace',     label: '替换',    enabled: false, hint: '即将上线', render: () => null },
+  { id: 'replace',     label: '替换',    enabled: true,  render: (ctx) => <ReplaceTool {...ctx} /> },
 ];
 
 export function ImageStudio({ initialImageUrl, onApply, onClose }: ImageStudioProps) {
