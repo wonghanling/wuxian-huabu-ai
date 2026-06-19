@@ -136,7 +136,7 @@ export async function POST(req: NextRequest) {
     if (!imageUrl) {
       return NextResponse.json({ error: '缺少原图' }, { status: 400 });
     }
-    if (!prompt && mode !== 'remove') {
+    if (!prompt && mode !== 'remove' && mode !== 'expand') {
       return NextResponse.json({ error: '缺少 prompt' }, { status: 400 });
     }
 
