@@ -14,7 +14,7 @@ import { RefThumb } from './RefThumb';
 import { PromptTools } from './PromptTools';
 import { PromptArea } from './PromptArea';
 import { Lightbox, downloadFile } from './Lightbox';
-import { EditModal } from './EditModal';
+import { ImageStudio } from './ImageStudio';
 import { uploadImageToStorage, generateImage, getUserId, softCompressImage, mirrorOutput } from '../lib/api';
 import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 
@@ -220,7 +220,13 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               <div style={track}><div style={{ height: '100%', width: `${data.progress ?? 0}%`, background: 'linear-gradient(90deg,#a0a0a0,#fff)', borderRadius: 99, transition: 'width .3s' }} /></div>
             </div>
           ) : displayImg ? (
-            <img src={displayImg} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            <img
+              src={displayImg}
+              alt=""
+              onDoubleClick={(e) => { e.stopPropagation(); setEditOpen(true); }}
+              title="双击进入 Image Studio 编辑"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', cursor: 'pointer' }}
+            />
           ) : (
             <span style={{ fontSize: 12, color: '#5a5a5f' }}>点击选中 · 下方描述画面</span>
           )}
@@ -342,8 +348,8 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               <button onClick={() => downloadFile(displayImg, `image-${id}.jpg`)} style={toolBtnWide} title="下载">
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>↓ 下载</span>
               </button>
-              <button onClick={() => setEditOpen(true)} style={toolBtnWide} title="AI 局部重绘">
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>✎ AI Edit</span>
+              <button onClick={() => setEditOpen(true)} style={toolBtnWide} title="进入 Image Studio 编辑">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>✎ 编辑</span>
               </button>
               <button onClick={() => updateCard(id, { status: 'empty', outputUrl: null })} style={toolBtnWide} title="删除图片">
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>× 删除</span>
@@ -368,15 +374,13 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
       </NodeToolbar>
       {lightbox && displayImg && <Lightbox url={displayImg} kind="image" onClose={() => setLightbox(false)} />}
       {editOpen && displayImg && (
-        <EditModal
-          imageUrl={displayImg}
+        <ImageStudio
+          initialImageUrl={displayImg}
           onClose={() => setEditOpen(false)}
-          onResult={(newUrl) => {
-            // 先显示 fal 结果图，再后台 mirror 成永久 URL
-            updateCard(id, { status: 'done', outputUrl: newUrl });
-            setEditOpen(false);
-            mirrorOutput(newUrl, 'image').then((permUrl) => {
-              if (permUrl && permUrl !== newUrl) updateCard(id, { outputUrl: permUrl });
+          onApply={(finalUrl) => {
+            updateCard(id, { status: 'done', outputUrl: finalUrl });
+            mirrorOutput(finalUrl, 'image').then((permUrl) => {
+              if (permUrl && permUrl !== finalUrl) updateCard(id, { outputUrl: permUrl });
               (window as any).saveCanvasV2Now?.();
             });
           }}
