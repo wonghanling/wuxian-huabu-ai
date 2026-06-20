@@ -10,6 +10,7 @@ import { HoverZoomImg } from './RefThumb';
 import { uploadImageToStorage, generateImage, mirrorOutput, getUserId } from '../lib/api';
 import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 import { Lightbox, downloadFile } from './Lightbox';
+import { ImageStudio } from './ImageStudio';
 
 // ============================================================
 // 角色设计卡片 · 矩形框
@@ -49,6 +50,7 @@ function CharacterNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
   const [sub, setSub] = useState<SubPanel>(null);
   const [lightbox, setLightbox] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);   // Image Studio
   const [spawnOpen, setSpawnOpen] = useState(false);
   const [uploading, setUploading] = useState(false);   // 上传中指示(照原网)
 
@@ -262,6 +264,9 @@ function CharacterNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               <button onClick={() => updateCard(id, { status: 'empty', outputUrl: null })} style={toolBtnWide} title="删除图片">
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>× 删除</span>
               </button>
+              <button onClick={() => setEditOpen(true)} style={toolBtnWide} title="进入 Image Studio 编辑">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>✎ 编辑</span>
+              </button>
             </>
           )}
           <button onClick={() => updateCard(id, { enlarged: !enlarged })} style={toolBtnWide}>
@@ -273,6 +278,19 @@ function CharacterNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
         </div>
       </NodeToolbar>
       {lightbox && hasOutput && <Lightbox url={data.outputUrl!} kind="image" onClose={() => setLightbox(false)} />}
+      {editOpen && hasOutput && (
+        <ImageStudio
+          initialImageUrl={data.outputUrl!}
+          onClose={() => setEditOpen(false)}
+          onApply={(finalUrl) => {
+            updateCard(id, { outputUrl: finalUrl });
+            mirrorOutput(finalUrl, 'image').then((permUrl) => {
+              if (permUrl && permUrl !== finalUrl) updateCard(id, { outputUrl: permUrl });
+              (window as any).saveCanvasV2Now?.();
+            });
+          }}
+        />
+      )}
     </>
   );
 

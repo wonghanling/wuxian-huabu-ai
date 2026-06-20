@@ -11,6 +11,7 @@ import { generateImage, mirrorOutput, getUserId, softCompressImage } from '../li
 import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 import { useDebouncedField } from '../lib/useDebouncedField';
 import { Lightbox, downloadFile } from './Lightbox';
+import { ImageStudio } from './ImageStudio';
 
 // ============================================================
 // 时空镜头延展卡片
@@ -161,6 +162,7 @@ function ExtendNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [sub, setSub] = useState<SubPanel>(null);
   const [spawnOpen, setSpawnOpen] = useState(false);
   const [lightbox, setLightbox] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const promptField = useDebouncedField(data.config.prompt ?? '', (v) => updateConfig(id, { prompt: v }));
 
   const modelId = data.config.model || 'nano-banana-pro';
@@ -417,6 +419,9 @@ function ExtendNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               <button onClick={() => updateCard(id, { status: 'empty', outputUrl: null })} style={toolBtnWide} title="删除图片">
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>× 删除</span>
               </button>
+              <button onClick={() => setEditOpen(true)} style={toolBtnWide} title="进入 Image Studio 编辑">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>✎ 编辑</span>
+              </button>
             </>
           )}
           <button onClick={() => updateCard(id, { enlarged: !enlarged })} style={toolBtnWide}>
@@ -428,6 +433,19 @@ function ExtendNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
         </div>
       </NodeToolbar>
       {lightbox && hasOutput && <Lightbox url={data.outputUrl!} kind="image" onClose={() => setLightbox(false)} />}
+      {editOpen && hasOutput && (
+        <ImageStudio
+          initialImageUrl={data.outputUrl!}
+          onClose={() => setEditOpen(false)}
+          onApply={(finalUrl) => {
+            updateCard(id, { outputUrl: finalUrl });
+            mirrorOutput(finalUrl, 'image').then((permUrl) => {
+              if (permUrl && permUrl !== finalUrl) updateCard(id, { outputUrl: permUrl });
+              (window as any).saveCanvasV2Now?.();
+            });
+          }}
+        />
+      )}
     </>
   );
 
