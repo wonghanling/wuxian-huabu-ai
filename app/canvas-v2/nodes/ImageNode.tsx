@@ -15,7 +15,7 @@ import { PromptTools } from './PromptTools';
 import { PromptArea } from './PromptArea';
 import { Lightbox, downloadFile } from './Lightbox';
 import { ImageStudio } from './ImageStudio';
-import { uploadImageToStorage, generateImage, getUserId, softCompressImage, mirrorOutput, editDesignImage } from '../lib/api';
+import { uploadImageToStorage, generateImage, getUserId, softCompressImage, mirrorOutput, editDesignImage, extractImage } from '../lib/api';
 import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 
 // ============================================================
@@ -48,6 +48,7 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [lightbox, setLightbox] = useState(false);      // 画布内查看放大
   const [editOpen, setEditOpen] = useState(false);      // AI Edit 局部重绘弹窗
   const [identityBusy, setIdentityBusy] = useState(false); // 真人设定生成中
+  const [extractBusy, setExtractBusy] = useState(false);  // 抠图生成中
   const editRef = useRef<HTMLTextAreaElement>(null);
 
   const model = IMAGE_MODELS.find((m) => m.id === data.config.model) ?? IMAGE_MODELS[0];
@@ -198,6 +199,23 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
       alert('真人设定失败: ' + (err?.message || err));
     } finally {
       setIdentityBusy(false);
+    }
+  };
+
+  // 抠图：birefnet 去背景，结果新建卡片连线
+  const handleExtract = async () => {
+    if (!displayImg || extractBusy) return;
+    setExtractBusy(true);
+    try {
+      const userId = await getUserId();
+      const newUrl = await extractImage({ imageUrl: displayImg, userId });
+      const permUrl = await mirrorOutput(newUrl, 'image') || newUrl;
+      useCanvasStore.getState().addImageCardWithRef(permUrl, '', 'nano-banana-pro');
+      (window as any).saveCanvasV2Now?.();
+    } catch (err: any) {
+      alert('抠图失败: ' + (err?.message || err));
+    } finally {
+      setExtractBusy(false);
     }
   };
 
@@ -380,6 +398,9 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               </button>
               <button onClick={handleIdentityMask} disabled={identityBusy} style={{ ...toolBtnWide, opacity: identityBusy ? 0.5 : 1 }} title="真人设定遮挡（Nano Banana Pro）">
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>🎭 {identityBusy ? '生成中…' : '真人设定'}</span>
+              </button>
+              <button onClick={handleExtract} disabled={extractBusy} style={{ ...toolBtnWide, opacity: extractBusy ? 0.5 : 1 }} title="抠图（透明PNG）">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>✂ {extractBusy ? '抠图中…' : '抠图'}</span>
               </button>
               <button onClick={() => updateCard(id, { status: 'empty', outputUrl: null })} style={toolBtnWide} title="删除图片">
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>× 删除</span>

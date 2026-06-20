@@ -7,7 +7,7 @@ import { ratioToWH, SIZE_OPTIONS, QUALITY_OPTIONS } from '../imageModels';
 import { IconExpand, IconShrink, IconMinus, IconPlus } from './icons';
 import { SpawnMenu } from './SpawnMenu';
 import { HoverZoomImg } from './RefThumb';
-import { uploadImageToStorage, generateImage, mirrorOutput, getUserId, editDesignImage } from '../lib/api';
+import { uploadImageToStorage, generateImage, mirrorOutput, getUserId, editDesignImage, extractImage } from '../lib/api';
 import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 import { Lightbox, downloadFile } from './Lightbox';
 import { ImageStudio } from './ImageStudio';
@@ -52,6 +52,7 @@ function CharacterNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [lightbox, setLightbox] = useState(false);
   const [editOpen, setEditOpen] = useState(false);   // Image Studio
   const [identityBusy, setIdentityBusy] = useState(false);
+  const [extractBusy, setExtractBusy] = useState(false);
   const [spawnOpen, setSpawnOpen] = useState(false);
   const [uploading, setUploading] = useState(false);   // 上传中指示(照原网)
 
@@ -145,6 +146,23 @@ function CharacterNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
       alert('真人设定失败: ' + (err?.message || err));
     } finally {
       setIdentityBusy(false);
+    }
+  };
+
+  // 抠图：birefnet 去背景，结果新建卡片连线
+  const handleExtract = async () => {
+    if (!hasOutput || extractBusy) return;
+    setExtractBusy(true);
+    try {
+      const userId = await getUserId();
+      const newUrl = await extractImage({ imageUrl: data.outputUrl!, userId });
+      const permUrl = await mirrorOutput(newUrl, 'image') || newUrl;
+      useCanvasStore.getState().addImageCardWithRef(permUrl, '', 'nano-banana-pro');
+      (window as any).saveCanvasV2Now?.();
+    } catch (err: any) {
+      alert('抠图失败: ' + (err?.message || err));
+    } finally {
+      setExtractBusy(false);
     }
   };
 
@@ -295,6 +313,9 @@ function CharacterNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               </button>
               <button onClick={handleIdentityMask} disabled={identityBusy} style={{ ...toolBtnWide, opacity: identityBusy ? 0.5 : 1 }} title="真人设定遮挡（Nano Banana Pro）">
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>🎭 {identityBusy ? '生成中…' : '真人设定'}</span>
+              </button>
+              <button onClick={handleExtract} disabled={extractBusy} style={{ ...toolBtnWide, opacity: extractBusy ? 0.5 : 1 }} title="抠图（透明PNG）">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>✂ {extractBusy ? '抠图中…' : '抠图'}</span>
               </button>
             </>
           )}

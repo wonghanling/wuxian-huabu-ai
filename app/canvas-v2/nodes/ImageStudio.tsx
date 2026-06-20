@@ -7,6 +7,7 @@ import { ExpandTool } from './imageStudioTools/ExpandTool';
 import { RemoveTool } from './imageStudioTools/RemoveTool';
 import { ReplaceTool } from './imageStudioTools/ReplaceTool';
 import { BgReplaceTool } from './imageStudioTools/BgReplaceTool';
+import { ExtractTool } from './imageStudioTools/ExtractTool';
 import type { ImageTool, ToolContext } from './imageStudioTools/types';
 
 // ============================================================
@@ -28,6 +29,7 @@ const TOOLS: ImageTool[] = [
   { id: 'remove',      label: '消除',    enabled: true,  render: (ctx) => <RemoveTool {...ctx} /> },
   { id: 'replace',     label: '替换',    enabled: true,  render: (ctx) => <ReplaceTool {...ctx} /> },
   { id: 'bg-replace',  label: '换背景',  enabled: true,  render: (ctx) => <BgReplaceTool {...ctx} /> },
+  { id: 'extract',     label: '抠图',    enabled: true,  render: (ctx) => <ExtractTool {...ctx} /> },
 ];
 
 export function ImageStudio({ initialImageUrl, onApply, onClose }: ImageStudioProps) {
