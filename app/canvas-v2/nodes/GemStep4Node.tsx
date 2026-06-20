@@ -361,7 +361,7 @@ function GemStep4NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               <button onClick={() => updateCard(id, { status: 'empty', outputUrl: null })} style={toolBtnWide} title="删除分镜图">
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>× 删除</span>
               </button>
-              <button onClick={() => setEditOpen(true)} style={toolBtnWide} title="进入 Image Studio 编辑"><span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>✎ 编辑</span></button>
+              <button onClick={() => setEditOpen(true)} style={toolBtnWide} title="进入 Image Studio 编辑"><span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>✎ 设计师</span></button>
             </>
           )}
           <button onClick={() => updateCard(id, { enlarged: !enlarged })} style={toolBtnWide} title={enlarged ? '还原' : '放大卡片'}>

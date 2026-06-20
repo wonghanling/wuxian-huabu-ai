@@ -420,7 +420,7 @@ function ExtendNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>× 删除</span>
               </button>
               <button onClick={() => setEditOpen(true)} style={toolBtnWide} title="进入 Image Studio 编辑">
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>✎ 编辑</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>✎ 设计师</span>
               </button>
             </>
           )}

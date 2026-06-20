@@ -34,7 +34,7 @@ const TOOLS: ImageTool[] = [
 
 export function ImageStudio({ initialImageUrl, onApply, onClose }: ImageStudioProps) {
   const [activeTool, setActiveTool] = useState('region-edit');
-  const [versions, setVersions] = useState<string[]>([initialImageUrl]); // [0]=原图
+  const [versions, setVersions] = useState<string[]>([initialImageUrl]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -90,7 +90,7 @@ export function ImageStudio({ initialImageUrl, onApply, onClose }: ImageStudioPr
       {/* 顶部条 */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderBottom: '1px solid rgba(0,0,0,0.08)', background: '#fff' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontWeight: 700, fontSize: 16, color: '#18181b' }}>Image Studio</span>
+          <span style={{ fontWeight: 700, fontSize: 16, color: '#18181b' }}>设计师专用</span>
           <span style={{ fontSize: 12, color: '#a1a1aa' }}>图片编辑中心</span>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
@@ -125,23 +125,43 @@ export function ImageStudio({ initialImageUrl, onApply, onClose }: ImageStudioPr
 
         {/* 中编辑区 */}
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'auto', padding: 24 }}>
-          <div style={{ position: 'relative', width: displaySize.w || 'auto', height: displaySize.h || 'auto', borderRadius: 12, overflow: 'hidden', boxShadow: '0 8px 40px rgba(0,0,0,0.12)', background: '#fff' }}>
-            <img
-              ref={imgRef}
-              src={currentUrl}
-              onLoad={onImgLoad}
-              crossOrigin="anonymous"
-              alt=""
-              style={{ display: 'block', width: displaySize.w || 'auto', height: displaySize.h || 'auto', maxWidth: '50vw', maxHeight: '70vh', userSelect: 'none', pointerEvents: 'none' }}
-            />
-            {/* 工具覆盖层挂载点 */}
-            <div ref={setOverlaySlot} style={{ position: 'absolute', inset: 0 }} />
-            {busy && (
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.6)', color: '#18181b', fontSize: 14, fontWeight: 600 }}>
-                生成中…
+          {!currentUrl ? (
+            /* 无图时：上传区 */
+            <label style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, width: 360, height: 280, borderRadius: 16, border: '2px dashed rgba(0,0,0,0.15)', background: '#fff', cursor: 'pointer', color: '#a1a1aa' }}>
+              <svg width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 15, fontWeight: 600, color: '#18181b', marginBottom: 6 }}>上传图片开始编辑</div>
+                <div style={{ fontSize: 12 }}>支持 JPG、PNG、WebP</div>
               </div>
-            )}
-          </div>
+              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={async (e) => {
+                const f = e.target.files?.[0]; e.currentTarget.value = '';
+                if (!f) return;
+                const { uploadImageToStorage } = await import('../lib/api');
+                const url = await uploadImageToStorage(f);
+                if (url) { setVersions([url]); setCurrentIdx(0); }
+              }} />
+            </label>
+          ) : (
+            <div style={{ position: 'relative', width: displaySize.w || 'auto', height: displaySize.h || 'auto', borderRadius: 12, overflow: 'hidden', boxShadow: '0 8px 40px rgba(0,0,0,0.12)', background: '#fff' }}>
+              <img
+                ref={imgRef}
+                src={currentUrl}
+                onLoad={onImgLoad}
+                crossOrigin="anonymous"
+                alt=""
+                style={{ display: 'block', width: displaySize.w || 'auto', height: displaySize.h || 'auto', maxWidth: '50vw', maxHeight: '70vh', userSelect: 'none', pointerEvents: 'none' }}
+              />
+              {/* 工具覆盖层挂载点 */}
+              <div ref={setOverlaySlot} style={{ position: 'absolute', inset: 0 }} />
+              {busy && (
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.6)', color: '#18181b', fontSize: 14, fontWeight: 600 }}>
+                  生成中…
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 右面板 */}
