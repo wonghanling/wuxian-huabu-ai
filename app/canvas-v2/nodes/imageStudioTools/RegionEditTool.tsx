@@ -183,13 +183,6 @@ export function RegionEditTool(ctx: ToolContext) {
         />
         {/* 快速 prompt 按钮 */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-          <button
-            onClick={() => {
-              setPrompt('对角色设定图中的所有人脸进行隐私遮挡。保持原图构图、人物、衣服、发型、背景不变。只在可见眼睛和嘴巴区域添加纯黑色矩形遮挡条。正脸遮挡双眼和嘴巴，侧脸遮挡可见眼睛和嘴巴。不要改变人物身份、发型、服装、姿态和画面风格。');
-              setPresetId('identity-mask');
-            }}
-            style={quickBtn}
-          >🎭 真人设定</button>
           <button onClick={() => setPrompt('替换成纯白背景，保留主体')} style={quickBtn}>白底</button>
           <button onClick={() => setPrompt('改成红色')} style={quickBtn}>改颜色</button>
           <button onClick={() => setPrompt('删除该区域，背景自然填充')} style={quickBtn}>删除对象</button>
