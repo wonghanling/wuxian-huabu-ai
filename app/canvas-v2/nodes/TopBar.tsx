@@ -81,6 +81,13 @@ export function TopBar({ saveStatus, switchCanvas, getCurrentCanvasId }: Props) 
       const qs = params.toString();
       window.history.replaceState({}, '', window.location.pathname + (qs ? `?${qs}` : ''));
     }
+    // 主页"专业设计"入口:带 ?design=true 进画布 → 自动打开设计师专用界面
+    if (params.get('design') === 'true') {
+      setImageStudioUrl('');
+      params.delete('design');
+      const qs = params.toString();
+      window.history.replaceState({}, '', window.location.pathname + (qs ? `?${qs}` : ''));
+    }
   }, []);
 
   const onNew = async () => {

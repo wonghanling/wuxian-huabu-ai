@@ -302,13 +302,13 @@ export default function Home() {
           </div>
         </div>
 
-        {/* 预览框：画布工作区风格，图片作为缩小节点卡片 */}
+        {/* 预览框：画布工作区风格，图片原比例错落排列 */}
         <div className="relative z-10 w-full px-4 md:px-10 mt-10">
           <div className="relative group">
             <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-[32px] blur opacity-20 group-hover:opacity-35 transition duration-1000"></div>
-            <div className="relative rounded-[28px] shadow-2xl overflow-hidden" style={{background:'#111114', border:'1px solid rgba(255,255,255,0.08)', padding:'28px 24px 24px'}}>
+            <div className="relative rounded-[28px] shadow-2xl overflow-hidden" style={{background:'#111114', border:'1px solid rgba(255,255,255,0.08)', padding:'28px 24px 32px'}}>
 
-              {/* 仿画布标题栏 */}
+              {/* 标题栏 */}
               <div className="flex items-center gap-2 mb-8">
                 <div className="w-2.5 h-2.5 rounded-full bg-zinc-700"></div>
                 <div className="w-2.5 h-2.5 rounded-full bg-zinc-700"></div>
@@ -317,68 +317,58 @@ export default function Home() {
                 <div className="ml-auto text-[10px] text-zinc-700">AI Edit · Remove · Replace · Expand</div>
               </div>
 
-              {/* 图片节点卡片：缩小摆放，模拟画布内的设计节点 */}
-              <div className="flex flex-wrap gap-4 items-end justify-center pb-2">
+              {/* 图片错落排列：原比例 h-auto，translateY 错开高度 */}
+              <div className="flex items-start gap-3 md:gap-5 overflow-x-auto pb-4" style={{scrollbarWidth:'none'}}>
 
-                {/* 卡片1 */}
-                <div className="flex-shrink-0 rounded-2xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.6)]" style={{background:'#1c1c1f', border:'1px solid rgba(255,255,255,0.09)', width:130}}>
-                  <div style={{height:170, overflow:'hidden'}}>
-                    <img src="/boluolab-filmavo.jpg" alt="" style={{width:'100%', height:'100%', objectFit:'cover'}} />
-                  </div>
-                  <div style={{padding:'7px 10px', fontSize:9, color:'#52525b'}}>poster</div>
+                <div className="flex-shrink-0 rounded-xl shadow-[0_8px_28px_rgba(0,0,0,0.55)]" style={{background:'#1c1c1f', border:'1px solid rgba(255,255,255,0.08)', width:150, transform:'translateY(20px)'}}>
+                  <img src="/boluolab-filmavo.jpg" alt="" style={{width:'100%', height:'auto', display:'block', borderRadius:'10px 10px 0 0'}} />
+                  <div style={{padding:'6px 10px', fontSize:9, color:'#52525b'}}>poster</div>
                 </div>
 
-                {/* 卡片2 稍高 */}
-                <div className="flex-shrink-0 rounded-2xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.6)]" style={{background:'#1c1c1f', border:'1px solid rgba(255,255,255,0.09)', width:150}}>
-                  <div style={{height:190, overflow:'hidden'}}>
-                    <img src="/10.png" alt="" style={{width:'100%', height:'100%', objectFit:'cover'}} />
-                  </div>
-                  <div style={{padding:'7px 10px', fontSize:9, color:'#52525b'}}>brand</div>
+                <div className="flex-shrink-0 rounded-xl shadow-[0_8px_28px_rgba(0,0,0,0.55)]" style={{background:'#1c1c1f', border:'1px solid rgba(255,255,255,0.08)', width:175, transform:'translateY(-10px)'}}>
+                  <img src="/10.png" alt="" style={{width:'100%', height:'auto', display:'block', borderRadius:'10px 10px 0 0'}} />
+                  <div style={{padding:'6px 10px', fontSize:9, color:'#52525b'}}>brand</div>
                 </div>
 
-                {/* 卡片3 最高 */}
-                <div className="flex-shrink-0 rounded-2xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.6)]" style={{background:'#1c1c1f', border:'1px solid rgba(255,255,255,0.09)', width:120}}>
-                  <div style={{height:210, overflow:'hidden'}}>
-                    <img src="/33.jpg" alt="" style={{width:'100%', height:'100%', objectFit:'cover'}} />
-                  </div>
-                  <div style={{padding:'7px 10px', fontSize:9, color:'#52525b'}}>social</div>
+                <div className="flex-shrink-0 rounded-xl shadow-[0_8px_28px_rgba(0,0,0,0.55)]" style={{background:'#1c1c1f', border:'1px solid rgba(255,255,255,0.08)', width:135, transform:'translateY(8px)'}}>
+                  <img src="/33.jpg" alt="" style={{width:'100%', height:'auto', display:'block', borderRadius:'10px 10px 0 0'}} />
+                  <div style={{padding:'6px 10px', fontSize:9, color:'#52525b'}}>social</div>
                 </div>
 
-                {/* 卡片4 md+ */}
-                <div className="flex-shrink-0 rounded-2xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.6)] hidden md:block" style={{background:'#1c1c1f', border:'1px solid rgba(255,255,255,0.09)', width:140}}>
-                  <div style={{height:175, overflow:'hidden'}}>
-                    <img src="/6.jpg" alt="" style={{width:'100%', height:'100%', objectFit:'cover'}} />
-                  </div>
-                  <div style={{padding:'7px 10px', fontSize:9, color:'#52525b'}}>ad creative</div>
+                <div className="flex-shrink-0 rounded-xl shadow-[0_8px_28px_rgba(0,0,0,0.55)] hidden md:block" style={{background:'#1c1c1f', border:'1px solid rgba(255,255,255,0.08)', width:155, transform:'translateY(-18px)'}}>
+                  <img src="/6.jpg" alt="" style={{width:'100%', height:'auto', display:'block', borderRadius:'10px 10px 0 0'}} />
+                  <div style={{padding:'6px 10px', fontSize:9, color:'#52525b'}}>ad creative</div>
                 </div>
 
-                {/* 卡片5 lg+ */}
-                <div className="flex-shrink-0 rounded-2xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.6)] hidden lg:block" style={{background:'#1c1c1f', border:'1px solid rgba(255,255,255,0.09)', width:135}}>
-                  <div style={{height:160, overflow:'hidden'}}>
-                    <img src="/image-i1781673005081.jpg" alt="" style={{width:'100%', height:'100%', objectFit:'cover'}} />
-                  </div>
-                  <div style={{padding:'7px 10px', fontSize:9, color:'#52525b'}}>product</div>
+                <div className="flex-shrink-0 rounded-xl shadow-[0_8px_28px_rgba(0,0,0,0.55)] hidden lg:block" style={{background:'#1c1c1f', border:'1px solid rgba(255,255,255,0.08)', width:150, transform:'translateY(16px)'}}>
+                  <img src="/image-i1781673005081.jpg" alt="" style={{width:'100%', height:'auto', display:'block', borderRadius:'10px 10px 0 0'}} />
+                  <div style={{padding:'6px 10px', fontSize:9, color:'#52525b'}}>product</div>
                 </div>
 
-                {/* CTA 卡片：专业设计 */}
-                <Link href="/canvas?design=true">
-                  <div className="flex-shrink-0 flex flex-col items-center justify-center rounded-2xl cursor-pointer transition-all hover:bg-white/5 hover:border-white/20" style={{background:'rgba(255,255,255,0.025)', border:'1px dashed rgba(255,255,255,0.1)', width:120, height:178, gap:10}}>
-                    <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{background:'rgba(255,255,255,0.07)'}}>
-                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth="1.5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                      </svg>
-                    </div>
-                    <div style={{textAlign:'center'}}>
-                      <div style={{color:'#e4e4e7', fontSize:11, fontWeight:600}}>专业设计</div>
-                      <div style={{color:'#52525b', fontSize:9.5, marginTop:3}}>设计师工作台</div>
-                    </div>
+                {/* 专业设计 CTA */}
+                <Link href="/canvas?design=true" className="flex-shrink-0 hidden md:flex flex-col items-center justify-center rounded-xl cursor-pointer transition-all hover:bg-white/5 hover:border-white/20" style={{background:'rgba(255,255,255,0.02)', border:'1px dashed rgba(255,255,255,0.1)', width:125, minHeight:150, gap:12, transform:'translateY(4px)'}}>
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{background:'rgba(255,255,255,0.07)'}}>
+                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth="1.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                  </div>
+                  <div style={{textAlign:'center', padding:'0 10px'}}>
+                    <div style={{color:'#e4e4e7', fontSize:11, fontWeight:600}}>专业设计</div>
+                    <div style={{color:'#52525b', fontSize:9.5, marginTop:3}}>设计师工作台</div>
                   </div>
                 </Link>
 
               </div>
 
-              {/* 底部 */}
-              <div className="flex items-center justify-end mt-5">
+              <div className="mt-4 md:hidden flex justify-center">
+                <Link href="/canvas?design=true">
+                  <button className="px-6 py-2.5 rounded-full text-white text-sm font-medium transition-all" style={{background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.12)'}}>
+                    🎨 专业设计
+                  </button>
+                </Link>
+              </div>
+
+              <div className="flex items-center justify-end mt-4">
                 <div className="text-[10px] text-zinc-700 flex items-center gap-1">
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>
                   随意拖曳 · 自由连接
