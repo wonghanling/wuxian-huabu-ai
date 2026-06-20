@@ -9,6 +9,7 @@ import { SpawnMenu } from './SpawnMenu';
 import { HoverZoomImg } from './RefThumb';
 import { PromptTools } from './PromptTools';
 import { Lightbox, downloadFile } from './Lightbox';
+import { ImageStudio } from './ImageStudio';
 import { uploadImageToStorage, generateGemStoryboardImage, mirrorOutput, getUserId } from '../lib/api';
 import { useDebouncedField } from '../lib/useDebouncedField';
 import { useUpstream } from '../lib/connections';
@@ -50,6 +51,7 @@ function GemStep4NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [modeTooltip, setModeTooltip] = useState<InputType | null>(null);
   const [uploading, setUploading] = useState(false);   // 上传中指示(照原网)
   const [lightbox, setLightbox] = useState(false);      // 画布内查看放大
+  const [editOpen, setEditOpen] = useState(false);
   const promptField = useDebouncedField(data.config.prompt ?? '', (v) => updateConfig(id, { prompt: v }));
 
   // 输入模式:存在 textDuration 字段里(复用)
@@ -359,6 +361,7 @@ function GemStep4NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               <button onClick={() => updateCard(id, { status: 'empty', outputUrl: null })} style={toolBtnWide} title="删除分镜图">
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>× 删除</span>
               </button>
+              <button onClick={() => setEditOpen(true)} style={toolBtnWide} title="进入 Image Studio 编辑"><span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>✎ 编辑</span></button>
             </>
           )}
           <button onClick={() => updateCard(id, { enlarged: !enlarged })} style={toolBtnWide} title={enlarged ? '还原' : '放大卡片'}>
@@ -370,6 +373,19 @@ function GemStep4NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
         </div>
       </NodeToolbar>
       {lightbox && hasOutput && <Lightbox url={data.outputUrl!} kind="image" onClose={() => setLightbox(false)} />}
+      {editOpen && hasOutput && (
+        <ImageStudio
+          initialImageUrl={data.outputUrl!}
+          onClose={() => setEditOpen(false)}
+          onApply={(finalUrl) => {
+            updateCard(id, { outputUrl: finalUrl });
+            mirrorOutput(finalUrl, 'image').then((permUrl) => {
+              if (permUrl && permUrl !== finalUrl) updateCard(id, { outputUrl: permUrl });
+              (window as any).saveCanvasV2Now?.();
+            });
+          }}
+        />
+      )}
     </>
   );
 

@@ -12,6 +12,7 @@ import { IconImage, IconModel, IconExpand, IconShrink, IconMinus, IconPlus } fro
 import { SpawnMenu } from './SpawnMenu';
 import { RefThumb, HoverZoomImg } from './RefThumb';
 import { Lightbox, downloadFile } from './Lightbox';
+import { ImageStudio } from './ImageStudio';
 import { uploadImageToStorage, generateTryOn, getUserId, mirrorOutput } from '../lib/api';
 import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 
@@ -47,6 +48,7 @@ function TryOnNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [sub, setSub] = useState<SubPanel>(null);
   const [uploading, setUploading] = useState(false);   // 上传中指示(照原网 setIsUploadingMulti)
   const [lightbox, setLightbox] = useState(false);      // 画布内查看放大
+  const [editOpen, setEditOpen] = useState(false);
   const editRef = useRef<HTMLTextAreaElement>(null);
 
   const ratio = data.config.ratio ?? '9:16';
@@ -244,6 +246,7 @@ function TryOnNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               <button onClick={() => updateCard(id, { status: 'empty', outputUrl: null })} style={toolBtnWide} title="删除图片">
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>× 删除</span>
               </button>
+              <button onClick={() => setEditOpen(true)} style={toolBtnWide} title="进入 Image Studio 编辑"><span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>✎ 编辑</span></button>
               <button onClick={() => updateCard(id, { enlarged: !enlarged })} style={toolBtnWide} title={enlarged ? '还原' : '放大卡片'}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>{enlarged ? <IconShrink size={16} /> : <IconExpand size={16} />}{enlarged ? '还原' : '放大'}</span>
               </button>
@@ -263,6 +266,19 @@ function TryOnNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
         </div>
       </NodeToolbar>
       {lightbox && displayImg && <Lightbox url={displayImg} kind="image" onClose={() => setLightbox(false)} />}
+      {editOpen && hasImage && (
+        <ImageStudio
+          initialImageUrl={data.outputUrl!}
+          onClose={() => setEditOpen(false)}
+          onApply={(finalUrl) => {
+            updateCard(id, { outputUrl: finalUrl });
+            mirrorOutput(finalUrl, 'image').then((permUrl) => {
+              if (permUrl && permUrl !== finalUrl) updateCard(id, { outputUrl: permUrl });
+              (window as any).saveCanvasV2Now?.();
+            });
+          }}
+        />
+      )}
     </>
   );
 
