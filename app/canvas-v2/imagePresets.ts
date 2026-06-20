@@ -55,6 +55,11 @@ Maintain strong visual consistency in every panel.`,
     accent: 'blue',
     prompt: `clean illustration, smooth shading, soft lighting, controlled details, minimal texture, high clarity, refined edges, smooth gradients --no noise, grain, artifacts, high frequency detail, dirty texture, oversharpen, blotchy, chaotic details`,
   },
+  {
+    label: '真人设定',
+    accent: 'gray',
+    prompt: `对角色设定图中的所有人脸进行隐私遮挡。保持原图构图、人物、衣服、发型、背景不变。只在可见眼睛和嘴巴区域添加纯黑色矩形遮挡条。正脸遮挡双眼和嘴巴，侧脸遮挡可见眼睛和嘴巴。不要改变人物身份、发型、服装、姿态和画面风格。`,
+  },
 ];
 
 // —— 每模型参考图上限(真实规则,来自 CustomCard) ——
