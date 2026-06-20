@@ -14,8 +14,8 @@ import { RefThumb } from './RefThumb';
 import { PromptTools } from './PromptTools';
 import { PromptArea } from './PromptArea';
 import { Lightbox, downloadFile } from './Lightbox';
-import { EditModal } from './EditModal';
-import { uploadImageToStorage, generateImage, getUserId, softCompressImage, mirrorOutput } from '../lib/api';
+import { ImageStudio } from './ImageStudio';
+import { uploadImageToStorage, generateImage, getUserId, softCompressImage, mirrorOutput, editDesignImage } from '../lib/api';
 import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 
 // ============================================================
@@ -47,6 +47,7 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [uploading, setUploading] = useState(false);   // 上传中指示(照原网 setIsUploadingMulti)
   const [lightbox, setLightbox] = useState(false);      // 画布内查看放大
   const [editOpen, setEditOpen] = useState(false);      // AI Edit 局部重绘弹窗
+  const [identityBusy, setIdentityBusy] = useState(false);
   const editRef = useRef<HTMLTextAreaElement>(null);
 
   const model = IMAGE_MODELS.find((m) => m.id === data.config.model) ?? IMAGE_MODELS[0];
@@ -174,6 +175,32 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     }
   };
 
+  // 真人设定：直接调 nano-banana-pro，结果在画布创建新卡并连线
+  const handleIdentityMask = async () => {
+    if (!displayImg || identityBusy) return;
+    setIdentityBusy(true);
+    try {
+      const userId = await getUserId();
+      const IDENTITY_PROMPT = '对角色设定图中的所有人脸进行隐私遮挡。保持原图构图、人物、衣服、发型、背景不变。只在可见眼睛和嘴巴区域添加纯黑色矩形遮挡条。正脸遮挡双眼和嘴巴，侧脸遮挡可见眼睛和嘴巴。不要改变人物身份、发型、服装、姿态和画面风格。';
+      const newUrl = await editDesignImage({
+        imageUrl: displayImg,
+        prompt: IDENTITY_PROMPT,
+        mode: 'region-edit',
+        provider: 'fal',
+        model: 'nano-banana-pro',
+        userId,
+      });
+      // mirror 到 Supabase，再在画布生成新卡并连线
+      const permUrl = await mirrorOutput(newUrl, 'image') || newUrl;
+      useCanvasStore.getState().addImageCardWithRef(permUrl, IDENTITY_PROMPT, 'nano-banana-pro');
+      (window as any).saveCanvasV2Now?.();
+    } catch (err: any) {
+      alert('真人设定失败: ' + (err?.message || err));
+    } finally {
+      setIdentityBusy(false);
+    }
+  };
+
   // ===== 收起态:居中带标题副标题小卡 =====
   if (collapsed) {
     return (
@@ -220,7 +247,13 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               <div style={track}><div style={{ height: '100%', width: `${data.progress ?? 0}%`, background: 'linear-gradient(90deg,#a0a0a0,#fff)', borderRadius: 99, transition: 'width .3s' }} /></div>
             </div>
           ) : displayImg ? (
-            <img src={displayImg} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            <img
+              src={displayImg}
+              alt=""
+              onDoubleClick={(e) => { e.stopPropagation(); setEditOpen(true); }}
+              title="双击进入 Image Studio 编辑"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', cursor: 'pointer' }}
+            />
           ) : (
             <span style={{ fontSize: 12, color: '#5a5a5f' }}>点击选中 · 下方描述画面</span>
           )}
@@ -263,17 +296,8 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               <div style={presetGrid}>
                 {OTHER_PRESETS.map((p) => (
                   <button key={p.label}
-                    onClick={() => {
-                      if (p.label === '真人过审') {
-                        const hasRef = (data.config.refImages?.length ?? 0) > 0 || upstreamLive.images.length > 0;
-                        if (!hasRef) {
-                          alert('请先上传或连接角色多视角图，再使用「真人过审」预设');
-                          return;
-                        }
-                      }
-                      updateConfig(id, { prompt: p.prompt, preset: p.label }); setSub(null);
-                    }}
-                    style={{ ...presetChip, borderColor: p.accent === 'purple' ? 'rgba(255,255,255,0.3)' : p.accent === 'gray' ? 'rgba(255,255,255,0.15)' : 'rgba(59,130,246,0.5)', color: p.accent === 'purple' ? '#d4d4d8' : p.accent === 'gray' ? '#a1a1aa' : '#93c5fd' }}>
+                    onClick={() => { updateConfig(id, { prompt: p.prompt, preset: p.label }); setSub(null); }}
+                    style={{ ...presetChip, borderColor: p.accent === 'purple' ? 'rgba(255,255,255,0.3)' : 'rgba(59,130,246,0.5)', color: p.accent === 'purple' ? '#d4d4d8' : '#93c5fd' }}>
                     {p.label}
                   </button>
                 ))}
@@ -351,8 +375,8 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               <button onClick={() => downloadFile(displayImg, `image-${id}.jpg`)} style={toolBtnWide} title="下载">
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>↓ 下载</span>
               </button>
-              <button onClick={() => setEditOpen(true)} style={toolBtnWide} title="设计师专用 AI 编辑">
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>✎ 设计师</span>
+              <button onClick={() => setEditOpen(true)} style={toolBtnWide} title="进入 Image Studio 编辑">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>✎ 编辑</span>
               </button>
               <button onClick={() => updateCard(id, { status: 'empty', outputUrl: null })} style={toolBtnWide} title="删除图片">
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>× 删除</span>
@@ -377,15 +401,13 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
       </NodeToolbar>
       {lightbox && displayImg && <Lightbox url={displayImg} kind="image" onClose={() => setLightbox(false)} />}
       {editOpen && displayImg && (
-        <EditModal
-          imageUrl={displayImg}
+        <ImageStudio
+          initialImageUrl={displayImg}
           onClose={() => setEditOpen(false)}
-          onResult={(newUrl) => {
-            // 先显示 fal 结果图，再后台 mirror 成永久 URL
-            updateCard(id, { status: 'done', outputUrl: newUrl });
-            setEditOpen(false);
-            mirrorOutput(newUrl, 'image').then((permUrl) => {
-              if (permUrl && permUrl !== newUrl) updateCard(id, { outputUrl: permUrl });
+          onApply={(finalUrl) => {
+            updateCard(id, { status: 'done', outputUrl: finalUrl });
+            mirrorOutput(finalUrl, 'image').then((permUrl) => {
+              if (permUrl && permUrl !== finalUrl) updateCard(id, { outputUrl: permUrl });
               (window as any).saveCanvasV2Now?.();
             });
           }}
