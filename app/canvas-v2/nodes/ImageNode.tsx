@@ -296,8 +296,14 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               <div style={presetGrid}>
                 {OTHER_PRESETS.map((p) => (
                   <button key={p.label}
-                    onClick={() => { updateConfig(id, { prompt: p.prompt, preset: p.label }); setSub(null); }}
-                    style={{ ...presetChip, borderColor: p.accent === 'purple' ? 'rgba(255,255,255,0.3)' : 'rgba(59,130,246,0.5)', color: p.accent === 'purple' ? '#d4d4d8' : '#93c5fd' }}>
+                    onClick={() => {
+                      if (p.label === '真人过审') {
+                        const hasRef = (data.config.refImages?.length ?? 0) > 0 || upstreamLive.images.length > 0;
+                        if (!hasRef) { alert('请先上传或连接角色多视角图，再使用「真人过审」预设'); return; }
+                      }
+                      updateConfig(id, { prompt: p.prompt, preset: p.label }); setSub(null);
+                    }}
+                    style={{ ...presetChip, borderColor: p.accent === 'purple' ? 'rgba(255,255,255,0.3)' : p.accent === 'gray' ? 'rgba(255,255,255,0.15)' : 'rgba(59,130,246,0.5)', color: p.accent === 'purple' ? '#d4d4d8' : p.accent === 'gray' ? '#a1a1aa' : '#93c5fd' }}>
                     {p.label}
                   </button>
                 ))}
@@ -376,7 +382,7 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>↓ 下载</span>
               </button>
               <button onClick={() => setEditOpen(true)} style={toolBtnWide} title="进入 Image Studio 编辑">
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>✎ 编辑</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>✎ 设计师</span>
               </button>
               <button onClick={() => updateCard(id, { status: 'empty', outputUrl: null })} style={toolBtnWide} title="删除图片">
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>× 删除</span>
