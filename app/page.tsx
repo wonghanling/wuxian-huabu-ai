@@ -302,77 +302,76 @@ export default function Home() {
           </div>
         </div>
 
-        {/* 预览框：画布工作区风格，图片原比例错落排列 */}
+        {/* 预览框：三列网格，图片原比例 */}
         <div className="relative z-10 w-full px-4 md:px-10 mt-10">
           <div className="relative group">
             <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-[32px] blur opacity-20 group-hover:opacity-35 transition duration-1000"></div>
-            <div className="relative rounded-[28px] shadow-2xl overflow-hidden" style={{background:'#111114', border:'1px solid rgba(255,255,255,0.08)', padding:'28px 24px 32px'}}>
+            <div className="relative rounded-[28px] shadow-2xl" style={{background:'#111114', border:'1px solid rgba(255,255,255,0.08)', padding:'24px'}}>
 
               {/* 标题栏 */}
-              <div className="flex items-center gap-2 mb-8">
+              <div className="flex items-center gap-2 mb-6">
                 <div className="w-2.5 h-2.5 rounded-full bg-zinc-700"></div>
                 <div className="w-2.5 h-2.5 rounded-full bg-zinc-700"></div>
                 <div className="w-2.5 h-2.5 rounded-full bg-zinc-700"></div>
-                <div className="ml-3 text-[11px] text-zinc-600 font-medium">Aura Canvas · Design Studio</div>
-                <div className="ml-auto text-[10px] text-zinc-700">AI Edit · Remove · Replace · Expand</div>
+                <span className="ml-3 text-[11px] text-zinc-600">Aura Canvas · Design Studio</span>
+                <span className="ml-auto text-[10px] text-zinc-700 hidden md:block">AI Edit · Remove · Replace · Expand</span>
               </div>
 
-              {/* 图片错落排列：原比例 h-auto，translateY 错开高度 */}
-              <div className="flex items-start gap-3 md:gap-5 overflow-x-auto pb-4" style={{scrollbarWidth:'none'}}>
+              {/* 三列：前两列各两张图，第三列一张图 + 专业设计按钮 */}
+              <div className="grid grid-cols-3 gap-3 md:gap-4">
 
-                <div className="flex-shrink-0 rounded-xl shadow-[0_8px_28px_rgba(0,0,0,0.55)]" style={{background:'#1c1c1f', border:'1px solid rgba(255,255,255,0.08)', width:150, transform:'translateY(20px)'}}>
-                  <img src="/boluolab-filmavo.jpg" alt="" style={{width:'100%', height:'auto', display:'block', borderRadius:'10px 10px 0 0'}} />
-                  <div style={{padding:'6px 10px', fontSize:9, color:'#52525b'}}>poster</div>
-                </div>
-
-                <div className="flex-shrink-0 rounded-xl shadow-[0_8px_28px_rgba(0,0,0,0.55)]" style={{background:'#1c1c1f', border:'1px solid rgba(255,255,255,0.08)', width:175, transform:'translateY(-10px)'}}>
-                  <img src="/10.png" alt="" style={{width:'100%', height:'auto', display:'block', borderRadius:'10px 10px 0 0'}} />
-                  <div style={{padding:'6px 10px', fontSize:9, color:'#52525b'}}>brand</div>
-                </div>
-
-                <div className="flex-shrink-0 rounded-xl shadow-[0_8px_28px_rgba(0,0,0,0.55)]" style={{background:'#1c1c1f', border:'1px solid rgba(255,255,255,0.08)', width:135, transform:'translateY(8px)'}}>
-                  <img src="/33.jpg" alt="" style={{width:'100%', height:'auto', display:'block', borderRadius:'10px 10px 0 0'}} />
-                  <div style={{padding:'6px 10px', fontSize:9, color:'#52525b'}}>social</div>
-                </div>
-
-                <div className="flex-shrink-0 rounded-xl shadow-[0_8px_28px_rgba(0,0,0,0.55)] hidden md:block" style={{background:'#1c1c1f', border:'1px solid rgba(255,255,255,0.08)', width:155, transform:'translateY(-18px)'}}>
-                  <img src="/6.jpg" alt="" style={{width:'100%', height:'auto', display:'block', borderRadius:'10px 10px 0 0'}} />
-                  <div style={{padding:'6px 10px', fontSize:9, color:'#52525b'}}>ad creative</div>
-                </div>
-
-                <div className="flex-shrink-0 rounded-xl shadow-[0_8px_28px_rgba(0,0,0,0.55)] hidden lg:block" style={{background:'#1c1c1f', border:'1px solid rgba(255,255,255,0.08)', width:150, transform:'translateY(16px)'}}>
-                  <img src="/image-i1781673005081.jpg" alt="" style={{width:'100%', height:'auto', display:'block', borderRadius:'10px 10px 0 0'}} />
-                  <div style={{padding:'6px 10px', fontSize:9, color:'#52525b'}}>product</div>
-                </div>
-
-                {/* 专业设计 CTA */}
-                <Link href="/canvas?design=true" className="flex-shrink-0 hidden md:flex flex-col items-center justify-center rounded-xl cursor-pointer transition-all hover:bg-white/5 hover:border-white/20" style={{background:'rgba(255,255,255,0.02)', border:'1px dashed rgba(255,255,255,0.1)', width:125, minHeight:150, gap:12, transform:'translateY(4px)'}}>
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{background:'rgba(255,255,255,0.07)'}}>
-                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth="1.5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                    </svg>
+                {/* 列1 */}
+                <div className="flex flex-col gap-3">
+                  <div className="rounded-xl overflow-hidden" style={{background:'#1c1c1f', border:'1px solid rgba(255,255,255,0.07)'}}>
+                    <img src="/boluolab-filmavo.jpg" alt="" style={{width:'100%', height:'auto', display:'block'}} />
+                    <div style={{padding:'5px 8px', fontSize:9, color:'#52525b'}}>poster</div>
                   </div>
-                  <div style={{textAlign:'center', padding:'0 10px'}}>
-                    <div style={{color:'#e4e4e7', fontSize:11, fontWeight:600}}>专业设计</div>
-                    <div style={{color:'#52525b', fontSize:9.5, marginTop:3}}>设计师工作台</div>
+                  <div className="rounded-xl overflow-hidden" style={{background:'#1c1c1f', border:'1px solid rgba(255,255,255,0.07)'}}>
+                    <img src="/6.jpg" alt="" style={{width:'100%', height:'auto', display:'block'}} />
+                    <div style={{padding:'5px 8px', fontSize:9, color:'#52525b'}}>ad creative</div>
                   </div>
-                </Link>
+                </div>
+
+                {/* 列2 */}
+                <div className="flex flex-col gap-3">
+                  <div className="rounded-xl overflow-hidden" style={{background:'#1c1c1f', border:'1px solid rgba(255,255,255,0.07)'}}>
+                    <img src="/10.png" alt="" style={{width:'100%', height:'auto', display:'block'}} />
+                    <div style={{padding:'5px 8px', fontSize:9, color:'#52525b'}}>brand</div>
+                  </div>
+                  <div className="rounded-xl overflow-hidden" style={{background:'#1c1c1f', border:'1px solid rgba(255,255,255,0.07)'}}>
+                    <img src="/image-i1781673005081.jpg" alt="" style={{width:'100%', height:'auto', display:'block'}} />
+                    <div style={{padding:'5px 8px', fontSize:9, color:'#52525b'}}>product</div>
+                  </div>
+                </div>
+
+                {/* 列3：一张图 + 专业设计按钮 */}
+                <div className="flex flex-col gap-3">
+                  <div className="rounded-xl overflow-hidden" style={{background:'#1c1c1f', border:'1px solid rgba(255,255,255,0.07)'}}>
+                    <img src="/33.jpg" alt="" style={{width:'100%', height:'auto', display:'block'}} />
+                    <div style={{padding:'5px 8px', fontSize:9, color:'#52525b'}}>social</div>
+                  </div>
+                  <Link href="/canvas?design=true">
+                    <div className="rounded-xl flex flex-col items-center justify-center gap-3 cursor-pointer transition-all hover:border-white/20 hover:bg-white/5" style={{background:'rgba(255,255,255,0.02)', border:'1px dashed rgba(255,255,255,0.1)', padding:'28px 16px'}}>
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{background:'rgba(255,255,255,0.07)'}}>
+                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth="1.5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                      </div>
+                      <div style={{textAlign:'center'}}>
+                        <div style={{color:'#e4e4e7', fontSize:11, fontWeight:600}}>专业设计</div>
+                        <div style={{color:'#52525b', fontSize:9, marginTop:2}}>设计师工作台</div>
+                      </div>
+                    </div>
+                  </Link>
+                </div>
 
               </div>
 
-              <div className="mt-4 md:hidden flex justify-center">
-                <Link href="/canvas?design=true">
-                  <button className="px-6 py-2.5 rounded-full text-white text-sm font-medium transition-all" style={{background:'rgba(255,255,255,0.08)', border:'1px solid rgba(255,255,255,0.12)'}}>
-                    🎨 专业设计
-                  </button>
-                </Link>
-              </div>
-
-              <div className="flex items-center justify-end mt-4">
-                <div className="text-[10px] text-zinc-700 flex items-center gap-1">
+              <div className="flex justify-end mt-4">
+                <span className="text-[10px] text-zinc-700 flex items-center gap-1">
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>
                   随意拖曳 · 自由连接
-                </div>
+                </span>
               </div>
 
             </div>
