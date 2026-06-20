@@ -302,121 +302,65 @@ export default function Home() {
           </div>
         </div>
 
-        {/* 预览框：移出 max-w-5xl，全宽展示 */}
+        {/* 预览框：设计海报图片墙 + 专业设计入口 */}
         <div className="relative z-10 w-full px-4 md:px-10 mt-10">
           <div className="relative group">
             <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-[32px] blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
-            <div className="relative glass-card p-2 md:p-4 aspect-video overflow-hidden shadow-2xl">
-              <div className="w-full h-full rounded-2xl bg-zinc-900 overflow-hidden relative">
-                {/* Mock UI elements */}
-                <div className="absolute top-4 left-4 flex space-x-2 z-10">
-                  <div className="w-3 h-3 rounded-full bg-zinc-800"></div>
-                  <div className="w-3 h-3 rounded-full bg-zinc-800"></div>
-                  <div className="w-3 h-3 rounded-full bg-zinc-800"></div>
-                </div>
-
-                {/* Floating Toolbars */}
-                <div className="absolute left-6 top-1/2 -translate-y-1/2 flex flex-col space-y-4 p-2 bg-zinc-800/50 rounded-xl border border-white/10 backdrop-blur-sm z-10">
-                  <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
-                    <Sparkles className="w-4 h-4" />
+            <div className="relative glass-card p-4 md:p-6 overflow-hidden rounded-[28px] shadow-2xl">
+              <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
+                <div className="flex flex-col gap-3">
+                  <div className="rounded-xl overflow-hidden bg-zinc-800" style={{aspectRatio:"3/4"}}>
+                    <img src="/boluolab-filmavo.jpg" alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
                   </div>
-                  <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
-                    <div className="w-4 h-4 border-2 border-current rounded"></div>
-                  </div>
-                  <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                  <div className="rounded-xl overflow-hidden bg-zinc-800" style={{aspectRatio:"1/1"}}>
+                    <img src="/6.jpg" alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
                   </div>
                 </div>
-
-                {/* Canvas Cards - Randomly positioned */}
-                <div className="absolute inset-0 scale-75 md:scale-90" style={{zIndex: 2}}>
-                  {/* Text Card - Left, middle-bottom */}
-                  <div className="absolute left-[8%] top-[45%] w-40 h-52 bg-zinc-800/80 border border-zinc-700 rounded-xl flex flex-col p-4 shadow-lg">
-                    <div className="text-[10px] text-zinc-500 mb-1">Text</div>
-                    <div className="text-sm font-semibold text-white mb-3">文本</div>
-                    <div className="flex-1 bg-zinc-700/50 rounded-lg p-2 mb-2">
-                      <div className="h-1.5 w-full bg-zinc-600 rounded mb-2"></div>
-                      <div className="h-1.5 w-4/5 bg-zinc-600 rounded mb-2"></div>
-                      <div className="h-1.5 w-3/5 bg-zinc-600 rounded"></div>
-                    </div>
-                    <div className="text-[9px] text-zinc-500 mb-1">模型:</div>
-                    <div className="text-[8px] leading-relaxed">
-                      <span className="text-blue-400">ChatGPT</span> · <span className="text-purple-400">Grok</span> · <span className="text-yellow-400">Gemini</span>
-                    </div>
-                    <div className="absolute -bottom-2 -right-2 w-6 h-6 rounded-full bg-zinc-700 border-2 border-zinc-600 flex items-center justify-center z-10">
-                      <span className="text-zinc-400 text-xs">+</span>
-                    </div>
+                <div className="flex flex-col gap-3">
+                  <div className="rounded-xl overflow-hidden bg-zinc-800" style={{aspectRatio:"1/1"}}>
+                    <img src="/10.png" alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
                   </div>
-
-                  {/* Image Card - Center-top */}
-                  <div className="absolute left-[32%] top-[15%] w-48 h-56 bg-zinc-800/80 border border-zinc-700 rounded-xl flex flex-col p-4 shadow-lg">
-                    <div className="text-[10px] text-zinc-500 mb-1">Image</div>
-                    <div className="text-sm font-semibold text-white mb-3">图片</div>
-                    <div className="flex-1 bg-zinc-700/30 rounded-lg flex items-center justify-center mb-2">
-                      <div className="w-20 h-20 bg-zinc-600/50 rounded"></div>
-                    </div>
-                    <div className="text-[9px] text-zinc-500 mb-1">模型:</div>
-                    <div className="text-[8px] leading-relaxed">
-                      <span className="text-blue-400">Nano</span> · <span className="text-purple-400">Banana Pro</span> · <span className="text-yellow-400">DALL-E</span>
-                    </div>
-                    <div className="absolute -bottom-2 -right-2 w-6 h-6 rounded-full bg-zinc-700 border-2 border-zinc-600 flex items-center justify-center z-10">
-                      <span className="text-zinc-400 text-xs">+</span>
-                    </div>
-                  </div>
-
-                  {/* Video Card - Right-top */}
-                  <div className="absolute right-[8%] top-[20%] w-52 h-48 bg-zinc-800/80 border border-zinc-700 rounded-xl flex flex-col p-4 shadow-lg">
-                    <div className="text-[10px] text-zinc-500 mb-1">Video</div>
-                    <div className="text-sm font-semibold text-white mb-3">视频</div>
-                    <div className="flex-1 bg-zinc-700/30 rounded-lg flex items-center justify-center mb-2">
-                      <svg className="w-10 h-10 text-zinc-500" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z"/>
-                      </svg>
-                    </div>
-                    <div className="text-[9px] text-zinc-500 mb-1">模型:</div>
-                    <div className="text-[8px] leading-relaxed">
-                      <span className="text-blue-400">Sora</span> · <span className="text-purple-400">Runway</span> · <span className="text-yellow-400">Veo3</span>
-                    </div>
-                    <div className="absolute -bottom-2 -right-2 w-6 h-6 rounded-full bg-zinc-700 border-2 border-zinc-600 flex items-center justify-center z-10">
-                      <span className="text-zinc-400 text-xs">+</span>
-                    </div>
-                  </div>
-
-                  {/* Image Editor Card - Center-bottom */}
-                  <div className="absolute left-[38%] top-[55%] w-44 h-44 bg-zinc-800/80 border border-zinc-700 rounded-xl flex flex-col p-4 shadow-lg">
-                    <div className="text-xs font-semibold text-white mb-2">图片编辑器</div>
-                    <div className="flex-1 bg-zinc-700/30 rounded-lg flex items-center justify-center relative">
-                      <div className="w-24 h-16 border-2 border-zinc-500 border-dashed rounded"></div>
-                      <div className="absolute top-2 right-2 w-3 h-3 bg-zinc-500 rounded-full"></div>
-                    </div>
-                    <div className="text-[8px] text-zinc-500 mt-2">裁剪 · 缩放 · 旋转</div>
-                    <div className="absolute -bottom-2 -right-2 w-6 h-6 rounded-full bg-zinc-700 border-2 border-zinc-600 flex items-center justify-center z-10">
-                      <span className="text-zinc-400 text-xs">+</span>
-                    </div>
-                  </div>
-
-                  {/* Double-click Editor Card - Right-bottom */}
-                  <div className="absolute right-[10%] top-[58%] w-40 h-40 bg-zinc-800/80 border border-zinc-700 rounded-xl flex flex-col items-center justify-center p-4 shadow-lg">
-                    <div className="text-xs text-center text-zinc-400 mb-2">双击打开编辑器</div>
-                    <div className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center mb-2">
-                      <svg className="w-4 h-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
-                      </svg>
-                    </div>
-                    <div className="text-[8px] text-zinc-500 text-center">快速编辑</div>
-                    <div className="absolute -bottom-2 -right-2 w-6 h-6 rounded-full bg-zinc-700 border-2 border-zinc-600 flex items-center justify-center z-10">
-                      <span className="text-zinc-400 text-xs">+</span>
-                    </div>
+                  <div className="rounded-xl overflow-hidden bg-zinc-800" style={{aspectRatio:"4/3"}}>
+                    <img src="/image-i1781673005081.jpg" alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
                   </div>
                 </div>
-
-                {/* Drag hint */}
-                <div className="absolute bottom-4 right-4 text-[10px] text-zinc-600 flex items-center gap-1 z-10">
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
-                  </svg>
-                  随意拖曳 · 自由连接
+                <div className="flex flex-col gap-3">
+                  <div className="rounded-xl overflow-hidden bg-zinc-800" style={{aspectRatio:"3/4"}}>
+                    <img src="/33.jpg" alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+                  </div>
+                  <div className="rounded-xl overflow-hidden bg-zinc-800" style={{aspectRatio:"1/1"}}>
+                    <img src="/ngqvHESjD4W8eTdVBG82Cy.png" alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+                  </div>
                 </div>
+                <div className="hidden md:flex flex-col gap-3">
+                  <div className="rounded-xl overflow-hidden bg-zinc-800" style={{aspectRatio:"3/4"}}>
+                    <img src="/image-imqjdjijt0.jpg" alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+                  </div>
+                  <Link href="/canvas?design=true">
+                    <div className="rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.07] hover:border-white/20 transition-all cursor-pointer p-5 flex flex-col items-center justify-center gap-2" style={{aspectRatio:"4/3"}}>
+                      <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center">
+                        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <div className="text-white text-sm font-semibold">专业设计</div>
+                      <div className="text-zinc-500 text-xs text-center">设计师工作台</div>
+                    </div>
+                  </Link>
+                </div>
+              </div>
+              <div className="mt-4 md:hidden flex justify-center">
+                <Link href="/canvas?design=true">
+                  <button className="px-6 py-2.5 rounded-full bg-white/10 border border-white/15 text-white text-sm font-medium hover:bg-white/15 transition-all">
+                    🎨 专业设计
+                  </button>
+                </Link>
+              </div>
+              <div className="absolute bottom-3 right-4 text-[10px] text-zinc-600 flex items-center gap-1">
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
+                </svg>
+                随意拖曳 · 自由连接
               </div>
             </div>
           </div>

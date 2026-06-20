@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+<rect width="100%" height="100%" fill="black"/>
+
+<g fill="none" stroke="#d9d9df" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
+
+  <!-- outer M wave -->
+  <path d="M180 260
+           C260 120, 420 120, 500 260
+           C580 400, 620 400, 700 260
+           C780 120, 940 120, 1020 260" />
+
+  <!-- second layer -->
+  <path d="M220 260
+           C290 160, 420 160, 500 260
+           C580 360, 620 360, 700 260
+           C780 160, 910 160, 980 260" />
+
+  <!-- third layer -->
+  <path d="M260 260
+           C320 200, 420 200, 500 260
+           C580 320, 620 320, 700 260
+           C780 200, 880 200, 940 260" />
+
+  <!-- inner spine lines -->
+  <path d="M420 260 L420 560" />
+  <path d="M500 300 L500 600" />
+  <path d="M700 300 L700 600" />
+  <path d="M780 260 L780 560" />
+
+  <!-- bottom curve accents -->
+  <path d="M360 360 C420 420, 480 500, 520 580" />
+  <path d="M840 360 C780 420, 720 500, 680 580" />
+
+</g>
+
+<text x="600" y="720" text-anchor="middle"
+font-family="Arial, Helvetica, sans-serif"
+font-size="88" fill="#d9d9df">BOLOULAB-filmavo</text>
+
+</svg>

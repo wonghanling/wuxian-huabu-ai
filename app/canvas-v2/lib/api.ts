@@ -725,38 +725,3 @@ export async function editDesignImage(params: {
 
   throw new Error('编辑失败：未返回结果');
 }
-
-// ============================================================
-// 抠图（透明 PNG）— 调 /api/design/extract → fal-ai/birefnet
-// ============================================================
-export async function extractImage(params: {
-  imageUrl: string;
-  userId?: string;
-}): Promise<string> {
-  const res = await fetch('/api/design/extract', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ imageUrl: params.imageUrl, userId: params.userId }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || '抠图失败');
-
-  if (data.imageUrl && !data.pending) return data.imageUrl;
-
-  if (data.pending && data.requestId && data.endpoint) {
-    let attempts = 0;
-    const poll = async (): Promise<string> => {
-      attempts++;
-      await new Promise((r) => setTimeout(r, 3000));
-      const qRes = await fetch(`/api/image/fal-query?requestId=${encodeURIComponent(data.requestId)}&endpoint=${encodeURIComponent(data.endpoint)}`);
-      const qData = await qRes.json();
-      if (qData.success && qData.imageUrl) return qData.imageUrl;
-      if (qData.error) throw new Error(qData.error);
-      if (attempts > 60) throw new Error('抠图超时');
-      return poll();
-    };
-    return poll();
-  }
-
-  throw new Error('抠图失败：未返回结果');
-}

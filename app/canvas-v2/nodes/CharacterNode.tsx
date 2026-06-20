@@ -7,10 +7,9 @@ import { ratioToWH, SIZE_OPTIONS, QUALITY_OPTIONS } from '../imageModels';
 import { IconExpand, IconShrink, IconMinus, IconPlus } from './icons';
 import { SpawnMenu } from './SpawnMenu';
 import { HoverZoomImg } from './RefThumb';
-import { uploadImageToStorage, generateImage, mirrorOutput, getUserId, editDesignImage } from '../lib/api';
+import { uploadImageToStorage, generateImage, mirrorOutput, getUserId } from '../lib/api';
 import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 import { Lightbox, downloadFile } from './Lightbox';
-import { ImageStudio } from './ImageStudio';
 
 // ============================================================
 // 角色设计卡片 · 矩形框
@@ -50,8 +49,6 @@ function CharacterNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
   const [sub, setSub] = useState<SubPanel>(null);
   const [lightbox, setLightbox] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);   // Image Studio
-  const [identityBusy, setIdentityBusy] = useState(false);
   const [spawnOpen, setSpawnOpen] = useState(false);
   const [uploading, setUploading] = useState(false);   // 上传中指示(照原网)
 
@@ -123,31 +120,6 @@ function CharacterNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     }
   };
 
-  // 真人设定：直接调 nano-banana-pro，结果在画布创建新卡并连线
-  const handleIdentityMask = async () => {
-    if (!hasOutput || identityBusy) return;
-    setIdentityBusy(true);
-    try {
-      const userId = await getUserId();
-      const IDENTITY_PROMPT = '对角色设定图中的所有人脸进行隐私遮挡。保持原图构图、人物、衣服、发型、背景不变。只在可见眼睛和嘴巴区域添加纯黑色矩形遮挡条。正脸遮挡双眼和嘴巴，侧脸遮挡可见眼睛和嘴巴。不要改变人物身份、发型、服装、姿态和画面风格。';
-      const newUrl = await editDesignImage({
-        imageUrl: data.outputUrl!,
-        prompt: IDENTITY_PROMPT,
-        mode: 'region-edit',
-        provider: 'fal',
-        model: 'nano-banana-pro',
-        userId,
-      });
-      const permUrl = await mirrorOutput(newUrl, 'image') || newUrl;
-      useCanvasStore.getState().addImageCardWithRef(permUrl, IDENTITY_PROMPT, 'nano-banana-pro');
-      (window as any).saveCanvasV2Now?.();
-    } catch (err: any) {
-      alert('真人设定失败: ' + (err?.message || err));
-    } finally {
-      setIdentityBusy(false);
-    }
-  };
-
   // ===== 收起态 =====
   if (collapsed) {
     return (
@@ -195,7 +167,7 @@ function CharacterNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               <div style={track}><div style={{ height: '100%', width: `${data.progress ?? 0}%`, background: 'linear-gradient(90deg,#a0a0a0,#fff)', borderRadius: 99, transition: 'width .3s' }} /></div>
             </div>
           ) : hasOutput ? (
-            <img src={data.outputUrl!} alt="" onDoubleClick={(e) => { e.stopPropagation(); setEditOpen(true); }} title="双击进入 Image Studio 编辑" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', cursor: 'pointer' }} />
+            <img src={data.outputUrl!} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
           ) : (
             <span style={{ fontSize: 12, color: '#5a5a5f' }}>上传参考图 · 生成三视角</span>
           )}
@@ -290,9 +262,6 @@ function CharacterNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               <button onClick={() => updateCard(id, { status: 'empty', outputUrl: null })} style={toolBtnWide} title="删除图片">
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>× 删除</span>
               </button>
-              <button onClick={() => setEditOpen(true)} style={toolBtnWide} title="进入 Image Studio 编辑">
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>✎ 编辑</span>
-              </button>
             </>
           )}
           <button onClick={() => updateCard(id, { enlarged: !enlarged })} style={toolBtnWide}>
@@ -304,19 +273,6 @@ function CharacterNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
         </div>
       </NodeToolbar>
       {lightbox && hasOutput && <Lightbox url={data.outputUrl!} kind="image" onClose={() => setLightbox(false)} />}
-      {editOpen && hasOutput && (
-        <ImageStudio
-          initialImageUrl={data.outputUrl!}
-          onClose={() => setEditOpen(false)}
-          onApply={(finalUrl) => {
-            updateCard(id, { outputUrl: finalUrl });
-            mirrorOutput(finalUrl, 'image').then((permUrl) => {
-              if (permUrl && permUrl !== finalUrl) updateCard(id, { outputUrl: permUrl });
-              (window as any).saveCanvasV2Now?.();
-            });
-          }}
-        />
-      )}
     </>
   );
 

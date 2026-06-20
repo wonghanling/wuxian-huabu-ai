@@ -9,7 +9,6 @@ import AccountModal from '@/app/canvas/AccountModal';
 import { SaveTemplateModal } from './SaveTemplateModal';
 import { ScriptStudioModal } from './ScriptStudioModal';
 import { DoodleModal } from './DoodleModal';
-import { ImageStudio } from './ImageStudio';
 import { useCanvasStore } from '../store';
 
 // ============================================================
@@ -30,8 +29,6 @@ export function TopBar({ saveStatus, switchCanvas, getCurrentCanvasId }: Props) 
   const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
   const [showScriptStudio, setShowScriptStudio] = useState(false);
   const [showDoodle, setShowDoodle] = useState(false);
-  const [imageStudioUrl, setImageStudioUrl] = useState<string | null>(null);  // 非空=打开 Image Studio
-  const [studioUploading, setStudioUploading] = useState(false);
   const [canvases, setCanvases] = useState<{ id: string; title: string; updated_at: string }[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -246,35 +243,22 @@ export function TopBar({ saveStatus, switchCanvas, getCurrentCanvasId }: Props) 
           <span>涂鸦标注</span>
         </button>
 
-        {/* Image Studio 入口：上传图片进入图片编辑中心 */}
-        <label
-          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-white/5 backdrop-blur-md border border-white/15 text-zinc-200 hover:bg-white/10 hover:border-white/25 transition-all cursor-pointer"
-          title="Image Studio:上传图片进入全屏编辑中心"
+        {/* 设计师专用入口 */}
+        <button
+          onClick={() => {
+            // 找画布内第一张已生成的图片卡，触发设计师编辑器
+            // 如果没有，提示用户先生成或上传图片
+            const event = new CustomEvent('open-image-studio');
+            window.dispatchEvent(event);
+          }}
+          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-white/5 backdrop-blur-md border border-white/15 text-zinc-200 hover:bg-white/10 hover:border-white/25 transition-all"
+          title="设计师专用：AI 图片编辑工作台"
         >
           <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          <span>{studioUploading ? '上传中…' : 'Image Studio'}</span>
-          <input
-            type="file"
-            accept="image/*"
-            style={{ display: 'none' }}
-            disabled={studioUploading}
-            onChange={async (e) => {
-              const f = e.target.files?.[0];
-              e.currentTarget.value = '';
-              if (!f) return;
-              setStudioUploading(true);
-              try {
-                const { uploadImageToStorage } = await import('../lib/api');
-                const url = await uploadImageToStorage(f);
-                if (url) setImageStudioUrl(url);
-              } finally {
-                setStudioUploading(false);
-              }
-            }}
-          />
-        </label>
+          <span>设计师专用</span>
+        </button>
 
         {/* 返回主页按钮 */}
         <button
@@ -315,18 +299,6 @@ export function TopBar({ saveStatus, switchCanvas, getCurrentCanvasId }: Props) 
           onClose={() => setShowDoodle(false)}
           onConfirm={({ doodleUrl }) => {
             useCanvasStore.getState().addImageCardWithRef(doodleUrl, '', 'nano-banana-pro');
-            (window as any).saveCanvasV2Now?.();
-          }}
-        />
-      )}
-
-      {/* Image Studio 全屏编辑中心 */}
-      {imageStudioUrl && (
-        <ImageStudio
-          initialImageUrl={imageStudioUrl}
-          onClose={() => setImageStudioUrl(null)}
-          onApply={(finalUrl) => {
-            useCanvasStore.getState().addImageCardWithRef(finalUrl, '', 'nano-banana-pro');
             (window as any).saveCanvasV2Now?.();
           }}
         />

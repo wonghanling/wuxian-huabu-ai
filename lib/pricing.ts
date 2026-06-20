@@ -60,8 +60,7 @@ export const IMAGE_PRICING: Record<string, number> = {
   'region-edit': 0.5,   // 局部重绘
   'remove':      0.5,   // 删除对象
   'replace':     0.5,   // 替换
-  'expand':      0.3,   // 扩图（bria/expand 便宜，$0.04/次）
-  'bg-replace':  0.5,   // 换背景（bria/product-shot）
+  'expand':      0.5,   // 扩图
 };
 
 // ============================================================

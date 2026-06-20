@@ -56,7 +56,7 @@ Maintain strong visual consistency in every panel.`,
     prompt: `clean illustration, smooth shading, soft lighting, controlled details, minimal texture, high clarity, refined edges, smooth gradients --no noise, grain, artifacts, high frequency detail, dirty texture, oversharpen, blotchy, chaotic details`,
   },
   {
-    label: '真人设定',
+    label: '真人过审',
     accent: 'gray',
     prompt: `对角色设定图中每一个人脸格子进行隐私遮挡。根据每个格子的人物视角判断遮挡部位：正面视角遮挡鼻子区域，侧面视角遮挡眼睛区域，半侧面视角遮挡嘴巴区域。每个格子只遮挡一个部位。遮挡方式：在对应器官上叠加纯黑色不透明矩形色块。保持原图所有内容不变，包括构图、人物、衣服、发型、背景、网格线、色调和风格。不要改变任何人物身份特征、姿态或画面其他部分。`,
   },

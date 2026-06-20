@@ -5,8 +5,7 @@ import { Handle, Position, NodeToolbar, type NodeProps } from '@xyflow/react';
 import { useCanvasStore, type CardNode } from '../store';
 import { IconImage, IconVideo, IconExpand, IconShrink, IconMinus, IconUpload, IconPlus } from './icons';
 import { SpawnMenu } from './SpawnMenu';
-import { uploadImageToStorage, uploadFileToStorage, mirrorOutput } from '../lib/api';
-import { ImageStudio } from './ImageStudio';
+import { uploadImageToStorage, uploadFileToStorage } from '../lib/api';
 
 // ============================================================
 // 素材上传卡片(照原网 media-upload-card)
@@ -29,7 +28,6 @@ function UploadNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
   const [spawnOpen, setSpawnOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
 
   const mediaType = (data.config as any).mediaType as 'image' | 'video' | undefined;
   const hasMedia = !!data.outputUrl;
@@ -129,29 +127,11 @@ function UploadNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
       {/* 顶部工具栏:放大/缩小(无底部 prompt 弹窗) */}
       <NodeToolbar isVisible={selected && !spawnOpen} position={Position.Top} offset={12}>
         <div style={toolRow} onClick={(e) => e.stopPropagation()}>
-          {hasMedia && mediaType !== 'video' && (
-            <button onClick={() => setEditOpen(true)} style={toolBtnWide} title="进入 Image Studio 编辑">
-              <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>✎ 编辑</span>
-            </button>
-          )}
           <button onClick={() => updateCard(id, { enlarged: !enlarged })} style={toolBtn}>
             {enlarged ? <IconShrink size={16} /> : <IconExpand size={16} />}
           </button>
         </div>
       </NodeToolbar>
-      {editOpen && hasMedia && mediaType !== 'video' && (
-        <ImageStudio
-          initialImageUrl={data.outputUrl!}
-          onClose={() => setEditOpen(false)}
-          onApply={(finalUrl) => {
-            updateCard(id, { outputUrl: finalUrl });
-            mirrorOutput(finalUrl, 'image').then((permUrl) => {
-              if (permUrl && permUrl !== finalUrl) updateCard(id, { outputUrl: permUrl });
-              (window as any).saveCanvasV2Now?.();
-            });
-          }}
-        />
-      )}
     </>
   );
 
@@ -183,12 +163,6 @@ const toolBtn: React.CSSProperties = {
   width: 34, height: 34, borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)',
   background: 'rgba(255,255,255,0.06)', color: '#e4e4e7', cursor: 'pointer',
   display: 'flex', alignItems: 'center', justifyContent: 'center',
-};
-const toolBtnWide: React.CSSProperties = {
-  padding: '9px 16px', borderRadius: 12, border: `1px solid ${GLASS_BORDER}`,
-  background: 'rgba(24,24,27,0.85)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-  color: '#e4e4e7', fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
-  boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
 };
 const portPlusIcon: React.CSSProperties = { pointerEvents: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' };
 function portCircle(color: string): React.CSSProperties {
