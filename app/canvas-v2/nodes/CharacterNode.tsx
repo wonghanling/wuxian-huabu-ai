@@ -7,7 +7,7 @@ import { ratioToWH, SIZE_OPTIONS, QUALITY_OPTIONS } from '../imageModels';
 import { IconExpand, IconShrink, IconMinus, IconPlus } from './icons';
 import { SpawnMenu } from './SpawnMenu';
 import { HoverZoomImg } from './RefThumb';
-import { uploadImageToStorage, generateImage, mirrorOutput, getUserId, editDesignImage, extractImage } from '../lib/api';
+import { uploadImageToStorage, generateImage, mirrorOutput, getUserId, editDesignImage } from '../lib/api';
 import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 import { Lightbox, downloadFile } from './Lightbox';
 import { ImageStudio } from './ImageStudio';
@@ -52,7 +52,6 @@ function CharacterNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [lightbox, setLightbox] = useState(false);
   const [editOpen, setEditOpen] = useState(false);   // Image Studio
   const [identityBusy, setIdentityBusy] = useState(false);
-  const [extractBusy, setExtractBusy] = useState(false);
   const [spawnOpen, setSpawnOpen] = useState(false);
   const [uploading, setUploading] = useState(false);   // 上传中指示(照原网)
 
@@ -149,23 +148,6 @@ function CharacterNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     }
   };
 
-  // 抠图：birefnet 去背景，结果新建卡片连线
-  const handleExtract = async () => {
-    if (!hasOutput || extractBusy) return;
-    setExtractBusy(true);
-    try {
-      const userId = await getUserId();
-      const newUrl = await extractImage({ imageUrl: data.outputUrl!, userId });
-      const permUrl = await mirrorOutput(newUrl, 'image') || newUrl;
-      useCanvasStore.getState().addImageCardWithRef(permUrl, '', 'nano-banana-pro');
-      (window as any).saveCanvasV2Now?.();
-    } catch (err: any) {
-      alert('抠图失败: ' + (err?.message || err));
-    } finally {
-      setExtractBusy(false);
-    }
-  };
-
   // ===== 收起态 =====
   if (collapsed) {
     return (
@@ -213,7 +195,7 @@ function CharacterNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               <div style={track}><div style={{ height: '100%', width: `${data.progress ?? 0}%`, background: 'linear-gradient(90deg,#a0a0a0,#fff)', borderRadius: 99, transition: 'width .3s' }} /></div>
             </div>
           ) : hasOutput ? (
-            <img src={data.outputUrl!} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            <img src={data.outputUrl!} alt="" onDoubleClick={(e) => { e.stopPropagation(); setEditOpen(true); }} title="双击进入 Image Studio 编辑" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', cursor: 'pointer' }} />
           ) : (
             <span style={{ fontSize: 12, color: '#5a5a5f' }}>上传参考图 · 生成三视角</span>
           )}
@@ -310,12 +292,6 @@ function CharacterNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               </button>
               <button onClick={() => setEditOpen(true)} style={toolBtnWide} title="进入 Image Studio 编辑">
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>✎ 编辑</span>
-              </button>
-              <button onClick={handleIdentityMask} disabled={identityBusy} style={{ ...toolBtnWide, opacity: identityBusy ? 0.5 : 1 }} title="真人设定遮挡（Nano Banana Pro）">
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>🎭 {identityBusy ? '生成中…' : '真人设定'}</span>
-              </button>
-              <button onClick={handleExtract} disabled={extractBusy} style={{ ...toolBtnWide, opacity: extractBusy ? 0.5 : 1 }} title="抠图（透明PNG）">
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>✂ {extractBusy ? '抠图中…' : '抠图'}</span>
               </button>
             </>
           )}

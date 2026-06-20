@@ -195,7 +195,7 @@ function GemStep4NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               <div style={track}><div style={{ height: '100%', width: `${data.progress ?? 0}%`, background: 'linear-gradient(90deg,#a0a0a0,#fff)', borderRadius: 99, transition: 'width .3s' }} /></div>
             </div>
           ) : hasOutput ? (
-            <img src={data.outputUrl!} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            <img src={data.outputUrl!} alt="" onDoubleClick={(e) => { e.stopPropagation(); setEditOpen(true); }} title="双击进入 Image Studio 编辑" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', cursor: 'pointer' }} />
           ) : (
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 12, color: '#71717a', marginBottom: 6 }}>GEM 导演引擎 · Step 4</div>

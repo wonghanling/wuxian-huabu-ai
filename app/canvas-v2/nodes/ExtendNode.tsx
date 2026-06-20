@@ -306,7 +306,7 @@ function ExtendNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               <div style={track}><div style={{ height: '100%', width: `${data.progress ?? 0}%`, background: 'linear-gradient(90deg,#3b82f6,#93c5fd)', borderRadius: 99, transition: 'width .3s' }} /></div>
             </div>
           ) : hasOutput ? (
-            <img src={data.outputUrl!} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            <img src={data.outputUrl!} alt="" onDoubleClick={(e) => { e.stopPropagation(); setEditOpen(true); }} title="双击进入 Image Studio 编辑" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', cursor: 'pointer' }} />
           ) : dispSource ? (
             // 连接源图实时显示在卡片框(照原网:无上传按钮,纯连线喂源图)
             <div style={{ position: 'relative', width: '100%', height: '100%' }}>
