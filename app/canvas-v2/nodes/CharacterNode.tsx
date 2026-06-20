@@ -7,7 +7,7 @@ import { ratioToWH, SIZE_OPTIONS, QUALITY_OPTIONS } from '../imageModels';
 import { IconExpand, IconShrink, IconMinus, IconPlus } from './icons';
 import { SpawnMenu } from './SpawnMenu';
 import { HoverZoomImg } from './RefThumb';
-import { uploadImageToStorage, generateImage, mirrorOutput, getUserId } from '../lib/api';
+import { uploadImageToStorage, generateImage, mirrorOutput, getUserId, editDesignImage } from '../lib/api';
 import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 import { Lightbox, downloadFile } from './Lightbox';
 import { ImageStudio } from './ImageStudio';
@@ -51,6 +51,7 @@ function CharacterNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [sub, setSub] = useState<SubPanel>(null);
   const [lightbox, setLightbox] = useState(false);
   const [editOpen, setEditOpen] = useState(false);   // Image Studio
+  const [identityBusy, setIdentityBusy] = useState(false);
   const [spawnOpen, setSpawnOpen] = useState(false);
   const [uploading, setUploading] = useState(false);   // 上传中指示(照原网)
 
@@ -119,6 +120,31 @@ function CharacterNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
       clearInterval(timer);
       updateCard(id, { status: 'error', progress: 0 });
       alert('角色三视图生成失败: ' + (err?.message || err));
+    }
+  };
+
+  // 真人设定：直接调 nano-banana-pro，结果在画布创建新卡并连线
+  const handleIdentityMask = async () => {
+    if (!hasOutput || identityBusy) return;
+    setIdentityBusy(true);
+    try {
+      const userId = await getUserId();
+      const IDENTITY_PROMPT = '对角色设定图中的所有人脸进行隐私遮挡。保持原图构图、人物、衣服、发型、背景不变。只在可见眼睛和嘴巴区域添加纯黑色矩形遮挡条。正脸遮挡双眼和嘴巴，侧脸遮挡可见眼睛和嘴巴。不要改变人物身份、发型、服装、姿态和画面风格。';
+      const newUrl = await editDesignImage({
+        imageUrl: data.outputUrl!,
+        prompt: IDENTITY_PROMPT,
+        mode: 'region-edit',
+        provider: 'fal',
+        model: 'nano-banana-pro',
+        userId,
+      });
+      const permUrl = await mirrorOutput(newUrl, 'image') || newUrl;
+      useCanvasStore.getState().addImageCardWithRef(permUrl, IDENTITY_PROMPT, 'nano-banana-pro');
+      (window as any).saveCanvasV2Now?.();
+    } catch (err: any) {
+      alert('真人设定失败: ' + (err?.message || err));
+    } finally {
+      setIdentityBusy(false);
     }
   };
 
@@ -266,6 +292,9 @@ function CharacterNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               </button>
               <button onClick={() => setEditOpen(true)} style={toolBtnWide} title="进入 Image Studio 编辑">
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>✎ 编辑</span>
+              </button>
+              <button onClick={handleIdentityMask} disabled={identityBusy} style={{ ...toolBtnWide, opacity: identityBusy ? 0.5 : 1 }} title="真人设定遮挡（Nano Banana Pro）">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>🎭 {identityBusy ? '生成中…' : '真人设定'}</span>
               </button>
             </>
           )}
