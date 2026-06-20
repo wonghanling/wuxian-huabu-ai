@@ -51,6 +51,14 @@ export const IMAGE_PRESETS: ImagePreset[] = [
     model: 'gpt-image-edit',
     supportsMask: true,
   },
+  {
+    id: 'identity-mask',
+    label: '真人设定',
+    desc: '角色设定图人脸隐私遮挡，保留构图/衣服/发型/背景',
+    provider: 'fal',
+    model: 'nano-banana-pro',
+    supportsMask: true,
+  },
 ];
 
 // 取支持 mask 的预设（Region Edit 用）

@@ -77,6 +77,18 @@ export function RegionEditTool(ctx: ToolContext) {
     setHasMask(false);
   };
 
+  // 自动填满全图 mask（给"真人设定"等不需要手动涂的 preset 用）
+  const fillFullMask = () => {
+    const c = maskCanvasRef.current;
+    if (!c) return;
+    const ctx2 = c.getContext('2d');
+    if (!ctx2) return;
+    ctx2.globalCompositeOperation = 'source-over';
+    ctx2.fillStyle = 'rgba(45,140,90,1)';
+    ctx2.fillRect(0, 0, c.width, c.height);
+    setHasMask(true);
+  };
+
   // 按 model 极性导出 mask（黑底）。用户涂区=重绘区
   // ideogram: 黑=重绘 → 反转；其余(flux/gpt): 白=重绘 → 直接
   const exportMaskBlob = (): Promise<Blob> => {
@@ -100,13 +112,17 @@ export function RegionEditTool(ctx: ToolContext) {
 
   const handleGenerate = async () => {
     setError('');
-    if (!hasMask) { setError('请先涂抹要修改的区域'); return; }
+    const isIdentityMask = presetId === 'identity-mask';
+    if (!isIdentityMask && !hasMask) { setError('请先涂抹要修改的区域'); return; }
     if (!prompt.trim()) { setError('请输入描述'); return; }
     setBusy(true);
     try {
-      const blob = await exportMaskBlob();
-      const maskUrl = await uploadMaskToStorage(blob);
-      if (!maskUrl) { setBusy(false); return; }
+      let maskUrl: string | undefined;
+      if (!isIdentityMask) {
+        const blob = await exportMaskBlob();
+        maskUrl = await uploadMaskToStorage(blob) || undefined;
+        if (!maskUrl) { setBusy(false); return; }
+      }
       const userId = await getUserId();
       const newUrl = await editDesignImage({
         imageUrl,
@@ -168,24 +184,30 @@ export function RegionEditTool(ctx: ToolContext) {
         {/* 快速 prompt 按钮 */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
           <button
-            onClick={() => setPrompt('对涂抹区域中的所有人脸进行隐私遮挡。保持原图构图、人物、衣服、发型、背景不变。只在可见眼睛和嘴巴区域添加纯黑色矩形遮挡条。正脸遮挡双眼和嘴巴，侧脸遮挡可见眼睛和嘴巴。不要改变人物身份、发型、服装、姿态和画面风格。')}
+            onClick={() => {
+              setPrompt('对角色设定图中的所有人脸进行隐私遮挡。保持原图构图、人物、衣服、发型、背景不变。只在可见眼睛和嘴巴区域添加纯黑色矩形遮挡条。正脸遮挡双眼和嘴巴，侧脸遮挡可见眼睛和嘴巴。不要改变人物身份、发型、服装、姿态和画面风格。');
+              setPresetId('identity-mask');
+            }}
             style={quickBtn}
-          >🎭 人脸遮挡</button>
+          >🎭 真人设定</button>
           <button onClick={() => setPrompt('替换成纯白背景，保留主体')} style={quickBtn}>白底</button>
           <button onClick={() => setPrompt('改成红色')} style={quickBtn}>改颜色</button>
           <button onClick={() => setPrompt('删除该区域，背景自然填充')} style={quickBtn}>删除对象</button>
         </div>
       </div>
-      <div>
-        <div style={lbl}>预设能力</div>
-        <select value={presetId} onChange={(e) => setPresetId(e.target.value)} style={select}>
-          {MASK_PRESETS.map((p) => (
-            <option key={p.id} value={p.id}>{p.label}</option>
-          ))}
-        </select>
-        <p style={{ color: '#a1a1aa', fontSize: 11, margin: '6px 0 0' }}>{preset?.desc}</p>
-        <p style={{ color: '#c4c4c8', fontSize: 10, margin: '3px 0 0' }}>模型：{preset?.model}</p>
-      </div>
+      {/* identity-mask 时隐藏模型选择，不影响设计师界面 */}
+      {presetId !== 'identity-mask' && (
+        <div>
+          <div style={lbl}>预设能力</div>
+          <select value={presetId} onChange={(e) => setPresetId(e.target.value)} style={select}>
+            {MASK_PRESETS.filter(p => p.id !== 'identity-mask').map((p) => (
+              <option key={p.id} value={p.id}>{p.label}</option>
+            ))}
+          </select>
+          <p style={{ color: '#a1a1aa', fontSize: 11, margin: '6px 0 0' }}>{preset?.desc}</p>
+          <p style={{ color: '#c4c4c8', fontSize: 10, margin: '3px 0 0' }}>模型：{preset?.model}</p>
+        </div>
+      )}
       <button onClick={handleGenerate} disabled={busy} style={genBtn(busy)}>
         {busy ? '生成中…' : '生成（0.5元/次）'}
       </button>
