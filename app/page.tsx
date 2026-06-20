@@ -302,66 +302,89 @@ export default function Home() {
           </div>
         </div>
 
-        {/* 预览框：设计海报图片墙 + 专业设计入口 */}
+        {/* 预览框：画布工作区风格，图片作为缩小节点卡片 */}
         <div className="relative z-10 w-full px-4 md:px-10 mt-10">
           <div className="relative group">
-            <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-[32px] blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
-            <div className="relative glass-card p-4 md:p-6 overflow-hidden rounded-[28px] shadow-2xl">
-              <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
-                <div className="flex flex-col gap-3">
-                  <div className="rounded-xl overflow-hidden bg-zinc-800" style={{aspectRatio:"3/4"}}>
-                    <img src="/boluolab-filmavo.jpg" alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
-                  </div>
-                  <div className="rounded-xl overflow-hidden bg-zinc-800" style={{aspectRatio:"1/1"}}>
-                    <img src="/6.jpg" alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
-                  </div>
-                </div>
-                <div className="flex flex-col gap-3">
-                  <div className="rounded-xl overflow-hidden bg-zinc-800" style={{aspectRatio:"1/1"}}>
-                    <img src="/10.png" alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
-                  </div>
-                  <div className="rounded-xl overflow-hidden bg-zinc-800" style={{aspectRatio:"4/3"}}>
-                    <img src="/image-i1781673005081.jpg" alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
-                  </div>
-                </div>
-                <div className="flex flex-col gap-3">
-                  <div className="rounded-xl overflow-hidden bg-zinc-800" style={{aspectRatio:"3/4"}}>
-                    <img src="/33.jpg" alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
-                  </div>
-                  <div className="rounded-xl overflow-hidden bg-zinc-800" style={{aspectRatio:"1/1"}}>
-                    <img src="/ngqvHESjD4W8eTdVBG82Cy.png" alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
-                  </div>
-                </div>
-                <div className="hidden md:flex flex-col gap-3">
-                  <div className="rounded-xl overflow-hidden bg-zinc-800" style={{aspectRatio:"3/4"}}>
-                    <img src="/image-imqjdjijt0.jpg" alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
-                  </div>
-                  <Link href="/canvas?design=true">
-                    <div className="rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.07] hover:border-white/20 transition-all cursor-pointer p-5 flex flex-col items-center justify-center gap-2" style={{aspectRatio:"4/3"}}>
-                      <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center">
-                        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      <div className="text-white text-sm font-semibold">专业设计</div>
-                      <div className="text-zinc-500 text-xs text-center">设计师工作台</div>
-                    </div>
-                  </Link>
-                </div>
+            <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-[32px] blur opacity-20 group-hover:opacity-35 transition duration-1000"></div>
+            <div className="relative rounded-[28px] shadow-2xl overflow-hidden" style={{background:'#111114', border:'1px solid rgba(255,255,255,0.08)', padding:'28px 24px 24px'}}>
+
+              {/* 仿画布标题栏 */}
+              <div className="flex items-center gap-2 mb-8">
+                <div className="w-2.5 h-2.5 rounded-full bg-zinc-700"></div>
+                <div className="w-2.5 h-2.5 rounded-full bg-zinc-700"></div>
+                <div className="w-2.5 h-2.5 rounded-full bg-zinc-700"></div>
+                <div className="ml-3 text-[11px] text-zinc-600 font-medium">Aura Canvas · Design Studio</div>
+                <div className="ml-auto text-[10px] text-zinc-700">AI Edit · Remove · Replace · Expand</div>
               </div>
-              <div className="mt-4 md:hidden flex justify-center">
+
+              {/* 图片节点卡片：缩小摆放，模拟画布内的设计节点 */}
+              <div className="flex flex-wrap gap-4 items-end justify-center pb-2">
+
+                {/* 卡片1 */}
+                <div className="flex-shrink-0 rounded-2xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.6)]" style={{background:'#1c1c1f', border:'1px solid rgba(255,255,255,0.09)', width:130}}>
+                  <div style={{height:170, overflow:'hidden'}}>
+                    <img src="/boluolab-filmavo.jpg" alt="" style={{width:'100%', height:'100%', objectFit:'cover'}} />
+                  </div>
+                  <div style={{padding:'7px 10px', fontSize:9, color:'#52525b'}}>poster</div>
+                </div>
+
+                {/* 卡片2 稍高 */}
+                <div className="flex-shrink-0 rounded-2xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.6)]" style={{background:'#1c1c1f', border:'1px solid rgba(255,255,255,0.09)', width:150}}>
+                  <div style={{height:190, overflow:'hidden'}}>
+                    <img src="/10.png" alt="" style={{width:'100%', height:'100%', objectFit:'cover'}} />
+                  </div>
+                  <div style={{padding:'7px 10px', fontSize:9, color:'#52525b'}}>brand</div>
+                </div>
+
+                {/* 卡片3 最高 */}
+                <div className="flex-shrink-0 rounded-2xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.6)]" style={{background:'#1c1c1f', border:'1px solid rgba(255,255,255,0.09)', width:120}}>
+                  <div style={{height:210, overflow:'hidden'}}>
+                    <img src="/33.jpg" alt="" style={{width:'100%', height:'100%', objectFit:'cover'}} />
+                  </div>
+                  <div style={{padding:'7px 10px', fontSize:9, color:'#52525b'}}>social</div>
+                </div>
+
+                {/* 卡片4 md+ */}
+                <div className="flex-shrink-0 rounded-2xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.6)] hidden md:block" style={{background:'#1c1c1f', border:'1px solid rgba(255,255,255,0.09)', width:140}}>
+                  <div style={{height:175, overflow:'hidden'}}>
+                    <img src="/6.jpg" alt="" style={{width:'100%', height:'100%', objectFit:'cover'}} />
+                  </div>
+                  <div style={{padding:'7px 10px', fontSize:9, color:'#52525b'}}>ad creative</div>
+                </div>
+
+                {/* 卡片5 lg+ */}
+                <div className="flex-shrink-0 rounded-2xl overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.6)] hidden lg:block" style={{background:'#1c1c1f', border:'1px solid rgba(255,255,255,0.09)', width:135}}>
+                  <div style={{height:160, overflow:'hidden'}}>
+                    <img src="/image-i1781673005081.jpg" alt="" style={{width:'100%', height:'100%', objectFit:'cover'}} />
+                  </div>
+                  <div style={{padding:'7px 10px', fontSize:9, color:'#52525b'}}>product</div>
+                </div>
+
+                {/* CTA 卡片：专业设计 */}
                 <Link href="/canvas?design=true">
-                  <button className="px-6 py-2.5 rounded-full bg-white/10 border border-white/15 text-white text-sm font-medium hover:bg-white/15 transition-all">
-                    🎨 专业设计
-                  </button>
+                  <div className="flex-shrink-0 flex flex-col items-center justify-center rounded-2xl cursor-pointer transition-all hover:bg-white/5 hover:border-white/20" style={{background:'rgba(255,255,255,0.025)', border:'1px dashed rgba(255,255,255,0.1)', width:120, height:178, gap:10}}>
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{background:'rgba(255,255,255,0.07)'}}>
+                      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth="1.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                      </svg>
+                    </div>
+                    <div style={{textAlign:'center'}}>
+                      <div style={{color:'#e4e4e7', fontSize:11, fontWeight:600}}>专业设计</div>
+                      <div style={{color:'#52525b', fontSize:9.5, marginTop:3}}>设计师工作台</div>
+                    </div>
+                  </div>
                 </Link>
+
               </div>
-              <div className="absolute bottom-3 right-4 text-[10px] text-zinc-600 flex items-center gap-1">
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/>
-                </svg>
-                随意拖曳 · 自由连接
+
+              {/* 底部 */}
+              <div className="flex items-center justify-end mt-5">
+                <div className="text-[10px] text-zinc-700 flex items-center gap-1">
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>
+                  随意拖曳 · 自由连接
+                </div>
               </div>
+
             </div>
           </div>
         </div>
