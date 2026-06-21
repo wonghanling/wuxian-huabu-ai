@@ -92,20 +92,6 @@ function falRegionEdit(input: AdapterInput): AdapterPlan {
     };
   }
 
-  if (model === 'nano-banana-pro') {
-    // nano-banana-pro edit：mask 可选，只传图+prompt 即可根据描述修改
-    const editInput: Record<string, unknown> = {
-      image_urls: [imageUrl],
-      prompt,
-      resolution: '2K',
-    };
-    if (maskUrl) editInput.mask_url = maskUrl;
-    return {
-      endpoint: 'fal-ai/nano-banana-2/edit',
-      input: editInput,
-    };
-  }
-
   // 默认 ideogram/v2/edit：黑=重绘，白=保留（mask 已在客户端反转）
   return {
     endpoint: 'fal-ai/ideogram/v2/edit',

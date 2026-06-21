@@ -76,7 +76,55 @@ export function loadDraftLocal(): ScriptProject | null {
 }
 
 // ---------- Supabase 云端永久 ----------
-// 取当前用户最近一条剧本(第一期单草稿)
+
+// 剧本列表项(只取轻量字段,用于头部切换下拉)
+export interface ProjectMeta {
+  id: string;
+  title: string;
+  updatedAt: string;
+}
+
+// DB row → ScriptProject(loadProject / loadProjectById 共用)
+function rowToProject(r: any): ScriptProject {
+  const inputsObj = (r.inputs && typeof r.inputs === 'object') ? r.inputs : {};
+  const assetObj = (r.asset_bibles && typeof r.asset_bibles === 'object') ? r.asset_bibles : {};
+  const breakdownObj = (r.asset_breakdowns && typeof r.asset_breakdowns === 'object') ? r.asset_breakdowns : {};
+  const explorationObj = (r.asset_explorations && typeof r.asset_explorations === 'object') ? r.asset_explorations : {};
+  const costumeBibleObj = (r.costume_bibles && typeof r.costume_bibles === 'object') ? r.costume_bibles : {};
+  const costumeSheetObj = (r.costume_sheets && typeof r.costume_sheets === 'object') ? r.costume_sheets : {};
+  const envSceneObj = (r.env_scenes && typeof r.env_scenes === 'object') ? r.env_scenes : {};
+  return {
+    id: r.id,
+    title: r.title ?? '未命名剧本',
+    // 6 阶段对应 phase_1..phase_6(旧库 phase_7 忽略)
+    phases: [r.phase_1, r.phase_2, r.phase_3, r.phase_4, r.phase_5, r.phase_6].map((s: any) => s ?? ''),
+    inputs: Array.from({ length: N }, (_, i) => (inputsObj[String(i)] ?? inputsObj[i] ?? '')),
+    assetBibles: assetObj,
+    assetBreakdowns: breakdownObj,
+    assetExplorations: explorationObj,
+    costumeBibles: costumeBibleObj,
+    costumeSheets: costumeSheetObj,
+    envScenes: envSceneObj,
+  };
+}
+
+// 取当前用户的剧本列表(只含 id/title/updatedAt,按最近更新排序)
+export async function listProjects(): Promise<ProjectMeta[]> {
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+    const { data, error } = await supabase
+      .from('script_projects')
+      .select('id, title, updated_at')
+      .eq('user_id', user.id)
+      .order('updated_at', { ascending: false });
+    if (error || !data) return [];
+    return data.map((r: any) => ({ id: r.id, title: r.title ?? '未命名剧本', updatedAt: r.updated_at }));
+  } catch { return []; }
+}
+
+// 取当前用户最近一条剧本(无 id 时的默认入口,保持兼容)
 export async function loadProject(): Promise<ScriptProject | null> {
   try {
     const supabase = createClient();
@@ -89,28 +137,40 @@ export async function loadProject(): Promise<ScriptProject | null> {
       .order('updated_at', { ascending: false })
       .limit(1);
     if (error || !data || !data.length) return null;
-    const r = data[0];
-    const inputsObj = (r.inputs && typeof r.inputs === 'object') ? r.inputs : {};
-    const assetObj = (r.asset_bibles && typeof r.asset_bibles === 'object') ? r.asset_bibles : {};
-    const breakdownObj = (r.asset_breakdowns && typeof r.asset_breakdowns === 'object') ? r.asset_breakdowns : {};
-    const explorationObj = (r.asset_explorations && typeof r.asset_explorations === 'object') ? r.asset_explorations : {};
-    const costumeBibleObj = (r.costume_bibles && typeof r.costume_bibles === 'object') ? r.costume_bibles : {};
-    const costumeSheetObj = (r.costume_sheets && typeof r.costume_sheets === 'object') ? r.costume_sheets : {};
-    const envSceneObj = (r.env_scenes && typeof r.env_scenes === 'object') ? r.env_scenes : {};
-    return {
-      id: r.id,
-      title: r.title ?? '未命名剧本',
-      // 6 阶段对应 phase_1..phase_6(旧库 phase_7 忽略)
-      phases: [r.phase_1, r.phase_2, r.phase_3, r.phase_4, r.phase_5, r.phase_6].map((s: any) => s ?? ''),
-      inputs: Array.from({ length: N }, (_, i) => (inputsObj[String(i)] ?? inputsObj[i] ?? '')),
-      assetBibles: assetObj,
-      assetBreakdowns: breakdownObj,
-      assetExplorations: explorationObj,
-      costumeBibles: costumeBibleObj,
-      costumeSheets: costumeSheetObj,
-      envScenes: envSceneObj,
-    };
+    return rowToProject(data[0]);
   } catch { return null; }
+}
+
+// 按 id 加载指定剧本(切换剧本用)
+export async function loadProjectById(id: string): Promise<ScriptProject | null> {
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+    const { data, error } = await supabase
+      .from('script_projects')
+      .select('*')
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .single();
+    if (error || !data) return null;
+    return rowToProject(data);
+  } catch { return null; }
+}
+
+// 删除指定剧本
+export async function deleteProject(id: string): Promise<boolean> {
+  try {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+    const { error } = await supabase
+      .from('script_projects')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id);
+    return !error;
+  } catch { return false; }
 }
 
 // 保存到云端(有 id 则 update,无则 insert),返回行 id

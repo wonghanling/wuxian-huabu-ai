@@ -5,9 +5,10 @@ import { useCanvasStore } from '../store';
 import { getUserId } from '../lib/api';
 import {
   PHASE_LABELS, PHASE_LABELS_CN, emptyProject, loadDraftLocal, saveDraftLocal,
-  loadProject, saveProject, generatePhase, generateAssetBible, generateAssetSheet,
+  loadProject, loadProjectById, listProjects, saveProject, deleteProject,
+  generatePhase, generateAssetBible, generateAssetSheet,
   generateCostume, generateEnvScene, parseAssets, parseCharacters, parseEnvironments,
-  type ScriptProject, type ParsedAsset, type ParsedCharacter, type ParsedEnv,
+  type ScriptProject, type ProjectMeta, type ParsedAsset, type ParsedCharacter, type ParsedEnv,
 } from '../lib/scriptStudio';
 
 // ============================================================
@@ -40,6 +41,9 @@ const DEPENDS_ON: Record<number, number[]> = {
 export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
   const addCardFromStudio = useCanvasStore((s) => s.addCardFromStudio);
   const [project, setProject] = useState<ScriptProject>(emptyProject);
+  const [projectList, setProjectList] = useState<ProjectMeta[]>([]); // 我的剧本列表
+  const [pickerOpen, setPickerOpen] = useState(false);               // 剧本切换下拉开关
+  const [switching, setSwitching] = useState(false);                 // 切换/新建中
   const [active, setActive] = useState(0);            // 当前阶段 0..5
   const [generating, setGenerating] = useState(false);
   const [sentTip, setSentTip] = useState('');         // 发送/复制提示
@@ -54,13 +58,14 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
   const cloudTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const userIdRef = useRef<string | undefined>(undefined);
 
-  // 打开:先读本地草稿秒显,再拉云端覆盖
+  // 打开:先读本地草稿秒显,再拉云端覆盖 + 加载剧本列表
   useEffect(() => {
     const local = loadDraftLocal();
     if (local) setProject(local);
     (async () => {
       userIdRef.current = await getUserId();
-      const cloud = await loadProject();
+      const [cloud, list] = await Promise.all([loadProject(), listProjects()]);
+      setProjectList(list);
       if (cloud) {
         // 云端有则用云端(更权威),同时刷新本地
         setProject(cloud);
@@ -83,11 +88,84 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
     if (cloudTimer.current) clearTimeout(cloudTimer.current);
     cloudTimer.current = setTimeout(async () => {
       const id = await saveProject(next);
+      // 仅当当前仍是这条剧本(insert 前 id 为空,且内容未被切换替换)才回填 id,
+      // 防止 3s 内切换剧本时把旧 insert 的 id 安到新剧本上 → 两本串味
       if (id && !next.id) {
-        setProject((p) => { const np = { ...p, id }; saveDraftLocal(np); return np; });
+        setProject((p) => {
+          if (p.id) return p; // 已切到别的(带 id)剧本,丢弃这次回填
+          const np = { ...p, id };
+          saveDraftLocal(np);
+          return np;
+        });
+        // 新 insert 成功 → 刷新列表
+        setProjectList(await listProjects());
       }
     }, 3000);
   }, []);
+
+  // 切换前先冲刷当前剧本(取消防抖 + 立即落库),保证不丢、不串
+  const flushCurrent = useCallback(async (cur: ScriptProject) => {
+    if (cloudTimer.current) { clearTimeout(cloudTimer.current); cloudTimer.current = null; }
+    const id = await saveProject(cur);
+    return id;
+  }, []);
+
+  // 切换到指定剧本
+  const switchTo = async (id: string) => {
+    if (switching || id === project.id) { setPickerOpen(false); return; }
+    setSwitching(true);
+    setPickerOpen(false);
+    try {
+      await flushCurrent(project);                 // 先存当前
+      const target = await loadProjectById(id);     // 再载目标
+      if (target) {
+        setProject(target);
+        saveDraftLocal(target);                     // 本地草稿同步换成目标,避免下次秒显旧本
+        setActive(0);
+        setOpenAsset(null); setOpenChar(null); setOpenScene(null);
+      }
+      setProjectList(await listProjects());
+    } finally {
+      setSwitching(false);
+    }
+  };
+
+  // 新建空白剧本
+  const createNew = async () => {
+    if (switching) return;
+    setSwitching(true);
+    setPickerOpen(false);
+    try {
+      await flushCurrent(project);                 // 先存当前
+      const fresh = emptyProject();                 // id=null 的全新剧本
+      setProject(fresh);
+      saveDraftLocal(fresh);
+      setActive(0);
+      setOpenAsset(null); setOpenChar(null); setOpenScene(null);
+    } finally {
+      setSwitching(false);
+    }
+  };
+
+  // 删除指定剧本
+  const handleDelete = async (id: string, title: string) => {
+    if (!confirm(`确定删除剧本「${title || '未命名剧本'}」?此操作不可恢复。`)) return;
+    const ok = await deleteProject(id);
+    if (!ok) { alert('删除失败,请重试'); return; }
+    const list = await listProjects();
+    setProjectList(list);
+    // 删的是当前打开的 → 切到列表第一条,没有就开新空白
+    if (id === project.id) {
+      if (list.length > 0) {
+        const target = await loadProjectById(list[0].id);
+        if (target) { setProject(target); saveDraftLocal(target); setActive(0); }
+      } else {
+        const fresh = emptyProject();
+        setProject(fresh); saveDraftLocal(fresh); setActive(0);
+      }
+      setOpenAsset(null); setOpenChar(null); setOpenScene(null);
+    }
+  };
 
   const updateInput = (v: string) => {
     setProject((p) => {
@@ -336,6 +414,59 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
         <div style={header}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ fontWeight: 700, fontSize: 16, color: '#fff' }}>剧本工作室</span>
+
+            {/* 当前剧本 + 切换下拉 */}
+            <div style={{ position: 'relative', marginLeft: 6 }}>
+              <button
+                onClick={() => setPickerOpen((o) => !o)}
+                disabled={switching}
+                style={pickerBtn}
+                title="切换剧本"
+              >
+                <span style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {switching ? '处理中…' : (project.title || '未命名剧本')}
+                </span>
+                <span style={{ fontSize: 10, color: '#a1a1aa' }}>▼</span>
+              </button>
+
+              {pickerOpen && (
+                <>
+                  {/* 点外部关闭 */}
+                  <div style={{ position: 'fixed', inset: 0, zIndex: 1 }} onClick={() => setPickerOpen(false)} />
+                  <div style={pickerMenu} className="cv2-scroll">
+                    <button onClick={createNew} style={pickerNewItem}>＋ 新建剧本</button>
+                    <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '4px 0' }} />
+                    {projectList.length === 0 ? (
+                      <div style={{ padding: '8px 12px', fontSize: 12, color: '#71717a' }}>暂无已保存剧本</div>
+                    ) : (
+                      projectList.map((m) => {
+                        const isCur = m.id === project.id;
+                        return (
+                          <div key={m.id} style={{ ...pickerItem, ...(isCur ? pickerItemActive : {}) }}>
+                            <button
+                              onClick={() => switchTo(m.id)}
+                              style={pickerItemName}
+                              title={m.title || '未命名剧本'}
+                            >
+                              {isCur && <span style={{ color: '#86efac', marginRight: 4 }}>●</span>}
+                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {m.title || '未命名剧本'}
+                              </span>
+                            </button>
+                            <button
+                              onClick={() => handleDelete(m.id, m.title)}
+                              style={pickerDelBtn}
+                              title="删除该剧本"
+                            >✕</button>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+
             <span style={{ fontSize: 12, color: '#71717a' }}>从想法到拍摄剧本 · 自动保存</span>
           </div>
           <button onClick={onClose} style={closeBtn} title="关闭(Esc)">✕</button>
@@ -647,6 +778,34 @@ const header: React.CSSProperties = {
 const closeBtn: React.CSSProperties = {
   width: 30, height: 30, borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)',
   background: 'rgba(255,255,255,0.05)', color: '#a1a1aa', cursor: 'pointer', fontSize: 14,
+};
+const pickerBtn: React.CSSProperties = {
+  display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px',
+  borderRadius: 8, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.06)',
+  color: '#e4e4e7', cursor: 'pointer', fontSize: 13, fontWeight: 500, maxWidth: 230,
+};
+const pickerMenu: React.CSSProperties = {
+  position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 2,
+  width: 260, maxHeight: 360, overflowY: 'auto', padding: 6,
+  background: '#1f1f23', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 12,
+  boxShadow: '0 16px 50px rgba(0,0,0,0.6)',
+};
+const pickerNewItem: React.CSSProperties = {
+  width: '100%', textAlign: 'left', padding: '8px 12px', borderRadius: 8,
+  border: 'none', background: 'transparent', color: '#86efac', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+};
+const pickerItem: React.CSSProperties = {
+  display: 'flex', alignItems: 'center', gap: 4, borderRadius: 8,
+};
+const pickerItemActive: React.CSSProperties = { background: 'rgba(255,255,255,0.05)' };
+const pickerItemName: React.CSSProperties = {
+  flex: 1, minWidth: 0, display: 'flex', alignItems: 'center',
+  textAlign: 'left', padding: '8px 12px', borderRadius: 8,
+  border: 'none', background: 'transparent', color: '#e4e4e7', cursor: 'pointer', fontSize: 13,
+};
+const pickerDelBtn: React.CSSProperties = {
+  flexShrink: 0, width: 26, height: 26, borderRadius: 7, border: 'none',
+  background: 'transparent', color: '#71717a', cursor: 'pointer', fontSize: 12,
 };
 const body: React.CSSProperties = { flex: 1, display: 'flex', minHeight: 0 };
 const stepper: React.CSSProperties = {
