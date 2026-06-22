@@ -69,14 +69,13 @@ function falRegionEdit(input: AdapterInput): AdapterPlan {
   if (!maskUrl) throw new Error('局部重绘需要 mask');
 
   if (model === 'flux-fill') {
-    // fal-ai/flux-pro/v1/fill：白=重绘，黑=保留
     return {
       endpoint: 'fal-ai/flux-pro/v1/fill',
       input: { image_url: imageUrl, mask_url: maskUrl, prompt, num_images: 1 },
     };
   }
 
-  // ideogram v3 三档(turbo/balanced/quality)
+  // ideogram v3 三档 — 关掉 magic_prompt 防止模型自由发挥
   const speedMap: Record<string, string> = {
     'ideogram-v3-turbo': 'TURBO',
     'ideogram-v3-balanced': 'BALANCED',
@@ -85,7 +84,14 @@ function falRegionEdit(input: AdapterInput): AdapterPlan {
   const renderingSpeed = speedMap[model || ''] || 'BALANCED';
   return {
     endpoint: 'fal-ai/ideogram/v3/edit',
-    input: { image_url: imageUrl, mask_url: maskUrl, prompt, rendering_speed: renderingSpeed, num_images: 1 },
+    input: {
+      image_url: imageUrl,
+      mask_url: maskUrl,
+      prompt,
+      rendering_speed: renderingSpeed,
+      magic_prompt: 'OFF',   // 关闭创意扩写，严格按 prompt 执行
+      num_images: 1,
+    },
   };
 }
 
@@ -93,7 +99,6 @@ function falRegionEdit(input: AdapterInput): AdapterPlan {
 function falGptEdit(input: AdapterInput): AdapterPlan {
   const { imageUrl, maskUrl, prompt, model } = input;
   if (!prompt) throw new Error('GPT 编辑需要描述');
-  // quality 从 model key 提取: gpt-edit-low / gpt-edit-medium / gpt-edit-high
   const qualityMap: Record<string, string> = {
     'gpt-edit-low': 'low',
     'gpt-edit-medium': 'medium',
@@ -101,12 +106,11 @@ function falGptEdit(input: AdapterInput): AdapterPlan {
   };
   const quality = qualityMap[model || ''] || 'medium';
   const inp: Record<string, unknown> = { image_urls: [imageUrl], prompt, quality };
-  if (maskUrl) inp.mask_url = maskUrl;  // 有 mask 则局部编辑,无则整图编辑
+  if (maskUrl) inp.mask_url = maskUrl;
   return { endpoint: 'openai/gpt-image-2/edit', input: inp };
 }
 
 // ── fal: bg-replace（换背景）──────────────────────────────────
-// bria/product-shot：一步换背景，自动识别主体，无需 mask
 function falBgReplace(input: AdapterInput): AdapterPlan {
   const { imageUrl, prompt } = input;
   if (!prompt) throw new Error('换背景需要描述新背景');
@@ -117,24 +121,31 @@ function falBgReplace(input: AdapterInput): AdapterPlan {
 }
 
 // ── fal: replace（替换对象）──────────────────────────────────
-// 涂抹区域 + 描述想替换成什么，走 ideogram v3（语义理解强）
+// 同样关掉 magic_prompt，严格替换涂抹区域
 function falReplace(input: AdapterInput): AdapterPlan {
   const { imageUrl, maskUrl, prompt } = input;
   if (!maskUrl) throw new Error('替换需要涂抹选区');
   if (!prompt) throw new Error('替换需要描述目标');
   return {
     endpoint: 'fal-ai/ideogram/v3/edit',
-    input: { image_url: imageUrl, mask_url: maskUrl, prompt, rendering_speed: 'BALANCED', num_images: 1 },
+    input: {
+      image_url: imageUrl,
+      mask_url: maskUrl,
+      prompt,
+      rendering_speed: 'BALANCED',
+      magic_prompt: 'OFF',
+      num_images: 1,
+    },
   };
 }
 
 // ── fal: remove（消除对象）──────────────────────────────────
-// bria/eraser：涂白=要删除区域，背景自动填充，不需要 prompt
+// object-removal：专用消除模型，LaMa 算法背景填充更干净，不出新物体
 function falRemove(input: AdapterInput): AdapterPlan {
   const { imageUrl, maskUrl } = input;
   if (!maskUrl) throw new Error('消除需要涂抹选区');
   return {
-    endpoint: 'fal-ai/bria/eraser',
+    endpoint: 'fal-ai/image-editing/object-removal',
     input: { image_url: imageUrl, mask_url: maskUrl },
   };
 }

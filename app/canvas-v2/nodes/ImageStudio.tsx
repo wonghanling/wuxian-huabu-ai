@@ -33,7 +33,6 @@ const TOOLS: ImageTool[] = [
   { id: 'replace',     label: '替换',    enabled: true,  render: (ctx) => <ReplaceTool {...ctx} /> },
   { id: 'bg-replace',  label: '换背景',  enabled: true,  render: (ctx) => <BgReplaceTool {...ctx} /> },
   { id: 'extract',     label: '抠图',    enabled: true,  render: (ctx) => <ExtractTool {...ctx} /> },
-  { id: 'text-layer',  label: '海报文字', enabled: true,  render: (ctx) => <TextLayerTool {...ctx} /> },
 ];
 
 export function ImageStudio({ initialImageUrl, onApply, onClose }: ImageStudioProps) {
