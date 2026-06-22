@@ -164,7 +164,7 @@ export function RemoveTool(ctx: ToolContext) {
         </div>
       </div>
       <button onClick={handleGenerate} disabled={busy} style={genBtn(busy)}>
-        {busy ? '消除中…' : '消除（0.5元/次）'}
+        {busy ? '消除中…' : '消除（0.3元/次）'}
       </button>
     </div>,
     panelSlot

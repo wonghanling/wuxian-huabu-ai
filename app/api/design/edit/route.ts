@@ -44,7 +44,7 @@ async function ensureEnglishPrompt(prompt: string): Promise<string> {
 // 新能力=新 mode，新供应商=新 provider，新模型=新 model
 // ============================================================
 
-type EditMode = 'region-edit' | 'remove' | 'replace' | 'expand' | 'bg-replace';
+type EditMode = 'region-edit' | 'remove' | 'replace' | 'expand' | 'bg-replace' | 'gpt-edit';
 
 interface AdapterInput {
   imageUrl: string;
@@ -63,40 +63,46 @@ interface AdapterPlan {
 type AdapterFn = (i: AdapterInput) => AdapterPlan | Promise<AdapterPlan>;
 
 // ── fal: region-edit（局部重绘）─────────────────────────────
-// mask 极性已由客户端按 model 处理好，服务端只透传
+// mask 极性:白=重绘,黑=保留（客户端统一导出白=涂抹区）
 function falRegionEdit(input: AdapterInput): AdapterPlan {
   const { imageUrl, maskUrl, prompt, model } = input;
   if (!maskUrl) throw new Error('局部重绘需要 mask');
 
-  if (model === 'flux-inpainting') {
-    // fal-ai/flux-lora/inpainting：白=重绘，黑=保留
-    return {
-      endpoint: 'fal-ai/flux-lora/inpainting',
-      input: { image_url: imageUrl, mask_url: maskUrl, prompt, num_images: 1 },
-    };
-  }
-
   if (model === 'flux-fill') {
-    // fal-ai/flux-pro/v1/fill：白=重绘，黑=保留（同 flux-inpainting 极性）
+    // fal-ai/flux-pro/v1/fill：白=重绘，黑=保留
     return {
       endpoint: 'fal-ai/flux-pro/v1/fill',
       input: { image_url: imageUrl, mask_url: maskUrl, prompt, num_images: 1 },
     };
   }
 
-  if (model === 'gpt-image-edit') {
-    // openai/gpt-image-2/edit via fal：image_urls(数组)，白=重绘，黑=保留
-    return {
-      endpoint: 'openai/gpt-image-2/edit',
-      input: { image_urls: [imageUrl], mask_url: maskUrl, prompt },
-    };
-  }
-
-  // 默认 ideogram/v2/edit：黑=重绘，白=保留（mask 已在客户端反转）
-  return {
-    endpoint: 'fal-ai/ideogram/v2/edit',
-    input: { image_url: imageUrl, mask_url: maskUrl, prompt },
+  // ideogram v3 三档(turbo/balanced/quality)
+  const speedMap: Record<string, string> = {
+    'ideogram-v3-turbo': 'TURBO',
+    'ideogram-v3-balanced': 'BALANCED',
+    'ideogram-v3-quality': 'QUALITY',
   };
+  const renderingSpeed = speedMap[model || ''] || 'BALANCED';
+  return {
+    endpoint: 'fal-ai/ideogram/v3/edit',
+    input: { image_url: imageUrl, mask_url: maskUrl, prompt, rendering_speed: renderingSpeed, num_images: 1 },
+  };
+}
+
+// ── fal: gpt-edit（GPT 高级编辑,支持有/无 mask 两种模式）────
+function falGptEdit(input: AdapterInput): AdapterPlan {
+  const { imageUrl, maskUrl, prompt, model } = input;
+  if (!prompt) throw new Error('GPT 编辑需要描述');
+  // quality 从 model key 提取: gpt-edit-low / gpt-edit-medium / gpt-edit-high
+  const qualityMap: Record<string, string> = {
+    'gpt-edit-low': 'low',
+    'gpt-edit-medium': 'medium',
+    'gpt-edit-high': 'high',
+  };
+  const quality = qualityMap[model || ''] || 'medium';
+  const inp: Record<string, unknown> = { image_urls: [imageUrl], prompt, quality };
+  if (maskUrl) inp.mask_url = maskUrl;  // 有 mask 则局部编辑,无则整图编辑
+  return { endpoint: 'openai/gpt-image-2/edit', input: inp };
 }
 
 // ── fal: bg-replace（换背景）──────────────────────────────────
@@ -111,15 +117,14 @@ function falBgReplace(input: AdapterInput): AdapterPlan {
 }
 
 // ── fal: replace（替换对象）──────────────────────────────────
-// 涂抹区域 + 描述想替换成什么，走 ideogram/v2/edit（语义理解强）
+// 涂抹区域 + 描述想替换成什么，走 ideogram v3（语义理解强）
 function falReplace(input: AdapterInput): AdapterPlan {
   const { imageUrl, maskUrl, prompt } = input;
   if (!maskUrl) throw new Error('替换需要涂抹选区');
   if (!prompt) throw new Error('替换需要描述目标');
-  // ideogram mask: 黑=重绘，白=保留（前端已按此极性导出）
   return {
-    endpoint: 'fal-ai/ideogram/v2/edit',
-    input: { image_url: imageUrl, mask_url: maskUrl, prompt },
+    endpoint: 'fal-ai/ideogram/v3/edit',
+    input: { image_url: imageUrl, mask_url: maskUrl, prompt, rendering_speed: 'BALANCED', num_images: 1 },
   };
 }
 
@@ -192,6 +197,7 @@ async function falExpand(input: AdapterInput): Promise<AdapterPlan> {
 const ADAPTERS: Record<string, Partial<Record<EditMode, AdapterFn>>> = {
   fal: {
     'region-edit': falRegionEdit,
+    'gpt-edit':    falGptEdit,
     'expand':      falExpand,
     'remove':      falRemove,
     'replace':     falReplace,
@@ -227,9 +233,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `暂不支持 ${provider}/${mode}` }, { status: 400 });
     }
 
-    // ── 扣费（按 mode 取 pricing key）──────────────────────────
-    const price = calcImagePrice(mode);
-    if (userId) {
+    // ── 扣费（按 model 或 mode 取 pricing key）──────────────────────────
+    // region-edit/gpt-edit 按具体 model key 计价(不同档位不同价)
+    // 其他 mode(remove/expand/bg-replace/replace)按 mode 计价
+    const pricingKey = (mode === 'region-edit' || mode === 'gpt-edit') && model ? model : mode;
+    const price = calcImagePrice(pricingKey);
+    if (userId && price > 0) {
       const deduct = await deductBalance(
         userId, price, 'image_deduct',
         `设计编辑 - ${mode}`,

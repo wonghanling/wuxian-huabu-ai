@@ -98,7 +98,7 @@ export function BgReplaceTool(ctx: ToolContext) {
       </div>
 
       <button onClick={handleGenerate} disabled={busy} style={genBtn(busy)}>
-        {busy ? '换背景中…' : '换背景（0.5元/次）'}
+        {busy ? '换背景中…' : '换背景（0.3元/次）'}
       </button>
 
       <p style={{ color: '#a1a1aa', fontSize: 11, lineHeight: 1.6, margin: 0 }}>

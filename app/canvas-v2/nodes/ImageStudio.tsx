@@ -8,6 +8,7 @@ import { RemoveTool } from './imageStudioTools/RemoveTool';
 import { ReplaceTool } from './imageStudioTools/ReplaceTool';
 import { BgReplaceTool } from './imageStudioTools/BgReplaceTool';
 import { ExtractTool } from './imageStudioTools/ExtractTool';
+import { GptEditTool } from './imageStudioTools/GptEditTool';
 import type { ImageTool, ToolContext } from './imageStudioTools/types';
 
 // ============================================================
@@ -25,6 +26,7 @@ interface ImageStudioProps {
 // 工具注册表（V1 只 region-edit 可用）
 const TOOLS: ImageTool[] = [
   { id: 'region-edit', label: '局部重绘', enabled: true,  render: (ctx) => <RegionEditTool {...ctx} /> },
+  { id: 'gpt-edit',    label: 'GPT编辑',  enabled: true,  render: (ctx) => <GptEditTool {...ctx} /> },
   { id: 'expand',      label: '扩图',    enabled: true,  render: (ctx) => <ExpandTool {...ctx} /> },
   { id: 'remove',      label: '消除',    enabled: true,  render: (ctx) => <RemoveTool {...ctx} /> },
   { id: 'replace',     label: '替换',    enabled: true,  render: (ctx) => <ReplaceTool {...ctx} /> },

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { fal as falSingleton, createFalClient } from '@fal-ai/client';
 import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
-import { deductBalance, refundBalance } from '@/lib/billing';
 
 export const maxDuration = 300;
 
@@ -31,36 +30,27 @@ export async function POST(req: NextRequest) {
   let body: any = {};
   try {
     body = await req.json();
-    const { imageUrl, userId } = body;
+    const { imageUrl } = body;
 
     if (!imageUrl) {
       return NextResponse.json({ error: '缺少图片' }, { status: 400 });
     }
 
-    // 扣费 0.3元/次
-    const PRICE = 0.3;
-    if (userId) {
-      const deduct = await deductBalance(
-        userId, PRICE, 'image_deduct', '抠图（透明PNG）', { model: 'birefnet' }
-      );
-      if (!deduct.success) {
-        return NextResponse.json({ error: deduct.error || '余额不足' }, { status: 402 });
-      }
-    }
+    // 免费功能，不扣费
 
-    // fal-ai/birefnet：异步提交
+    // fal-ai/birefnet/v2：异步提交
     const keyInfo = await pickKey('fal');
     const fal = createFalClient({ credentials: keyInfo.keyValue });
     let falSuccess = false;
     let falErr: any = null;
     try {
-      const submitted = await fal.queue.submit('fal-ai/birefnet', {
+      const submitted = await fal.queue.submit('fal-ai/birefnet/v2', {
         input: { image_url: imageUrl },
       });
       const requestId = submitted.request_id;
       if (!requestId) throw new Error('fal 未返回 requestId');
       falSuccess = true;
-      return NextResponse.json({ success: true, pending: true, requestId, endpoint: 'fal-ai/birefnet' });
+      return NextResponse.json({ success: true, pending: true, requestId, endpoint: 'fal-ai/birefnet/v2' });
     } catch (e) {
       falErr = e;
       throw e;
@@ -69,9 +59,6 @@ export async function POST(req: NextRequest) {
     }
   } catch (error: any) {
     console.error('[design/extract] error:', error);
-    if (body?.userId) {
-      await refundBalance(body.userId, 0.3, '抠图失败退款', { model: 'birefnet' });
-    }
     return NextResponse.json({ error: error.message || '服务器错误' }, { status: 500 });
   }
 }

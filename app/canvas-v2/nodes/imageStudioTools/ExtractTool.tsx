@@ -45,11 +45,11 @@ export function ExtractTool(ctx: ToolContext) {
       )}
 
       <button onClick={handleGenerate} disabled={busy} style={genBtn(busy)}>
-        {busy ? '抠图中…' : '一键抠图（0.3元/次）'}
+        {busy ? '抠图中…' : '一键抠图（免费）'}
       </button>
 
       <p style={{ color: '#a1a1aa', fontSize: 11, lineHeight: 1.6, margin: 0 }}>
-        使用 BiRefNet 模型，边缘细节精准，支持复杂发丝抠图。
+        使用 BiRefNet V2 模型，边缘细节精准，支持复杂发丝抠图。
       </p>
     </div>,
     panelSlot

@@ -78,7 +78,7 @@ export function RegionEditTool(ctx: ToolContext) {
   };
 
   // 按 model 极性导出 mask（黑底）。用户涂区=重绘区
-  // ideogram: 黑=重绘 → 反转；其余(flux/gpt): 白=重绘 → 直接
+  // ideogram v3: 白=重绘区域 → 直接导出；flux-fill 也是白=重绘 → 直接
   const exportMaskBlob = (): Promise<Blob> => {
     return new Promise((resolve, reject) => {
       const src = maskCanvasRef.current!;
@@ -87,10 +87,10 @@ export function RegionEditTool(ctx: ToolContext) {
       const ctx2 = out.getContext('2d')!;
       const srcData = src.getContext('2d')!.getImageData(0, 0, src.width, src.height);
       const outData = ctx2.createImageData(src.width, src.height);
-      const invert = preset.model === 'ideogram-v2-edit';
+      // ideogram v3 和 flux-fill 都是白=重绘,无需反转
       for (let i = 0; i < srcData.data.length; i += 4) {
         const painted = srcData.data[i + 3] > 10;
-        const v = invert ? (painted ? 0 : 255) : (painted ? 255 : 0);
+        const v = painted ? 255 : 0;
         outData.data[i] = v; outData.data[i + 1] = v; outData.data[i + 2] = v; outData.data[i + 3] = 255;
       }
       ctx2.putImageData(outData, 0, 0);
@@ -183,7 +183,7 @@ export function RegionEditTool(ctx: ToolContext) {
         <p style={{ color: '#c4c4c8', fontSize: 10, margin: '3px 0 0' }}>模型：{preset?.model}</p>
       </div>
       <button onClick={handleGenerate} disabled={busy} style={genBtn(busy)}>
-        {busy ? '生成中…' : '生成（0.5元/次）'}
+        {busy ? '生成中…' : `生成（${preset.price}元/次）`}
       </button>
       <p style={{ color: '#71717a', fontSize: 11, lineHeight: 1.6, margin: 0 }}>
         涂抹要修改的区域，输入描述后生成。仅重绘选中区域。

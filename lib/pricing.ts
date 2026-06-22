@@ -56,12 +56,20 @@ export const IMAGE_PRICING: Record<string, number> = {
   'flux-2-pro-edit-4k-wide':     2.26,
   'flux-2-pro-edit-4k-square':   3.88,
 
-  // Design Workflow（设计编辑能力，按次，会员/普通同价）
-  'region-edit': 0.5,   // 局部重绘
-  'remove':      0.5,   // 删除对象
-  'replace':     0.5,   // 替换
-  'expand':      0.3,   // 扩图（bria/expand 便宜，$0.04/次）
-  'bg-replace':  0.5,   // 换背景（bria/product-shot）
+  // Design Workflow（设计编辑能力）
+  'ideogram-v3-turbo':    0.3,   // 局部重绘 快速
+  'ideogram-v3-balanced': 0.5,   // 局部重绘 标准
+  'ideogram-v3-quality':  0.7,   // 局部重绘 高质量
+  'flux-fill':            1.7,   // Flux Fill 专业
+  'gpt-edit-low':         0.15,  // GPT 编辑 低质量
+  'gpt-edit-medium':      0.5,   // GPT 编辑 中质量
+  'gpt-edit-high':        1.6,   // GPT 编辑 高质量
+  'remove':               0.3,   // 删除对象
+  'replace':              0.5,   // 替换
+  'expand':               0.3,   // 扩图
+  'bg-replace':           0.3,   // 换背景
+  'text-layer':           0.7,   // 海报文字编辑
+  'extract':              0,     // 抠图(免费)
 };
 
 // ============================================================
