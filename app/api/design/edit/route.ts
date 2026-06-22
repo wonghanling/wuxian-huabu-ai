@@ -229,6 +229,8 @@ export async function POST(req: NextRequest) {
       model,
       ratio,
       userId,
+      imageWidth,
+      imageHeight,
     } = body;
 
     if (!imageUrl) {
@@ -245,16 +247,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `暂不支持 ${provider}/${mode}` }, { status: 400 });
     }
 
-    // ── 扣费（按 model 或 mode 取 pricing key）──────────────────────────
-    // region-edit/gpt-edit 按具体 model key 计价(不同档位不同价)
-    // 其他 mode(remove/expand/bg-replace/replace)按 mode 计价
-    const pricingKey = (mode === 'region-edit' || mode === 'gpt-edit') && model ? model : mode;
-    const price = calcImagePrice(pricingKey);
+    // ── 扣费 ──────────────────────────────────────────────────
+    // region-edit: 按图片 MP 动态计价（flux-fill 按分辨率收费）
+    // gpt-edit: 按 model key 计价（三档质量）
+    // 其他 mode: 按 mode key 计价
+    let price: number;
+    if (mode === 'region-edit' && imageWidth && imageHeight) {
+      const mp = (imageWidth * imageHeight) / 1_000_000;
+      if (mp < 1)      price = 0.4;
+      else if (mp < 2) price = 0.72;
+      else if (mp < 3) price = 1.1;
+      else             price = 1.7;
+    } else if (mode === 'gpt-edit' && model) {
+      price = calcImagePrice(model);
+    } else {
+      price = calcImagePrice(mode);
+    }
+
     if (userId && price > 0) {
       const deduct = await deductBalance(
         userId, price, 'image_deduct',
         `设计编辑 - ${mode}`,
-        { mode, provider, model },
+        { mode, provider, model, imageWidth, imageHeight },
       );
       if (!deduct.success) {
         return NextResponse.json({ error: deduct.error || '余额不足，请充值' }, { status: 402 });
@@ -283,13 +297,20 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error('Design edit API error:', error);
     if (body?.userId) {
-      // 退款用与扣费相同的 pricingKey，避免金额不匹配
       const refundMode = body.mode || 'region-edit';
       const refundModel = body.model;
-      const refundKey = (refundMode === 'region-edit' || refundMode === 'gpt-edit') && refundModel
-        ? refundModel
-        : refundMode;
-      const refundPrice = calcImagePrice(refundKey);
+      let refundPrice: number;
+      if (refundMode === 'region-edit' && body.imageWidth && body.imageHeight) {
+        const mp = (body.imageWidth * body.imageHeight) / 1_000_000;
+        if (mp < 1)      refundPrice = 0.4;
+        else if (mp < 2) refundPrice = 0.72;
+        else if (mp < 3) refundPrice = 1.1;
+        else             refundPrice = 1.7;
+      } else if (refundMode === 'gpt-edit' && refundModel) {
+        refundPrice = calcImagePrice(refundModel);
+      } else {
+        refundPrice = calcImagePrice(refundMode);
+      }
       if (refundPrice > 0) {
         await refundBalance(body.userId, refundPrice, `设计编辑失败退款 - ${refundMode}`, { mode: refundMode, model: refundModel });
       }

@@ -8,6 +8,18 @@ import { MASK_PRESETS } from './presets';
 
 // ============================================================
 // Region Edit 工具 — 涂抹区域 + prompt 局部重绘
+// 模型: fal-ai/flux-pro/v1/fill（精确，严格按 prompt 执行）
+// 计费: 按图片 MP 动态计费
+// ============================================================
+
+// 按原图尺寸计算 flux-fill 费用
+export function calcFluxFillPrice(w: number, h: number): number {
+  const mp = (w * h) / 1_000_000;
+  if (mp < 1)   return 0.4;
+  if (mp < 2)   return 0.72;
+  if (mp < 3)   return 1.1;
+  return 1.7;
+}
 // 用户选"预设(任务)"，内部映射 provider/model；mask 极性按所选模型反转
 // ============================================================
 
@@ -116,6 +128,8 @@ export function RegionEditTool(ctx: ToolContext) {
         provider: preset.provider,
         model: preset.model,
         userId,
+        imageWidth: imgNatural?.w,
+        imageHeight: imgNatural?.h,
       });
       pushVersion(newUrl);
       clearMask();
@@ -180,10 +194,14 @@ export function RegionEditTool(ctx: ToolContext) {
           ))}
         </select>
         <p style={{ color: '#a1a1aa', fontSize: 11, margin: '6px 0 0' }}>{preset?.desc}</p>
-        <p style={{ color: '#c4c4c8', fontSize: 10, margin: '3px 0 0' }}>模型：{preset?.model}</p>
+        {imgNatural && (
+          <p style={{ color: '#c4c4c8', fontSize: 10, margin: '3px 0 0' }}>
+            图片尺寸 {imgNatural.w}×{imgNatural.h} · {((imgNatural.w * imgNatural.h) / 1_000_000).toFixed(2)}MP
+          </p>
+        )}
       </div>
       <button onClick={handleGenerate} disabled={busy} style={genBtn(busy)}>
-        {busy ? '生成中…' : `生成（${preset.price}元/次）`}
+        {busy ? '生成中…' : `生成（¥${imgNatural ? calcFluxFillPrice(imgNatural.w, imgNatural.h) : '—'}/次）`}
       </button>
       <p style={{ color: '#71717a', fontSize: 11, lineHeight: 1.6, margin: 0 }}>
         涂抹要修改的区域，输入描述后生成。仅重绘选中区域。

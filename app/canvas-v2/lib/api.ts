@@ -667,7 +667,7 @@ export async function uploadMaskToStorage(blob: Blob): Promise<string | null> {
   }
 }
 
-export type DesignEditMode = 'region-edit' | 'remove' | 'replace' | 'expand';
+export type DesignEditMode = 'region-edit' | 'remove' | 'replace' | 'expand' | 'gpt-edit';
 
 // 调用 /api/design/edit，异步提交后轮询 fal-query，返回结果图 URL
 export async function editDesignImage(params: {
@@ -675,10 +675,12 @@ export async function editDesignImage(params: {
   maskUrl?: string;
   prompt: string;
   mode: DesignEditMode;
-  provider?: string;   // 默认 fal
-  model?: string;      // 默认 ideogram-v2-edit
-  ratio?: string;      // expand 专用
+  provider?: string;
+  model?: string;
+  ratio?: string;
   userId?: string;
+  imageWidth?: number;   // 原图宽度（px），用于按 MP 动态计费
+  imageHeight?: number;  // 原图高度（px）
 }): Promise<string> {
   const res = await fetch('/api/design/edit', {
     method: 'POST',
@@ -692,6 +694,8 @@ export async function editDesignImage(params: {
       model: params.model || undefined,
       ratio: params.ratio || undefined,
       userId: params.userId || undefined,
+      imageWidth: params.imageWidth || undefined,
+      imageHeight: params.imageHeight || undefined,
     }),
   });
   const data = await res.json();
