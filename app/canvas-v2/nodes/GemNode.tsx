@@ -230,7 +230,9 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
             value={promptField.value}
             {...promptField.bind}
             onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleGenerate(); }}
-            placeholder="输入剧本或故事内容…"
+            placeholder={mode === 'cinematic'
+              ? '时空模式：请根据首尾图生成{故事/剧情}两张图片中间的镜头分镜（9/4宫格）'
+              : '故事模式：请根据参考图生成{剧情/故事}广告视频的9宫格（4/25宫格）分镜。25宫格工作量大建议根据需求使用'}
             rows={4}
             style={promptInput}
           />
