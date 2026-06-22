@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: `fal.ai 未返回图片 URL (data keys: ${Object.keys(d || {}).join(',')})` }, { status: 500 });
       }
       success = true;
-      return NextResponse.json({ success: true, imageUrl });
+      return NextResponse.json({ success: true, imageUrl, raw: d });
     }
 
     // IN_QUEUE 或 IN_PROGRESS
