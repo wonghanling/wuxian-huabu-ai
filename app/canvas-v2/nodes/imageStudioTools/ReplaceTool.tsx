@@ -92,8 +92,8 @@ export function ReplaceTool(ctx: ToolContext) {
       const outData = ctx2.createImageData(src.width, src.height);
       for (let i = 0; i < srcData.data.length; i += 4) {
         const painted = srcData.data[i + 3] > 10;
-        // ideogram 黑=重绘，白=保留
-        const v = painted ? 0 : 255;
+        // ideogram v3 白=重绘，黑=保留
+        const v = painted ? 255 : 0;
         outData.data[i] = v; outData.data[i+1] = v; outData.data[i+2] = v; outData.data[i+3] = 255;
       }
       ctx2.putImageData(outData, 0, 0);
