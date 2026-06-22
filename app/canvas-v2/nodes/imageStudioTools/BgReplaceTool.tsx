@@ -79,7 +79,7 @@ export function BgReplaceTool(ctx: ToolContext) {
         <textarea
           value={scene}
           onChange={(e) => setScene(e.target.value)}
-          placeholder="例如：简洁白色展台，专业产品摄影"
+          placeholder="建议英文输入效果更好，例如：clean white studio background, professional product photography"
           rows={3}
           style={textarea}
         />

@@ -262,11 +262,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ── 账号池取 key，异步提交（立即返回 requestId，前端轮询 fal-query）──
-    // 只对有 prompt 的 mode 翻译（remove/expand 不需要）
-    const translatedPrompt = (prompt && mode !== 'remove' && mode !== 'expand')
-      ? await ensureEnglishPrompt(prompt)
-      : (prompt || '');
-    const plan = await adapter({ imageUrl, maskUrl, prompt: translatedPrompt, model, ratio });
+    const plan = await adapter({ imageUrl, maskUrl, prompt: prompt || '', model, ratio });
     const keyInfo = await pickKey('fal');
     const fal = createFalClient({ credentials: keyInfo.keyValue });
     let falSuccess = false;

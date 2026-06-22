@@ -182,7 +182,7 @@ export function ReplaceTool(ctx: ToolContext) {
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="例如：换成金色香水瓶 / 替换成亚洲女性模特"
+          placeholder="建议英文输入效果更好，例如：replace with a golden perfume bottle / replace with Asian female model"
           rows={3}
           style={textarea}
         />

@@ -161,7 +161,7 @@ export function RegionEditTool(ctx: ToolContext) {
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="例如：把衣服换成红色 / 替换成蓝天背景"
+          placeholder="建议英文输入效果更好，例如：change the clothes to red / replace with blue sky background"
           rows={4}
           style={textarea}
         />

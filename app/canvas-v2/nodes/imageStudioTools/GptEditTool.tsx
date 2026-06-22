@@ -208,7 +208,7 @@ export function GptEditTool(ctx: ToolContext) {
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder={useMask ? '描述要修改的内容，如：把衣服换成红色' : '描述整体修改，如：把背景改成赛博朋克城市'}
+          placeholder={useMask ? 'English works best, e.g.: change the jacket to red leather / add sunglasses' : 'English works best, e.g.: change background to cyberpunk city / make it look like a movie poster'}
           rows={4}
           style={textarea}
         />
