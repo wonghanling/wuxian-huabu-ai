@@ -63,33 +63,35 @@ interface AdapterPlan {
 type AdapterFn = (i: AdapterInput) => AdapterPlan | Promise<AdapterPlan>;
 
 // ── fal: region-edit（局部重绘）─────────────────────────────
-// mask 极性:白=重绘,黑=保留（客户端统一导出白=涂抹区）
+// mask 极性:白=重绘,黑=保留
 function falRegionEdit(input: AdapterInput): AdapterPlan {
   const { imageUrl, maskUrl, prompt, model } = input;
   if (!maskUrl) throw new Error('局部重绘需要 mask');
 
   if (model === 'flux-fill') {
+    // flux-pro/v1/fill: strength=1 完全按 prompt 重绘涂抹区
     return {
       endpoint: 'fal-ai/flux-pro/v1/fill',
-      input: { image_url: imageUrl, mask_url: maskUrl, prompt, num_images: 1 },
+      input: { image_url: imageUrl, mask_url: maskUrl, prompt, steps: 28, guidance: 30 },
     };
   }
 
-  // ideogram v2/edit — 极性白=重绘，黑=保留
+  // ideogram v3 三档，magic_prompt OFF 严格按用户输入执行
   const speedMap: Record<string, string> = {
-    'ideogram-v3-turbo': 'TURBO',
+    'ideogram-v3-turbo':    'TURBO',
     'ideogram-v3-balanced': 'BALANCED',
-    'ideogram-v3-quality': 'QUALITY',
+    'ideogram-v3-quality':  'QUALITY',
   };
   const renderingSpeed = speedMap[model || ''] || 'BALANCED';
   return {
-    endpoint: 'fal-ai/ideogram/v2/edit',
+    endpoint: 'fal-ai/ideogram/v3/edit',
     input: {
       image_url: imageUrl,
       mask_url: maskUrl,
       prompt,
       rendering_speed: renderingSpeed,
-      num_images: 1,
+      magic_prompt: 'OFF',
+      style_type: 'REALISTIC',
     },
   };
 }
