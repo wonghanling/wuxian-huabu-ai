@@ -91,10 +91,17 @@ export function TextLayerTool(ctx: ToolContext) {
           `/api/image/fal-query?requestId=${encodeURIComponent(requestId)}&endpoint=${encodeURIComponent(endpoint)}`
         );
         const qData = await qRes.json();
+        // 504 下游不可用 — fal 服务问题，给用户友好提示
+        if (qData.error && qData.error.includes('504')) {
+          throw new Error('fal.ai 服务暂时不可用，请稍后重试');
+        }
+        if (qData.error && qData.error.includes('downstream')) {
+          throw new Error('AI 服务暂时不可用，请稍后重试');
+        }
         if (qData.error) throw new Error(qData.error);
         if (qData.success && qData.raw) return qData.raw;
         if (qData.success && qData.imageUrl) return { image: { url: qData.imageUrl } };
-        if (attempts > 60) throw new Error('拆层超时');
+        if (attempts > 60) throw new Error('拆层超时，请重试');
         return poll();
       };
 
@@ -196,12 +203,10 @@ export function TextLayerTool(ctx: ToolContext) {
         }, 'image/png');
       });
 
-      // 上传到 Supabase
-      const userId = await getUserId();
+      // 上传到 fal storage（走现有 /api/image/upload 路由）
       const formData = new FormData();
       formData.append('file', blob, 'poster.png');
-      formData.append('userId', userId ?? '');
-      const upRes = await fetch('/api/upload/image', {
+      const upRes = await fetch('/api/image/upload', {
         method: 'POST',
         body: formData,
       });
