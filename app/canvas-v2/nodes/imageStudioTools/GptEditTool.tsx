@@ -167,7 +167,7 @@ export function GptEditTool(ctx: ToolContext) {
       onPointerLeave={onUp}
       style={{
         position: 'absolute', inset: 0,
-        width: displaySize.w || '100%', height: displaySize.h || '100%',
+        width: '100%', height: '100%',
         cursor: 'crosshair', opacity: 0.5, touchAction: 'none',
       }}
     />,

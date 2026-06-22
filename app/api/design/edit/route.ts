@@ -223,6 +223,7 @@ export async function POST(req: NextRequest) {
     if (!imageUrl) {
       return NextResponse.json({ error: '缺少原图' }, { status: 400 });
     }
+    // prompt 校验：在扣费前拦截，避免无效请求已扣费
     if (!prompt && mode !== 'remove' && mode !== 'expand') {
       return NextResponse.json({ error: '缺少 prompt' }, { status: 400 });
     }
@@ -250,7 +251,11 @@ export async function POST(req: NextRequest) {
     }
 
     // ── 账号池取 key，异步提交（立即返回 requestId，前端轮询 fal-query）──
-    const plan = await adapter({ imageUrl, maskUrl, prompt: await ensureEnglishPrompt(prompt), model, ratio });
+    // 只对有 prompt 的 mode 翻译（remove/expand 不需要）
+    const translatedPrompt = (prompt && mode !== 'remove' && mode !== 'expand')
+      ? await ensureEnglishPrompt(prompt)
+      : (prompt || '');
+    const plan = await adapter({ imageUrl, maskUrl, prompt: translatedPrompt, model, ratio });
     const keyInfo = await pickKey('fal');
     const fal = createFalClient({ credentials: keyInfo.keyValue });
     let falSuccess = false;
@@ -271,8 +276,16 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error('Design edit API error:', error);
     if (body?.userId) {
-      const price = calcImagePrice(body.mode || 'region-edit');
-      await refundBalance(body.userId, price, `设计编辑失败退款 - ${body.mode}`, { mode: body.mode });
+      // 退款用与扣费相同的 pricingKey，避免金额不匹配
+      const refundMode = body.mode || 'region-edit';
+      const refundModel = body.model;
+      const refundKey = (refundMode === 'region-edit' || refundMode === 'gpt-edit') && refundModel
+        ? refundModel
+        : refundMode;
+      const refundPrice = calcImagePrice(refundKey);
+      if (refundPrice > 0) {
+        await refundBalance(body.userId, refundPrice, `设计编辑失败退款 - ${refundMode}`, { mode: refundMode, model: refundModel });
+      }
     }
     return NextResponse.json({ error: error.message || '服务器错误' }, { status: 500 });
   }
