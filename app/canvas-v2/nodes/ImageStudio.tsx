@@ -30,7 +30,6 @@ const TOOLS: ImageTool[] = [
   { id: 'gpt-edit',    label: 'GPT编辑',  enabled: true,  render: (ctx) => <GptEditTool {...ctx} /> },
   { id: 'expand',      label: '扩图',    enabled: true,  render: (ctx) => <ExpandTool {...ctx} /> },
   { id: 'remove',      label: '消除',    enabled: true,  render: (ctx) => <RemoveTool {...ctx} /> },
-  { id: 'replace',     label: '替换',    enabled: true,  render: (ctx) => <ReplaceTool {...ctx} /> },
   { id: 'bg-replace',  label: '换背景',  enabled: true,  render: (ctx) => <BgReplaceTool {...ctx} /> },
   { id: 'extract',     label: '抠图',    enabled: true,  render: (ctx) => <ExtractTool {...ctx} /> },
 ];

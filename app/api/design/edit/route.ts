@@ -75,7 +75,7 @@ function falRegionEdit(input: AdapterInput): AdapterPlan {
     };
   }
 
-  // ideogram v3 三档 — 关掉 magic_prompt 防止模型自由发挥
+  // ideogram v2/edit — 极性白=重绘，黑=保留
   const speedMap: Record<string, string> = {
     'ideogram-v3-turbo': 'TURBO',
     'ideogram-v3-balanced': 'BALANCED',
@@ -83,13 +83,12 @@ function falRegionEdit(input: AdapterInput): AdapterPlan {
   };
   const renderingSpeed = speedMap[model || ''] || 'BALANCED';
   return {
-    endpoint: 'fal-ai/ideogram/v3/edit',
+    endpoint: 'fal-ai/ideogram/v2/edit',
     input: {
       image_url: imageUrl,
       mask_url: maskUrl,
       prompt,
       rendering_speed: renderingSpeed,
-      magic_prompt: 'OFF',   // 关闭创意扩写，严格按 prompt 执行
       num_images: 1,
     },
   };
@@ -140,12 +139,11 @@ function falReplace(input: AdapterInput): AdapterPlan {
 }
 
 // ── fal: remove（消除对象）──────────────────────────────────
-// object-removal：专用消除模型，LaMa 算法背景填充更干净，不出新物体
 function falRemove(input: AdapterInput): AdapterPlan {
   const { imageUrl, maskUrl } = input;
   if (!maskUrl) throw new Error('消除需要涂抹选区');
   return {
-    endpoint: 'fal-ai/image-editing/object-removal',
+    endpoint: 'fal-ai/bria/eraser',
     input: { image_url: imageUrl, mask_url: maskUrl },
   };
 }
