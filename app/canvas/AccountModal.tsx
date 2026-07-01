@@ -168,10 +168,19 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
       onPointerDown={e => e.stopPropagation()}
     >
       <div
-        className="relative flex w-[820px] max-h-[640px] rounded-2xl bg-zinc-900 border border-white/10 shadow-2xl overflow-hidden"
+        className="relative flex w-[820px] max-h-[640px] rounded-2xl overflow-hidden"
+        style={{
+          background: 'linear-gradient(145deg, #1a1523 0%, #18181b 60%, #1a1523 100%)',
+          boxShadow: '0 0 0 1px rgba(139,92,246,0.45), 0 0 0 3px rgba(139,92,246,0.08), 0 0 50px rgba(139,92,246,0.15), 0 30px 80px rgba(0,0,0,0.8)',
+        }}
         onClick={e => e.stopPropagation()}
         onPointerDown={e => e.stopPropagation()}
       >
+        {/* 顶部光晕线 */}
+        <div style={{
+          position: 'absolute', top: 0, left: '8%', right: '8%', height: 1, zIndex: 10,
+          background: 'linear-gradient(90deg, transparent, rgba(167,139,250,0.8), rgba(99,102,241,0.8), rgba(167,139,250,0.8), transparent)',
+        }} />
         {/* 左侧导航 */}
         <div className="w-44 flex-shrink-0 bg-zinc-950/60 border-r border-white/8 flex flex-col py-6 px-3 gap-1">
           <div className="px-2 mb-4">
