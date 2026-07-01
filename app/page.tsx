@@ -155,13 +155,18 @@ export default function Home() {
             {/* 轮播图区域 */}
             <div className="relative overflow-hidden" style={{ aspectRatio: '16/9' }}>
               <div style={{
-                display: 'flex', width: '300%', height: '100%',
-                transform: `translateX(${-promoSlide * (100 / 3)}%)`,
+                display: 'flex', width: '400%', height: '100%',
+                transform: `translateX(${-promoSlide * 25}%)`,
                 transition: 'transform 0.5s cubic-bezier(0.4,0,0.2,1)',
               }}>
-                {['/xuanchuantanchuang1.webp', '/xuanchuantanchuang2.webp', '/xuanchuantanchuang3.webp'].map((src, i) => (
+                {[
+                  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/boluolab.com/huodongchuangkou1.webp',
+                  '/xuanchuantanchuang1.webp',
+                  '/xuanchuantanchuang2.webp',
+                  '/xuanchuantanchuang3.webp',
+                ].map((src, i) => (
                   <img key={i} src={src} alt={`宣传图${i + 1}`}
-                    style={{ width: '33.333%', height: '100%', objectFit: 'cover', flexShrink: 0 }}
+                    style={{ width: '25%', height: '100%', objectFit: 'cover', flexShrink: 0 }}
                   />
                 ))}
               </div>
@@ -169,12 +174,12 @@ export default function Home() {
                 <button onClick={e => { e.stopPropagation(); setPromoSlide(s => s - 1); }}
                   className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center text-white text-xl transition-all">‹</button>
               )}
-              {promoSlide < 2 && (
+              {promoSlide < 3 && (
                 <button onClick={e => { e.stopPropagation(); setPromoSlide(s => s + 1); }}
                   className="absolute right-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center text-white text-xl transition-all">›</button>
               )}
               <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-                {[0, 1, 2].map(i => (
+                {[0, 1, 2, 3].map(i => (
                   <button key={i} onClick={e => { e.stopPropagation(); setPromoSlide(i); }}
                     style={{
                       width: promoSlide === i ? 20 : 6, height: 6, borderRadius: 3, border: 'none', cursor: 'pointer', padding: 0,
@@ -759,134 +764,102 @@ export default function Home() {
             <p className="text-zinc-400 text-lg">按需付费，无隐藏费用</p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
             {/* 免费用户 */}
-            <div className="rounded-2xl border border-white/10 bg-zinc-900/50 p-7">
-              <div className="mb-5">
-                <h3 className="text-lg font-semibold text-white mb-1">免费用户</h3>
-                <p className="text-zinc-500 text-sm">注册即可使用</p>
-              </div>
-              <div className="text-4xl font-bold text-white mb-5">¥0</div>
-              <ul className="space-y-2.5 text-sm text-zinc-400 mb-7">
-                <li className="flex items-center gap-2"><span className="text-zinc-600">✓</span> 无限画布创作</li>
-                <li className="flex items-center gap-2"><span className="text-zinc-600">✓</span> 图片生成 ¥0.3–1.5 / 次</li>
-                <li className="flex items-center gap-2"><span className="text-zinc-600">✓</span> 视频生成（普通价）</li>
-                <li className="flex items-center gap-2"><span className="text-zinc-600">✗</span> 文本卡片 / 角色设计</li>
-                <li className="flex items-center gap-2"><span className="text-zinc-600">✗</span> Prompt 优化</li>
+            <div className="rounded-xl border border-white/8 bg-zinc-900 p-6 flex flex-col">
+              <div className="text-xs font-medium text-zinc-500 uppercase tracking-widest mb-4">免费</div>
+              <div className="text-3xl font-bold text-white mb-1">¥0</div>
+              <div className="text-zinc-500 text-xs mb-5">注册即用</div>
+              <ul className="space-y-2 text-sm text-zinc-400 mb-6 flex-1">
+                <li className="flex items-center gap-2"><span className="text-zinc-600 text-xs">✓</span> 无限画布创作</li>
+                <li className="flex items-center gap-2"><span className="text-zinc-600 text-xs">✓</span> 图片生成 ¥0.3–1.5</li>
+                <li className="flex items-center gap-2"><span className="text-zinc-600 text-xs">✓</span> 视频生成普通价</li>
+                <li className="flex items-center gap-2"><span className="text-zinc-600 text-xs">✗</span> 文本卡片 / 角色设计</li>
+                <li className="flex items-center gap-2"><span className="text-zinc-600 text-xs">✗</span> Prompt 优化</li>
               </ul>
-              <a
-                href="/auth"
-                className="block w-full py-3 rounded-xl border border-white/10 text-white text-sm font-semibold text-center hover:bg-white/5 transition-all"
-              >
+              <a href="/auth" className="block w-full py-2.5 rounded-lg border border-white/10 text-white/60 text-sm font-medium text-center hover:bg-white/5 transition-all">
                 免费注册
               </a>
             </div>
 
-            {/* 月套餐 */}
-            <div className="rounded-2xl p-7 relative overflow-hidden" style={{
-              background: 'linear-gradient(145deg, #1e1528 0%, #18181b 60%)',
-              boxShadow: '0 0 0 1px rgba(139,92,246,0.45), 0 0 0 3px rgba(139,92,246,0.1), 0 0 30px rgba(139,92,246,0.12), 0 20px 40px rgba(0,0,0,0.5)',
-            }}>
-              {/* 顶部光晕线 */}
+            {/* 月套餐 — 紫色 */}
+            <div className="rounded-xl border border-violet-500/60 bg-zinc-900 p-6 flex flex-col relative overflow-hidden">
               <div style={{
-                position: 'absolute', top: 0, left: '10%', right: '10%', height: 1,
-                background: 'linear-gradient(90deg, transparent, rgba(167,139,250,0.7), rgba(99,102,241,0.7), rgba(167,139,250,0.7), transparent)',
+                position: 'absolute', inset: 0, pointerEvents: 'none',
+                background: 'linear-gradient(135deg, rgba(139,92,246,0.18) 0%, rgba(139,92,246,0.04) 50%, transparent 100%)',
               }} />
-              <div className="absolute top-4 right-4 text-xs font-semibold px-2.5 py-1 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30">
-                推荐
+              <div className="relative">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="text-xs font-semibold text-violet-400 uppercase tracking-widest">月套餐</div>
+                  <div className="text-xs font-semibold px-2 py-0.5 rounded bg-violet-500/20 text-violet-300">推荐</div>
+                </div>
+                <div className="text-3xl font-bold text-white mb-0.5">¥39</div>
+                <div className="text-zinc-500 text-xs mb-5">/月 · 不自动续费</div>
+                <ul className="space-y-2 text-sm text-zinc-300 mb-6 flex-1">
+                  <li className="flex items-center gap-2"><span className="text-violet-400 text-xs">✓</span> 无限文本大模型</li>
+                  <li className="flex items-center gap-2"><span className="text-violet-400 text-xs">✓</span> 导演引擎功能</li>
+                  <li className="flex items-center gap-2"><span className="text-violet-400 text-xs">✓</span> 视频生成每秒省 ¥0.2</li>
+                  <li className="flex items-center gap-2"><span className="text-violet-400 text-xs">✓</span> 设计师专业工具</li>
+                </ul>
+                <button onClick={() => handlePay('membership', 39)}
+                  className="w-full py-2.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold transition-all">
+                  立即开通
+                </button>
               </div>
-              <div className="mb-5">
-                <h3 className="text-lg font-semibold text-white mb-1">月套餐</h3>
-                <p className="text-zinc-400 text-sm">灵活按月订阅</p>
-              </div>
-              <div className="flex items-end gap-1 mb-5">
-                <span className="text-4xl font-bold text-white">¥39</span>
-                <span className="text-zinc-400 text-sm mb-1">/月</span>
-              </div>
-              <ul className="space-y-2.5 text-sm text-zinc-300 mb-7">
-                <li className="flex items-center gap-2"><span className="text-violet-400">✓</span> 无限使用文本大模型</li>
-                <li className="flex items-center gap-2"><span className="text-violet-400">✓</span> 导演引擎功能</li>
-                <li className="flex items-center gap-2"><span className="text-violet-400">✓</span> 视频生成每秒省 ¥0.2</li>
-                <li className="flex items-center gap-2"><span className="text-violet-400">✓</span> 设计师专业工具</li>
-              </ul>
-              <button
-                onClick={() => handlePay('membership', 39)}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white text-sm font-semibold transition-all shadow-lg shadow-violet-500/20"
-              >
-                立即开通
-              </button>
             </div>
 
-            {/* 年套餐 */}
-            <div className="rounded-2xl p-7 relative overflow-hidden" style={{
-              background: 'linear-gradient(145deg, #121a28 0%, #18181b 60%)',
-              boxShadow: '0 0 0 1px rgba(59,130,246,0.45), 0 0 0 3px rgba(59,130,246,0.1), 0 0 30px rgba(59,130,246,0.12), 0 20px 40px rgba(0,0,0,0.5)',
-            }}>
-              {/* 顶部光晕线 */}
+            {/* 年套餐 — 蓝色 */}
+            <div className="rounded-xl border border-blue-500/60 bg-zinc-900 p-6 flex flex-col relative overflow-hidden">
               <div style={{
-                position: 'absolute', top: 0, left: '10%', right: '10%', height: 1,
-                background: 'linear-gradient(90deg, transparent, rgba(96,165,250,0.7), rgba(59,130,246,0.7), rgba(96,165,250,0.7), transparent)',
+                position: 'absolute', inset: 0, pointerEvents: 'none',
+                background: 'linear-gradient(135deg, rgba(59,130,246,0.18) 0%, rgba(59,130,246,0.04) 50%, transparent 100%)',
               }} />
-              <div className="absolute top-4 right-4 text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                省 ¥9/月
+              <div className="relative">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="text-xs font-semibold text-blue-400 uppercase tracking-widest">年套餐</div>
+                  <div className="text-xs font-semibold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300">省 ¥9/月</div>
+                </div>
+                <div className="text-3xl font-bold text-white mb-0.5">¥459</div>
+                <div className="text-zinc-500 text-xs mb-1">/年 · ≈ ¥38.25/月</div>
+                <div className="text-zinc-600 text-xs line-through mb-4">原价 ¥468</div>
+                <ul className="space-y-2 text-sm text-zinc-300 mb-6">
+                  <li className="flex items-center gap-2"><span className="text-blue-400 text-xs">✓</span> 月套餐全部权益</li>
+                  <li className="flex items-center gap-2"><span className="text-blue-400 text-xs">✓</span> 年费专属优先服务</li>
+                  <li className="flex items-center gap-2"><span className="text-blue-400 text-xs">✓</span> 新功能优先体验</li>
+                  <li className="flex items-center gap-2"><span className="text-blue-400 text-xs">✓</span> 一次付清省钱</li>
+                </ul>
+                <button onClick={() => handlePay('membership_yearly', 459)}
+                  className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-all">
+                  立即开通
+                </button>
               </div>
-              <div className="mb-5">
-                <h3 className="text-lg font-semibold text-white mb-1">年套餐</h3>
-                <p className="text-zinc-400 text-sm">相当于 ¥38.25/月</p>
-              </div>
-              <div className="flex items-end gap-1 mb-1">
-                <span className="text-4xl font-bold text-white">¥459</span>
-                <span className="text-zinc-400 text-sm mb-1">/年</span>
-              </div>
-              <div className="text-zinc-600 text-xs line-through mb-4">原价 ¥468</div>
-              <ul className="space-y-2.5 text-sm text-zinc-300 mb-7">
-                <li className="flex items-center gap-2"><span className="text-blue-400">✓</span> 月套餐全部权益</li>
-                <li className="flex items-center gap-2"><span className="text-blue-400">✓</span> 年费专属优先服务</li>
-                <li className="flex items-center gap-2"><span className="text-blue-400">✓</span> 新功能优先体验</li>
-                <li className="flex items-center gap-2"><span className="text-blue-400">✓</span> 一次付清省心省钱</li>
-              </ul>
-              <button
-                onClick={() => handlePay('membership_yearly', 459)}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white text-sm font-semibold transition-all shadow-lg shadow-blue-500/20"
-              >
-                立即开通
-              </button>
             </div>
 
-            {/* 两年套餐 */}
-            <div className="rounded-2xl p-7 relative overflow-hidden" style={{
-              background: 'linear-gradient(145deg, #151e18 0%, #18181b 60%)',
-              boxShadow: '0 0 0 1px rgba(16,185,129,0.45), 0 0 0 3px rgba(16,185,129,0.1), 0 0 30px rgba(16,185,129,0.12), 0 20px 40px rgba(0,0,0,0.5)',
-            }}>
-              {/* 顶部光晕线 */}
+            {/* 两年套餐 — 绿色 */}
+            <div className="rounded-xl border border-emerald-500/60 bg-zinc-900 p-6 flex flex-col relative overflow-hidden">
               <div style={{
-                position: 'absolute', top: 0, left: '10%', right: '10%', height: 1,
-                background: 'linear-gradient(90deg, transparent, rgba(52,211,153,0.7), rgba(16,185,129,0.7), rgba(52,211,153,0.7), transparent)',
+                position: 'absolute', inset: 0, pointerEvents: 'none',
+                background: 'linear-gradient(135deg, rgba(16,185,129,0.18) 0%, rgba(16,185,129,0.04) 50%, transparent 100%)',
               }} />
-              <div className="absolute top-4 right-4 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                最划算
+              <div className="relative">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="text-xs font-semibold text-emerald-400 uppercase tracking-widest">两年套餐</div>
+                  <div className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">最划算</div>
+                </div>
+                <div className="text-3xl font-bold text-white mb-0.5">¥899</div>
+                <div className="text-zinc-500 text-xs mb-1">/两年 · ≈ ¥37.42/月</div>
+                <div className="text-zinc-600 text-xs line-through mb-4">原价 ¥936</div>
+                <ul className="space-y-2 text-sm text-zinc-300 mb-6">
+                  <li className="flex items-center gap-2"><span className="text-emerald-400 text-xs">✓</span> 年套餐全部权益</li>
+                  <li className="flex items-center gap-2"><span className="text-emerald-400 text-xs">✓</span> 两年锁定最低价</li>
+                  <li className="flex items-center gap-2"><span className="text-emerald-400 text-xs">✓</span> 专属客服支持</li>
+                  <li className="flex items-center gap-2"><span className="text-emerald-400 text-xs">✓</span> 未来功能永久享</li>
+                </ul>
+                <button onClick={() => handlePay('membership_2yearly', 899)}
+                  className="w-full py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold transition-all">
+                  立即开通
+                </button>
               </div>
-              <div className="mb-5">
-                <h3 className="text-lg font-semibold text-white mb-1">两年套餐</h3>
-                <p className="text-zinc-400 text-sm">相当于 ¥37.42/月</p>
-              </div>
-              <div className="flex items-end gap-1 mb-1">
-                <span className="text-4xl font-bold text-white">¥899</span>
-                <span className="text-zinc-400 text-sm mb-1">/两年</span>
-              </div>
-              <div className="text-zinc-600 text-xs line-through mb-4">原价 ¥936</div>
-              <ul className="space-y-2.5 text-sm text-zinc-300 mb-7">
-                <li className="flex items-center gap-2"><span className="text-emerald-400">✓</span> 年套餐全部权益</li>
-                <li className="flex items-center gap-2"><span className="text-emerald-400">✓</span> 两年锁定最低价</li>
-                <li className="flex items-center gap-2"><span className="text-emerald-400">✓</span> 专属客服支持</li>
-                <li className="flex items-center gap-2"><span className="text-emerald-400">✓</span> 未来功能永久享</li>
-              </ul>
-              <button
-                onClick={() => handlePay('membership_2yearly', 899)}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-sm font-semibold transition-all shadow-lg shadow-emerald-500/20"
-              >
-                立即开通
-              </button>
             </div>
           </div>
 

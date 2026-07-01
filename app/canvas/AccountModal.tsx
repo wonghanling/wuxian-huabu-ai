@@ -27,7 +27,7 @@ interface Transaction {
 interface Order {
   id: string;
   order_no: string;
-  order_type: 'recharge' | 'membership';
+  order_type: 'recharge' | 'membership' | 'membership_yearly' | 'membership_2yearly';
   amount_rmb: number;
   status: 'pending' | 'paid' | 'cancelled' | 'refunded';
   trade_no: string | null;
@@ -168,19 +168,16 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
       onPointerDown={e => e.stopPropagation()}
     >
       <div
-        className="relative flex w-[820px] max-h-[640px] rounded-2xl overflow-hidden"
+        className="relative flex w-[820px] max-h-[640px] rounded-xl overflow-hidden"
         style={{
-          background: 'linear-gradient(145deg, #1a1523 0%, #18181b 60%, #1a1523 100%)',
-          boxShadow: '0 0 0 1px rgba(139,92,246,0.45), 0 0 0 3px rgba(139,92,246,0.08), 0 0 50px rgba(139,92,246,0.15), 0 30px 80px rgba(0,0,0,0.8)',
+          background: '#111113',
+          border: '1px solid rgba(139,92,246,0.5)',
         }}
         onClick={e => e.stopPropagation()}
         onPointerDown={e => e.stopPropagation()}
       >
-        {/* 顶部光晕线 */}
-        <div style={{
-          position: 'absolute', top: 0, left: '8%', right: '8%', height: 1, zIndex: 10,
-          background: 'linear-gradient(90deg, transparent, rgba(167,139,250,0.8), rgba(99,102,241,0.8), rgba(167,139,250,0.8), transparent)',
-        }} />
+        {/* 顶部竖向渐变色条 */}
+        <div style={{position:'absolute',top:0,left:0,right:0,height:2,zIndex:10,background:'linear-gradient(90deg,#7c3aed,#6366f1,#7c3aed)',opacity:0.9}} />
         {/* 左侧导航 */}
         <div className="w-44 flex-shrink-0 bg-zinc-950/60 border-r border-white/8 flex flex-col py-6 px-3 gap-1">
           <div className="px-2 mb-4">
@@ -224,7 +221,7 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
             onPointerDown={e => e.stopPropagation()}
           >✕</button>
 
-          <div className="flex-1 overflow-y-auto p-7">
+          <div className="flex-1 overflow-y-auto p-7 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
 
             {/* 会员订阅 */}
             {tab === 'membership' && (
@@ -239,109 +236,87 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
                 )}
 
                 {/* 套餐卡片列表 */}
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-3">
 
                   {/* 月套餐 */}
-                  <div className="rounded-2xl p-6 relative overflow-hidden" style={{
-                    background: 'linear-gradient(145deg, #1e1528 0%, #1a1a1f 100%)',
-                    boxShadow: '0 0 0 1px rgba(139,92,246,0.45), 0 0 0 3px rgba(139,92,246,0.08), 0 0 24px rgba(139,92,246,0.1)',
-                  }}>
-                    <div style={{
-                      position: 'absolute', top: 0, left: '8%', right: '8%', height: 1,
-                      background: 'linear-gradient(90deg, transparent, rgba(167,139,250,0.8), rgba(99,102,241,0.8), rgba(167,139,250,0.8), transparent)',
-                    }} />
-                    <div className="flex items-end justify-between mb-4">
-                      <div>
-                        <div className="text-white font-bold text-3xl">¥{MEMBERSHIP_PRICE}</div>
-                        <div className="text-white/40 text-sm mt-0.5">/月 · 不自动续费</div>
+                  <div className="rounded-xl border border-violet-500/60 bg-zinc-900 p-5 relative overflow-hidden">
+                    <div style={{position:'absolute',inset:0,pointerEvents:'none',background:'linear-gradient(135deg,rgba(139,92,246,0.15) 0%,rgba(139,92,246,0.03) 50%,transparent 100%)'}} />
+                    <div className="relative flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div>
+                          <div className="text-xs font-semibold text-violet-400 uppercase tracking-widest mb-0.5">月套餐</div>
+                          <div className="text-white font-bold text-2xl">¥{MEMBERSHIP_PRICE}<span className="text-zinc-500 text-sm font-normal">/月</span></div>
+                        </div>
                       </div>
-                      <div className="px-3 py-1 rounded-full bg-violet-500/30 border border-violet-400/30 text-violet-300 text-xs font-medium">月付</div>
+                      <div className="text-xs font-semibold px-2 py-0.5 rounded bg-violet-500/20 text-violet-300">推荐</div>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 mb-5">
-                      {['无限文本生成（大模型）','角色设计 & 导演引擎功能','视频生成每秒省 ¥0.2','优先体验新功能'].map(item => (
-                        <div key={item} className="flex items-center gap-2 text-sm text-white/70">
-                          <span className="text-violet-400 text-xs">✓</span> {item}
+                    <div className="relative grid grid-cols-2 gap-1.5 mb-4">
+                      {['无限文本生成（大模型）','角色设计 & 导演引擎','视频生成每秒省 ¥0.2','优先体验新功能'].map(item => (
+                        <div key={item} className="flex items-center gap-1.5 text-xs text-zinc-400">
+                          <span className="text-violet-400">✓</span> {item}
                         </div>
                       ))}
                     </div>
-                    <button
-                      className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold transition-all shadow-lg shadow-violet-500/20"
+                    <button className="relative w-full py-2.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold transition-all"
                       onClick={() => { onClose(); onPay('membership', MEMBERSHIP_PRICE); }}
-                      onPointerDown={e => e.stopPropagation()}
-                    >
+                      onPointerDown={e => e.stopPropagation()}>
                       {isMember ? '续费会员' : '立即开通'} · ¥{MEMBERSHIP_PRICE}/月
                     </button>
                   </div>
 
                   {/* 年套餐 */}
-                  <div className="rounded-2xl p-6 relative overflow-hidden" style={{
-                    background: 'linear-gradient(145deg, #121a28 0%, #1a1a1f 100%)',
-                    boxShadow: '0 0 0 1px rgba(59,130,246,0.45), 0 0 0 3px rgba(59,130,246,0.08), 0 0 24px rgba(59,130,246,0.1)',
-                  }}>
-                    <div style={{
-                      position: 'absolute', top: 0, left: '8%', right: '8%', height: 1,
-                      background: 'linear-gradient(90deg, transparent, rgba(96,165,250,0.8), rgba(59,130,246,0.8), rgba(96,165,250,0.8), transparent)',
-                    }} />
-                    <div className="flex items-end justify-between mb-1">
+                  <div className="rounded-xl border border-blue-500/60 bg-zinc-900 p-5 relative overflow-hidden">
+                    <div style={{position:'absolute',inset:0,pointerEvents:'none',background:'linear-gradient(135deg,rgba(59,130,246,0.15) 0%,rgba(59,130,246,0.03) 50%,transparent 100%)'}} />
+                    <div className="relative flex items-center justify-between mb-3">
                       <div>
-                        <div className="text-white font-bold text-3xl">¥459</div>
-                        <div className="text-white/40 text-sm mt-0.5">/年 · 相当于 ¥38.25/月</div>
+                        <div className="text-xs font-semibold text-blue-400 uppercase tracking-widest mb-0.5">年套餐</div>
+                        <div className="text-white font-bold text-2xl">¥459<span className="text-zinc-500 text-sm font-normal">/年</span></div>
+                        <div className="text-zinc-600 text-xs line-through">原价 ¥468</div>
                       </div>
-                      <div className="px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-medium">省 ¥9/月</div>
+                      <div className="text-xs font-semibold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300">省 ¥9/月</div>
                     </div>
-                    <div className="text-white/25 text-xs line-through mb-4">原价 ¥468</div>
-                    <div className="grid grid-cols-2 gap-2 mb-5">
-                      {['月套餐全部权益','年费专属优先服务','新功能优先体验','一次付清省心省钱'].map(item => (
-                        <div key={item} className="flex items-center gap-2 text-sm text-white/70">
-                          <span className="text-blue-400 text-xs">✓</span> {item}
+                    <div className="relative grid grid-cols-2 gap-1.5 mb-4">
+                      {['月套餐全部权益','年费专属优先服务','新功能优先体验','一次付清省钱'].map(item => (
+                        <div key={item} className="flex items-center gap-1.5 text-xs text-zinc-400">
+                          <span className="text-blue-400">✓</span> {item}
                         </div>
                       ))}
                     </div>
-                    <button
-                      className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-semibold transition-all shadow-lg shadow-blue-500/20"
+                    <button className="relative w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-all"
                       onClick={() => { onClose(); onPay('membership_yearly', 459); }}
-                      onPointerDown={e => e.stopPropagation()}
-                    >
+                      onPointerDown={e => e.stopPropagation()}>
                       开通年套餐 · ¥459/年
                     </button>
                   </div>
 
                   {/* 两年套餐 */}
-                  <div className="rounded-2xl p-6 relative overflow-hidden" style={{
-                    background: 'linear-gradient(145deg, #151e18 0%, #1a1a1f 100%)',
-                    boxShadow: '0 0 0 1px rgba(16,185,129,0.45), 0 0 0 3px rgba(16,185,129,0.08), 0 0 24px rgba(16,185,129,0.1)',
-                  }}>
-                    <div style={{
-                      position: 'absolute', top: 0, left: '8%', right: '8%', height: 1,
-                      background: 'linear-gradient(90deg, transparent, rgba(52,211,153,0.8), rgba(16,185,129,0.8), rgba(52,211,153,0.8), transparent)',
-                    }} />
-                    <div className="flex items-end justify-between mb-1">
+                  <div className="rounded-xl border border-emerald-500/60 bg-zinc-900 p-5 relative overflow-hidden">
+                    <div style={{position:'absolute',inset:0,pointerEvents:'none',background:'linear-gradient(135deg,rgba(16,185,129,0.15) 0%,rgba(16,185,129,0.03) 50%,transparent 100%)'}} />
+                    <div className="relative flex items-center justify-between mb-3">
                       <div>
-                        <div className="text-white font-bold text-3xl">¥899</div>
-                        <div className="text-white/40 text-sm mt-0.5">/两年 · 相当于 ¥37.42/月</div>
+                        <div className="text-xs font-semibold text-emerald-400 uppercase tracking-widest mb-0.5">两年套餐</div>
+                        <div className="text-white font-bold text-2xl">¥899<span className="text-zinc-500 text-sm font-normal">/两年</span></div>
+                        <div className="text-zinc-600 text-xs line-through">原价 ¥936</div>
                       </div>
-                      <div className="px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-medium">最划算</div>
+                      <div className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">最划算</div>
                     </div>
-                    <div className="text-white/25 text-xs line-through mb-4">原价 ¥936</div>
-                    <div className="grid grid-cols-2 gap-2 mb-5">
+                    <div className="relative grid grid-cols-2 gap-1.5 mb-4">
                       {['年套餐全部权益','两年锁定最低价','专属客服支持','未来功能永久享'].map(item => (
-                        <div key={item} className="flex items-center gap-2 text-sm text-white/70">
-                          <span className="text-emerald-400 text-xs">✓</span> {item}
+                        <div key={item} className="flex items-center gap-1.5 text-xs text-zinc-400">
+                          <span className="text-emerald-400">✓</span> {item}
                         </div>
                       ))}
                     </div>
-                    <button
-                      className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold transition-all shadow-lg shadow-emerald-500/20"
+                    <button className="relative w-full py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold transition-all"
                       onClick={() => { onClose(); onPay('membership_2yearly', 899); }}
-                      onPointerDown={e => e.stopPropagation()}
-                    >
+                      onPointerDown={e => e.stopPropagation()}>
                       开通两年套餐 · ¥899/两年
                     </button>
                   </div>
 
                 </div>
 
-                <p className="text-center text-xs text-white/25">支付宝付款 · 手动续费 · 随时停止</p>
+                <p className="text-center text-xs text-white/25 mt-3">支付宝付款 · 手动续费 · 随时停止</p>
               </div>
             )}
 
@@ -446,8 +421,10 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
                         refunded:  { text: '已退款', color: 'text-red-400' },
                       };
                       const typeMap: Record<string, string> = {
-                        membership: '开通会员',
-                        recharge:   '余额充值',
+                        membership:         '开通会员（月付）',
+                        membership_yearly:  '开通会员（年付）',
+                        membership_2yearly: '开通会员（两年付）',
+                        recharge:           '余额充值',
                       };
                       const status = statusMap[order.status] ?? { text: order.status, color: 'text-white/40' };
                       return (

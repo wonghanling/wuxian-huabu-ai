@@ -57,10 +57,33 @@ export async function POST(req: NextRequest) {
         .eq('order_no', outTradeNo);
 
       if (orderData.user_id) {
-        if (orderData.order_type === 'membership') {
-          // 开通会员：设置 is_member + member_expires_at（+1个月）
-          const expiresAt = new Date();
-          expiresAt.setMonth(expiresAt.getMonth() + 1);
+        if (
+          orderData.order_type === 'membership' ||
+          orderData.order_type === 'membership_yearly' ||
+          orderData.order_type === 'membership_2yearly'
+        ) {
+          // 开通/续费会员：按套餐加对应月数
+          const MONTHS_BY_PLAN: Record<string, number> = {
+            membership: 1,
+            membership_yearly: 12,
+            membership_2yearly: 24,
+          };
+          const addMonths = MONTHS_BY_PLAN[orderData.order_type] ?? 1;
+
+          // 读取现有到期时间，若仍在有效期内则叠加，否则从当前时间算起
+          const { data: userData } = await supabaseAdmin
+            .from('users')
+            .select('member_expires_at')
+            .eq('id', orderData.user_id)
+            .single();
+
+          const now = new Date();
+          const currentExpires = userData?.member_expires_at
+            ? new Date(userData.member_expires_at)
+            : null;
+          const base = currentExpires && currentExpires > now ? currentExpires : now;
+          const expiresAt = new Date(base);
+          expiresAt.setMonth(expiresAt.getMonth() + addMonths);
 
           await supabaseAdmin
             .from('users')
@@ -70,7 +93,7 @@ export async function POST(req: NextRequest) {
             })
             .eq('id', orderData.user_id);
 
-          console.log('Membership activated:', orderData.user_id);
+          console.log(`Membership activated (${orderData.order_type}, +${addMonths}mo) for user ${orderData.user_id}, expires ${expiresAt.toISOString()}`);
         } else if (orderData.order_type === 'recharge') {
           // 余额充值：增加 balance
           const { data: userData } = await supabaseAdmin

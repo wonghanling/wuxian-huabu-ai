@@ -115,7 +115,7 @@ create table if not exists public.payment_orders (
   id uuid primary key default gen_random_uuid(),
   order_no text not null unique,           -- 商户订单号
   user_id uuid not null references public.users(id) on delete cascade,
-  order_type text not null check (order_type in ('recharge', 'membership')),
+  order_type text not null check (order_type in ('recharge', 'membership', 'membership_yearly', 'membership_2yearly')),
   amount_rmb numeric(10,2) not null,       -- 订单金额（元）
   status text not null default 'pending' check (status in ('pending', 'paid', 'cancelled', 'refunded')),
   payment_method text not null default 'alipay',

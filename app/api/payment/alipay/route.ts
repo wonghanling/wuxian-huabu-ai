@@ -31,8 +31,9 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const { plan, amount } = body;
-    // plan: 'recharge'（余额充值）| 'membership'（会员）
-    if (!plan || !amount) {
+    // plan: 'recharge'（余额充值）| 'membership'（月付）| 'membership_yearly'（年付）| 'membership_2yearly'（两年付）
+    const ALLOWED_PLANS = ['recharge', 'membership', 'membership_yearly', 'membership_2yearly'];
+    if (!plan || !amount || !ALLOWED_PLANS.includes(plan)) {
       return NextResponse.json({ error: '缺少必要参数' }, { status: 400 });
     }
 
@@ -58,7 +59,13 @@ export async function POST(req: NextRequest) {
     const protocol = host.includes('localhost') ? 'http' : 'https';
     const baseUrl = `${protocol}://${host}`;
 
-    const subject = plan === 'membership' ? 'Aura Canvas 会员月付' : 'Aura Canvas 余额充值';
+    const SUBJECT_BY_PLAN: Record<string, string> = {
+      membership: 'Aura Canvas 会员月付',
+      membership_yearly: 'Aura Canvas 会员年付',
+      membership_2yearly: 'Aura Canvas 会员两年付',
+      recharge: 'Aura Canvas 余额充值',
+    };
+    const subject = SUBJECT_BY_PLAN[plan] ?? 'Aura Canvas 余额充值';
 
     const paymentForm = await alipaySdk.pageExec('alipay.trade.page.pay', {
       bizContent: {
