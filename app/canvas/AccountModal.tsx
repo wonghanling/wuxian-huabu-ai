@@ -6,7 +6,7 @@ import { MEMBERSHIP_PRICE } from '@/lib/pricing';
 
 interface AccountModalProps {
   onClose: () => void;
-  onPay: (plan: 'membership' | 'recharge', amount: number) => void;
+  onPay: (plan: 'membership' | 'membership_yearly' | 'membership_2yearly' | 'recharge', amount: number) => void;
   balance: number;
   isMember: boolean;
   memberExpiresAt?: string | null;
@@ -229,36 +229,107 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
                   </div>
                 )}
 
-                {/* 套餐卡片 */}
-                <div className="rounded-2xl bg-gradient-to-br from-violet-600/20 to-indigo-600/20 border border-violet-500/30 p-6 mb-4">
-                  <div className="flex items-end justify-between mb-4">
-                    <div>
-                      <div className="text-white font-bold text-3xl">¥{MEMBERSHIP_PRICE}</div>
-                      <div className="text-white/40 text-sm mt-0.5">/月 · 不自动续费</div>
-                    </div>
-                    <div className="px-3 py-1 rounded-full bg-violet-500/30 border border-violet-400/30 text-violet-300 text-xs font-medium">
-                      月付
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 mb-5">
-                    {[
-                      '无限文本生成（大模型）',
-                      '角色设计 & 导演引擎功能',
-                      '视频生成每秒省 ¥0.2',
-                      '优先体验新功能',
-                    ].map(item => (
-                      <div key={item} className="flex items-center gap-2 text-sm text-white/70">
-                        <span className="text-violet-400 text-xs">✓</span> {item}
+                {/* 套餐卡片列表 */}
+                <div className="flex flex-col gap-4">
+
+                  {/* 月套餐 */}
+                  <div className="rounded-2xl p-6 relative overflow-hidden" style={{
+                    background: 'linear-gradient(145deg, #1e1528 0%, #1a1a1f 100%)',
+                    boxShadow: '0 0 0 1px rgba(139,92,246,0.45), 0 0 0 3px rgba(139,92,246,0.08), 0 0 24px rgba(139,92,246,0.1)',
+                  }}>
+                    <div style={{
+                      position: 'absolute', top: 0, left: '8%', right: '8%', height: 1,
+                      background: 'linear-gradient(90deg, transparent, rgba(167,139,250,0.8), rgba(99,102,241,0.8), rgba(167,139,250,0.8), transparent)',
+                    }} />
+                    <div className="flex items-end justify-between mb-4">
+                      <div>
+                        <div className="text-white font-bold text-3xl">¥{MEMBERSHIP_PRICE}</div>
+                        <div className="text-white/40 text-sm mt-0.5">/月 · 不自动续费</div>
                       </div>
-                    ))}
+                      <div className="px-3 py-1 rounded-full bg-violet-500/30 border border-violet-400/30 text-violet-300 text-xs font-medium">月付</div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mb-5">
+                      {['无限文本生成（大模型）','角色设计 & 导演引擎功能','视频生成每秒省 ¥0.2','优先体验新功能'].map(item => (
+                        <div key={item} className="flex items-center gap-2 text-sm text-white/70">
+                          <span className="text-violet-400 text-xs">✓</span> {item}
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold transition-all shadow-lg shadow-violet-500/20"
+                      onClick={() => { onClose(); onPay('membership', MEMBERSHIP_PRICE); }}
+                      onPointerDown={e => e.stopPropagation()}
+                    >
+                      {isMember ? '续费会员' : '立即开通'} · ¥{MEMBERSHIP_PRICE}/月
+                    </button>
                   </div>
-                  <button
-                    className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold transition-all shadow-lg shadow-violet-500/20"
-                    onClick={() => { onClose(); onPay('membership', MEMBERSHIP_PRICE); }}
-                    onPointerDown={e => e.stopPropagation()}
-                  >
-                    {isMember ? '续费会员' : '立即开通'} · ¥{MEMBERSHIP_PRICE}/月
-                  </button>
+
+                  {/* 年套餐 */}
+                  <div className="rounded-2xl p-6 relative overflow-hidden" style={{
+                    background: 'linear-gradient(145deg, #121a28 0%, #1a1a1f 100%)',
+                    boxShadow: '0 0 0 1px rgba(59,130,246,0.45), 0 0 0 3px rgba(59,130,246,0.08), 0 0 24px rgba(59,130,246,0.1)',
+                  }}>
+                    <div style={{
+                      position: 'absolute', top: 0, left: '8%', right: '8%', height: 1,
+                      background: 'linear-gradient(90deg, transparent, rgba(96,165,250,0.8), rgba(59,130,246,0.8), rgba(96,165,250,0.8), transparent)',
+                    }} />
+                    <div className="flex items-end justify-between mb-1">
+                      <div>
+                        <div className="text-white font-bold text-3xl">¥459</div>
+                        <div className="text-white/40 text-sm mt-0.5">/年 · 相当于 ¥38.25/月</div>
+                      </div>
+                      <div className="px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-medium">省 ¥9/月</div>
+                    </div>
+                    <div className="text-white/25 text-xs line-through mb-4">原价 ¥468</div>
+                    <div className="grid grid-cols-2 gap-2 mb-5">
+                      {['月套餐全部权益','年费专属优先服务','新功能优先体验','一次付清省心省钱'].map(item => (
+                        <div key={item} className="flex items-center gap-2 text-sm text-white/70">
+                          <span className="text-blue-400 text-xs">✓</span> {item}
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-semibold transition-all shadow-lg shadow-blue-500/20"
+                      onClick={() => { onClose(); onPay('membership_yearly', 459); }}
+                      onPointerDown={e => e.stopPropagation()}
+                    >
+                      开通年套餐 · ¥459/年
+                    </button>
+                  </div>
+
+                  {/* 两年套餐 */}
+                  <div className="rounded-2xl p-6 relative overflow-hidden" style={{
+                    background: 'linear-gradient(145deg, #151e18 0%, #1a1a1f 100%)',
+                    boxShadow: '0 0 0 1px rgba(16,185,129,0.45), 0 0 0 3px rgba(16,185,129,0.08), 0 0 24px rgba(16,185,129,0.1)',
+                  }}>
+                    <div style={{
+                      position: 'absolute', top: 0, left: '8%', right: '8%', height: 1,
+                      background: 'linear-gradient(90deg, transparent, rgba(52,211,153,0.8), rgba(16,185,129,0.8), rgba(52,211,153,0.8), transparent)',
+                    }} />
+                    <div className="flex items-end justify-between mb-1">
+                      <div>
+                        <div className="text-white font-bold text-3xl">¥899</div>
+                        <div className="text-white/40 text-sm mt-0.5">/两年 · 相当于 ¥37.42/月</div>
+                      </div>
+                      <div className="px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-medium">最划算</div>
+                    </div>
+                    <div className="text-white/25 text-xs line-through mb-4">原价 ¥936</div>
+                    <div className="grid grid-cols-2 gap-2 mb-5">
+                      {['年套餐全部权益','两年锁定最低价','专属客服支持','未来功能永久享'].map(item => (
+                        <div key={item} className="flex items-center gap-2 text-sm text-white/70">
+                          <span className="text-emerald-400 text-xs">✓</span> {item}
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold transition-all shadow-lg shadow-emerald-500/20"
+                      onClick={() => { onClose(); onPay('membership_2yearly', 899); }}
+                      onPointerDown={e => e.stopPropagation()}
+                    >
+                      开通两年套餐 · ¥899/两年
+                    </button>
+                  </div>
+
                 </div>
 
                 <p className="text-center text-xs text-white/25">支付宝付款 · 手动续费 · 随时停止</p>

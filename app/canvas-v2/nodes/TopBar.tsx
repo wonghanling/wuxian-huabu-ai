@@ -40,7 +40,7 @@ export function TopBar({ saveStatus, switchCanvas, getCurrentCanvasId }: Props) 
   const manualSave = () => { (window as any).saveCanvasV2Now?.(); };
 
   // 支付(照原网 handlePay:调 /api/payment/alipay,提交支付表单)
-  const handlePay = async (plan: 'membership' | 'recharge', amount: number) => {
+  const handlePay = async (plan: 'membership' | 'membership_yearly' | 'membership_2yearly' | 'recharge', amount: number) => {
     const supabase = createClient();
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { alert('请先登录'); return; }

@@ -18,11 +18,12 @@ export default function Home() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [showPromoModal, setShowPromoModal] = useState(false);
+  const [promoSlide, setPromoSlide] = useState(0);
   const [navScrolled, setNavScrolled] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
-  const handlePay = async (plan: 'membership' | 'recharge', amount: number) => {
+  const handlePay = async (plan: 'membership' | 'membership_yearly' | 'membership_2yearly' | 'recharge', amount: number) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { router.push('/auth/login'); return; }
     const res = await fetch('/api/payment/alipay', {
@@ -127,55 +128,90 @@ export default function Home() {
       {/* 活动弹窗 - 仅未登录用户自动弹出 */}
       {showPromoModal && (
         <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm"
           onClick={() => setShowPromoModal(false)}
         >
           <div
-            className="relative w-[600px] rounded-3xl overflow-hidden shadow-2xl bg-zinc-900"
+            className="relative rounded-3xl overflow-hidden"
+            style={{
+              width: 'min(760px, 92vw)',
+              boxShadow: '0 0 0 1px rgba(139,92,246,0.5), 0 0 0 4px rgba(139,92,246,0.1), 0 0 60px rgba(139,92,246,0.2), 0 30px 80px rgba(0,0,0,0.8)',
+              background: 'linear-gradient(145deg, #1a1523 0%, #18181b 60%, #1a1523 100%)',
+            }}
             onClick={e => e.stopPropagation()}
           >
+            {/* 顶部光晕线 */}
+            <div style={{
+              position: 'absolute', top: 0, left: '8%', right: '8%', height: 1, zIndex: 20,
+              background: 'linear-gradient(90deg, transparent, rgba(167,139,250,0.9), rgba(99,102,241,0.9), rgba(167,139,250,0.9), transparent)',
+            }} />
+
             {/* 关闭按钮 */}
             <button
               onClick={() => setShowPromoModal(false)}
-              className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 flex items-center justify-center text-white/70 hover:text-white transition-all"
+              className="absolute top-4 right-4 z-20 w-8 h-8 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center text-white/70 hover:text-white transition-all"
             >✕</button>
 
-            {/* 图片区域 - 独立展示不叠加文字 */}
-            <img
-              src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/boluolab.com/huodongchuangkou1.webp"
-              alt="活动"
-              className="w-full"
-              style={{ aspectRatio: '16/9', objectFit: 'cover' }}
-            />
+            {/* 轮播图区域 */}
+            <div className="relative overflow-hidden" style={{ aspectRatio: '16/9' }}>
+              <div style={{
+                display: 'flex', width: '300%', height: '100%',
+                transform: `translateX(${-promoSlide * (100 / 3)}%)`,
+                transition: 'transform 0.5s cubic-bezier(0.4,0,0.2,1)',
+              }}>
+                {['/xuanchuantanchuang1.webp', '/xuanchuantanchuang2.webp', '/xuanchuantanchuang3.webp'].map((src, i) => (
+                  <img key={i} src={src} alt={`宣传图${i + 1}`}
+                    style={{ width: '33.333%', height: '100%', objectFit: 'cover', flexShrink: 0 }}
+                  />
+                ))}
+              </div>
+              {promoSlide > 0 && (
+                <button onClick={e => { e.stopPropagation(); setPromoSlide(s => s - 1); }}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center text-white text-xl transition-all">‹</button>
+              )}
+              {promoSlide < 2 && (
+                <button onClick={e => { e.stopPropagation(); setPromoSlide(s => s + 1); }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center text-white text-xl transition-all">›</button>
+              )}
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+                {[0, 1, 2].map(i => (
+                  <button key={i} onClick={e => { e.stopPropagation(); setPromoSlide(i); }}
+                    style={{
+                      width: promoSlide === i ? 20 : 6, height: 6, borderRadius: 3, border: 'none', cursor: 'pointer', padding: 0,
+                      background: promoSlide === i ? 'rgba(167,139,250,1)' : 'rgba(255,255,255,0.35)',
+                      transition: 'all 0.3s',
+                    }} />
+                ))}
+              </div>
+            </div>
 
-            {/* 按钮区域 - 图片下方 */}
-            <div className="px-6 py-5">
-              <div className="text-center mb-3">
-                <div className="text-white font-semibold text-base mb-0.5">🎁 新用户注册即送 1 个月会员</div>
-                <div className="text-white/50 text-xs">注册成功后进入画布即可领取，限时活动</div>
+            {/* 底部按钮区域 */}
+            <div className="px-7 py-6">
+              <div className="text-center mb-4">
+                <div className="text-white font-semibold text-lg mb-1">🎁 新用户注册即送 1 个月会员</div>
+                <div className="text-white/50 text-sm">注册成功后进入画布即可领取，限时活动</div>
               </div>
               <div className="flex gap-3">
                 <button
                   onClick={() => { setShowPromoModal(false); window.location.href = '/auth'; }}
                   className="flex-1 py-3.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold text-sm transition-all shadow-lg shadow-violet-500/20"
-                >
-                  立即注册领取
-                </button>
+                >立即注册领取</button>
                 <button
-                  onClick={() => {
-                    setShowPromoModal(false);
-                    document.getElementById('workflow-templates')?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="flex-1 py-3.5 rounded-xl bg-white/10 hover:bg-white/15 text-white/70 hover:text-white text-sm font-medium transition-all"
-                >
-                  查看示例
+                  onClick={() => setShowPromoModal(false)}
+                  className="flex-1 py-3.5 rounded-xl border border-white/10 hover:bg-white/5 text-white/60 hover:text-white font-medium text-sm transition-all"
+                >稍后再说</button>
+              </div>
+              <div className="text-center mt-3">
+                <button onClick={() => { setShowPromoModal(false); window.location.href = '/auth?mode=login'; }}
+                  className="text-white/30 hover:text-white/60 text-xs transition-colors">
+                  已有账号？直接登录
                 </button>
               </div>
-              <p className="text-center text-white/25 text-xs mt-3">已有账号？<button onClick={() => { setShowPromoModal(false); window.location.href = '/auth'; }} className="text-violet-400 hover:text-violet-300 transition-colors">直接登录进入画布</button></p>
             </div>
           </div>
         </div>
       )}
+
       {/* Animated Grid Background */}
       <div className="infinite-grid absolute inset-0 opacity-50" />
 
@@ -723,15 +759,15 @@ export default function Home() {
             <p className="text-zinc-400 text-lg">按需付费，无隐藏费用</p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 max-w-6xl mx-auto">
             {/* 免费用户 */}
-            <div className="rounded-2xl border border-white/10 bg-zinc-900/50 p-8">
-              <div className="mb-6">
+            <div className="rounded-2xl border border-white/10 bg-zinc-900/50 p-7">
+              <div className="mb-5">
                 <h3 className="text-lg font-semibold text-white mb-1">免费用户</h3>
                 <p className="text-zinc-500 text-sm">注册即可使用</p>
               </div>
-              <div className="text-4xl font-bold text-white mb-6">¥0</div>
-              <ul className="space-y-3 text-sm text-zinc-400 mb-8">
+              <div className="text-4xl font-bold text-white mb-5">¥0</div>
+              <ul className="space-y-2.5 text-sm text-zinc-400 mb-7">
                 <li className="flex items-center gap-2"><span className="text-zinc-600">✓</span> 无限画布创作</li>
                 <li className="flex items-center gap-2"><span className="text-zinc-600">✓</span> 图片生成 ¥0.3–1.5 / 次</li>
                 <li className="flex items-center gap-2"><span className="text-zinc-600">✓</span> 视频生成（普通价）</li>
@@ -746,27 +782,108 @@ export default function Home() {
               </a>
             </div>
 
-            {/* 会员 */}
-            <div className="rounded-2xl border border-violet-500/40 bg-gradient-to-b from-violet-950/40 to-zinc-900/80 p-8 relative overflow-hidden">
+            {/* 月套餐 */}
+            <div className="rounded-2xl p-7 relative overflow-hidden" style={{
+              background: 'linear-gradient(145deg, #1e1528 0%, #18181b 60%)',
+              boxShadow: '0 0 0 1px rgba(139,92,246,0.45), 0 0 0 3px rgba(139,92,246,0.1), 0 0 30px rgba(139,92,246,0.12), 0 20px 40px rgba(0,0,0,0.5)',
+            }}>
+              {/* 顶部光晕线 */}
+              <div style={{
+                position: 'absolute', top: 0, left: '10%', right: '10%', height: 1,
+                background: 'linear-gradient(90deg, transparent, rgba(167,139,250,0.7), rgba(99,102,241,0.7), rgba(167,139,250,0.7), transparent)',
+              }} />
               <div className="absolute top-4 right-4 text-xs font-semibold px-2.5 py-1 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30">
                 推荐
               </div>
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-white mb-1">会员</h3>
-                <p className="text-zinc-400 text-sm">解锁全部 AI 能力</p>
+              <div className="mb-5">
+                <h3 className="text-lg font-semibold text-white mb-1">月套餐</h3>
+                <p className="text-zinc-400 text-sm">灵活按月订阅</p>
               </div>
-              <div className="flex items-end gap-1 mb-6">
+              <div className="flex items-end gap-1 mb-5">
                 <span className="text-4xl font-bold text-white">¥39</span>
                 <span className="text-zinc-400 text-sm mb-1">/月</span>
               </div>
-              <ul className="space-y-3 text-sm text-zinc-300 mb-8">
+              <ul className="space-y-2.5 text-sm text-zinc-300 mb-7">
                 <li className="flex items-center gap-2"><span className="text-violet-400">✓</span> 无限使用文本大模型</li>
                 <li className="flex items-center gap-2"><span className="text-violet-400">✓</span> 导演引擎功能</li>
                 <li className="flex items-center gap-2"><span className="text-violet-400">✓</span> 视频生成每秒省 ¥0.2</li>
+                <li className="flex items-center gap-2"><span className="text-violet-400">✓</span> 设计师专业工具</li>
               </ul>
               <button
                 onClick={() => handlePay('membership', 39)}
                 className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white text-sm font-semibold transition-all shadow-lg shadow-violet-500/20"
+              >
+                立即开通
+              </button>
+            </div>
+
+            {/* 年套餐 */}
+            <div className="rounded-2xl p-7 relative overflow-hidden" style={{
+              background: 'linear-gradient(145deg, #121a28 0%, #18181b 60%)',
+              boxShadow: '0 0 0 1px rgba(59,130,246,0.45), 0 0 0 3px rgba(59,130,246,0.1), 0 0 30px rgba(59,130,246,0.12), 0 20px 40px rgba(0,0,0,0.5)',
+            }}>
+              {/* 顶部光晕线 */}
+              <div style={{
+                position: 'absolute', top: 0, left: '10%', right: '10%', height: 1,
+                background: 'linear-gradient(90deg, transparent, rgba(96,165,250,0.7), rgba(59,130,246,0.7), rgba(96,165,250,0.7), transparent)',
+              }} />
+              <div className="absolute top-4 right-4 text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                省 ¥9/月
+              </div>
+              <div className="mb-5">
+                <h3 className="text-lg font-semibold text-white mb-1">年套餐</h3>
+                <p className="text-zinc-400 text-sm">相当于 ¥38.25/月</p>
+              </div>
+              <div className="flex items-end gap-1 mb-1">
+                <span className="text-4xl font-bold text-white">¥459</span>
+                <span className="text-zinc-400 text-sm mb-1">/年</span>
+              </div>
+              <div className="text-zinc-600 text-xs line-through mb-4">原价 ¥468</div>
+              <ul className="space-y-2.5 text-sm text-zinc-300 mb-7">
+                <li className="flex items-center gap-2"><span className="text-blue-400">✓</span> 月套餐全部权益</li>
+                <li className="flex items-center gap-2"><span className="text-blue-400">✓</span> 年费专属优先服务</li>
+                <li className="flex items-center gap-2"><span className="text-blue-400">✓</span> 新功能优先体验</li>
+                <li className="flex items-center gap-2"><span className="text-blue-400">✓</span> 一次付清省心省钱</li>
+              </ul>
+              <button
+                onClick={() => handlePay('membership_yearly', 459)}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white text-sm font-semibold transition-all shadow-lg shadow-blue-500/20"
+              >
+                立即开通
+              </button>
+            </div>
+
+            {/* 两年套餐 */}
+            <div className="rounded-2xl p-7 relative overflow-hidden" style={{
+              background: 'linear-gradient(145deg, #151e18 0%, #18181b 60%)',
+              boxShadow: '0 0 0 1px rgba(16,185,129,0.45), 0 0 0 3px rgba(16,185,129,0.1), 0 0 30px rgba(16,185,129,0.12), 0 20px 40px rgba(0,0,0,0.5)',
+            }}>
+              {/* 顶部光晕线 */}
+              <div style={{
+                position: 'absolute', top: 0, left: '10%', right: '10%', height: 1,
+                background: 'linear-gradient(90deg, transparent, rgba(52,211,153,0.7), rgba(16,185,129,0.7), rgba(52,211,153,0.7), transparent)',
+              }} />
+              <div className="absolute top-4 right-4 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                最划算
+              </div>
+              <div className="mb-5">
+                <h3 className="text-lg font-semibold text-white mb-1">两年套餐</h3>
+                <p className="text-zinc-400 text-sm">相当于 ¥37.42/月</p>
+              </div>
+              <div className="flex items-end gap-1 mb-1">
+                <span className="text-4xl font-bold text-white">¥899</span>
+                <span className="text-zinc-400 text-sm mb-1">/两年</span>
+              </div>
+              <div className="text-zinc-600 text-xs line-through mb-4">原价 ¥936</div>
+              <ul className="space-y-2.5 text-sm text-zinc-300 mb-7">
+                <li className="flex items-center gap-2"><span className="text-emerald-400">✓</span> 年套餐全部权益</li>
+                <li className="flex items-center gap-2"><span className="text-emerald-400">✓</span> 两年锁定最低价</li>
+                <li className="flex items-center gap-2"><span className="text-emerald-400">✓</span> 专属客服支持</li>
+                <li className="flex items-center gap-2"><span className="text-emerald-400">✓</span> 未来功能永久享</li>
+              </ul>
+              <button
+                onClick={() => handlePay('membership_2yearly', 899)}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-sm font-semibold transition-all shadow-lg shadow-emerald-500/20"
               >
                 立即开通
               </button>
