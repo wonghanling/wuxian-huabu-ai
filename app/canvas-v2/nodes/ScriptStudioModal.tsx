@@ -431,19 +431,6 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
                 </span>
                 <span style={{ fontSize: 10, color: '#a1a1aa' }}>▼</span>
               </button>
-              <button
-                onClick={() => {
-                  const name = prompt('修改剧本名称：', project.title || '')?.trim();
-                  if (name === null || name === undefined) return;
-                  setProject((p) => {
-                    const next = { ...p, title: name };
-                    persist(next);
-                    return next;
-                  });
-                }}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: '#71717a', fontSize: 12 }}
-                title="重命名剧本"
-              >✎</button>
 
               {pickerOpen && (
                 <>
@@ -469,6 +456,30 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
                                 {m.title || '未命名剧本'}
                               </span>
                             </button>
+                            <button
+                              onClick={async () => {
+                                const name = prompt('修改剧本名称：', m.title || '')?.trim();
+                                if (name === null || name === undefined) return;
+                                // 如果改的是当前打开的剧本，直接更新 state
+                                if (m.id === project.id) {
+                                  setProject((p) => {
+                                    const next = { ...p, title: name };
+                                    persist(next);
+                                    return next;
+                                  });
+                                } else {
+                                  // 改的是其他剧本，直接更新云端
+                                  const target = await loadProjectById(m.id);
+                                  if (target) {
+                                    target.title = name;
+                                    await saveProject(target);
+                                  }
+                                }
+                                setProjectList(await listProjects());
+                              }}
+                              style={{ ...pickerDelBtn, color: '#a1a1aa' }}
+                              title="重命名"
+                            >✎</button>
                             <button
                               onClick={() => handleDelete(m.id, m.title)}
                               style={pickerDelBtn}
