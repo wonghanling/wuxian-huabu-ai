@@ -460,8 +460,10 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
                               onClick={async () => {
                                 const name = prompt('修改剧本名称：', m.title || '')?.trim();
                                 if (name === null || name === undefined) return;
-                                // 如果改的是当前打开的剧本，直接更新 state
+                                // 立即更新列表显示（不等云端）
+                                setProjectList((list) => list.map((item) => item.id === m.id ? { ...item, title: name } : item));
                                 if (m.id === project.id) {
+                                  // 改的是当前打开的剧本
                                   setProject((p) => {
                                     const next = { ...p, title: name };
                                     persist(next);
@@ -475,7 +477,6 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
                                     await saveProject(target);
                                   }
                                 }
-                                setProjectList(await listProjects());
                               }}
                               style={{ ...pickerDelBtn, color: '#a1a1aa' }}
                               title="重命名"
