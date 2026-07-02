@@ -130,14 +130,17 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
     }
   };
 
-  // 新建空白剧本
+  // 新建空白剧本（弹出输入名称）
   const createNew = async () => {
     if (switching) return;
+    const name = prompt('请输入新剧本名称：', '')?.trim();
+    if (name === null || name === undefined) return; // 取消
     setSwitching(true);
     setPickerOpen(false);
     try {
       await flushCurrent(project);                 // 先存当前
       const fresh = emptyProject();                 // id=null 的全新剧本
+      fresh.title = name || '';
       setProject(fresh);
       saveDraftLocal(fresh);
       setActive(0);
@@ -428,6 +431,19 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
                 </span>
                 <span style={{ fontSize: 10, color: '#a1a1aa' }}>▼</span>
               </button>
+              <button
+                onClick={() => {
+                  const name = prompt('修改剧本名称：', project.title || '')?.trim();
+                  if (name === null || name === undefined) return;
+                  setProject((p) => {
+                    const next = { ...p, title: name };
+                    persist(next);
+                    return next;
+                  });
+                }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: '#71717a', fontSize: 12 }}
+                title="重命名剧本"
+              >✎</button>
 
               {pickerOpen && (
                 <>
@@ -476,7 +492,7 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
         <div style={body}>
           {/* 左侧阶段列表 */}
           <div style={stepper} className="cv2-scroll">
-            {PHASE_LABELS.map((label, i) => {
+            {PHASE_LABELS_CN.map((label, i) => {
               const done = !!project.phases[i]?.trim();
               const isActive = i === active;
               return (
@@ -492,8 +508,8 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
           {/* 右侧当前阶段 */}
           <div style={editor}>
             <div style={{ fontSize: 13, color: '#a1a1aa', marginBottom: 8 }}>
-              阶段 {active + 1} / 6 · <span style={{ color: '#e4e4e7', fontWeight: 600 }}>{PHASE_LABELS[active]}</span>
-              <span style={{ color: '#71717a', marginLeft: 6 }}>{PHASE_LABELS_CN[active]}</span>
+              阶段 {active + 1} / 6 · <span style={{ color: '#e4e4e7', fontWeight: 600 }}>{PHASE_LABELS_CN[active]}</span>
+              <span style={{ color: '#71717a', marginLeft: 6 }}>{PHASE_LABELS[active]}</span>
             </div>
 
             {/* 输入框 */}
@@ -511,7 +527,7 @@ export function ScriptStudioModal({ onClose }: { onClose: () => void }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '10px 0' }}>
               <button onClick={handleGenerate} disabled={!canGenerate}
                 style={{ ...genBtn, opacity: canGenerate ? 1 : 0.45, cursor: generating ? 'wait' : (canGenerate ? 'pointer' : 'not-allowed') }}>
-                {generating ? '生成中…' : `生成${PHASE_LABELS[active]}`}
+                {generating ? '生成中…' : `生成${PHASE_LABELS_CN[active]}`}
               </button>
               {depHint && <span style={{ fontSize: 12, color: '#a1a1aa' }}>{depHint}</span>}
               {sentTip && <span style={{ fontSize: 12, color: '#86efac' }}>{sentTip}</span>}
