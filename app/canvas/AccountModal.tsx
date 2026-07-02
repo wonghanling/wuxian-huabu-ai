@@ -239,79 +239,80 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
                 <div className="flex flex-col gap-3">
 
                   {/* 月套餐 */}
-                  <div className="rounded-xl border border-violet-500/60 bg-zinc-900 p-5 relative overflow-hidden">
-                    <div style={{position:'absolute',inset:0,pointerEvents:'none',background:'linear-gradient(135deg,rgba(139,92,246,0.15) 0%,rgba(139,92,246,0.03) 50%,transparent 100%)'}} />
-                    <div className="relative flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div>
-                          <div className="text-xs font-semibold text-violet-400 uppercase tracking-widest mb-0.5">月套餐</div>
-                          <div className="text-white font-bold text-2xl">¥{MEMBERSHIP_PRICE}<span className="text-zinc-500 text-sm font-normal">/月</span></div>
-                        </div>
+                  <div className="rounded-2xl overflow-hidden bg-[#0d0d0f]" style={{ border: '1px solid #8b5cf6' }}>
+                    <div className="px-4 py-2 flex items-center justify-between text-white" style={{ background: '#8b5cf6' }}>
+                      <span className="text-xs font-bold uppercase tracking-widest">月套餐</span>
+                      <span className="text-xs font-bold">推荐</span>
+                    </div>
+                    <div className="p-5">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="text-white font-bold text-2xl">¥{MEMBERSHIP_PRICE}<span className="text-zinc-500 text-sm font-normal">/月</span></div>
                       </div>
-                      <div className="text-xs font-semibold px-2 py-0.5 rounded bg-violet-500/20 text-violet-300">推荐</div>
+                      <div className="grid grid-cols-2 gap-1.5 mb-4">
+                        {['无限文本生成（大模型）','角色设计 & 导演引擎','视频生成每秒省 ¥0.2','优先体验新功能'].map(item => (
+                          <div key={item} className="flex items-center gap-1.5 text-xs text-zinc-400">
+                            <span className="text-violet-400">✓</span> {item}
+                          </div>
+                        ))}
+                      </div>
+                      <button className="w-full py-2.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold transition-all"
+                        onClick={() => { onClose(); onPay('membership', MEMBERSHIP_PRICE); }}
+                        onPointerDown={e => e.stopPropagation()}>
+                        {isMember ? '续费会员' : '立即开通'} · ¥{MEMBERSHIP_PRICE}/月
+                      </button>
                     </div>
-                    <div className="relative grid grid-cols-2 gap-1.5 mb-4">
-                      {['无限文本生成（大模型）','角色设计 & 导演引擎','视频生成每秒省 ¥0.2','优先体验新功能'].map(item => (
-                        <div key={item} className="flex items-center gap-1.5 text-xs text-zinc-400">
-                          <span className="text-violet-400">✓</span> {item}
-                        </div>
-                      ))}
-                    </div>
-                    <button className="relative w-full py-2.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold transition-all"
-                      onClick={() => { onClose(); onPay('membership', MEMBERSHIP_PRICE); }}
-                      onPointerDown={e => e.stopPropagation()}>
-                      {isMember ? '续费会员' : '立即开通'} · ¥{MEMBERSHIP_PRICE}/月
-                    </button>
                   </div>
 
                   {/* 年套餐 */}
-                  <div className="rounded-xl border border-blue-500/60 bg-zinc-900 p-5 relative overflow-hidden">
-                    <div style={{position:'absolute',inset:0,pointerEvents:'none',background:'linear-gradient(135deg,rgba(59,130,246,0.15) 0%,rgba(59,130,246,0.03) 50%,transparent 100%)'}} />
-                    <div className="relative flex items-center justify-between mb-3">
-                      <div>
-                        <div className="text-xs font-semibold text-blue-400 uppercase tracking-widest mb-0.5">年套餐</div>
+                  <div className="rounded-2xl overflow-hidden bg-[#0d0d0f]" style={{ border: '1px solid #3b82f6' }}>
+                    <div className="px-4 py-2 flex items-center justify-between text-white" style={{ background: '#3b82f6' }}>
+                      <span className="text-xs font-bold uppercase tracking-widest">年套餐</span>
+                      <span className="text-xs font-bold">省 ¥9/月</span>
+                    </div>
+                    <div className="p-5">
+                      <div className="flex items-center justify-between mb-1">
                         <div className="text-white font-bold text-2xl">¥459<span className="text-zinc-500 text-sm font-normal">/年</span></div>
-                        <div className="text-zinc-600 text-xs line-through">原价 ¥468</div>
                       </div>
-                      <div className="text-xs font-semibold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300">省 ¥9/月</div>
+                      <div className="text-zinc-600 text-xs line-through mb-3">原价 ¥468</div>
+                      <div className="grid grid-cols-2 gap-1.5 mb-4">
+                        {['月套餐全部权益','年费专属优先服务','新功能优先体验','一次付清省钱'].map(item => (
+                          <div key={item} className="flex items-center gap-1.5 text-xs text-zinc-400">
+                            <span className="text-blue-400">✓</span> {item}
+                          </div>
+                        ))}
+                      </div>
+                      <button className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-all"
+                        onClick={() => { onClose(); onPay('membership_yearly', 459); }}
+                        onPointerDown={e => e.stopPropagation()}>
+                        开通年套餐 · ¥459/年
+                      </button>
                     </div>
-                    <div className="relative grid grid-cols-2 gap-1.5 mb-4">
-                      {['月套餐全部权益','年费专属优先服务','新功能优先体验','一次付清省钱'].map(item => (
-                        <div key={item} className="flex items-center gap-1.5 text-xs text-zinc-400">
-                          <span className="text-blue-400">✓</span> {item}
-                        </div>
-                      ))}
-                    </div>
-                    <button className="relative w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-all"
-                      onClick={() => { onClose(); onPay('membership_yearly', 459); }}
-                      onPointerDown={e => e.stopPropagation()}>
-                      开通年套餐 · ¥459/年
-                    </button>
                   </div>
 
                   {/* 两年套餐 */}
-                  <div className="rounded-xl border border-emerald-500/60 bg-zinc-900 p-5 relative overflow-hidden">
-                    <div style={{position:'absolute',inset:0,pointerEvents:'none',background:'linear-gradient(135deg,rgba(16,185,129,0.15) 0%,rgba(16,185,129,0.03) 50%,transparent 100%)'}} />
-                    <div className="relative flex items-center justify-between mb-3">
-                      <div>
-                        <div className="text-xs font-semibold text-emerald-400 uppercase tracking-widest mb-0.5">两年套餐</div>
+                  <div className="rounded-2xl overflow-hidden bg-[#0d0d0f]" style={{ border: '1px solid #10b981' }}>
+                    <div className="px-4 py-2 flex items-center justify-between text-white" style={{ background: '#10b981' }}>
+                      <span className="text-xs font-bold uppercase tracking-widest">两年套餐</span>
+                      <span className="text-xs font-bold">最划算</span>
+                    </div>
+                    <div className="p-5">
+                      <div className="flex items-center justify-between mb-1">
                         <div className="text-white font-bold text-2xl">¥899<span className="text-zinc-500 text-sm font-normal">/两年</span></div>
-                        <div className="text-zinc-600 text-xs line-through">原价 ¥936</div>
                       </div>
-                      <div className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">最划算</div>
+                      <div className="text-zinc-600 text-xs line-through mb-3">原价 ¥936</div>
+                      <div className="grid grid-cols-2 gap-1.5 mb-4">
+                        {['年套餐全部权益','两年锁定最低价','专属客服支持','未来功能永久享'].map(item => (
+                          <div key={item} className="flex items-center gap-1.5 text-xs text-zinc-400">
+                            <span className="text-emerald-400">✓</span> {item}
+                          </div>
+                        ))}
+                      </div>
+                      <button className="w-full py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold transition-all"
+                        onClick={() => { onClose(); onPay('membership_2yearly', 899); }}
+                        onPointerDown={e => e.stopPropagation()}>
+                        开通两年套餐 · ¥899/两年
+                      </button>
                     </div>
-                    <div className="relative grid grid-cols-2 gap-1.5 mb-4">
-                      {['年套餐全部权益','两年锁定最低价','专属客服支持','未来功能永久享'].map(item => (
-                        <div key={item} className="flex items-center gap-1.5 text-xs text-zinc-400">
-                          <span className="text-emerald-400">✓</span> {item}
-                        </div>
-                      ))}
-                    </div>
-                    <button className="relative w-full py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold transition-all"
-                      onClick={() => { onClose(); onPay('membership_2yearly', 899); }}
-                      onPointerDown={e => e.stopPropagation()}>
-                      开通两年套餐 · ¥899/两年
-                    </button>
                   </div>
 
                 </div>

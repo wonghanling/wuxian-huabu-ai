@@ -766,33 +766,33 @@ export default function Home() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
             {/* 免费用户 */}
-            <div className="rounded-xl border border-white/8 bg-zinc-900 p-6 flex flex-col">
-              <div className="text-xs font-medium text-zinc-500 uppercase tracking-widest mb-4">免费</div>
-              <div className="text-3xl font-bold text-white mb-1">¥0</div>
-              <div className="text-zinc-500 text-xs mb-5">注册即用</div>
-              <ul className="space-y-2 text-sm text-zinc-400 mb-6 flex-1">
-                <li className="flex items-center gap-2"><span className="text-zinc-600 text-xs">✓</span> 无限画布创作</li>
-                <li className="flex items-center gap-2"><span className="text-zinc-600 text-xs">✓</span> 图片生成 ¥0.3–1.5</li>
-                <li className="flex items-center gap-2"><span className="text-zinc-600 text-xs">✓</span> 视频生成普通价</li>
-                <li className="flex items-center gap-2"><span className="text-zinc-600 text-xs">✗</span> 文本卡片 / 角色设计</li>
-                <li className="flex items-center gap-2"><span className="text-zinc-600 text-xs">✗</span> Prompt 优化</li>
-              </ul>
-              <a href="/auth" className="block w-full py-2.5 rounded-lg border border-white/10 text-white/60 text-sm font-medium text-center hover:bg-white/5 transition-all">
-                免费注册
-              </a>
+            <div className="rounded-2xl overflow-hidden flex flex-col bg-[#0d0d0f]" style={{ border: '1px solid rgba(255,255,255,0.12)' }}>
+              <div className="px-5 py-2.5 text-center text-xs font-bold uppercase tracking-widest text-zinc-300" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                免费
+              </div>
+              <div className="p-6 flex flex-col flex-1">
+                <div className="text-3xl font-bold text-white mb-1">¥0</div>
+                <div className="text-zinc-500 text-xs mb-5">注册即用</div>
+                <ul className="space-y-2 text-sm text-zinc-400 mb-6 flex-1">
+                  <li className="flex items-center gap-2"><span className="text-zinc-600 text-xs">✓</span> 无限画布创作</li>
+                  <li className="flex items-center gap-2"><span className="text-zinc-600 text-xs">✓</span> 图片生成 ¥0.3–1.5</li>
+                  <li className="flex items-center gap-2"><span className="text-zinc-600 text-xs">✓</span> 视频生成普通价</li>
+                  <li className="flex items-center gap-2"><span className="text-zinc-600 text-xs">✗</span> 文本卡片 / 角色设计</li>
+                  <li className="flex items-center gap-2"><span className="text-zinc-600 text-xs">✗</span> Prompt 优化</li>
+                </ul>
+                <a href="/auth" className="block w-full py-2.5 rounded-lg border border-white/12 text-white/60 text-sm font-medium text-center hover:bg-white/5 transition-all">
+                  免费注册
+                </a>
+              </div>
             </div>
 
             {/* 月套餐 — 紫色 */}
-            <div className="rounded-xl border border-violet-500/60 bg-zinc-900 p-6 flex flex-col relative overflow-hidden">
-              <div style={{
-                position: 'absolute', inset: 0, pointerEvents: 'none',
-                background: 'linear-gradient(135deg, rgba(139,92,246,0.18) 0%, rgba(139,92,246,0.04) 50%, transparent 100%)',
-              }} />
-              <div className="relative">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="text-xs font-semibold text-violet-400 uppercase tracking-widest">月套餐</div>
-                  <div className="text-xs font-semibold px-2 py-0.5 rounded bg-violet-500/20 text-violet-300">推荐</div>
-                </div>
+            <div className="rounded-2xl overflow-hidden flex flex-col bg-[#0d0d0f]" style={{ border: '1px solid #8b5cf6' }}>
+              <div className="px-5 py-2.5 flex items-center justify-between text-white" style={{ background: '#8b5cf6' }}>
+                <span className="text-xs font-bold uppercase tracking-widest">月套餐</span>
+                <span className="text-xs font-bold">推荐</span>
+              </div>
+              <div className="p-6 flex flex-col flex-1">
                 <div className="text-3xl font-bold text-white mb-0.5">¥39</div>
                 <div className="text-zinc-500 text-xs mb-5">/月 · 不自动续费</div>
                 <ul className="space-y-2 text-sm text-zinc-300 mb-6 flex-1">
@@ -809,20 +809,16 @@ export default function Home() {
             </div>
 
             {/* 年套餐 — 蓝色 */}
-            <div className="rounded-xl border border-blue-500/60 bg-zinc-900 p-6 flex flex-col relative overflow-hidden">
-              <div style={{
-                position: 'absolute', inset: 0, pointerEvents: 'none',
-                background: 'linear-gradient(135deg, rgba(59,130,246,0.18) 0%, rgba(59,130,246,0.04) 50%, transparent 100%)',
-              }} />
-              <div className="relative">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="text-xs font-semibold text-blue-400 uppercase tracking-widest">年套餐</div>
-                  <div className="text-xs font-semibold px-2 py-0.5 rounded bg-blue-500/20 text-blue-300">省 ¥9/月</div>
-                </div>
+            <div className="rounded-2xl overflow-hidden flex flex-col bg-[#0d0d0f]" style={{ border: '1px solid #3b82f6' }}>
+              <div className="px-5 py-2.5 flex items-center justify-between text-white" style={{ background: '#3b82f6' }}>
+                <span className="text-xs font-bold uppercase tracking-widest">年套餐</span>
+                <span className="text-xs font-bold">省 ¥9/月</span>
+              </div>
+              <div className="p-6 flex flex-col flex-1">
                 <div className="text-3xl font-bold text-white mb-0.5">¥459</div>
                 <div className="text-zinc-500 text-xs mb-1">/年 · ≈ ¥38.25/月</div>
                 <div className="text-zinc-600 text-xs line-through mb-4">原价 ¥468</div>
-                <ul className="space-y-2 text-sm text-zinc-300 mb-6">
+                <ul className="space-y-2 text-sm text-zinc-300 mb-6 flex-1">
                   <li className="flex items-center gap-2"><span className="text-blue-400 text-xs">✓</span> 月套餐全部权益</li>
                   <li className="flex items-center gap-2"><span className="text-blue-400 text-xs">✓</span> 年费专属优先服务</li>
                   <li className="flex items-center gap-2"><span className="text-blue-400 text-xs">✓</span> 新功能优先体验</li>
@@ -836,20 +832,16 @@ export default function Home() {
             </div>
 
             {/* 两年套餐 — 绿色 */}
-            <div className="rounded-xl border border-emerald-500/60 bg-zinc-900 p-6 flex flex-col relative overflow-hidden">
-              <div style={{
-                position: 'absolute', inset: 0, pointerEvents: 'none',
-                background: 'linear-gradient(135deg, rgba(16,185,129,0.18) 0%, rgba(16,185,129,0.04) 50%, transparent 100%)',
-              }} />
-              <div className="relative">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="text-xs font-semibold text-emerald-400 uppercase tracking-widest">两年套餐</div>
-                  <div className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">最划算</div>
-                </div>
+            <div className="rounded-2xl overflow-hidden flex flex-col bg-[#0d0d0f]" style={{ border: '1px solid #10b981' }}>
+              <div className="px-5 py-2.5 flex items-center justify-between text-white" style={{ background: '#10b981' }}>
+                <span className="text-xs font-bold uppercase tracking-widest">两年套餐</span>
+                <span className="text-xs font-bold">最划算</span>
+              </div>
+              <div className="p-6 flex flex-col flex-1">
                 <div className="text-3xl font-bold text-white mb-0.5">¥899</div>
                 <div className="text-zinc-500 text-xs mb-1">/两年 · ≈ ¥37.42/月</div>
                 <div className="text-zinc-600 text-xs line-through mb-4">原价 ¥936</div>
-                <ul className="space-y-2 text-sm text-zinc-300 mb-6">
+                <ul className="space-y-2 text-sm text-zinc-300 mb-6 flex-1">
                   <li className="flex items-center gap-2"><span className="text-emerald-400 text-xs">✓</span> 年套餐全部权益</li>
                   <li className="flex items-center gap-2"><span className="text-emerald-400 text-xs">✓</span> 两年锁定最低价</li>
                   <li className="flex items-center gap-2"><span className="text-emerald-400 text-xs">✓</span> 专属客服支持</li>
