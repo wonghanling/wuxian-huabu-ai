@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useCanvasStore } from '../store';
 
 export function DirectorDesk3DModal({ onClose }: { onClose: () => void }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const addImageCard = useCanvasStore((s) => s.addImageCardWithRef);
+  // 每次打开用新 key 强制 iframe 全新加载，避免 WebGL context 残留导致黑屏
+  const [iframeKey] = useState(() => Date.now());
 
   // ESC 关闭
   useEffect(() => {
@@ -30,12 +32,11 @@ export function DirectorDesk3DModal({ onClose }: { onClose: () => void }) {
       if (type === 'storyai:director-desk-captures-sent' && payload?.captures?.length) {
         for (const cap of payload.captures) {
           if (cap.dataUrl) {
-            // dataUrl → 直接作为图片节点插入画布
             addImageCard(cap.dataUrl, '', '');
           }
         }
         (window as any).saveCanvasV2Now?.();
-        onClose();
+        // 截图后不自动关闭，让用户继续操作或手动关闭
       }
     };
     window.addEventListener('message', onMessage);
@@ -65,6 +66,7 @@ export function DirectorDesk3DModal({ onClose }: { onClose: () => void }) {
       </div>
       {/* iframe 加载 3D 导演台 */}
       <iframe
+        key={iframeKey}
         ref={iframeRef}
         src="/director-desk/index.html"
         style={{ flex: 1, border: 'none', width: '100%' }}
