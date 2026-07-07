@@ -8,6 +8,7 @@ import { listCanvases, createCanvas, deleteCanvas } from '@/lib/canvas-storage';
 import AccountModal from '@/app/canvas/AccountModal';
 import { SaveTemplateModal } from './SaveTemplateModal';
 import { ScriptStudioModal } from './ScriptStudioModal';
+import { DirectorDesk3DModal } from './DirectorDesk3DModal';
 import { DoodleModal } from './DoodleModal';
 import { ImageStudio } from './ImageStudio';
 import { useCanvasStore } from '../store';
@@ -29,6 +30,7 @@ export function TopBar({ saveStatus, switchCanvas, getCurrentCanvasId }: Props) 
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
   const [showScriptStudio, setShowScriptStudio] = useState(false);
+  const [show3DStudio, setShow3DStudio] = useState(false);
   const [showDoodle, setShowDoodle] = useState(false);
   const [imageStudioUrl, setImageStudioUrl] = useState<string | null>(null);  // null=关闭，''=打开无图，url=打开有图
   const [studioUploading, setStudioUploading] = useState(false);
@@ -241,6 +243,18 @@ export function TopBar({ saveStatus, switchCanvas, getCurrentCanvasId }: Props) 
           <span>剧本工作室</span>
         </button>
 
+        {/* 3D 导演台入口 */}
+        <button
+          onClick={() => setShow3DStudio(true)}
+          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-white/5 backdrop-blur-md border border-white/15 text-zinc-200 hover:bg-white/10 hover:border-white/25 transition-all"
+          title="3D 导演台:3D 场景摆放、机位规划"
+        >
+          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
+          </svg>
+          <span>3D 导演台</span>
+        </button>
+
         {/* 涂鸦工作台入口 */}
         <button
           onClick={() => setShowDoodle(true)}
@@ -296,6 +310,11 @@ export function TopBar({ saveStatus, switchCanvas, getCurrentCanvasId }: Props) 
       {/* 剧本工作室全屏弹窗 */}
       {showScriptStudio && (
         <ScriptStudioModal onClose={() => setShowScriptStudio(false)} />
+      )}
+
+      {/* 3D 导演台全屏弹窗 */}
+      {show3DStudio && (
+        <DirectorDesk3DModal onClose={() => setShow3DStudio(false)} />
       )}
 
       {/* 涂鸦工作台 */}
