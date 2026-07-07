@@ -19,8 +19,9 @@ export function DirectorDesk3DModal({ onClose }: { onClose: () => void }) {
   // 监听 3D 导演台 postMessage
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
-      if (e.origin !== window.location.origin) return;
       const { type, payload } = e.data ?? {};
+      // 只处理 3D 导演台的消息（同域 iframe，按消息类型前缀过滤，不依赖 origin 精确匹配）
+      if (typeof type !== 'string' || !type.startsWith('storyai:director-desk')) return;
 
       // 关闭
       if (type === 'storyai:director-desk-close') {
@@ -30,13 +31,18 @@ export function DirectorDesk3DModal({ onClose }: { onClose: () => void }) {
 
       // 截图发送到画布（作为图片节点）
       if (type === 'storyai:director-desk-captures-sent' && payload?.captures?.length) {
+        let added = 0;
         for (const cap of payload.captures) {
-          if (cap.dataUrl) {
+          if (cap?.dataUrl) {
             addImageCard(cap.dataUrl, '', '');
+            added++;
           }
         }
-        (window as any).saveCanvasV2Now?.();
-        // 截图后不自动关闭，让用户继续操作或手动关闭
+        if (added > 0) {
+          (window as any).saveCanvasV2Now?.();
+          // 提示用户已发送
+          alert(`已发送 ${added} 张截图到画布`);
+        }
       }
     };
     window.addEventListener('message', onMessage);
