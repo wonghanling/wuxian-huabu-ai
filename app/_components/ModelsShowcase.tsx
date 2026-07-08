@@ -13,24 +13,24 @@ export function ModelsShowcase() {
 
   return (
     <div className="relative w-full overflow-hidden">
-      {/* 背景暗绿光晕 */}
+      {/* 背景光晕：低饱和度，贴近极简风 */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-32 left-1/3 w-[700px] h-[700px] rounded-full blur-[160px] opacity-15"
+        <div className="absolute -top-32 left-1/3 w-[700px] h-[700px] rounded-full blur-[160px] opacity-[0.06]"
           style={{ background: 'radial-gradient(circle,#10805a,transparent 70%)' }} />
-        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] rounded-full blur-[140px] opacity-10"
+        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] rounded-full blur-[140px] opacity-[0.05]"
           style={{ background: 'radial-gradient(circle,#34d399,transparent 70%)' }} />
       </div>
 
       {/* 标题区 */}
       <div className="relative text-center mb-16 px-6">
-        <p className="text-sm tracking-[0.4em] uppercase mb-5" style={{ color: '#10b07a' }}>Models · 顶尖模型矩阵</p>
-        <h2 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-[1.05]">
+        <p className="text-sm tracking-[0.4em] uppercase mb-5" style={{ color: 'rgb(96,96,96)' }}>Models · 顶尖模型矩阵</p>
+        <h2 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-[1.05]" style={{ color: 'rgb(238,238,238)' }}>
           一个画布<br />
-          <span style={{ background: 'linear-gradient(90deg,#6ee7b7,#10805a)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          <span style={{ color: 'rgb(113,208,131)' }}>
             全球顶尖图像模型
           </span>
         </h2>
-        <p className="text-lg md:text-xl text-zinc-400 max-w-3xl mx-auto leading-relaxed">
+        <p className="text-lg md:text-xl max-w-3xl mx-auto leading-relaxed" style={{ color: 'rgb(180,180,180)' }}>
           FLUX、Nano Banana Pro、ChatGPT Image 2、Midjourney 等业界领先模型即开即用，在同一画布里按需切换、自由组合
         </p>
       </div>

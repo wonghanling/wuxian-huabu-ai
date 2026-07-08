@@ -140,14 +140,14 @@ export function VideoModelsShowcase() {
 
       {/* 标题 */}
       <div className="text-center mb-14 px-6">
-        <p className="text-sm tracking-[0.4em] uppercase mb-5" style={{ color: '#2d6a4f' }}>
+        <p className="text-sm tracking-[0.4em] uppercase mb-5" style={{ color: 'rgb(96,96,96)' }}>
           Video · 生成案例
         </p>
-        <h2 className="text-4xl md:text-6xl font-bold tracking-tight mb-5 leading-tight">
+        <h2 className="text-4xl md:text-6xl font-bold tracking-tight mb-5 leading-tight" style={{ color: 'rgb(238,238,238)' }}>
           顶尖视频模型<br />
-          <span className="text-zinc-400 font-normal text-2xl md:text-3xl">全部接入，随时切换</span>
+          <span className="font-normal text-2xl md:text-3xl" style={{ color: 'rgb(180,180,180)' }}>全部接入，随时切换</span>
         </h2>
-        <p className="text-base text-zinc-500 max-w-xl mx-auto">
+        <p className="text-base max-w-xl mx-auto" style={{ color: 'rgb(96,96,96)' }}>
           悬停预览 · 均为平台实际生成
         </p>
       </div>
@@ -172,7 +172,10 @@ export function VideoModelsShowcase() {
       {/* CTA */}
       <div className="mt-12 flex justify-center">
         <Link href="/canvas">
-          <button className="px-8 py-3.5 rounded-full bg-white text-black font-semibold text-sm hover:bg-zinc-200 transition-all hover:-translate-y-0.5">
+          <button
+            className="px-8 py-3.5 rounded-full font-semibold text-sm transition-transform hover:scale-[1.03]"
+            style={{ background: 'rgb(113,208,131)', color: '#04170a' }}
+          >
             开始生成 →
           </button>
         </Link>
@@ -195,21 +198,21 @@ function ModelCard({ model }: { model: typeof MODELS[0] }) {
       {/* 顶部：立即创作 + 类型标签 */}
       <div className="flex items-center justify-between mb-6">
         <Link href="/canvas">
-          <span className="text-xs font-medium hover:underline" style={{ color: '#2d6a4f' }}>立即创作</span>
+          <span className="text-xs font-medium hover:underline" style={{ color: 'rgb(113,208,131)' }}>立即创作</span>
         </Link>
         <span
           className="text-xs px-2 py-0.5 rounded"
-          style={{ background: 'rgba(255,255,255,0.06)', color: '#71717a' }}
+          style={{ background: 'rgba(255,255,255,0.06)', color: 'rgb(96,96,96)' }}
         >
           {model.type}
         </span>
       </div>
       {/* 底部：模型名 + 描述 */}
       <div>
-        <div className="text-base font-semibold mb-1.5" style={{ color: '#4ade80' }}>
+        <div className="text-base font-semibold mb-1.5" style={{ color: 'rgb(238,238,238)' }}>
           {model.name}
         </div>
-        <div className="text-xs leading-relaxed" style={{ color: '#52525b' }}>
+        <div className="text-xs leading-relaxed" style={{ color: 'rgb(96,96,96)' }}>
           {model.desc}
         </div>
       </div>
