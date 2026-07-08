@@ -20,6 +20,163 @@ const ITEMS = [
   { key: 'shotboard', title: '分镜设计', desc: '分镜提示词到导演级分镜表格，时间码、景别、运镜、画面一应俱全。' },
 ] as const;
 
+// ============================================================
+// 剧本工作室 · 6子流程数据（迁移自 ScriptStudioDemo.tsx，内容不变）
+// 仅当这一层作为 activeIndex===0 可见时才自动轮播，切走时清空定时器
+// ============================================================
+type StageKind = 'text' | 'image' | 'asset';
+interface ScriptStage {
+  key: string;
+  no: string;
+  title: string;
+  kind: StageKind;
+  image?: string;
+  caption?: string;
+  lines?: string[];
+  assets?: { label: string; image: string; caption: string }[];
+}
+
+const SCRIPT_STAGES: ScriptStage[] = [
+  {
+    key: 'novel', no: '01', title: '生成小说', kind: 'text',
+    lines: [
+      '雨在霓虹里碎成针。林深站在天台边缘，',
+      '城市像一块正在熄灭的电路板，在他脚下闪烁。',
+      '十二年前那场火，烧掉的不只是档案室——',
+      '还有他相信"真相终会浮出水面"的最后一点天真。',
+      '口袋里的硬盘还在发烫，里面是足以掀翻半座城的秘密……',
+    ],
+  },
+  {
+    key: 'beat', no: '02', title: '节拍表', kind: 'text',
+    lines: [
+      '① 开场画面　—　暴雨天台，硬盘发烫',
+      '② 主题陈述　—　"真相会浮出水面吗？"',
+      '③ 推动事件　—　神秘来电，限时十二小时',
+      '⑦ 中点　　　—　发现内鬼竟是当年的恩人',
+      '⑮ 终场画面　—　黎明，城市第一次安静下来……',
+    ],
+  },
+  {
+    key: 'character', no: '03', title: '人物设计', kind: 'asset',
+    assets: [
+      { label: '主角设计', image: '/renwusheji1.webp', caption: '主角 · 三视角定妆设计稿' },
+      { label: '机甲设计', image: '/renwusheji2.webp', caption: '机甲角色 · 三视图 + 头部细节' },
+      { label: '配角设计', image: '/renwusheji3.webp', caption: '配角 · 角色设定稿' },
+    ],
+  },
+  {
+    key: 'scene', no: '04', title: '场景设计', kind: 'image',
+    image: '/changjingsheji.webp',
+    caption: '核心场景 · 概念设计图',
+  },
+  {
+    key: 'asset', no: '05', title: '资产分解', kind: 'asset',
+    assets: [
+      { label: '装备分解', image: '/zhuangbeifenjie.webp', caption: '装备系统 · 技术分解板' },
+      { label: '近塔分解 ①', image: '/jintafenjie1.webp', caption: '场景资产 · 近塔结构分解' },
+      { label: '近塔分解 ②', image: '/jintafenjie2.webp', caption: '场景资产 · 近塔细节分解' },
+    ],
+  },
+  {
+    key: 'shooting', no: '06', title: '拍摄剧本', kind: 'text',
+    lines: [
+      'SC.024 / 天台 · 夜 · 暴雨',
+      'SHOT 01　极广角　俯拍　城市灯海，雨幕倾泻',
+      'SHOT 02　中景　　手持　林深逆光，硬盘红灯明灭',
+      'SHOT 03　特写　　轨道　雨水顺着下颌线滑落',
+      '镜头提示：冷蓝主调，霓虹反射，浅景深……',
+    ],
+  },
+];
+
+// 打字机：逐行浮现（迁移自 ScriptStudioDemo.tsx，去掉交互按钮，纯展示）
+function StageTypewriter({ lines }: { lines: string[] }) {
+  // 调用处始终传 key={stage.key}，切换阶段会整体重新挂载，shown 天然从 0 开始，无需在 effect 里手动重置
+  const [shown, setShown] = useState(0);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    lines.forEach((_, i) => {
+      timers.current.push(setTimeout(() => setShown((n) => Math.max(n, i + 1)), 320 * (i + 1)));
+    });
+    return () => { timers.current.forEach(clearTimeout); };
+  }, [lines]);
+
+  return (
+    <div className="font-mono text-sm leading-[1.9]" style={{ color: 'rgb(200,200,200)' }}>
+      {lines.map((ln, i) => (
+        <div key={i} className="transition-opacity duration-500" style={{ opacity: i < shown ? 1 : 0 }}>
+          {ln}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// 图片展示（迁移自 ScriptStudioDemo.tsx 的 DemoImage，去掉交互按钮）
+// 调用处始终传 key={...}，切图会整体重新挂载，loaded 天然从 false 开始，无需额外 effect 重置
+function StageImage({ src, caption }: { src: string; caption?: string }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <div>
+      <div className="relative rounded-xl overflow-hidden" style={{ border: '1px solid #ffffff1c', background: 'rgba(0,0,0,0.3)' }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt={caption || ''}
+          onLoad={() => setLoaded(true)}
+          className="w-full h-auto max-h-[280px] object-contain transition-all duration-700"
+          style={{ opacity: loaded ? 1 : 0, transform: loaded ? 'scale(1)' : 'scale(1.03)' }}
+        />
+      </div>
+      {caption && <p className="text-xs mt-2" style={{ color: 'rgb(96,96,96)' }}>{caption}</p>}
+    </div>
+  );
+}
+
+// 剧本工作室预览层：内部6子流程自动轮播，仅当 isActive(即 activeIndex===0 且可见) 时运行
+function ScriptStudioPreview({ isActive }: { isActive: boolean }) {
+  const [stageIdx, setStageIdx] = useState(0);
+  const [assetIdx, setAssetIdx] = useState(0);
+  const stage = SCRIPT_STAGES[stageIdx];
+
+  useEffect(() => {
+    if (!isActive) return;
+    const isAsset = stage.kind === 'asset' && !!stage.assets;
+    const dwell = stage.kind === 'text' ? 4200 : isAsset ? 2600 : 3200;
+    const t = setTimeout(() => {
+      if (isAsset && assetIdx < stage.assets!.length - 1) {
+        setAssetIdx((i) => i + 1);
+      } else {
+        setStageIdx((i) => (i + 1) % SCRIPT_STAGES.length);
+        setAssetIdx(0);
+      }
+    }, dwell);
+    return () => clearTimeout(t);
+  }, [isActive, stageIdx, assetIdx, stage]);
+
+  return (
+    <div className="w-full h-full flex flex-col p-6 md:p-8">
+      <div className="flex items-center gap-2 mb-5">
+        <span className="text-xs font-bold tracking-wider" style={{ color: 'rgb(113,208,131)' }}>{stage.no}</span>
+        <span className="text-sm font-medium" style={{ color: 'rgb(238,238,238)' }}>{stage.title}</span>
+      </div>
+      <div className="flex-1 min-h-0 overflow-auto">
+        {stage.kind === 'text' && stage.lines && <StageTypewriter key={stage.key} lines={stage.lines} />}
+        {stage.kind === 'image' && stage.image && <StageImage key={stage.key} src={stage.image} caption={stage.caption} />}
+        {stage.kind === 'asset' && stage.assets && (
+          <StageImage
+            key={`${stage.key}-${assetIdx}`}
+            src={stage.assets[Math.min(assetIdx, stage.assets.length - 1)].image}
+            caption={stage.assets[Math.min(assetIdx, stage.assets.length - 1)].caption}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function WorkflowScrollShowcase() {
   const [activeIndex, setActiveIndex] = useState(0);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -79,12 +236,18 @@ export function WorkflowScrollShowcase() {
             {ITEMS.map((item, i) => (
               <div
                 key={item.key}
-                className="absolute inset-0 flex items-center justify-center"
+                className="absolute inset-0"
                 style={{ opacity: activeIndex === i ? 1 : 0, transition: 'opacity 0.45s ease' }}
               >
-                <span className="text-sm" style={{ color: 'rgb(96,96,96)' }}>
-                  {item.title} 预览（占位，骨架验证阶段）
-                </span>
+                {item.key === 'script' ? (
+                  <ScriptStudioPreview isActive={activeIndex === i} />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <span className="text-sm" style={{ color: 'rgb(96,96,96)' }}>
+                      {item.title} 预览（占位，待迁移）
+                    </span>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -102,10 +265,16 @@ export function WorkflowScrollShowcase() {
               {item.desc}
             </p>
             <div
-              className="relative rounded-2xl overflow-hidden flex items-center justify-center"
+              className="relative rounded-2xl overflow-hidden"
               style={{ aspectRatio: '4/3', background: 'rgb(20,20,20)', border: '1px solid #ffffff1c' }}
             >
-              <span className="text-sm" style={{ color: 'rgb(96,96,96)' }}>{item.title} 预览（占位）</span>
+              {item.key === 'script' ? (
+                <ScriptStudioPreview isActive />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <span className="text-sm" style={{ color: 'rgb(96,96,96)' }}>{item.title} 预览（占位，待迁移）</span>
+                </div>
+              )}
             </div>
           </div>
         ))}
