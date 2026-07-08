@@ -8,10 +8,7 @@ import { useRouter } from 'next/navigation';
 import { ScrollZoomShowcase } from './_components/ScrollZoomShowcase';
 import { ModelsShowcase } from './_components/ModelsShowcase';
 import { FeatureTabsShowcase } from './_components/FeatureTabsShowcase';
-import { ScriptStudioDemo } from './_components/ScriptStudioDemo';
-import { DoodleDemo } from './_components/DoodleDemo';
-import { JsonConfigDemo } from './_components/JsonConfigDemo';
-import { ShotboardDemo } from './_components/ShotboardDemo';
+import { WorkflowScrollShowcase } from './_components/WorkflowScrollShowcase';
 import { TryOnDemo } from './_components/TryOnDemo';
 
 export default function Home() {
@@ -405,63 +402,9 @@ export default function Home() {
         <ModelsShowcase />
       </section>
 
-      {/* 剧本工作室 · 重点功能介绍 */}
+      {/* 功能演示区：Sticky Scroll Showcase(左侧文案滚动/右侧sticky联动切换) */}
       <section className="py-32 relative z-10" style={{ borderTop: '1px solid #ffffff0d' }}>
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16 reveal">
-            <p className="text-sm tracking-[0.3em] uppercase mb-4" style={{ color: 'rgb(96,96,96)' }}>Feature · 核心功能</p>
-            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4" style={{ color: 'rgb(238,238,238)' }}>剧本工作室</h2>
-            <p className="text-lg max-w-2xl mx-auto" style={{ color: 'rgb(180,180,180)' }}>
-              从一个想法到一部可拍摄的电影,完整覆盖电影工业的每一道工序。点击下方任一阶段,看看它能产出什么。
-            </p>
-          </div>
-
-          {/* 交互式演示:点击阶段切换右侧屏幕 */}
-          <div className="reveal mb-12">
-            <ScriptStudioDemo />
-          </div>
-
-          <div className="flex flex-col items-center gap-5 reveal">
-            <div className="flex flex-wrap justify-center gap-3">
-              {['资产连续性管理', '场景多视角', '服装装备表', '镜头级提示词', '一键发送到画布'].map((tag) => (
-                <span
-                  key={tag}
-                  className="px-3 py-1.5 text-xs rounded-full font-medium"
-                  style={{ background: 'rgb(26,26,26)', border: '1px solid #ffffff1c', color: 'rgb(180,180,180)' }}
-                >{tag}</span>
-              ))}
-            </div>
-            <Link href="/canvas?studio=true">
-              <button
-                className="px-8 py-3.5 rounded-full font-semibold text-sm transition-transform hover:scale-[1.03]"
-                style={{ background: 'rgb(113,208,131)', color: '#04170a' }}
-              >
-                进入剧本工作室 →
-              </button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* 涂鸦标注 · 功能介绍 */}
-      <section className="py-32 relative z-10" style={{ borderTop: '1px solid #ffffff0d' }}>
-        <div className="max-w-7xl mx-auto px-6">
-          <DoodleDemo />
-        </div>
-      </section>
-
-      {/* JSON 配置 · 功能介绍 */}
-      <section className="py-32 relative z-10" style={{ borderTop: '1px solid #ffffff0d' }}>
-        <div className="max-w-7xl mx-auto px-6">
-          <JsonConfigDemo />
-        </div>
-      </section>
-
-      {/* 分镜设计 Step2+Step4 · 功能介绍 */}
-      <section className="py-32 relative z-10" style={{ borderTop: '1px solid #ffffff0d' }}>
-        <div className="max-w-7xl mx-auto px-6">
-          <ShotboardDemo />
-        </div>
+        <WorkflowScrollShowcase />
       </section>
 
       {/* 角色换衣(虚拟试衣)· 功能介绍 */}
