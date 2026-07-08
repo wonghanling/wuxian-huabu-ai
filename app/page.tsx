@@ -218,7 +218,7 @@ export default function Home() {
       )}
 
       {/* Animated Grid Background */}
-      <div className="infinite-grid absolute inset-0 opacity-50" />
+      <div className="infinite-grid absolute inset-0 opacity-30" />
 
       {/* Glowing Orbs */}
       <div className="orb orb-blue" />
@@ -227,68 +227,68 @@ export default function Home() {
       <div id="cursor-orb" className="orb-cursor" />
 
       {/* Navigation */}
-      <nav className={`fixed top-0 w-full z-50 border-b transition-all duration-500 ${navScrolled ? 'border-white/10 bg-zinc-950/80 backdrop-blur-xl' : 'border-white/5 bg-zinc-950/50 backdrop-blur-md'}`}>
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <img src="/boluo-logo-nav.svg" alt="Boluolab" className="h-8 w-auto" />
-            <span className="font-semibold text-lg tracking-tight">Boluolab</span>
+      <nav
+        className="fixed top-0 w-full z-50 border-b transition-all duration-500"
+        style={{
+          borderColor: navScrolled ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)',
+          background: navScrolled ? 'rgba(10,10,10,0.92)' : 'rgba(10,10,10,0.55)',
+          backdropFilter: 'blur(16px)',
+        }}
+      >
+        <div className="max-w-7xl mx-auto px-6 h-[72px] flex items-center justify-between">
+          <div className="flex items-center space-x-2.5">
+            <img src="/boluo-logo-nav.svg" alt="Boluolab" className="h-7 w-auto" />
+            <span className="font-semibold text-base tracking-tight" style={{ color: 'rgb(238,238,238)' }}>Boluolab</span>
           </div>
 
-          <div className="hidden md:flex space-x-8 text-sm text-zinc-400 font-medium">
-            <a href="/boluotv" className="transition-colors flex flex-col items-center" style={{ color: '#10805a' }}>
-              <span className="font-semibold">BOLUOTV</span>
-              <span className="text-xs" style={{ color: '#0c5f43' }}>作品广场</span>
+          <div className="hidden md:flex items-center space-x-10 text-sm font-medium" style={{ color: 'rgb(180,180,180)' }}>
+            <a href="/boluotv" className="transition-colors hover:text-white" style={{ color: 'rgb(180,180,180)' }}>
+              作品广场
             </a>
-            <a href="#" className="hover:text-white transition-colors flex flex-col items-center">
-              <span>Platform</span>
-              <span className="text-xs text-zinc-500">平台</span>
-            </a>
-            <a href="#" className="hover:text-white transition-colors flex flex-col items-center">
-              <span>Showcase</span>
-              <span className="text-xs text-zinc-500">案例展示</span>
-            </a>
-            <a href="#" className="hover:text-white transition-colors flex flex-col items-center">
-              <span>Enterprise</span>
-              <span className="text-xs text-zinc-500">企业版</span>
-            </a>
-            <a href="#pricing" className="hover:text-white transition-colors flex flex-col items-center">
-              <span>Pricing</span>
-              <span className="text-xs text-zinc-500">定价</span>
-            </a>
+            <a href="#" className="hover:text-white transition-colors">平台</a>
+            <a href="#" className="hover:text-white transition-colors">案例展示</a>
+            <a href="#" className="hover:text-white transition-colors">企业版</a>
+            <a href="#pricing" className="hover:text-white transition-colors">定价</a>
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-5">
             {loading ? (
-              <div className="text-sm text-zinc-400">加载中...</div>
+              <div className="text-sm" style={{ color: 'rgb(96,96,96)' }}>加载中...</div>
             ) : user ? (
               <>
-                <div className="text-sm text-zinc-400">
+                <div className="hidden sm:block text-sm" style={{ color: 'rgb(96,96,96)' }}>
                   {user.email}
                 </div>
-                <Link href="/orders" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">
+                <Link href="/orders" className="text-sm font-medium hover:text-white transition-colors" style={{ color: 'rgb(180,180,180)' }}>
                   订单
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="text-sm font-medium text-zinc-400 hover:text-white transition-colors"
+                  className="text-sm font-medium hover:text-white transition-colors"
+                  style={{ color: 'rgb(180,180,180)' }}
                 >
-                  登出 / Logout
+                  登出
                 </button>
                 <Link href="/canvas">
-                  <button className="px-4 py-2 text-sm font-semibold rounded-full btn-primary">
-                    进入画布 / Canvas
+                  <button
+                    className="px-5 py-2.5 text-sm font-semibold rounded-full transition-transform hover:scale-[1.03]"
+                    style={{ background: 'rgb(238,238,238)', color: '#000' }}
+                  >
+                    进入画布
                   </button>
                 </Link>
               </>
             ) : (
               <>
-                <a href="/auth" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors flex flex-col items-center">
-                  <span>Log in</span>
-                  <span className="text-xs text-zinc-500">登录</span>
+                <a href="/auth" className="text-sm font-medium hover:text-white transition-colors" style={{ color: 'rgb(180,180,180)' }}>
+                  登录
                 </a>
-                <a href="/auth" className="px-4 py-2 text-sm font-semibold rounded-full btn-primary flex flex-col items-center">
-                  <span>Sign up</span>
-                  <span className="text-xs">注册</span>
+                <a
+                  href="/auth"
+                  className="px-5 py-2.5 text-sm font-semibold rounded-full transition-transform hover:scale-[1.03]"
+                  style={{ background: 'rgb(238,238,238)', color: '#000' }}
+                >
+                  注册
                 </a>
               </>
             )}
@@ -297,126 +297,98 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <main className="relative pt-32 pb-20 px-6 flex flex-col items-center">
-        <div className="relative z-10 max-w-5xl mx-auto text-center">
-          <h1 className="text-6xl md:text-8xl font-bold tracking-tighter hero-text leading-[1.1] mb-4">
-            The AI workspace for <br/> <span className="hero-flow italic">infinite</span> creative flow.
+      <main className="relative pt-40 pb-24 px-6 flex flex-col items-center">
+        <div className="relative z-10 max-w-4xl mx-auto text-center">
+          <h1 className="text-6xl md:text-7xl font-bold tracking-tight leading-[1.08] mb-6" style={{ color: 'rgb(238,238,238)' }}>
+            The AI workspace for <span className="hero-flow italic">infinite</span> creative flow.
           </h1>
-          <p className="text-2xl md:text-3xl text-zinc-500 mb-8">
-            为<span className="text-zinc-300">无限创作流</span>而生的 AI 工作空间
+          <p className="text-lg md:text-xl mb-3 max-w-2xl mx-auto leading-relaxed" style={{ color: 'rgb(180,180,180)' }}>
+            为无限创作流而生的 AI 工作空间。一个为高效团队打造的非线性画布，
+            在你的工作流中直接与 AI 智能体协作。
           </p>
 
-          <p className="max-w-2xl mx-auto text-lg md:text-xl text-zinc-400 leading-relaxed mb-3">
-            A non-linear canvas designed for high-performance teams. Brainstorm, design, and prototype with AI agents that live directly inside your workflow.
-          </p>
-          <p className="max-w-2xl mx-auto text-base md:text-lg text-zinc-500 leading-relaxed mb-12">
-            一个为高效团队打造的非线性画布。<br/>
-            在你的工作流中，直接与 AI 智能体协作，完成头脑风暴、设计与原型构建。
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-10">
             <Link href="/canvas">
-              <button className="px-8 py-4 rounded-full font-semibold btn-primary text-base min-w-[200px] flex flex-col items-center">
-                <span>Try the Infinite Canvas</span>
-                <span className="text-xs opacity-80">体验无限画布</span>
+              <button
+                className="px-7 py-3 rounded-full font-semibold text-sm min-w-[180px] transition-transform hover:scale-[1.03]"
+                style={{ background: 'rgb(113,208,131)', color: '#04170a' }}
+              >
+                体验无限画布 →
               </button>
             </Link>
             <Link href="/canvas?tutorial=true">
-              <button className="px-8 py-4 rounded-full font-semibold text-base min-w-[200px] flex flex-col items-center bg-white/5 hover:bg-white/10 border border-white/10 transition-all">
-                <span>View Tutorial</span>
-                <span className="text-xs opacity-80">查看教程</span>
+              <button
+                className="px-7 py-3 rounded-full font-semibold text-sm min-w-[180px] transition-colors"
+                style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: 'rgb(180,180,180)' }}
+              >
+                查看教程
               </button>
             </Link>
           </div>
-
-          {/* 注册送会员横幅已移至弹窗 */}
-
-
-          {/* Dashboard Preview */}
-          <div className="text-center mb-6">
-            <h3 className="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 mb-2">
-              随心拖拽 · 无限扩展 · 创意无限延伸 · 自由连接 · 高自由度创作
-            </h3>
-            <p className="text-sm md:text-base text-zinc-500">
-              Drag Freely · Expand Infinitely · Extend Creativity · Connect Freely · Ultimate Creative Freedom
-            </p>
-          </div>
         </div>
 
-        {/* 预览框：三列网格，图片原比例 */}
-        <div className="relative z-10 w-full px-4 md:px-10 mt-10">
-          <div className="relative group">
-            <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-[32px] blur opacity-20 group-hover:opacity-35 transition duration-1000"></div>
-            <div className="relative rounded-[28px] shadow-2xl" style={{background:'#111114', border:'1px solid rgba(255,255,255,0.08)', padding:'24px'}}>
+        {/* 画布式展示区：中心画布 + 四周浮动卡片 + 连线，呼应产品核心形态 */}
+        <div className="relative z-10 w-full mt-20" style={{ maxWidth: 1100, height: 460 }}>
+          {/* 连线层 */}
+          <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 1100 460" preserveAspectRatio="none">
+            <path d="M 120 100 Q 400 100 550 230" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" fill="none" />
+            <path d="M 980 90 Q 700 100 550 230" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" fill="none" />
+            <path d="M 140 380 Q 400 360 550 230" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" fill="none" />
+            <path d="M 960 370 Q 700 360 550 230" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" fill="none" />
+          </svg>
 
-              {/* 标题栏 */}
-              <div className="flex items-center gap-2 mb-6">
-                <div className="w-2.5 h-2.5 rounded-full bg-zinc-700"></div>
-                <div className="w-2.5 h-2.5 rounded-full bg-zinc-700"></div>
-                <div className="w-2.5 h-2.5 rounded-full bg-zinc-700"></div>
-                <span className="ml-3 text-[11px] text-zinc-600">Aura Canvas · Design Studio</span>
-                <span className="ml-auto text-[10px] text-zinc-700 hidden md:block">AI Edit · Remove · Replace · Expand</span>
-              </div>
-
-              {/* 三列：前两列各两张图，第三列一张图 + 专业设计按钮 */}
-              <div className="grid grid-cols-3 gap-3 md:gap-4">
-
-                {/* 列1 */}
-                <div className="flex flex-col gap-3">
-                  <div className="rounded-xl overflow-hidden" style={{background:'#1c1c1f', border:'1px solid rgba(255,255,255,0.07)'}}>
-                    <img src="/boluolab-filmavo.jpg" alt="" style={{width:'100%', height:'auto', display:'block'}} />
-                    <div style={{padding:'5px 8px', fontSize:9, color:'#52525b'}}>poster</div>
-                  </div>
-                  <div className="rounded-xl overflow-hidden" style={{background:'#1c1c1f', border:'1px solid rgba(255,255,255,0.07)'}}>
-                    <img src="/6.jpg" alt="" style={{width:'100%', height:'auto', display:'block'}} />
-                    <div style={{padding:'5px 8px', fontSize:9, color:'#52525b'}}>ad creative</div>
-                  </div>
-                </div>
-
-                {/* 列2 */}
-                <div className="flex flex-col gap-3">
-                  <div className="rounded-xl overflow-hidden" style={{background:'#1c1c1f', border:'1px solid rgba(255,255,255,0.07)'}}>
-                    <img src="/10.png" alt="" style={{width:'100%', height:'auto', display:'block'}} />
-                    <div style={{padding:'5px 8px', fontSize:9, color:'#52525b'}}>brand</div>
-                  </div>
-                  <div className="rounded-xl overflow-hidden" style={{background:'#1c1c1f', border:'1px solid rgba(255,255,255,0.07)'}}>
-                    <img src="/image-i1781673005081.jpg" alt="" style={{width:'100%', height:'auto', display:'block'}} />
-                    <div style={{padding:'5px 8px', fontSize:9, color:'#52525b'}}>product</div>
-                  </div>
-                </div>
-
-                {/* 列3：一张图 + 专业设计按钮 */}
-                <div className="flex flex-col gap-3">
-                  <div className="rounded-xl overflow-hidden" style={{background:'#1c1c1f', border:'1px solid rgba(255,255,255,0.07)'}}>
-                    <img src="/33.jpg" alt="" style={{width:'100%', height:'auto', display:'block'}} />
-                    <div style={{padding:'5px 8px', fontSize:9, color:'#52525b'}}>social</div>
-                  </div>
-                  <Link href="/canvas?design=true">
-                    <div className="rounded-xl flex flex-col items-center justify-center gap-3 cursor-pointer transition-all hover:border-white/20 hover:bg-white/5" style={{background:'rgba(255,255,255,0.02)', border:'1px dashed rgba(255,255,255,0.1)', padding:'28px 16px'}}>
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{background:'rgba(255,255,255,0.07)'}}>
-                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth="1.5">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                        </svg>
-                      </div>
-                      <div style={{textAlign:'center'}}>
-                        <div style={{color:'#e4e4e7', fontSize:11, fontWeight:600}}>专业设计</div>
-                        <div style={{color:'#52525b', fontSize:9, marginTop:2}}>设计师工作台</div>
-                      </div>
-                    </div>
-                  </Link>
-                </div>
-
-              </div>
-
-              <div className="flex justify-end mt-4">
-                <span className="text-[10px] text-zinc-700 flex items-center gap-1">
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"/></svg>
-                  随意拖曳 · 自由连接
-                </span>
-              </div>
-
-            </div>
+          {/* 中心节点 */}
+          <div
+            className="absolute rounded-2xl flex items-center justify-center"
+            style={{
+              left: '50%', top: 230, transform: 'translate(-50%, -50%)',
+              width: 180, height: 120,
+              background: 'rgb(26,26,26)', border: '1px solid #ffffff1c',
+            }}
+          >
+            <img src="/boluo-logo-nav.svg" alt="" className="w-9 h-9 opacity-70" />
           </div>
+
+          {/* 浮动卡片占位（后续替换真实产品截图） */}
+          {[
+            { label: '海报设计', top: 40, left: 40 },
+            { label: '视频生成', top: 30, left: 860 },
+            { label: '角色设计', top: 300, left: 20 },
+            { label: '分镜脚本', top: 300, left: 840 },
+          ].map((card, i) => (
+            <div
+              key={i}
+              className="absolute rounded-2xl overflow-hidden"
+              style={{
+                top: card.top, left: card.left, width: 200, height: 130,
+                background: 'rgb(26,26,26)', border: '1px solid #ffffff1c',
+              }}
+            >
+              <div
+                className="w-full h-full"
+                style={{ background: 'linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.01))' }}
+              />
+              <span
+                className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full text-[11px] font-medium"
+                style={{ background: 'rgba(0,0,0,0.6)', color: 'rgb(238,238,238)', backdropFilter: 'blur(4px)' }}
+              >
+                {card.label}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* 信任标签行 */}
+        <div className="relative z-10 flex flex-wrap items-center justify-center gap-2.5 mt-16 max-w-3xl mx-auto">
+          {['30+ AI 模型', '文生图', '文生视频', '角色设计', '分镜脚本', '无限画布节点'].map((tag) => (
+            <span
+              key={tag}
+              className="px-4 py-1.5 rounded-full text-xs font-medium"
+              style={{ background: 'rgb(26,26,26)', border: '1px solid #ffffff1c', color: 'rgb(180,180,180)' }}
+            >
+              {tag}
+            </span>
+          ))}
         </div>
       </main>
 

@@ -62,28 +62,28 @@ body::-webkit-scrollbar {
   to { background-position: 1000px 1000px; }
 }
 
-/* Glowing Orbs */
+/* Glowing Orbs - 降低存在感，更贴近纯黑极简风 */
 .orb {
   position: absolute;
-  width: 400px;
-  height: 400px;
+  width: 500px;
+  height: 500px;
   border-radius: 50%;
-  filter: blur(120px);
-  opacity: 0.15;
+  filter: blur(140px);
+  opacity: 0.08;
   z-index: 0;
   pointer-events: none;
 }
 
 .orb-blue {
   background: var(--accent-blue);
-  top: -100px;
-  left: -100px;
+  top: -150px;
+  left: -150px;
 }
 
 .orb-purple {
   background: var(--accent-purple);
-  bottom: -100px;
-  right: -100px;
+  bottom: -150px;
+  right: -150px;
 }
 
 /* 跟随鼠标的柔光(纯 transform,GPU 合成,不触发重排) */
@@ -94,9 +94,9 @@ body::-webkit-scrollbar {
   width: 480px;
   height: 480px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(139,92,246,0.5) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255,255,255,0.35) 0%, transparent 70%);
   filter: blur(110px);
-  opacity: 0.12;
+  opacity: 0.06;
   z-index: 0;
   pointer-events: none;
   margin-left: -240px;
