@@ -5,11 +5,9 @@ import { Infinity, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import { TemplateGallery } from './_components/TemplateGallery';
 import { ScrollZoomShowcase } from './_components/ScrollZoomShowcase';
 import { ModelsShowcase } from './_components/ModelsShowcase';
 import { FeatureTabsShowcase } from './_components/FeatureTabsShowcase';
-import { VideoModelsShowcase } from './_components/VideoModelsShowcase';
 import { ScriptStudioDemo } from './_components/ScriptStudioDemo';
 import { DoodleDemo } from './_components/DoodleDemo';
 import { JsonConfigDemo } from './_components/JsonConfigDemo';
@@ -406,16 +404,6 @@ export default function Home() {
       <section className="py-24 relative z-10" style={{ borderTop: '1px solid #ffffff0d' }}>
         <ModelsShowcase />
       </section>
-
-      {/* 视频模型展示 */}
-      <section className="py-24 relative z-10" style={{ borderTop: '1px solid #ffffff0d' }}>
-        <VideoModelsShowcase />
-      </section>
-
-      {/* Workflow Templates Gallery */}
-      <div id="workflow-templates">
-        <TemplateGallery />
-      </div>
 
       {/* 剧本工作室 · 重点功能介绍 */}
       <section className="py-32 relative z-10" style={{ borderTop: '1px solid #ffffff0d' }}>
