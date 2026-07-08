@@ -23,7 +23,7 @@ const GROUP_2 = [
 const GROUP_3_ROW1 = [
   { key: 'happyhorse', name: 'HappyHorse 1.0', w: 443 }, // 约1.31:1
   { key: 'seedream', name: 'Seedream', w: 674 },         // 约1.99:1
-  { key: 'niji', name: 'Niji 7 动漫', w: 443 },           // 约1.31:1
+  { key: 'niji', name: 'stable-diffusion', w: 443 },      // 约1.31:1
 ];
 const GROUP_3_ROW2 = [
   { key: 'marey', name: 'marey', w: 674 }, // 约1.99:1
