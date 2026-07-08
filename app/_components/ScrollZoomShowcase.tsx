@@ -110,14 +110,14 @@ export function ScrollZoomShowcase() {
           </p>
         </div>
 
-        {/* 5 栗卡片布局 */}
-        <div className="relative flex items-center justify-center gap-3 md:gap-4 px-4">
+        {/* 5 栗卡片布局（整体放大，推开距离随尺寸自动重新计算，交互逻辑不变） */}
+        <div className="relative flex items-center justify-center gap-4 md:gap-6 px-4">
           {/* 左侧组：外侧竖版卡片 + 内侧堆叠卡片，作为一个刚性整体移动 */}
-          <div ref={leftWrapRef} className="flex items-center gap-3 md:gap-4" style={{ willChange: 'transform, opacity' }}>
-            <PlaceholderCard label="案例 01" aspect="3/4" width={150} color="#262626" />
-            <div className="flex flex-col gap-3">
-              <PlaceholderCard label="案例 02" aspect="4/3" width={190} color="#2a2a2a" />
-              <PlaceholderCard label="案例 03" aspect="4/3" width={190} color="#242424" />
+          <div ref={leftWrapRef} className="flex items-center gap-4 md:gap-6" style={{ willChange: 'transform, opacity' }}>
+            <PlaceholderCard label="案例 01" aspect="3/4" width={200} color="#262626" />
+            <div className="flex flex-col gap-4">
+              <PlaceholderCard label="案例 02" aspect="4/3" width={250} color="#2a2a2a" />
+              <PlaceholderCard label="案例 03" aspect="4/3" width={250} color="#242424" />
             </div>
           </div>
 
@@ -126,7 +126,7 @@ export function ScrollZoomShowcase() {
             ref={centerRef}
             className="relative rounded-3xl overflow-hidden flex items-center justify-center flex-shrink-0"
             style={{
-              width: 460,
+              width: 620,
               aspectRatio: '16/10',
               background: '#1a1a1a',
               border: '1px solid #ffffff1c',
@@ -142,12 +142,12 @@ export function ScrollZoomShowcase() {
           </div>
 
           {/* 右侧组：内侧堆叠卡片 + 外侧竖版卡片，作为一个刚性整体移动 */}
-          <div ref={rightWrapRef} className="flex items-center gap-3 md:gap-4" style={{ willChange: 'transform, opacity' }}>
-            <div className="flex flex-col gap-3">
-              <PlaceholderCard label="案例 05" aspect="4/3" width={190} color="#2a2a2a" />
-              <PlaceholderCard label="案例 06" aspect="4/3" width={190} color="#242424" />
+          <div ref={rightWrapRef} className="flex items-center gap-4 md:gap-6" style={{ willChange: 'transform, opacity' }}>
+            <div className="flex flex-col gap-4">
+              <PlaceholderCard label="案例 05" aspect="4/3" width={250} color="#2a2a2a" />
+              <PlaceholderCard label="案例 06" aspect="4/3" width={250} color="#242424" />
             </div>
-            <PlaceholderCard label="案例 07" aspect="3/4" width={150} color="#262626" />
+            <PlaceholderCard label="案例 07" aspect="3/4" width={200} color="#262626" />
           </div>
         </div>
       </div>
