@@ -1,26 +1,26 @@
 'use client';
 
-// 13 个模型占位卡，bento 拼贴网格（大小不一，参照截图风格）
+// 13 个模型占位卡，bento 拼贴网格
+// 大小节奏参照截图："宽卡+竖长卡" 起头，穿插小卡填缝，再接宽卡收尾，制造不规则韵律
 // 每张卡先占位，后续替换为真实视频/图片封面，模型名称保留展示
 const MODELS = [
-  { key: 'flux', name: 'FLUX', size: 'lg' },
-  { key: 'nanobanana', name: 'Nano Banana Pro', size: 'wide' },
+  { key: 'flux', name: 'FLUX', size: 'wide' },
+  { key: 'nanobanana', name: 'Nano Banana Pro', size: 'tall' },
   { key: 'gptimage', name: 'ChatGPT Image 2', size: 'sm' },
-  { key: 'midjourney', name: 'Midjourney', size: 'sm' },
-  { key: 'jimeng', name: 'Jimeng 3.0', size: 'tall' },
+  { key: 'midjourney', name: 'Midjourney', size: 'wide' },
+  { key: 'jimeng', name: 'Jimeng 3.0', size: 'sm' },
   { key: 'wan', name: 'Wan 2.7', size: 'wide' },
-  { key: 'seedance', name: 'Seedance 2.0', size: 'sm' },
-  { key: 'pixverse', name: 'Pixverse v6', size: 'sm' },
-  { key: 'happyhorse', name: 'HappyHorse 1.0', size: 'lg' },
-  { key: 'seedream', name: 'Seedream', size: 'wide' },
-  { key: 'niji', name: 'Niji 7 动漫', size: 'tall' },
+  { key: 'seedance', name: 'Seedance 2.0', size: 'wide' },
+  { key: 'pixverse', name: 'Pixverse v6', size: 'tall' },
+  { key: 'happyhorse', name: 'HappyHorse 1.0', size: 'sm' },
+  { key: 'seedream', name: 'Seedream', size: 'sm' },
+  { key: 'niji', name: 'Niji 7 动漫', size: 'wide' },
   { key: 'marey', name: 'marey', size: 'sm' },
   { key: 'pika', name: 'pika', size: 'sm' },
 ] as const;
 
 // size -> grid span 类名映射
 const SIZE_CLASS: Record<string, string> = {
-  lg: 'col-span-2 row-span-2',
   wide: 'col-span-2 row-span-1',
   tall: 'col-span-1 row-span-2',
   sm: 'col-span-1 row-span-1',
@@ -37,18 +37,24 @@ export function ModelsShowcase() {
           style={{ background: 'radial-gradient(circle,#34d399,transparent 70%)' }} />
       </div>
 
-      {/* 标题区 */}
-      <div className="relative text-center mb-16 px-6">
-        <p className="text-sm tracking-[0.4em] uppercase mb-5" style={{ color: 'rgb(96,96,96)' }}>Models · 顶尖模型矩阵</p>
-        <h2 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-[1.05]" style={{ color: 'rgb(238,238,238)' }}>
-          一个画布<br />
-          <span style={{ color: 'rgb(113,208,131)' }}>
-            全球顶尖图像模型
-          </span>
-        </h2>
-        <p className="text-lg md:text-xl max-w-3xl mx-auto leading-relaxed" style={{ color: 'rgb(180,180,180)' }}>
-          FLUX、Nano Banana Pro、ChatGPT Image 2、Midjourney 等业界领先模型即开即用，在同一画布里按需切换、自由组合
-        </p>
+      {/* 标题区：左侧大标题+副标题，右侧链接（参照截图左右布局） */}
+      <div className="relative flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-16 px-6 md:px-10">
+        <div>
+          <p className="text-sm tracking-[0.4em] uppercase mb-4" style={{ color: 'rgb(96,96,96)' }}>Models · 顶尖模型矩阵</p>
+          <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 leading-[1.1]" style={{ color: 'rgb(238,238,238)' }}>
+            一个画布，<span style={{ color: 'rgb(113,208,131)' }}>全球顶尖图像模型</span>
+          </h2>
+          <p className="text-base md:text-lg max-w-xl leading-relaxed" style={{ color: 'rgb(180,180,180)' }}>
+            FLUX、Nano Banana Pro、ChatGPT Image 2、Midjourney 等业界领先模型即开即用，在同一画布里按需切换、自由组合
+          </p>
+        </div>
+        <a
+          href="/canvas"
+          className="flex items-center gap-1 text-sm font-medium whitespace-nowrap hover:opacity-70 transition-opacity"
+          style={{ color: 'rgb(238,238,238)' }}
+        >
+          进入画布 <span style={{ fontSize: 16 }}>↗</span>
+        </a>
       </div>
 
       {/* bento 拼贴网格：13 张占位卡，大小不一，参照截图风格 */}
