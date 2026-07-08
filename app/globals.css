@@ -86,6 +86,44 @@ body::-webkit-scrollbar {
   right: -150px;
 }
 
+/* Hero 画布点阵背景：基础暗层 + 鼠标跟随发亮层 */
+.hero-dot-grid {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.16) 1px, transparent 1.5px);
+  background-size: 26px 26px;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.hero-dot-grid-bright {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.95) 1px, transparent 1.5px);
+  background-size: 26px 26px;
+  z-index: 1;
+  pointer-events: none;
+  -webkit-mask-image: radial-gradient(circle 220px at var(--mx, 50%) var(--my, 50%), black, transparent 70%);
+  mask-image: radial-gradient(circle 220px at var(--mx, 50%) var(--my, 50%), black, transparent 70%);
+}
+
+/* 连接线光流动效：pathLength=1 归一化，dashoffset 平移形成光点沿线移动 */
+@keyframes hero-line-flow {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: -1; }
+}
+
+.hero-line-glow {
+  stroke-dasharray: 0.16 1;
+  stroke-linecap: round;
+  animation: hero-line-flow 2.8s linear infinite;
+  filter: drop-shadow(0 0 3px rgba(238,238,238,0.9));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-line-glow { animation: none; }
+}
+
 /* 跟随鼠标的柔光(纯 transform,GPU 合成,不触发重排) */
 .orb-cursor {
   position: fixed;

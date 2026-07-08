@@ -79,6 +79,7 @@ export default function Home() {
   useEffect(() => {
     // 1) 光晕跟随鼠标:rAF 节流 + 缓动,只写 transform
     const orb = document.getElementById('cursor-orb');
+    const dotGrid = document.getElementById('hero-dot-grid-bright');
     let targetX = window.innerWidth / 2, targetY = window.innerHeight / 2;
     let curX = targetX, curY = targetY, raf = 0;
     const onMove = (e: MouseEvent) => { targetX = e.clientX; targetY = e.clientY; };
@@ -86,6 +87,12 @@ export default function Home() {
       curX += (targetX - curX) * 0.08;
       curY += (targetY - curY) * 0.08;
       if (orb) orb.style.transform = `translate3d(${curX}px, ${curY}px, 0)`;
+      // 点阵发亮层：跟随鼠标在其所在容器内的相对坐标
+      if (dotGrid) {
+        const rect = dotGrid.getBoundingClientRect();
+        dotGrid.style.setProperty('--mx', `${curX - rect.left}px`);
+        dotGrid.style.setProperty('--my', `${curY - rect.top}px`);
+      }
       raf = requestAnimationFrame(tick);
     };
     window.addEventListener('mousemove', onMove, { passive: true });
@@ -296,90 +303,83 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <main className="relative pt-40 pb-24 px-6 flex flex-col items-center">
-        <div className="relative z-10 max-w-4xl mx-auto text-center">
-          <h1 className="text-6xl md:text-7xl font-bold tracking-tight leading-[1.08] mb-6" style={{ color: 'rgb(238,238,238)' }}>
-            The AI workspace for <span className="hero-flow italic">infinite</span> creative flow.
-          </h1>
-          <p className="text-lg md:text-xl mb-3 max-w-2xl mx-auto leading-relaxed" style={{ color: 'rgb(180,180,180)' }}>
-            为无限创作流而生的 AI 工作空间。一个为高效团队打造的非线性画布，
-            在你的工作流中直接与 AI 智能体协作。
-          </p>
+      {/* Hero Section：全宽画布，中间文案节点 + 四周素材节点 + 光流动连线 */}
+      <main className="relative pt-28 pb-16">
+        <div
+          className="relative w-full overflow-hidden"
+          style={{ height: 'min(92vh, 780px)', minHeight: 560 }}
+        >
+          {/* 点阵背景：暗层 + 鼠标跟随发亮层 */}
+          <div className="hero-dot-grid" />
+          <div id="hero-dot-grid-bright" className="hero-dot-grid-bright" />
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-10">
-            <Link href="/canvas">
-              <button
-                className="px-7 py-3 rounded-full font-semibold text-sm min-w-[180px] transition-transform hover:scale-[1.03]"
-                style={{ background: 'rgb(113,208,131)', color: '#04170a' }}
-              >
-                体验无限画布 →
-              </button>
-            </Link>
-            <Link href="/canvas?tutorial=true">
-              <button
-                className="px-7 py-3 rounded-full font-semibold text-sm min-w-[180px] transition-colors"
-                style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: 'rgb(180,180,180)' }}
-              >
-                查看教程
-              </button>
-            </Link>
-          </div>
-        </div>
-
-        {/* 画布式展示区：中心画布 + 四周浮动卡片 + 连线，呼应产品核心形态 */}
-        <div className="relative z-10 w-full mt-20" style={{ maxWidth: 1100, height: 460 }}>
-          {/* 连线层 */}
-          <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 1100 460" preserveAspectRatio="none">
-            <path d="M 120 100 Q 400 100 550 230" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" fill="none" />
-            <path d="M 980 90 Q 700 100 550 230" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" fill="none" />
-            <path d="M 140 380 Q 400 360 550 230" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" fill="none" />
-            <path d="M 960 370 Q 700 360 550 230" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" fill="none" />
+          {/* 连线层（光沿线流动） */}
+          <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 1600 780" preserveAspectRatio="none" style={{ zIndex: 2 }}>
+            <path id="hero-line-1" d="M 260 190 Q 600 190 780 390" stroke="rgba(255,255,255,0.14)" strokeWidth="1.5" fill="none" pathLength="1" />
+            <path id="hero-line-2" d="M 1340 160 Q 1000 190 820 390" stroke="rgba(255,255,255,0.14)" strokeWidth="1.5" fill="none" pathLength="1" />
+            <path id="hero-line-3" d="M 300 610 Q 600 590 780 400" stroke="rgba(255,255,255,0.14)" strokeWidth="1.5" fill="none" pathLength="1" />
+            <path id="hero-line-4" d="M 1320 630 Q 1000 590 820 400" stroke="rgba(255,255,255,0.14)" strokeWidth="1.5" fill="none" pathLength="1" />
+            <use href="#hero-line-1" className="hero-line-glow" stroke="rgb(238,238,238)" strokeWidth="2" fill="none" pathLength="1" style={{ animationDelay: '0s' }} />
+            <use href="#hero-line-2" className="hero-line-glow" stroke="rgb(238,238,238)" strokeWidth="2" fill="none" pathLength="1" style={{ animationDelay: '0.7s' }} />
+            <use href="#hero-line-3" className="hero-line-glow" stroke="rgb(238,238,238)" strokeWidth="2" fill="none" pathLength="1" style={{ animationDelay: '1.4s' }} />
+            <use href="#hero-line-4" className="hero-line-glow" stroke="rgb(238,238,238)" strokeWidth="2" fill="none" pathLength="1" style={{ animationDelay: '2.1s' }} />
           </svg>
 
-          {/* 中心节点 */}
+          {/* 中间文案节点 */}
           <div
-            className="absolute rounded-2xl flex items-center justify-center"
-            style={{
-              left: '50%', top: 230, transform: 'translate(-50%, -50%)',
-              width: 180, height: 120,
-              background: 'rgb(26,26,26)', border: '1px solid #ffffff1c',
-            }}
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center px-6"
+            style={{ zIndex: 3, width: 'min(640px, 88vw)' }}
           >
-            <img src="/boluo-logo-nav.svg" alt="" className="w-9 h-9 opacity-70" />
+            <h1 className="text-4xl md:text-6xl font-bold tracking-tight leading-[1.12] mb-5" style={{ color: 'rgb(238,238,238)' }}>
+              The AI workspace for <span className="hero-flow italic">infinite</span> creative flow.
+            </h1>
+            <p className="text-base md:text-lg mb-8 leading-relaxed" style={{ color: 'rgb(180,180,180)' }}>
+              为无限创作流而生的 AI 工作空间。一个为高效团队打造的非线性画布，
+              在你的工作流中直接与 AI 智能体协作。
+            </p>
+            <Link href="/canvas">
+              <button
+                className="px-8 py-3.5 rounded-full font-semibold text-sm transition-transform hover:scale-[1.03]"
+                style={{ background: 'rgb(113,208,131)', color: '#04170a' }}
+              >
+                立即创作
+              </button>
+            </Link>
           </div>
 
-          {/* 浮动卡片占位（后续替换真实产品截图） */}
-          {[
-            { label: '海报设计', top: 40, left: 40 },
-            { label: '视频生成', top: 30, left: 860 },
-            { label: '角色设计', top: 300, left: 20 },
-            { label: '分镜脚本', top: 300, left: 840 },
-          ].map((card, i) => (
-            <div
-              key={i}
-              className="absolute rounded-2xl overflow-hidden"
-              style={{
-                top: card.top, left: card.left, width: 200, height: 130,
-                background: 'rgb(26,26,26)', border: '1px solid #ffffff1c',
-              }}
-            >
-              <div
-                className="w-full h-full"
-                style={{ background: 'linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.01))' }}
-              />
-              <span
-                className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full text-[11px] font-medium"
-                style={{ background: 'rgba(0,0,0,0.6)', color: 'rgb(238,238,238)', backdropFilter: 'blur(4px)' }}
-              >
-                {card.label}
-              </span>
-            </div>
-          ))}
+          {/* 四周素材节点卡片：左二图片(4:3)，右上视频(16:9)，右下竖版(9:14)，hover 放大 */}
+          <div
+            className="absolute rounded-2xl overflow-hidden cursor-pointer transition-transform duration-300 hover:scale-110 hover:z-20"
+            style={{ zIndex: 2, top: '18%', left: '10%', width: 'min(220px, 20vw)', aspectRatio: '4/3', background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}
+          >
+            <div className="w-full h-full" style={{ background: 'linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.01))' }} />
+            <span className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full text-[11px] font-medium" style={{ background: 'rgba(0,0,0,0.6)', color: 'rgb(238,238,238)', backdropFilter: 'blur(4px)' }}>海报设计</span>
+          </div>
+          <div
+            className="absolute rounded-2xl overflow-hidden cursor-pointer transition-transform duration-300 hover:scale-110 hover:z-20"
+            style={{ zIndex: 2, top: '62%', left: '7%', width: 'min(220px, 20vw)', aspectRatio: '4/3', background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}
+          >
+            <div className="w-full h-full" style={{ background: 'linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.01))' }} />
+            <span className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full text-[11px] font-medium" style={{ background: 'rgba(0,0,0,0.6)', color: 'rgb(238,238,238)', backdropFilter: 'blur(4px)' }}>角色设计</span>
+          </div>
+          <div
+            className="absolute rounded-2xl overflow-hidden cursor-pointer transition-transform duration-300 hover:scale-110 hover:z-20"
+            style={{ zIndex: 2, top: '12%', right: '9%', width: 'min(260px, 22vw)', aspectRatio: '16/9', background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}
+          >
+            <div className="w-full h-full" style={{ background: 'linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.01))' }} />
+            <span className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full text-[11px] font-medium" style={{ background: 'rgba(0,0,0,0.6)', color: 'rgb(238,238,238)', backdropFilter: 'blur(4px)' }}>视频生成</span>
+          </div>
+          <div
+            className="absolute rounded-2xl overflow-hidden cursor-pointer transition-transform duration-300 hover:scale-110 hover:z-20"
+            style={{ zIndex: 2, top: '58%', right: '11%', width: 'min(170px, 16vw)', aspectRatio: '9/14', background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}
+          >
+            <div className="w-full h-full" style={{ background: 'linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.01))' }} />
+            <span className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full text-[11px] font-medium" style={{ background: 'rgba(0,0,0,0.6)', color: 'rgb(238,238,238)', backdropFilter: 'blur(4px)' }}>分镜脚本</span>
+          </div>
         </div>
 
         {/* 信任标签行 */}
-        <div className="relative z-10 flex flex-wrap items-center justify-center gap-2.5 mt-16 max-w-3xl mx-auto">
+        <div className="relative z-10 flex flex-wrap items-center justify-center gap-2.5 mt-14 max-w-3xl mx-auto px-6">
           {['30+ AI 模型', '文生图', '文生视频', '角色设计', '分镜脚本', '无限画布节点'].map((tag) => (
             <span
               key={tag}
