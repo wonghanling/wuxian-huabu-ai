@@ -43,8 +43,10 @@ export function ScrollZoomShowcase() {
       // 右侧组的近边 = 组的左边缘（内侧栗紧贴中间，是右侧组第一个子元素）
       rightInitialOffsetRef.current = Math.abs(rightWrap.getBoundingClientRect().left - viewportCenterX);
 
-      // 目标：中心卡片放大到能覆盖整个视口宽度(略超出防止露边)
-      maxScaleRef.current = (window.innerWidth * 1.05) / (centerRect.width || 1);
+      // 目标：中心卡片放大到能同时覆盖视口宽和高(取较大倍数，类似 CSS cover)，避免只按宽度算导致上下留白
+      const scaleForWidth = (window.innerWidth * 1.05) / (centerRect.width || 1);
+      const scaleForHeight = (window.innerHeight * 1.05) / (centerRect.height || 1);
+      maxScaleRef.current = Math.max(scaleForWidth, scaleForHeight);
     };
 
     measure();
