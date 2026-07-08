@@ -84,23 +84,41 @@ export function FeatureTabsShowcase() {
           })}
         </div>
 
-        {/* 右侧：预览区，随左侧选中项切换（占位，后续替换真实截图/视频） */}
+        {/* 右侧：预览卡片，随左侧选中项切换（Featured Techniques 卡片样式：图 + 标题 + 描述 + 作者行）
+            占位版：图片区留空、文案后续替换，作者行先占位 */}
         <div
-          className="relative rounded-3xl overflow-hidden flex items-center justify-center"
-          style={{
-            aspectRatio: '4/3',
-            background: 'rgb(20,20,20)',
-            border: '1px solid #ffffff1c',
-          }}
+          key={activeFeature.key}
+          className="relative rounded-2xl overflow-hidden flex flex-col"
+          style={{ background: 'rgb(20,20,20)', border: '1px solid #ffffff1c' }}
         >
+          {/* 图片占位区 */}
           <div
-            key={activeFeature.key}
-            className="absolute inset-0 flex items-center justify-center"
-            style={{ background: 'linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.01))' }}
+            className="relative w-full flex items-center justify-center"
+            style={{ aspectRatio: '4/3', background: 'linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.01))' }}
           >
-            <span className="text-sm font-medium" style={{ color: 'rgb(150,150,150)' }}>
-              {activeFeature.title} 预览（占位，后续替换真实素材）
+            <span className="text-sm font-medium" style={{ color: 'rgb(96,96,96)' }}>
+              占位图片
             </span>
+          </div>
+
+          {/* 文字区：标题 + 描述 */}
+          <div className="p-5">
+            <h3 className="text-base font-semibold mb-1.5" style={{ color: 'rgb(238,238,238)' }}>
+              {activeFeature.title}
+            </h3>
+            <p className="text-sm leading-relaxed mb-4" style={{ color: 'rgb(150,150,150)' }}>
+              {activeFeature.desc}
+            </p>
+
+            {/* 作者行占位：头像 + 名字 + 机构 */}
+            <div className="flex items-center gap-2 pt-3" style={{ borderTop: '1px solid #ffffff0d' }}>
+              <span
+                className="w-6 h-6 rounded-full flex-shrink-0"
+                style={{ background: 'rgb(63,63,63)' }}
+              />
+              <span className="text-xs" style={{ color: 'rgb(150,150,150)' }}>作者名占位</span>
+              <span className="text-xs" style={{ color: 'rgb(96,96,96)' }}>· 机构占位</span>
+            </div>
           </div>
         </div>
       </div>
