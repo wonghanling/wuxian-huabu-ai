@@ -5,9 +5,12 @@ import { useEffect, useRef } from 'react';
 // ============================================================
 // 滚动缩放展示区（占位版，验证交互）
 // 5 栗布局：最外侧各1张竖版卡片，内侧各2张堆叠卡片，中间1张16:10大卡片
-// 滚动时中间卡片放大铺满视口，两侧4栗卡片被推出屏幕外(非覆盖，是清空让位)
+// 核心逻辑：按中心卡片"当前实际膨胀宽度"实时计算两侧应让开的距离，
+// 保证任意一帧中心卡片边缘都不会超出两侧卡片已让开的位置 —— 是"推开"不是"覆盖"
 // 纯 transform/opacity，rAF 节流，不触发重排
 // ============================================================
+
+const GAP_BUFFER = 24; // 中心卡片边缘与两侧卡片之间始终保留的最小间隙(px)
 
 export function ScrollZoomShowcase() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -15,9 +18,36 @@ export function ScrollZoomShowcase() {
   const sideRefs = useRef<(HTMLDivElement | null)[]>([]);
   const labelRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    let raf = 0;
+  // 初始状态测量值（不随 transform 变化，只在 mount / resize 时重新测）
+  const baseHalfWidthRef = useRef(0); // 中心卡片初始半宽
+  const initialOffsetsRef = useRef<number[]>([0, 0, 0, 0]); // 每栗侧卡片初始"近边到视口中心"的距离
+  const maxScaleRef = useRef(4.6);
 
+  useEffect(() => {
+    const measure = () => {
+      const center = centerRef.current;
+      if (!center) return;
+      const viewportCenterX = window.innerWidth / 2;
+      const centerRect = center.getBoundingClientRect();
+      baseHalfWidthRef.current = centerRect.width / 2;
+
+      sideRefs.current.forEach((col, i) => {
+        if (!col) return;
+        const rect = col.getBoundingClientRect();
+        const isLeft = i < 2;
+        // 近边：左侧栗取右边缘，右侧栗取左边缘
+        const nearEdge = isLeft ? rect.right : rect.left;
+        initialOffsetsRef.current[i] = Math.abs(nearEdge - viewportCenterX);
+      });
+
+      // 目标：中心卡片放大到能覆盖整个视口宽度(略超出防止露边)
+      maxScaleRef.current = (window.innerWidth * 1.05) / (centerRect.width || 1);
+    };
+
+    measure();
+    window.addEventListener('resize', measure);
+
+    let raf = 0;
     const onScroll = () => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
@@ -27,26 +57,26 @@ export function ScrollZoomShowcase() {
         const total = el.offsetHeight - window.innerHeight;
         const progress = total > 0 ? Math.min(1, Math.max(0, -rect.top / total)) : 0;
 
-        // 中心卡片：随进度放大铺满视口
+        const scale = 1 + (maxScaleRef.current - 1) * progress;
+        const centerHalfWidthNow = baseHalfWidthRef.current * scale;
+        const requiredOffset = centerHalfWidthNow + GAP_BUFFER;
+
+        // 中心卡片：放大铺满视口
         if (centerRef.current) {
-          const scale = 1 + progress * 3.6;
           centerRef.current.style.transform = `scale(${scale})`;
           centerRef.current.style.borderRadius = `${24 - progress * 24}px`;
         }
 
-        // 两侧 4 栗卡片：整体推出屏幕外(左侧往左推、右侧往右推)，逐渐清空让中心卡片独占视口
+        // 两侧卡片：按中心卡片实际膨胀宽度，实时计算需要让开的距离，确保不被覆盖
         sideRefs.current.forEach((col, i) => {
           if (!col) return;
-          const isLeft = i < 2; // 前两栗在左侧，后两栗在右侧
+          const isLeft = i < 2;
           const dir = isLeft ? -1 : 1;
-          // 内侧栗(i=1,2)推出距离小一点，外侧栗(i=0,3)推出距离大一点，制造层次
-          const isOuter = i === 0 || i === 3;
-          const distance = (isOuter ? 900 : 600) * progress * dir;
-          col.style.transform = `translateX(${distance}px)`;
-          col.style.opacity = String(Math.max(0, 1 - progress * 1.6));
+          const extraPush = Math.max(0, requiredOffset - initialOffsetsRef.current[i]);
+          col.style.transform = `translateX(${extraPush * dir}px)`;
+          col.style.opacity = String(Math.max(0, 1 - progress * 1.3));
         });
 
-        // 中心标签随进度淡出（放大后不需要标签遮挡视频）
         if (labelRef.current) {
           labelRef.current.style.opacity = String(Math.max(0, 1 - progress * 3));
         }
@@ -56,6 +86,7 @@ export function ScrollZoomShowcase() {
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     return () => {
+      window.removeEventListener('resize', measure);
       window.removeEventListener('scroll', onScroll);
       cancelAnimationFrame(raf);
     };
@@ -99,7 +130,6 @@ export function ScrollZoomShowcase() {
               border: '1px solid #ffffff1c',
               willChange: 'transform',
               transformOrigin: 'center center',
-              zIndex: 10,
             }}
           >
             <div ref={labelRef} className="absolute inset-0 flex items-center justify-center">
