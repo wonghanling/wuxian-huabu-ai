@@ -408,12 +408,12 @@ export default function Home() {
       </div>
 
       {/* 剧本工作室 · 重点功能介绍 */}
-      <section className="py-32 border-t border-white/5 relative z-10 bg-zinc-950/40">
+      <section className="py-32 relative z-10" style={{ borderTop: '1px solid #ffffff0d' }}>
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16 reveal">
-            <p className="text-sm tracking-[0.3em] text-zinc-500 uppercase mb-4">Feature · 核心功能</p>
-            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">剧本工作室</h2>
-            <p className="text-lg text-zinc-400 max-w-2xl mx-auto">
+            <p className="text-sm tracking-[0.3em] uppercase mb-4" style={{ color: 'rgb(96,96,96)' }}>Feature · 核心功能</p>
+            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4" style={{ color: 'rgb(238,238,238)' }}>剧本工作室</h2>
+            <p className="text-lg max-w-2xl mx-auto" style={{ color: 'rgb(180,180,180)' }}>
               从一个想法到一部可拍摄的电影,完整覆盖电影工业的每一道工序。点击下方任一阶段,看看它能产出什么。
             </p>
           </div>
@@ -426,11 +426,18 @@ export default function Home() {
           <div className="flex flex-col items-center gap-5 reveal">
             <div className="flex flex-wrap justify-center gap-3">
               {['资产连续性管理', '场景多视角', '服装装备表', '镜头级提示词', '一键发送到画布'].map((tag) => (
-                <span key={tag} className="px-3 py-1.5 text-xs rounded-full bg-white/5 border border-white/10 text-zinc-300">{tag}</span>
+                <span
+                  key={tag}
+                  className="px-3 py-1.5 text-xs rounded-full font-medium"
+                  style={{ background: 'rgb(26,26,26)', border: '1px solid #ffffff1c', color: 'rgb(180,180,180)' }}
+                >{tag}</span>
               ))}
             </div>
             <Link href="/canvas?studio=true">
-              <button className="px-8 py-3.5 rounded-full bg-white text-black font-semibold text-sm hover:bg-zinc-200 transition-all hover:-translate-y-0.5 shadow-lg shadow-white/10">
+              <button
+                className="px-8 py-3.5 rounded-full font-semibold text-sm transition-transform hover:scale-[1.03]"
+                style={{ background: 'rgb(113,208,131)', color: '#04170a' }}
+              >
                 进入剧本工作室 →
               </button>
             </Link>
@@ -439,28 +446,28 @@ export default function Home() {
       </section>
 
       {/* 涂鸦标注 · 功能介绍 */}
-      <section className="py-32 border-t border-white/5 relative z-10">
+      <section className="py-32 relative z-10" style={{ borderTop: '1px solid #ffffff0d' }}>
         <div className="max-w-7xl mx-auto px-6">
           <DoodleDemo />
         </div>
       </section>
 
       {/* JSON 配置 · 功能介绍 */}
-      <section className="py-32 border-t border-white/5 relative z-10 bg-zinc-950/40">
+      <section className="py-32 relative z-10" style={{ borderTop: '1px solid #ffffff0d' }}>
         <div className="max-w-7xl mx-auto px-6">
           <JsonConfigDemo />
         </div>
       </section>
 
       {/* 分镜设计 Step2+Step4 · 功能介绍 */}
-      <section className="py-32 border-t border-white/5 relative z-10">
+      <section className="py-32 relative z-10" style={{ borderTop: '1px solid #ffffff0d' }}>
         <div className="max-w-7xl mx-auto px-6">
           <ShotboardDemo />
         </div>
       </section>
 
       {/* 角色换衣(虚拟试衣)· 功能介绍 */}
-      <section className="py-32 border-t border-white/5 relative z-10 bg-zinc-950/40">
+      <section className="py-32 relative z-10" style={{ borderTop: '1px solid #ffffff0d' }}>
         <div className="max-w-7xl mx-auto px-6">
           <TryOnDemo />
         </div>
