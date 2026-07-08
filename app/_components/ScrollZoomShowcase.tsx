@@ -88,7 +88,7 @@ export function ScrollZoomShowcase() {
         }
 
         if (labelRef.current) {
-          labelRef.current.style.opacity = String(Math.max(0, 1 - progress * 3));
+          labelRef.current.style.opacity = String(Math.max(0, 1 - progress * 1.1));
         }
       });
     };
@@ -130,8 +130,8 @@ export function ScrollZoomShowcase() {
             style={{
               width: 620,
               aspectRatio: '16/10',
-              background: '#1a1a1a',
-              border: '1px solid #ffffff1c',
+              background: 'rgb(38,38,38)',
+              border: '1px solid #ffffff2e',
               willChange: 'transform',
               transformOrigin: 'center center',
             }}
