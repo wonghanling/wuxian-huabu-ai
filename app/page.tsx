@@ -484,61 +484,56 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="py-32 relative z-10">
+      <section className="py-32 relative z-10" style={{ borderTop: '1px solid #ffffff0d' }}>
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-20 reveal">
-            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-              Everything you need to create
-            </h2>
-            <p className="text-xl text-zinc-500">
+            <p className="text-sm tracking-[0.3em] uppercase mb-4" style={{ color: 'rgb(96,96,96)' }}>Features · 核心能力</p>
+            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4" style={{ color: 'rgb(238,238,238)' }}>
               你所需要的一切创作工具
-            </p>
+            </h2>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-6">
             {/* Feature 1 */}
-            <div className="glass-card p-8 hover:border-blue-500/30 transition-all duration-300">
-              <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mb-6">
-                <Infinity className="w-6 h-6 text-blue-400" />
+            <div
+              className="rounded-2xl p-8 transition-all duration-300"
+              style={{ background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}
+            >
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-6" style={{ background: 'rgba(113,208,131,0.1)' }}>
+                <Infinity className="w-6 h-6" style={{ color: 'rgb(113,208,131)' }} />
               </div>
-              <h3 className="text-xl font-semibold mb-3">Infinite Canvas</h3>
-              <p className="text-sm text-zinc-500 mb-2">无限画布</p>
-              <p className="text-zinc-400 leading-relaxed">
-                Unlimited space for your ideas. Drag, zoom, and organize your creative workflow without boundaries.
-              </p>
-              <p className="text-sm text-zinc-500 mt-2">
+              <h3 className="text-xl font-semibold mb-3" style={{ color: 'rgb(238,238,238)' }}>无限画布</h3>
+              <p className="leading-relaxed" style={{ color: 'rgb(180,180,180)' }}>
                 为你的创意提供无限空间。自由拖拽、缩放，无边界地组织你的创作流程。
               </p>
             </div>
 
             {/* Feature 2 */}
-            <div className="glass-card p-8 hover:border-purple-500/30 transition-all duration-300">
-              <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center mb-6">
-                <Sparkles className="w-6 h-6 text-purple-400" />
+            <div
+              className="rounded-2xl p-8 transition-all duration-300"
+              style={{ background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}
+            >
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-6" style={{ background: 'rgba(113,208,131,0.1)' }}>
+                <Sparkles className="w-6 h-6" style={{ color: 'rgb(113,208,131)' }} />
               </div>
-              <h3 className="text-xl font-semibold mb-3">AI-Powered Cards</h3>
-              <p className="text-sm text-zinc-500 mb-2">AI 驱动的卡片</p>
-              <p className="text-zinc-400 leading-relaxed">
-                Each card is an independent AI agent. Generate images, videos, and content with custom models and parameters.
-              </p>
-              <p className="text-sm text-zinc-500 mt-2">
+              <h3 className="text-xl font-semibold mb-3" style={{ color: 'rgb(238,238,238)' }}>AI 驱动的卡片</h3>
+              <p className="leading-relaxed" style={{ color: 'rgb(180,180,180)' }}>
                 每张卡片都是独立的 AI 智能体。使用自定义模型和参数生成图片、视频和内容。
               </p>
             </div>
 
             {/* Feature 3 */}
-            <div className="glass-card p-8 hover:border-cyan-500/30 transition-all duration-300">
-              <div className="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center mb-6">
-                <svg className="w-6 h-6 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <div
+              className="rounded-2xl p-8 transition-all duration-300"
+              style={{ background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}
+            >
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-6" style={{ background: 'rgba(113,208,131,0.1)' }}>
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="rgb(113,208,131)" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold mb-3">Card-Level Control</h3>
-              <p className="text-sm text-zinc-500 mb-2">卡片级控制</p>
-              <p className="text-zinc-400 leading-relaxed">
-                Every card chooses its own model, parameters, and execution. No global settings, complete autonomy.
-              </p>
-              <p className="text-sm text-zinc-500 mt-2">
+              <h3 className="text-xl font-semibold mb-3" style={{ color: 'rgb(238,238,238)' }}>卡片级控制</h3>
+              <p className="leading-relaxed" style={{ color: 'rgb(180,180,180)' }}>
                 每张卡片独立选择模型、参数和执行方式。无全局设置，完全自治。
               </p>
             </div>
@@ -547,197 +542,113 @@ export default function Home() {
       </section>
 
       {/* Card Types Section */}
-      <section className="py-32 border-t border-white/5 relative z-10 bg-zinc-950/50">
+      <section className="py-32 relative z-10" style={{ borderTop: '1px solid #ffffff0d' }}>
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-20 reveal">
-            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-              Powerful card types
-            </h2>
-            <p className="text-xl text-zinc-500">
+            <p className="text-sm tracking-[0.3em] uppercase mb-4" style={{ color: 'rgb(96,96,96)' }}>Card Types · 卡片类型</p>
+            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4" style={{ color: 'rgb(238,238,238)' }}>
               强大的卡片类型
-            </p>
+            </h2>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="p-6 bg-white/[0.03] border border-white/10 rounded-3xl backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.06] hover:border-violet-500/30 hover:-translate-y-1">
-              <div className="w-8 h-8 mb-3">
-                <img src="/book-business-guidelines-svgrepo-com.svg" alt="Text Card" className="w-full h-full" />
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {[
+              { icon: '/book-business-guidelines-svgrepo-com.svg', name: '文本卡', desc: '撰写提示词与剧本' },
+              { icon: '/juese-halloween-typical-character-bandaged-outline-svgrepo-com.svg', name: '角色卡', desc: '创建细节丰富的角色' },
+              { icon: '/tupian-landscape-png-svgrepo-com.svg', name: '图片生成', desc: '文本转图片，AI 驱动' },
+              { icon: '/jingtou-film-svgrepo-com.svg', name: '多镜头', desc: '多角度镜头一次生成' },
+              { icon: '/jiandao-svgrepo-com.svg', name: '裁剪卡', desc: '裁剪与调整图片尺寸' },
+              { icon: '/bianhuanka-camera-svgrepo-com.svg', name: '变换卡', desc: '旋转、缩放与翻转' },
+              { icon: '/shipingshengchen-camera-filled-svgrepo-com.svg', name: '视频生成', desc: '创建 AI 视频' },
+              { icon: '/zijing-svgrepo-com.svg', name: '资产卡', desc: '管理你的创作资产' },
+            ].map((card) => (
+              <div
+                key={card.name}
+                className="p-6 rounded-2xl transition-all duration-300 hover:-translate-y-1"
+                style={{ background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}
+              >
+                <div className="w-8 h-8 mb-3">
+                  <img src={card.icon} alt={card.name} className="w-full h-full" />
+                </div>
+                <h4 className="font-semibold mb-1" style={{ color: 'rgb(238,238,238)' }}>{card.name}</h4>
+                <p className="text-sm" style={{ color: 'rgb(150,150,150)' }}>{card.desc}</p>
               </div>
-              <h4 className="font-semibold mb-1 text-white">Text Card</h4>
-              <p className="text-xs text-zinc-500 mb-2">文本卡</p>
-              <p className="text-sm text-zinc-400">Write prompts and scripts</p>
-            </div>
-
-            <div className="p-6 bg-white/[0.03] border border-white/10 rounded-3xl backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.06] hover:border-violet-500/30 hover:-translate-y-1">
-              <div className="w-8 h-8 mb-3">
-                <img src="/juese-halloween-typical-character-bandaged-outline-svgrepo-com.svg" alt="Character Card" className="w-full h-full" />
-              </div>
-              <h4 className="font-semibold mb-1 text-white">Character Card</h4>
-              <p className="text-xs text-zinc-500 mb-2">角色卡</p>
-              <p className="text-sm text-zinc-400">Create detailed characters</p>
-            </div>
-
-            <div className="p-6 bg-white/[0.03] border border-white/10 rounded-3xl backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.06] hover:border-violet-500/30 hover:-translate-y-1">
-              <div className="w-8 h-8 mb-3">
-                <img src="/tupian-landscape-png-svgrepo-com.svg" alt="Image Generate" className="w-full h-full" />
-              </div>
-              <h4 className="font-semibold mb-1 text-white">Image Generate</h4>
-              <p className="text-xs text-zinc-500 mb-2">图片生成</p>
-              <p className="text-sm text-zinc-400">Text to image with AI</p>
-            </div>
-
-            <div className="p-6 bg-white/[0.03] border border-white/10 rounded-3xl backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.06] hover:border-violet-500/30 hover:-translate-y-1">
-              <div className="w-8 h-8 mb-3">
-                <img src="/jingtou-film-svgrepo-com.svg" alt="Shot Grid" className="w-full h-full" />
-              </div>
-              <h4 className="font-semibold mb-1 text-white">Shot Grid</h4>
-              <p className="text-xs text-zinc-500 mb-2">多镜头</p>
-              <p className="text-sm text-zinc-400">Multiple camera angles</p>
-            </div>
-
-            <div className="p-6 bg-white/[0.03] border border-white/10 rounded-3xl backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.06] hover:border-violet-500/30 hover:-translate-y-1">
-              <div className="w-8 h-8 mb-3">
-                <img src="/jiandao-svgrepo-com.svg" alt="Crop Card" className="w-full h-full" />
-              </div>
-              <h4 className="font-semibold mb-1 text-white">Crop Card</h4>
-              <p className="text-xs text-zinc-500 mb-2">裁剪卡</p>
-              <p className="text-sm text-zinc-400">Crop and resize images</p>
-            </div>
-
-            <div className="p-6 bg-white/[0.03] border border-white/10 rounded-3xl backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.06] hover:border-violet-500/30 hover:-translate-y-1">
-              <div className="w-8 h-8 mb-3">
-                <img src="/bianhuanka-camera-svgrepo-com.svg" alt="Transform" className="w-full h-full" />
-              </div>
-              <h4 className="font-semibold mb-1 text-white">Transform</h4>
-              <p className="text-xs text-zinc-500 mb-2">变换卡</p>
-              <p className="text-sm text-zinc-400">Rotate, scale, and flip</p>
-            </div>
-
-            <div className="p-6 bg-white/[0.03] border border-white/10 rounded-3xl backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.06] hover:border-violet-500/30 hover:-translate-y-1">
-              <div className="w-8 h-8 mb-3">
-                <img src="/shipingshengchen-camera-filled-svgrepo-com.svg" alt="Video Generate" className="w-full h-full" />
-              </div>
-              <h4 className="font-semibold mb-1 text-white">Video Generate</h4>
-              <p className="text-xs text-zinc-500 mb-2">视频生成</p>
-              <p className="text-sm text-zinc-400">Create AI videos</p>
-            </div>
-
-            <div className="p-6 bg-white/[0.03] border border-white/10 rounded-3xl backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.06] hover:border-violet-500/30 hover:-translate-y-1">
-              <div className="w-8 h-8 mb-3">
-                <img src="/zijing-svgrepo-com.svg" alt="Asset Card" className="w-full h-full" />
-              </div>
-              <h4 className="font-semibold mb-1 text-white">Asset Card</h4>
-              <p className="text-xs text-zinc-500 mb-2">资产卡</p>
-              <p className="text-sm text-zinc-400">Manage your assets</p>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* How It Works Section */}
-      <section className="py-32 border-t border-white/5 relative z-10">
+      <section className="py-32 relative z-10" style={{ borderTop: '1px solid #ffffff0d' }}>
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-20 reveal">
-            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-              How it works
+            <p className="text-sm tracking-[0.3em] uppercase mb-4" style={{ color: 'rgb(96,96,96)' }}>How it works · 工作原理</p>
+            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4" style={{ color: 'rgb(238,238,238)' }}>
+              三步完成一次创作
             </h2>
-            <p className="text-xl text-zinc-500">
-              工作原理
-            </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-12">
-            {/* Step 1 */}
-            <div className="relative">
-              <div className="absolute -top-4 -left-4 w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/30">
-                <span className="text-xl font-bold text-blue-400">1</span>
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              { n: '1', title: '拖拽卡片', desc: '从卡片库中选择并拖拽到无限画布上。每张卡片都是你创作流程的构建模块。' },
+              { n: '2', title: '配置与连接', desc: '为每张卡片设置专属的 AI 模型、参数和输入。连接卡片以引用其他卡片的输出。' },
+              { n: '3', title: '运行与创作', desc: '点击任意卡片的运行按钮独立执行。结果直接显示在卡片上，随时用于下一步创作。' },
+            ].map((step) => (
+              <div key={step.n} className="relative">
+                <div
+                  className="absolute -top-4 -left-4 w-12 h-12 rounded-full flex items-center justify-center z-10"
+                  style={{ background: 'rgb(20,20,20)', border: '1px solid #ffffff2e' }}
+                >
+                  <span className="text-lg font-bold" style={{ color: 'rgb(113,208,131)' }}>{step.n}</span>
+                </div>
+                <div
+                  className="rounded-2xl p-8 pt-12"
+                  style={{ background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}
+                >
+                  <h3 className="text-xl font-semibold mb-3" style={{ color: 'rgb(238,238,238)' }}>{step.title}</h3>
+                  <p className="leading-relaxed" style={{ color: 'rgb(180,180,180)' }}>
+                    {step.desc}
+                  </p>
+                </div>
               </div>
-              <div className="glass-card p-8 pt-12">
-                <h3 className="text-xl font-semibold mb-2">Drag & Drop Cards</h3>
-                <p className="text-sm text-zinc-500 mb-4">拖拽卡片</p>
-                <p className="text-zinc-400 leading-relaxed">
-                  Choose from our card library and drag them onto your infinite canvas. Each card is a building block for your creative workflow.
-                </p>
-                <p className="text-sm text-zinc-500 mt-3">
-                  从卡片库中选择并拖拽到无限画布上。每张卡片都是你创作流程的构建模块。
-                </p>
-              </div>
-            </div>
-
-            {/* Step 2 */}
-            <div className="relative">
-              <div className="absolute -top-4 -left-4 w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center border border-purple-500/30">
-                <span className="text-xl font-bold text-purple-400">2</span>
-              </div>
-              <div className="glass-card p-8 pt-12">
-                <h3 className="text-xl font-semibold mb-2">Configure & Connect</h3>
-                <p className="text-sm text-zinc-500 mb-4">配置与连接</p>
-                <p className="text-zinc-400 leading-relaxed">
-                  Set up each card with its own AI model, parameters, and inputs. Connect cards to reference outputs from other cards.
-                </p>
-                <p className="text-sm text-zinc-500 mt-3">
-                  为每张卡片设置专属的 AI 模型、参数和输入。连接卡片以引用其他卡片的输出。
-                </p>
-              </div>
-            </div>
-
-            {/* Step 3 */}
-            <div className="relative">
-              <div className="absolute -top-4 -left-4 w-12 h-12 rounded-full bg-cyan-500/20 flex items-center justify-center border border-cyan-500/30">
-                <span className="text-xl font-bold text-cyan-400">3</span>
-              </div>
-              <div className="glass-card p-8 pt-12">
-                <h3 className="text-xl font-semibold mb-2">Run & Create</h3>
-                <p className="text-sm text-zinc-500 mb-4">运行与创作</p>
-                <p className="text-zinc-400 leading-relaxed">
-                  Click Run on any card to execute it independently. Results appear directly on the card, ready to use in your next step.
-                </p>
-                <p className="text-sm text-zinc-500 mt-3">
-                  点击任意卡片的运行按钮独立执行。结果直接显示在卡片上，随时用于下一步创作。
-                </p>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-32 border-t border-white/5 relative z-10 bg-zinc-950/50">
+      <section className="py-32 relative z-10" style={{ borderTop: '1px solid #ffffff0d' }}>
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <div className="relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 blur-3xl"></div>
-            <div className="relative glass-card p-12 md:p-16 overflow-hidden">
-              {/* 视频背景 */}
-              <video
-                autoPlay
-                muted
-                loop
-                playsInline
-                className="absolute inset-0 w-full h-full object-cover opacity-60"
-                src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/boluolab.com/hero.mp4"
-              />
-              {/* 内容叠在视频上 */}
-              <div className="relative z-10">
-                <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-                  Ready to start creating?
-                </h2>
-                <p className="text-xl text-zinc-500 mb-8">
-                  准备开始创作了吗？
-                </p>
-                <p className="text-lg text-zinc-400 mb-10 max-w-2xl mx-auto">
-                  Join thousands of creators using Boluolab to bring their ideas to life with AI-powered workflows.
-                </p>
-                <p className="text-sm text-zinc-200 mb-10 max-w-2xl mx-auto">
-                  加入数千名创作者，使用 Boluolab 通过 AI 驱动的工作流将创意变为现实。
-                </p>
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                  <Link href="/canvas">
-                    <button className="px-10 py-5 rounded-full font-semibold btn-primary text-lg min-w-[240px] flex flex-col items-center">
-                      <span>Get Started Free</span>
-                      <span className="text-sm opacity-80">免费开始</span>
-                    </button>
-                  </Link>
-                </div>
+          <div
+            className="relative rounded-3xl p-12 md:p-16 overflow-hidden"
+            style={{ background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}
+          >
+            {/* 视频背景 */}
+            <video
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="absolute inset-0 w-full h-full object-cover opacity-40"
+              src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/boluolab.com/hero.mp4"
+            />
+            {/* 内容叠在视频上 */}
+            <div className="relative z-10">
+              <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-5" style={{ color: 'rgb(238,238,238)' }}>
+                准备开始创作了吗？
+              </h2>
+              <p className="text-lg mb-10 max-w-2xl mx-auto" style={{ color: 'rgb(180,180,180)' }}>
+                加入数千名创作者，使用 Boluolab 通过 AI 驱动的工作流将创意变为现实。
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <Link href="/canvas">
+                  <button
+                    className="px-10 py-4 rounded-full font-semibold text-lg transition-transform hover:scale-[1.03]"
+                    style={{ background: 'rgb(113,208,131)', color: '#04170a' }}
+                  >
+                    免费开始
+                  </button>
+                </Link>
               </div>
             </div>
           </div>
@@ -745,12 +656,12 @@ export default function Home() {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-32 border-t border-white/5 relative z-10">
+      <section id="pricing" className="py-32 relative z-10" style={{ borderTop: '1px solid #ffffff0d' }}>
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-16 reveal">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 mb-4">Pricing</p>
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">简单透明的定价</h2>
-            <p className="text-zinc-400 text-lg">按需付费，无隐藏费用</p>
+            <p className="text-sm tracking-[0.3em] uppercase mb-4" style={{ color: 'rgb(96,96,96)' }}>Pricing · 定价</p>
+            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4" style={{ color: 'rgb(238,238,238)' }}>简单透明的定价</h2>
+            <p className="text-lg" style={{ color: 'rgb(180,180,180)' }}>按需付费，无隐藏费用</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
@@ -848,66 +759,63 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-white/5 py-12 relative z-10">
+      <footer className="py-12 relative z-10" style={{ borderTop: '1px solid #ffffff0d' }}>
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid md:grid-cols-4 gap-8 mb-12">
             {/* Brand */}
             <div className="md:col-span-1">
               <div className="flex items-center space-x-2 mb-4">
                 <img src="/boluo-logo-nav.svg" alt="Boluolab" className="h-8 w-auto" />
-                <span className="font-semibold text-lg">Boluolab</span>
+                <span className="font-semibold text-lg" style={{ color: 'rgb(238,238,238)' }}>Boluolab</span>
               </div>
-              <p className="text-sm text-zinc-500 leading-relaxed">
-                The infinite canvas for AI-powered creative workflows.
-              </p>
-              <p className="text-xs text-zinc-600 mt-2">
+              <p className="text-sm leading-relaxed" style={{ color: 'rgb(150,150,150)' }}>
                 AI 驱动的无限创作画布
               </p>
             </div>
 
             {/* Product */}
             <div>
-              <h4 className="font-semibold mb-4 text-sm">Product <span className="text-xs text-zinc-500">产品</span></h4>
-              <ul className="space-y-3 text-sm text-zinc-400">
-                <li><a href="#" className="hover:text-white transition-colors">Features <span className="text-xs text-zinc-600">功能</span></a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Pricing <span className="text-xs text-zinc-600">定价</span></a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Roadmap <span className="text-xs text-zinc-600">路线图</span></a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Changelog <span className="text-xs text-zinc-600">更新日志</span></a></li>
+              <h4 className="font-semibold mb-4 text-sm" style={{ color: 'rgb(238,238,238)' }}>产品</h4>
+              <ul className="space-y-3 text-sm" style={{ color: 'rgb(150,150,150)' }}>
+                <li><a href="#" className="hover:text-white transition-colors">功能</a></li>
+                <li><a href="#pricing" className="hover:text-white transition-colors">定价</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">路线图</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">更新日志</a></li>
               </ul>
             </div>
 
             {/* Resources */}
             <div>
-              <h4 className="font-semibold mb-4 text-sm">Resources <span className="text-xs text-zinc-500">资源</span></h4>
-              <ul className="space-y-3 text-sm text-zinc-400">
-                <li><a href="#" className="hover:text-white transition-colors">Documentation <span className="text-xs text-zinc-600">文档</span></a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Tutorials <span className="text-xs text-zinc-600">教程</span></a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Templates <span className="text-xs text-zinc-600">模板</span></a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Community <span className="text-xs text-zinc-600">社区</span></a></li>
+              <h4 className="font-semibold mb-4 text-sm" style={{ color: 'rgb(238,238,238)' }}>资源</h4>
+              <ul className="space-y-3 text-sm" style={{ color: 'rgb(150,150,150)' }}>
+                <li><a href="#" className="hover:text-white transition-colors">文档</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">教程</a></li>
+                <li><a href="#workflow-templates" className="hover:text-white transition-colors">模板</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">社区</a></li>
               </ul>
             </div>
 
             {/* Company */}
             <div>
-              <h4 className="font-semibold mb-4 text-sm">Company <span className="text-xs text-zinc-500">公司</span></h4>
-              <ul className="space-y-3 text-sm text-zinc-400">
-                <li><a href="#" className="hover:text-white transition-colors">About <span className="text-xs text-zinc-600">关于</span></a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Blog <span className="text-xs text-zinc-600">博客</span></a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Careers <span className="text-xs text-zinc-600">招聘</span></a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact <span className="text-xs text-zinc-600">联系</span></a></li>
+              <h4 className="font-semibold mb-4 text-sm" style={{ color: 'rgb(238,238,238)' }}>公司</h4>
+              <ul className="space-y-3 text-sm" style={{ color: 'rgb(150,150,150)' }}>
+                <li><a href="#" className="hover:text-white transition-colors">关于</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">博客</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">招聘</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">联系</a></li>
               </ul>
             </div>
           </div>
 
           {/* Bottom Bar */}
-          <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm text-zinc-500">
-              © 2026 Boluolab. All rights reserved. <span className="text-xs text-zinc-600">保留所有权利</span>
+          <div className="pt-8 flex flex-col md:flex-row justify-between items-center gap-4" style={{ borderTop: '1px solid #ffffff0d' }}>
+            <p className="text-sm" style={{ color: 'rgb(96,96,96)' }}>
+              © 2026 Boluolab. 保留所有权利
             </p>
-            <div className="flex items-center space-x-6 text-sm text-zinc-500">
-              <a href="#" className="hover:text-white transition-colors">Privacy <span className="text-xs text-zinc-600">隐私</span></a>
-              <a href="#" className="hover:text-white transition-colors">Terms <span className="text-xs text-zinc-600">条款</span></a>
-              <a href="#" className="hover:text-white transition-colors">Cookies <span className="text-xs text-zinc-600">Cookie</span></a>
+            <div className="flex items-center space-x-6 text-sm" style={{ color: 'rgb(96,96,96)' }}>
+              <a href="#" className="hover:text-white transition-colors">隐私</a>
+              <a href="#" className="hover:text-white transition-colors">条款</a>
+              <a href="#" className="hover:text-white transition-colors">Cookie</a>
             </div>
           </div>
         </div>

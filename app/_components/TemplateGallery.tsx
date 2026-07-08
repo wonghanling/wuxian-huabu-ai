@@ -31,18 +31,16 @@ export function TemplateGallery() {
   if (loading || templates.length === 0) return null;
 
   return (
-    <section className="py-20 px-6 border-t border-white/5">
+    <section className="py-24 px-6 relative z-10" style={{ borderTop: '1px solid #ffffff0d' }}>
       <div className="max-w-[1600px] mx-auto">
-        <div className="text-center mb-12">
-          <div className="inline-block mb-3 px-3 py-1 rounded-full border border-purple-500/30 bg-purple-500/10">
-            <span className="text-xs text-purple-300 font-medium">WORKFLOW TEMPLATES</span>
-          </div>
-          <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">
+        <div className="text-center mb-16">
+          <p className="text-sm tracking-[0.4em] uppercase mb-5" style={{ color: 'rgb(96,96,96)' }}>Templates · 工作流模板</p>
+          <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4" style={{ color: 'rgb(238,238,238)' }}>
             创意工作流模板
           </h2>
-          <p className="text-zinc-400 text-base">一键复用完整工作流，立即开始创作</p>
+          <p className="text-lg" style={{ color: 'rgb(180,180,180)' }}>一键复用完整工作流，立即开始创作</p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {templates.map((t) => (
             <TemplateCard key={t.id} template={t} />
           ))}
@@ -92,7 +90,8 @@ function TemplateCard({ template }: { template: Template }) {
   return (
     <div
       ref={cardRef}
-      className="glass-card overflow-hidden group hover:border-purple-500/40 transition-all duration-300"
+      className="rounded-2xl overflow-hidden group transition-all duration-300"
+      style={{ background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
@@ -131,20 +130,27 @@ function TemplateCard({ template }: { template: Template }) {
           </div>
         )}
         {template.is_featured && (
-          <div className="absolute top-3 left-3 px-2 py-1 rounded-md bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-[10px] font-bold shadow-lg z-10">
+          <div
+            className="absolute top-3 left-3 px-2 py-1 rounded-md text-[10px] font-bold z-10"
+            style={{ background: 'rgb(113,208,131)', color: '#04170a' }}
+          >
             精选
           </div>
         )}
       </div>
       <div className="p-5">
-        <h3 className="text-lg font-semibold mb-2 text-white">{template.title}</h3>
+        <h3 className="text-lg font-semibold mb-2" style={{ color: 'rgb(238,238,238)' }}>{template.title}</h3>
         {template.description && (
-          <p className="text-sm text-zinc-400 mb-1 line-clamp-2 leading-relaxed">{template.description}</p>
+          <p className="text-sm mb-1 line-clamp-2 leading-relaxed" style={{ color: 'rgb(180,180,180)' }}>{template.description}</p>
         )}
         {template.tags && template.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-3">
             {template.tags.slice(0, 4).map((tag) => (
-              <span key={tag} className="px-2 py-0.5 text-[10px] rounded bg-white/5 text-zinc-300 border border-white/5">
+              <span
+                key={tag}
+                className="px-2 py-0.5 text-[10px] rounded-full font-medium"
+                style={{ background: 'rgb(26,26,26)', border: '1px solid #ffffff1c', color: 'rgb(180,180,180)' }}
+              >
                 {tag}
               </span>
             ))}
