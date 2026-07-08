@@ -17,6 +17,38 @@ const GROUP_2 = [
   { key: 'h', name: 'Hailuo AI (右下右卡)', col: '3 / 4', row: '2 / 3' },                 // 443x338，约1.31:1
 ];
 
+// 第三组无跨行卡片，上下两行各自独立列宽：上行 443/674/443，下行 674/906
+const GROUP_3_ROW1 = [
+  { key: 'i', name: 'Pika' },      // 443x338，约1.31:1
+  { key: 'j', name: 'KlingAI' },   // 674x338，约1.99:1
+  { key: 'k', name: 'Recraft' },   // 443x338，约1.31:1
+];
+const GROUP_3_ROW2 = [
+  { key: 'l', name: 'ByteDance / Seed' }, // 674x338，约1.99:1
+  { key: 'm', name: 'Moonvalley' },       // 906x338，约2.68:1
+];
+
+// 卡片内部样式复用（占位图+渐变遮罩+文字），跨行/独立行两种布局都用这个
+function CardInner({ name }: { name: string }) {
+  return (
+    <>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className="text-sm" style={{ color: 'rgb(90,90,90)' }}>占位图片 (cover)</span>
+      </div>
+      <div
+        className="absolute inset-0"
+        style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.15), rgba(0,0,0,0.55))' }}
+      />
+      <div className="relative p-5 text-white text-sm font-semibold">{name}</div>
+    </>
+  );
+}
+
+const CARD_STYLE = {
+  borderRadius: 24,
+  background: 'linear-gradient(160deg, rgb(40,40,40), rgb(16,16,16))',
+} as const;
+
 function BentoGroup({
   cards,
   columns,
@@ -38,26 +70,32 @@ function BentoGroup({
         <div
           key={c.key}
           className="relative overflow-hidden flex items-end"
-          style={{
-            gridColumn: c.col,
-            gridRow: c.row,
-            borderRadius: 24,
-            background: 'linear-gradient(160deg, rgb(40,40,40), rgb(16,16,16))',
-          }}
+          style={{ gridColumn: c.col, gridRow: c.row, ...CARD_STYLE }}
         >
-          {/* 占位标记 */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-sm" style={{ color: 'rgb(90,90,90)' }}>占位图片 (cover)</span>
-          </div>
-          {/* 黑色渐变遮罩 */}
-          <div
-            className="absolute inset-0"
-            style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.15), rgba(0,0,0,0.55))' }}
-          />
-          {/* 文字叠加 */}
-          <div className="relative p-5 text-white text-sm font-semibold">
-            {c.name}
-          </div>
+          <CardInner name={c.name} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// 第三组：无跨行卡片，上下两行各自独立列宽，用 flex 逐行排列即可
+function BentoFlexRow({
+  cards,
+  widths,
+}: {
+  cards: { key: string; name: string }[];
+  widths: number[];
+}) {
+  return (
+    <div className="flex" style={{ gap: 20, width: 1600, height: 338 }}>
+      {cards.map((c, i) => (
+        <div
+          key={c.key}
+          className="relative overflow-hidden flex items-end flex-shrink-0"
+          style={{ width: widths[i], height: 338, ...CARD_STYLE }}
+        >
+          <CardInner name={c.name} />
         </div>
       ))}
     </div>
@@ -69,6 +107,10 @@ export default function BentoDraftPage() {
     <div className="min-h-screen flex flex-col items-center justify-center gap-5 bg-black p-10">
       <BentoGroup cards={GROUP_1} columns="443px 674px 443px" />
       <BentoGroup cards={GROUP_2} columns="674px 443px 443px" />
+      <div className="flex flex-col" style={{ gap: 20, width: 1600 }}>
+        <BentoFlexRow cards={GROUP_3_ROW1} widths={[443, 674, 443]} />
+        <BentoFlexRow cards={GROUP_3_ROW2} widths={[674, 906]} />
+      </div>
     </div>
   );
 }
