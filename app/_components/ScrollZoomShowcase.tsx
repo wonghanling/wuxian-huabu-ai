@@ -3,26 +3,16 @@
 import { useEffect, useRef } from 'react';
 
 // ============================================================
-// 滚动缩放展示区（占位版，先验证交互）
-// 7 张卡片横排(16:9)，滚动时中间卡片放大铺满视口，两侧卡片推向外侧+淡出
+// 滚动缩放展示区（占位版，验证交互）
+// 5 栗布局：最外侧各1张竖版卡片，内侧各2张堆叠卡片，中间1张16:10大卡片
+// 滚动时中间卡片放大铺满视口，两侧4栗卡片被推出屏幕外(非覆盖，是清空让位)
 // 纯 transform/opacity，rAF 节流，不触发重排
 // ============================================================
 
-const PLACEHOLDER_CARDS = [
-  { label: '案例 01', color: '#2a2a2a' },
-  { label: '案例 02', color: '#262626' },
-  { label: '案例 03', color: '#2a2a2a' },
-  { label: '中心视频', color: '#1a1a1a' },
-  { label: '案例 05', color: '#2a2a2a' },
-  { label: '案例 06', color: '#262626' },
-  { label: '案例 07', color: '#2a2a2a' },
-];
-
-const CENTER_INDEX = 3;
-
 export function ScrollZoomShowcase() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const centerRef = useRef<HTMLDivElement>(null);
+  const sideRefs = useRef<(HTMLDivElement | null)[]>([]);
   const labelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -37,24 +27,23 @@ export function ScrollZoomShowcase() {
         const total = el.offsetHeight - window.innerHeight;
         const progress = total > 0 ? Math.min(1, Math.max(0, -rect.top / total)) : 0;
 
-        cardRefs.current.forEach((card, i) => {
-          if (!card) return;
-          const offset = i - CENTER_INDEX;
+        // 中心卡片：随进度放大铺满视口
+        if (centerRef.current) {
+          const scale = 1 + progress * 3.6;
+          centerRef.current.style.transform = `scale(${scale})`;
+          centerRef.current.style.borderRadius = `${24 - progress * 24}px`;
+        }
 
-          if (offset === 0) {
-            // 中心卡片：随进度放大铺满视口(16:9 保持比例放大)
-            const scale = 1 + progress * 5.2;
-            card.style.transform = `scale(${scale})`;
-            card.style.zIndex = '10';
-            card.style.borderRadius = `${24 - progress * 24}px`;
-          } else {
-            // 两侧卡片：推向外侧 + 淡出
-            const dir = offset > 0 ? 1 : -1;
-            const dist = Math.abs(offset);
-            const translate = progress * dist * 260 * dir;
-            card.style.transform = `translateX(${translate}px)`;
-            card.style.opacity = String(Math.max(0, 1 - progress * 1.4));
-          }
+        // 两侧 4 栗卡片：整体推出屏幕外(左侧往左推、右侧往右推)，逐渐清空让中心卡片独占视口
+        sideRefs.current.forEach((col, i) => {
+          if (!col) return;
+          const isLeft = i < 2; // 前两栗在左侧，后两栗在右侧
+          const dir = isLeft ? -1 : 1;
+          // 内侧栗(i=1,2)推出距离小一点，外侧栗(i=0,3)推出距离大一点，制造层次
+          const isOuter = i === 0 || i === 3;
+          const distance = (isOuter ? 900 : 600) * progress * dir;
+          col.style.transform = `translateX(${distance}px)`;
+          col.style.opacity = String(Math.max(0, 1 - progress * 1.6));
         });
 
         // 中心标签随进度淡出（放大后不需要标签遮挡视频）
@@ -75,49 +64,88 @@ export function ScrollZoomShowcase() {
   return (
     <div ref={containerRef} className="relative" style={{ height: '260vh' }}>
       <div className="sticky top-0 h-screen overflow-hidden flex items-center justify-center">
-        {/* 标题（缩放开始前可见） */}
-        <div className="absolute top-20 left-0 w-full text-center px-6 z-0">
-          <p className="text-sm tracking-[0.3em] uppercase mb-3" style={{ color: 'rgb(96,96,96)' }}>
+        {/* 顶部小标签 */}
+        <div className="absolute top-16 left-0 w-full text-center px-6 z-0">
+          <p className="text-sm tracking-[0.3em] uppercase" style={{ color: 'rgb(96,96,96)' }}>
             Showcase · 生成案例
           </p>
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tight" style={{ color: 'rgb(238,238,238)' }}>
-            向下滚动，放大看细节
-          </h2>
         </div>
 
-        {/* 卡片行：统一 16:9，中心卡片更宽 */}
-        <div className="relative flex items-center justify-center gap-3 md:gap-4">
-          {PLACEHOLDER_CARDS.map((c, i) => {
-            const isCenter = i === CENTER_INDEX;
-            const width = isCenter ? 480 : 200;
-            return (
-              <div
-                key={i}
-                ref={(node) => { cardRefs.current[i] = node; }}
-                className="relative rounded-2xl overflow-hidden flex items-center justify-center flex-shrink-0"
-                style={{
-                  width,
-                  aspectRatio: '16/9',
-                  background: c.color,
-                  border: '1px solid #ffffff1c',
-                  willChange: 'transform, opacity',
-                  transformOrigin: 'center center',
-                }}
-              >
-                {isCenter ? (
-                  <div ref={labelRef} className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-sm font-medium" style={{ color: 'rgb(180,180,180)' }}>
-                      {c.label}（占位，后续替换真实视频）
-                    </span>
-                  </div>
-                ) : (
-                  <span className="text-xs font-medium" style={{ color: 'rgb(96,96,96)' }}>{c.label}</span>
-                )}
-              </div>
-            );
-          })}
+        {/* 5 栗卡片布局 */}
+        <div className="relative flex items-center justify-center gap-3 md:gap-4 px-4">
+          {/* 最外左：1 张竖版卡片 */}
+          <div ref={(node) => { sideRefs.current[0] = node; }} style={{ willChange: 'transform, opacity' }}>
+            <PlaceholderCard label="案例 01" aspect="3/4" width={150} color="#262626" />
+          </div>
+
+          {/* 内左：2 张堆叠卡片 */}
+          <div
+            ref={(node) => { sideRefs.current[1] = node; }}
+            className="flex flex-col gap-3"
+            style={{ willChange: 'transform, opacity' }}
+          >
+            <PlaceholderCard label="案例 02" aspect="4/3" width={190} color="#2a2a2a" />
+            <PlaceholderCard label="案例 03" aspect="4/3" width={190} color="#242424" />
+          </div>
+
+          {/* 中间：1 张 16:10 大卡片 */}
+          <div
+            ref={centerRef}
+            className="relative rounded-3xl overflow-hidden flex items-center justify-center flex-shrink-0"
+            style={{
+              width: 460,
+              aspectRatio: '16/10',
+              background: '#1a1a1a',
+              border: '1px solid #ffffff1c',
+              willChange: 'transform',
+              transformOrigin: 'center center',
+              zIndex: 10,
+            }}
+          >
+            <div ref={labelRef} className="absolute inset-0 flex items-center justify-center">
+              <span className="text-sm font-medium" style={{ color: 'rgb(180,180,180)' }}>
+                中心视频（占位，后续替换真实素材）
+              </span>
+            </div>
+          </div>
+
+          {/* 内右：2 张堆叠卡片 */}
+          <div
+            ref={(node) => { sideRefs.current[2] = node; }}
+            className="flex flex-col gap-3"
+            style={{ willChange: 'transform, opacity' }}
+          >
+            <PlaceholderCard label="案例 05" aspect="4/3" width={190} color="#2a2a2a" />
+            <PlaceholderCard label="案例 06" aspect="4/3" width={190} color="#242424" />
+          </div>
+
+          {/* 最外右：1 张竖版卡片 */}
+          <div ref={(node) => { sideRefs.current[3] = node; }} style={{ willChange: 'transform, opacity' }}>
+            <PlaceholderCard label="案例 07" aspect="3/4" width={150} color="#262626" />
+          </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function PlaceholderCard({
+  label,
+  aspect,
+  width,
+  color,
+}: {
+  label: string;
+  aspect: string;
+  width: number;
+  color: string;
+}) {
+  return (
+    <div
+      className="rounded-2xl overflow-hidden flex items-center justify-center flex-shrink-0"
+      style={{ width, aspectRatio: aspect, background: color, border: '1px solid #ffffff1c' }}
+    >
+      <span className="text-xs font-medium" style={{ color: 'rgb(96,96,96)' }}>{label}</span>
     </div>
   );
 }
