@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { TemplateGallery } from './_components/TemplateGallery';
+import { ScrollZoomShowcase } from './_components/ScrollZoomShowcase';
 import { ModelsShowcase } from './_components/ModelsShowcase';
 import { VideoModelsShowcase } from './_components/VideoModelsShowcase';
 import { ScriptStudioDemo } from './_components/ScriptStudioDemo';
@@ -391,6 +392,9 @@ export default function Home() {
           ))}
         </div>
       </main>
+
+      {/* 滚动缩放展示区(占位版，先验证交互效果) */}
+      <ScrollZoomShowcase />
 
       {/* 顶尖模型展示 */}
       <section className="py-24 relative z-10" style={{ borderTop: '1px solid #ffffff0d' }}>
