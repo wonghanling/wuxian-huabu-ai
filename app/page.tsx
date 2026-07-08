@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { TemplateGallery } from './_components/TemplateGallery';
 import { ScrollZoomShowcase } from './_components/ScrollZoomShowcase';
 import { ModelsShowcase } from './_components/ModelsShowcase';
+import { FeatureTabsShowcase } from './_components/FeatureTabsShowcase';
 import { VideoModelsShowcase } from './_components/VideoModelsShowcase';
 import { ScriptStudioDemo } from './_components/ScriptStudioDemo';
 import { DoodleDemo } from './_components/DoodleDemo';
@@ -395,6 +396,11 @@ export default function Home() {
 
       {/* 滚动缩放展示区(占位版，先验证交互效果) */}
       <ScrollZoomShowcase />
+
+      {/* 业务模块：左侧点击切换 / 右侧预览联动 */}
+      <section className="py-24 relative z-10" style={{ borderTop: '1px solid #ffffff0d' }}>
+        <FeatureTabsShowcase />
+      </section>
 
       {/* 顶尖模型展示 */}
       <section className="py-24 relative z-10" style={{ borderTop: '1px solid #ffffff0d' }}>
