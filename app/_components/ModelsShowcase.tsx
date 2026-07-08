@@ -1,33 +1,35 @@
 'use client';
 
-// 13 个模型占位卡，Bento Grid（参照 flora.ai 模型展示区规格）
-// 12列 grid + dense 排列，6 种卡片尺寸混排：超宽横卡/中等横卡/大横卡/大图横卡/普通小横卡/竖向大卡
-// 每张卡先占位，后续替换为真实视频/图片封面，模型名称保留展示
+// 13 个模型占位卡，Bento Grid（参照 flora.ai 模型展示区）
+// 关键修复：不再用 grid-auto-flow:dense 让浏览器自动摆放（那样同一行的 span 加总凑不齐12列，
+// 会留下缺口）。改为手工精确坐标(colStart/colEnd/rowStart/rowEnd)，分成5个矩形区块，
+// 每个区块内每一"行带"的列宽加总都严格验算等于12，保证严丝合缝拼成矩形，零缺口零重叠。
+//
+// 区块A(仿Google结构，4张卡，占4行高): FLUX(宽8)+NanoBananaPro(竖4×4行) 上半8+4=12；
+//   ChatGPT(4)+Midjourney(4)+NanoBananaPro续(4) 下半4+4+4=12
+// 区块B(2张卡，占2行高): Wan(7)+Jimeng(5) = 12
+// 区块C(3张卡，占2行高): Seedance(4)+Pixverse(4)+HappyHorse(4) = 12
+// 区块D(2张卡，占2行高): Seedream(7)+marey(5) = 12
+// 区块E(2张卡，占2行高): Niji(6)+pika(6) = 12
 const MODELS = [
-  { key: 'flux', name: 'FLUX', size: 'superwide' },       // 超宽横卡 3.4:1，主推位
-  { key: 'nanobanana', name: 'Nano Banana Pro', size: 'tall' }, // 竖向大卡 0.63:1
-  { key: 'gptimage', name: 'ChatGPT Image 2', size: 'small' },
-  { key: 'midjourney', name: 'Midjourney', size: 'medium' },
-  { key: 'jimeng', name: 'Jimeng 3.0', size: 'imageLarge' },
-  { key: 'wan', name: 'Wan 2.7', size: 'large' },
-  { key: 'seedance', name: 'Seedance 2.0', size: 'small' },
-  { key: 'pixverse', name: 'Pixverse v6', size: 'medium' },
-  { key: 'happyhorse', name: 'HappyHorse 1.0', size: 'small' },
-  { key: 'seedream', name: 'Seedream', size: 'large' },
-  { key: 'niji', name: 'Niji 7 动漫', size: 'small' },
-  { key: 'marey', name: 'marey', size: 'imageLarge' },
-  { key: 'pika', name: 'pika', size: 'small' },
-] as const;
+  { key: 'flux', name: 'FLUX', col: [1, 9], row: [1, 3] },
+  { key: 'nanobanana', name: 'Nano Banana Pro', col: [9, 13], row: [1, 5] },
+  { key: 'gptimage', name: 'ChatGPT Image 2', col: [1, 5], row: [3, 5] },
+  { key: 'midjourney', name: 'Midjourney', col: [5, 9], row: [3, 5] },
 
-// size -> grid span 类名映射（12列 grid，行高单位见 auto-rows）
-const SIZE_CLASS: Record<string, string> = {
-  superwide: 'col-span-12 md:col-span-8 row-span-2',   // 928x272 比例约 3.4:1
-  small: 'col-span-6 md:col-span-4 row-span-2',        // 362x276 比例约 1.3:1
-  medium: 'col-span-6 md:col-span-5 row-span-2',       // 551x276 比例约 2:1
-  tall: 'col-span-6 md:col-span-4 row-span-4',         // 362x572 比例约 0.63:1
-  large: 'col-span-12 md:col-span-7 row-span-2',       // 740x277 比例约 2.6:1
-  imageLarge: 'col-span-12 md:col-span-5 row-span-3',  // 551x345 比例约 1.6:1
-};
+  { key: 'wan', name: 'Wan 2.7', col: [1, 8], row: [5, 7] },
+  { key: 'jimeng', name: 'Jimeng 3.0', col: [8, 13], row: [5, 7] },
+
+  { key: 'seedance', name: 'Seedance 2.0', col: [1, 5], row: [7, 9] },
+  { key: 'pixverse', name: 'Pixverse v6', col: [5, 9], row: [7, 9] },
+  { key: 'happyhorse', name: 'HappyHorse 1.0', col: [9, 13], row: [7, 9] },
+
+  { key: 'seedream', name: 'Seedream', col: [1, 8], row: [9, 11] },
+  { key: 'marey', name: 'marey', col: [8, 13], row: [9, 11] },
+
+  { key: 'niji', name: 'Niji 7 动漫', col: [1, 7], row: [11, 13] },
+  { key: 'pika', name: 'pika', col: [7, 13], row: [11, 13] },
+] as const;
 
 export function ModelsShowcase() {
   return (
@@ -60,19 +62,24 @@ export function ModelsShowcase() {
         </a>
       </div>
 
-      {/* Bento Grid：13 张占位卡，12列 grid + dense 排列，固定 gap/圆角，靠横卡竖卡混排制造专业感 */}
+      {/* Bento Grid：13 张占位卡。手机端单列堆叠；md以上用手工精确坐标拼出严丝合缝的矩形区块（不用 dense 自动排列，避免行内 span 加总凑不齐12列留缺口） */}
       <div
-        className="relative grid grid-cols-12 gap-4 px-4 md:px-10 auto-rows-[64px] md:auto-rows-[64px]"
-        style={{ gridAutoFlow: 'dense', maxWidth: 1320, margin: '0 auto' }}
+        className="relative grid grid-cols-1 md:grid-cols-12 gap-4 px-4 md:px-10 md:auto-rows-[64px]"
+        style={{ maxWidth: 1320, margin: '0 auto' }}
       >
         {MODELS.map((m) => (
           <div
             key={m.key}
-            className={`group relative overflow-hidden ring-1 ring-white/10 hover:ring-emerald-500/60 transition-all duration-500 ${SIZE_CLASS[m.size]}`}
+            className="group relative overflow-hidden ring-1 ring-white/10 hover:ring-emerald-500/60 transition-all duration-500 h-[220px] md:h-auto md:[grid-column:var(--gcs)/var(--gce)] md:[grid-row:var(--grs)/var(--gre)]"
             style={{
+              // CSS 自定义属性传入具体坐标数字，class 本身是静态字符串，Tailwind 编译时能正确扫描到
+              '--gcs': m.col[0],
+              '--gce': m.col[1],
+              '--grs': m.row[0],
+              '--gre': m.row[1],
               borderRadius: 20,
               background: 'linear-gradient(160deg, rgb(40,40,40), rgb(16,16,16))',
-            }}
+            } as React.CSSProperties}
           >
             {/* 占位标记（后续替换为背景图/视频） */}
             <div className="absolute inset-0 flex items-center justify-center">
