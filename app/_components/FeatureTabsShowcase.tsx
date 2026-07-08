@@ -33,17 +33,27 @@ const FEATURES = [
 export function FeatureTabsShowcase() {
   return (
     <div className="max-w-7xl mx-auto px-6">
-      <div className="text-center mb-14">
-        <p className="text-sm tracking-[0.3em] uppercase mb-4" style={{ color: 'rgb(96,96,96)' }}>
-          Workflow · 核心业务
-        </p>
-        <h2 className="text-3xl md:text-4xl font-bold tracking-tight" style={{ color: 'rgb(238,238,238)' }}>
-          一个画布，覆盖创作全流程
-        </h2>
+      {/* 标题区：左侧大标题+副标题，右侧对齐一个链接 */}
+      <div className="flex items-end justify-between mb-10 gap-6">
+        <div>
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-3" style={{ color: 'rgb(238,238,238)' }}>
+            核心业务
+          </h2>
+          <p className="text-sm md:text-base" style={{ color: 'rgb(150,150,150)' }}>
+            一个画布，覆盖创作全流程
+          </p>
+        </div>
+        <a
+          href="/canvas"
+          className="text-sm font-medium whitespace-nowrap hover:opacity-80 transition-opacity"
+          style={{ color: 'rgb(238,238,238)' }}
+        >
+          进入画布 →
+        </a>
       </div>
 
-      {/* 静态网格：2 列 x 2 行，每张卡片独立展示，无点击切换 */}
-      <div className="grid md:grid-cols-2 gap-6">
+      {/* 静态网格：4 列 x 1 行，每张卡片独立展示，无点击切换 */}
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
         {FEATURES.map((f) => (
           <div
             key={f.key}
@@ -69,14 +79,21 @@ export function FeatureTabsShowcase() {
                 {f.desc}
               </p>
 
-              {/* 作者行占位：头像 + 名字 + 机构 */}
-              <div className="flex items-center gap-2 pt-3" style={{ borderTop: '1px solid #ffffff0d' }}>
+              {/* 作者行占位：头像 + 姓名(带认证勾) + 机构 */}
+              <div className="flex items-center gap-2.5 pt-3" style={{ borderTop: '1px solid #ffffff0d' }}>
                 <span
-                  className="w-6 h-6 rounded-full flex-shrink-0"
+                  className="w-7 h-7 rounded-full flex-shrink-0"
                   style={{ background: 'rgb(63,63,63)' }}
                 />
-                <span className="text-xs" style={{ color: 'rgb(150,150,150)' }}>作者名占位</span>
-                <span className="text-xs" style={{ color: 'rgb(96,96,96)' }}>· 机构占位</span>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs font-medium truncate" style={{ color: 'rgb(200,200,200)' }}>作者名占位</span>
+                    <svg className="w-3 h-3 flex-shrink-0" viewBox="0 0 20 20" fill="rgb(113,208,131)">
+                      <path fillRule="evenodd" d="M10 1l2.39 1.94 3.03-.4.7 3-2.12 2.46 2.12 2.46-.7 3-3.03-.4L10 16l-2.39-1.94-3.03.4-.7-3 2.12-2.46-2.12-2.46.7-3 3.03.4L10 1zm-1.03 10.4l4.34-4.34-1.06-1.06-3.28 3.28-1.6-1.6-1.06 1.06 2.66 2.66z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <span className="text-[11px] truncate block" style={{ color: 'rgb(96,96,96)' }}>机构占位</span>
+                </div>
               </div>
             </div>
           </div>
