@@ -103,7 +103,7 @@ export function ScrollZoomShowcase() {
   }, []);
 
   return (
-    <div ref={containerRef} className="relative" style={{ height: '180vh' }}>
+    <div ref={containerRef} className="relative" style={{ height: '145vh' }}>
       <div className="sticky top-0 h-screen overflow-hidden flex items-center justify-center">
         {/* 顶部小标签 */}
         <div className="absolute top-16 left-0 w-full text-center px-6 z-0">
