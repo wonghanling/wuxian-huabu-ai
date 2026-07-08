@@ -36,22 +36,22 @@ export function FeatureTabsShowcase() {
         {PLACEHOLDER_CARDS.map((f) => (
           <div
             key={f.key}
-            className="rounded-2xl overflow-hidden flex flex-col"
-            style={{ background: 'rgb(18,18,18)' }}
+            className="rounded-2xl overflow-hidden flex flex-col p-3"
+            style={{ background: 'linear-gradient(160deg, rgb(30,30,30), rgb(14,14,14))' }}
           >
-            {/* 图片占位区 */}
+            {/* 图片占位区：四周留白，独立圆角卡片浮在里面，带渐变质感 */}
             <div
-              className="w-full flex items-center justify-center"
+              className="w-full flex items-center justify-center rounded-xl"
               style={{
                 aspectRatio: '4/3',
-                background: 'rgb(38,38,38)',
+                background: 'linear-gradient(160deg, rgb(70,70,70), rgb(32,32,32))',
               }}
             >
-              <span className="text-sm" style={{ color: 'rgb(80,80,80)' }}>占位图片</span>
+              <span className="text-sm" style={{ color: 'rgb(120,120,120)' }}>占位图片</span>
             </div>
 
             {/* 文字区 */}
-            <div className="px-4 pt-3 pb-4 flex flex-col gap-1">
+            <div className="px-1 pt-3 pb-1 flex flex-col gap-1">
               <h3 className="text-base font-bold leading-snug" style={{ color: 'rgb(238,238,238)' }}>
                 {f.title}
               </h3>
