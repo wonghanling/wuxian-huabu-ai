@@ -1,27 +1,12 @@
 'use client';
 
-const FEATURES = [
-  {
-    key: 'script',
-    title: '剧本工作室',
-    desc: '从一个想法到一部可拍摄的电影，完整覆盖角色设定、场景多视角、镜头级提示词生成。',
-  },
-  {
-    key: 'doodle',
-    title: '涂鸦标注',
-    desc: '在图片上直接涂抹标注修改意图，一键发送到画布生成新版本，所见即所得。',
-  },
-  {
-    key: 'json',
-    title: 'JSON 锁定风格',
-    desc: '把角色、场景的视觉参数固化为 JSON 配置，跨镜头、跨场次保持风格一致。',
-  },
-  {
-    key: 'shotboard',
-    title: '导演级分镜',
-    desc: '按镜头拆解剧本，自动生成分镜图与运镜说明，产出可直接执行的分镜表。',
-  },
-] as const;
+// 8 张占位卡片，4列x2行，结构对齐 flora.ai Featured Techniques
+// 图片/标题/描述/作者信息全部占位，后续替换为真实内容
+const PLACEHOLDER_CARDS = Array.from({ length: 8 }, (_, i) => ({
+  key: `card-${i + 1}`,
+  title: `占位标题 ${i + 1}`,
+  desc: '占位描述文字，后续替换为真实功能说明。',
+}));
 
 export function FeatureTabsShowcase() {
   return (
@@ -46,19 +31,19 @@ export function FeatureTabsShowcase() {
         </a>
       </div>
 
-      {/* 2列×2行卡片网格 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {FEATURES.map((f) => (
+      {/* 4列×2行卡片网格 */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {PLACEHOLDER_CARDS.map((f) => (
           <div
             key={f.key}
             className="rounded-2xl overflow-hidden flex flex-col"
             style={{ background: 'rgb(18,18,18)' }}
           >
-            {/* 图片占位区，约 16:9 比例 */}
+            {/* 图片占位区 */}
             <div
               className="w-full flex items-center justify-center"
               style={{
-                aspectRatio: '16/9',
+                aspectRatio: '4/3',
                 background: 'rgb(38,38,38)',
               }}
             >
@@ -66,31 +51,31 @@ export function FeatureTabsShowcase() {
             </div>
 
             {/* 文字区 */}
-            <div className="px-5 pt-4 pb-5 flex flex-col gap-1.5">
-              <h3 className="text-lg font-bold leading-snug" style={{ color: 'rgb(238,238,238)' }}>
+            <div className="px-4 pt-3 pb-4 flex flex-col gap-1">
+              <h3 className="text-base font-bold leading-snug" style={{ color: 'rgb(238,238,238)' }}>
                 {f.title}
               </h3>
-              <p className="text-sm leading-relaxed line-clamp-2" style={{ color: 'rgb(150,150,150)' }}>
+              <p className="text-xs leading-relaxed line-clamp-2" style={{ color: 'rgb(150,150,150)' }}>
                 {f.desc}
               </p>
 
               {/* 作者行 */}
-              <div className="flex items-center gap-2.5 mt-3">
+              <div className="flex items-center gap-2 mt-2.5">
                 {/* 圆形头像占位 */}
                 <span
-                  className="w-8 h-8 rounded-full flex-shrink-0 block"
+                  className="w-6 h-6 rounded-full flex-shrink-0 block"
                   style={{ background: 'rgb(60,60,60)' }}
                 />
                 <div className="flex flex-col leading-tight">
                   <div className="flex items-center gap-1">
-                    <span className="text-sm font-medium" style={{ color: 'rgb(220,220,220)' }}>作者名占位</span>
+                    <span className="text-xs font-medium" style={{ color: 'rgb(220,220,220)' }}>作者名占位</span>
                     {/* 绿色认证勾 */}
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
                       <circle cx="7" cy="7" r="7" fill="rgb(113,208,131)" />
                       <path d="M4 7l2 2 4-4" stroke="#04170a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </div>
-                  <span className="text-xs" style={{ color: 'rgb(100,100,100)' }}>机构占位</span>
+                  <span className="text-[11px]" style={{ color: 'rgb(100,100,100)' }}>机构占位</span>
                 </div>
               </div>
             </div>
