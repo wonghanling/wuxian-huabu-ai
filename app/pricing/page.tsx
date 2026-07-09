@@ -19,6 +19,7 @@ type Plan = {
   original?: string;
   unit: string;
   desc: string;
+  offer?: string; // 特惠上市高亮框文案
   features: { text: string; on: boolean }[];
   action: { type: 'pay'; plan: 'membership' | 'membership_yearly' | 'membership_2yearly'; amount: number } | { type: 'signup' };
   highlight?: boolean;
@@ -55,6 +56,7 @@ const PLANS: Plan[] = [
       { text: '视频生成每秒省 ¥0.2', on: true },
       { text: '设计师专业工具', on: true },
     ],
+    offer: '特惠上市 · 限时优惠价',
     action: { type: 'pay', plan: 'membership', amount: 39 },
     highlight: true,
     accent: 'rgb(113,208,131)',
@@ -166,20 +168,33 @@ export default function PricingPage() {
             return (
             <div
               key={p.key}
-              className="rounded-2xl overflow-hidden flex flex-col relative transition-transform hover:-translate-y-1"
+              className="rounded-3xl overflow-hidden flex flex-col relative transition-transform duration-300 hover:-translate-y-1.5"
               style={{
-                background: p.highlight ? 'rgb(22,28,24)' : 'rgb(20,20,20)',
-                border: p.highlight ? '1px solid rgb(113,208,131)' : '1px solid #ffffff1c',
-                boxShadow: p.highlight ? '0 0 40px -8px rgba(113,208,131,0.35)' : 'none',
+                minHeight: 580,
+                background: p.highlight
+                  ? 'linear-gradient(180deg, rgb(24,30,26) 0%, rgb(16,26,19) 55%, rgba(28,66,42,0.55) 100%)'
+                  : 'linear-gradient(180deg, rgb(26,26,28) 0%, rgb(16,16,18) 100%)',
+                border: p.highlight ? '1px solid rgba(113,208,131,0.55)' : '1px solid #ffffff14',
+                boxShadow: p.highlight
+                  ? '0 0 60px -10px rgba(113,208,131,0.45), inset 0 0 40px -20px rgba(113,208,131,0.4)'
+                  : '0 20px 50px -30px rgba(0,0,0,0.9)',
               }}
             >
-              <div className="p-6 flex flex-col flex-1">
+              {/* Pro 卡底部绿色辉光 */}
+              {p.highlight && (
+                <div
+                  className="absolute inset-x-0 bottom-0 pointer-events-none"
+                  style={{ height: '55%', background: 'radial-gradient(ellipse at 50% 120%, rgba(113,208,131,0.35), transparent 70%)' }}
+                />
+              )}
+
+              <div className="relative p-7 flex flex-col flex-1">
                 {/* 名称 + 徽标 */}
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-base font-semibold" style={{ color: 'rgb(238,238,238)' }}>{p.name}</span>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-lg font-bold" style={{ color: 'rgb(238,238,238)' }}>{p.name}</span>
                   {p.badge && (
                     <span
-                      className="text-[11px] font-bold px-2 py-0.5 rounded-full"
+                      className="text-[11px] font-bold px-2.5 py-1 rounded-full"
                       style={{
                         background: p.highlight ? 'rgb(113,208,131)' : '#ffffff14',
                         color: p.highlight ? '#04170a' : 'rgb(180,180,180)',
@@ -189,46 +204,57 @@ export default function PricingPage() {
                     </span>
                   )}
                 </div>
-                <p className="text-xs mb-5 leading-relaxed" style={{ color: 'rgb(120,120,120)' }}>{p.desc}</p>
+                <p className="text-[13px] mb-6 leading-relaxed" style={{ color: 'rgb(140,140,140)', minHeight: 40 }}>{p.desc}</p>
 
                 {/* 价格 */}
                 <div className="flex items-end gap-2 mb-1">
-                  <span className="text-4xl font-bold" style={{ color: 'rgb(238,238,238)' }}>{p.price}</span>
-                  {p.original && <span className="text-xs line-through mb-1.5" style={{ color: 'rgb(96,96,96)' }}>{p.original}</span>}
+                  <span className="text-5xl font-bold tracking-tight" style={{ color: 'rgb(245,245,245)' }}>{p.price}</span>
+                  {p.original && <span className="text-sm line-through mb-2" style={{ color: 'rgb(96,96,96)' }}>{p.original}</span>}
                 </div>
-                <div className="text-xs mb-5" style={{ color: 'rgb(96,96,96)' }}>{p.unit}</div>
+                <div className="text-[13px] mb-6" style={{ color: 'rgb(120,120,120)' }}>{p.unit}</div>
+
+                {/* 特惠上市高亮框 */}
+                {p.offer && (
+                  <div
+                    className="flex items-center gap-2 rounded-xl px-3.5 py-2.5 mb-5"
+                    style={{ background: 'rgba(113,208,131,0.12)', border: '1px solid rgba(113,208,131,0.4)' }}
+                  >
+                    <span className="text-xs" style={{ color: 'rgb(113,208,131)' }}>✓</span>
+                    <span className="text-[12.5px] font-medium" style={{ color: 'rgb(150,220,170)' }}>{p.offer}</span>
+                  </div>
+                )}
 
                 {/* 分隔线 */}
                 <div className="mb-5" style={{ borderTop: '1px solid #ffffff14' }} />
 
                 {/* 功能列表 */}
-                <ul className="space-y-2.5 text-sm mb-6 flex-1" style={{ color: 'rgb(200,200,200)' }}>
+                <ul className="space-y-3 text-sm mb-7 flex-1">
                   {p.features.map((f) => (
-                    <li key={f.text} className="flex items-start gap-2">
+                    <li key={f.text} className="flex items-start gap-2.5">
                       <span className="text-xs mt-0.5" style={{ color: f.on ? p.accent : 'rgb(80,80,80)' }}>
                         {f.on ? '✓' : '✗'}
                       </span>
-                      <span style={{ color: f.on ? 'rgb(200,200,200)' : 'rgb(110,110,110)' }}>{f.text}</span>
+                      <span style={{ color: f.on ? 'rgb(210,210,210)' : 'rgb(110,110,110)' }}>{f.text}</span>
                     </li>
                   ))}
                 </ul>
 
-                {/* 按钮 */}
+                {/* 底部整宽大按钮 */}
                 {action.type === 'signup' ? (
                   <a
                     href="/auth"
-                    className="block w-full py-2.5 rounded-lg text-sm font-medium text-center transition-all"
-                    style={{ border: '1px solid #ffffff2e', color: 'rgb(180,180,180)' }}
+                    className="block w-full py-3.5 rounded-xl text-sm font-semibold text-center transition-all"
+                    style={{ border: '1px solid #ffffff2e', color: 'rgb(210,210,210)' }}
                   >
                     免费注册
                   </a>
                 ) : (
                   <button
                     onClick={() => handlePay(action.plan, action.amount)}
-                    className="w-full py-2.5 rounded-lg text-sm font-semibold transition-all"
+                    className="w-full py-3.5 rounded-xl text-sm font-semibold transition-all hover:opacity-90"
                     style={
                       p.highlight
-                        ? { background: 'rgb(113,208,131)', color: '#04170a' }
+                        ? { background: 'rgb(113,208,131)', color: '#04170a', boxShadow: '0 8px 24px -8px rgba(113,208,131,0.6)' }
                         : { background: '#ffffff14', color: 'rgb(238,238,238)', border: '1px solid #ffffff2e' }
                     }
                   >
