@@ -327,7 +327,7 @@ export default function Home() {
             style={{ zIndex: 2, top: '18%', left: '10%', width: 'min(220px, 20vw)' }}
           >
             <span className="block mb-1.5 text-[12px] font-medium" style={{ color: 'rgb(160,160,160)' }}>产品设计</span>
-            <div className="rounded-2xl overflow-hidden" style={{ aspectRatio: '4/3', background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}>
+            <div className="rounded-2xl overflow-hidden" style={{ aspectRatio: '1/1', background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}>
               <img src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783578531053.jpg" alt="产品设计" className="w-full h-full object-cover" draggable={false} />
             </div>
           </div>
