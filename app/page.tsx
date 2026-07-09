@@ -1,10 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Infinity, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
 import { ScrollZoomShowcase } from './_components/ScrollZoomShowcase';
 import { ModelsShowcase } from './_components/ModelsShowcase';
 import { FeatureTabsShowcase } from './_components/FeatureTabsShowcase';
@@ -17,28 +15,7 @@ export default function Home() {
   const [showPromoModal, setShowPromoModal] = useState(false);
   const [promoSlide, setPromoSlide] = useState(0);
   const [navScrolled, setNavScrolled] = useState(false);
-  const router = useRouter();
   const supabase = createClient();
-
-  const handlePay = async (plan: 'membership' | 'membership_yearly' | 'membership_2yearly' | 'recharge', amount: number) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { router.push('/auth/login'); return; }
-    const res = await fetch('/api/payment/alipay', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
-      body: JSON.stringify({ plan, amount }),
-    });
-    const data = await res.json();
-    if (data.paymentForm) {
-      const div = document.createElement('div');
-      div.innerHTML = data.paymentForm;
-      document.body.appendChild(div);
-      const form = div.querySelector('form');
-      form?.submit();
-    } else {
-      alert(data.error || '发起支付失败');
-    }
-  };
 
   useEffect(() => {
     // 检查登录状态
@@ -252,7 +229,7 @@ export default function Home() {
             <a href="#" className="hover:text-white transition-colors">平台</a>
             <a href="#" className="hover:text-white transition-colors">案例展示</a>
             <a href="#" className="hover:text-white transition-colors">企业版</a>
-            <a href="#pricing" className="hover:text-white transition-colors">定价</a>
+            <a href="/pricing" className="hover:text-white transition-colors">定价</a>
           </div>
 
           <div className="flex items-center space-x-5">
@@ -414,224 +391,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-32 relative z-10">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-20 reveal">
-            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-              Everything you need to create
-            </h2>
-            <p className="text-xl text-zinc-500">
-              你所需要的一切创作工具
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Feature 1 */}
-            <div className="glass-card p-8 hover:border-blue-500/30 transition-all duration-300">
-              <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center mb-6">
-                <Infinity className="w-6 h-6 text-blue-400" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Infinite Canvas</h3>
-              <p className="text-sm text-zinc-500 mb-2">无限画布</p>
-              <p className="text-zinc-400 leading-relaxed">
-                Unlimited space for your ideas. Drag, zoom, and organize your creative workflow without boundaries.
-              </p>
-              <p className="text-sm text-zinc-500 mt-2">
-                为你的创意提供无限空间。自由拖拽、缩放，无边界地组织你的创作流程。
-              </p>
-            </div>
-
-            {/* Feature 2 */}
-            <div className="glass-card p-8 hover:border-purple-500/30 transition-all duration-300">
-              <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center mb-6">
-                <Sparkles className="w-6 h-6 text-purple-400" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">AI-Powered Cards</h3>
-              <p className="text-sm text-zinc-500 mb-2">AI 驱动的卡片</p>
-              <p className="text-zinc-400 leading-relaxed">
-                Each card is an independent AI agent. Generate images, videos, and content with custom models and parameters.
-              </p>
-              <p className="text-sm text-zinc-500 mt-2">
-                每张卡片都是独立的 AI 智能体。使用自定义模型和参数生成图片、视频和内容。
-              </p>
-            </div>
-
-            {/* Feature 3 */}
-            <div className="glass-card p-8 hover:border-cyan-500/30 transition-all duration-300">
-              <div className="w-12 h-12 rounded-xl bg-cyan-500/10 flex items-center justify-center mb-6">
-                <svg className="w-6 h-6 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Card-Level Control</h3>
-              <p className="text-sm text-zinc-500 mb-2">卡片级控制</p>
-              <p className="text-zinc-400 leading-relaxed">
-                Every card chooses its own model, parameters, and execution. No global settings, complete autonomy.
-              </p>
-              <p className="text-sm text-zinc-500 mt-2">
-                每张卡片独立选择模型、参数和执行方式。无全局设置，完全自治。
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Card Types Section */}
-      <section className="py-32 border-t border-white/5 relative z-10 bg-zinc-950/50">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-20 reveal">
-            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-              Powerful card types
-            </h2>
-            <p className="text-xl text-zinc-500">
-              强大的卡片类型
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="p-6 bg-white/[0.03] border border-white/10 rounded-3xl backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.06] hover:border-violet-500/30 hover:-translate-y-1">
-              <div className="w-8 h-8 mb-3">
-                <img src="/book-business-guidelines-svgrepo-com.svg" alt="Text Card" className="w-full h-full" />
-              </div>
-              <h4 className="font-semibold mb-1 text-white">Text Card</h4>
-              <p className="text-xs text-zinc-500 mb-2">文本卡</p>
-              <p className="text-sm text-zinc-400">Write prompts and scripts</p>
-            </div>
-
-            <div className="p-6 bg-white/[0.03] border border-white/10 rounded-3xl backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.06] hover:border-violet-500/30 hover:-translate-y-1">
-              <div className="w-8 h-8 mb-3">
-                <img src="/juese-halloween-typical-character-bandaged-outline-svgrepo-com.svg" alt="Character Card" className="w-full h-full" />
-              </div>
-              <h4 className="font-semibold mb-1 text-white">Character Card</h4>
-              <p className="text-xs text-zinc-500 mb-2">角色卡</p>
-              <p className="text-sm text-zinc-400">Create detailed characters</p>
-            </div>
-
-            <div className="p-6 bg-white/[0.03] border border-white/10 rounded-3xl backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.06] hover:border-violet-500/30 hover:-translate-y-1">
-              <div className="w-8 h-8 mb-3">
-                <img src="/tupian-landscape-png-svgrepo-com.svg" alt="Image Generate" className="w-full h-full" />
-              </div>
-              <h4 className="font-semibold mb-1 text-white">Image Generate</h4>
-              <p className="text-xs text-zinc-500 mb-2">图片生成</p>
-              <p className="text-sm text-zinc-400">Text to image with AI</p>
-            </div>
-
-            <div className="p-6 bg-white/[0.03] border border-white/10 rounded-3xl backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.06] hover:border-violet-500/30 hover:-translate-y-1">
-              <div className="w-8 h-8 mb-3">
-                <img src="/jingtou-film-svgrepo-com.svg" alt="Shot Grid" className="w-full h-full" />
-              </div>
-              <h4 className="font-semibold mb-1 text-white">Shot Grid</h4>
-              <p className="text-xs text-zinc-500 mb-2">多镜头</p>
-              <p className="text-sm text-zinc-400">Multiple camera angles</p>
-            </div>
-
-            <div className="p-6 bg-white/[0.03] border border-white/10 rounded-3xl backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.06] hover:border-violet-500/30 hover:-translate-y-1">
-              <div className="w-8 h-8 mb-3">
-                <img src="/jiandao-svgrepo-com.svg" alt="Crop Card" className="w-full h-full" />
-              </div>
-              <h4 className="font-semibold mb-1 text-white">Crop Card</h4>
-              <p className="text-xs text-zinc-500 mb-2">裁剪卡</p>
-              <p className="text-sm text-zinc-400">Crop and resize images</p>
-            </div>
-
-            <div className="p-6 bg-white/[0.03] border border-white/10 rounded-3xl backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.06] hover:border-violet-500/30 hover:-translate-y-1">
-              <div className="w-8 h-8 mb-3">
-                <img src="/bianhuanka-camera-svgrepo-com.svg" alt="Transform" className="w-full h-full" />
-              </div>
-              <h4 className="font-semibold mb-1 text-white">Transform</h4>
-              <p className="text-xs text-zinc-500 mb-2">变换卡</p>
-              <p className="text-sm text-zinc-400">Rotate, scale, and flip</p>
-            </div>
-
-            <div className="p-6 bg-white/[0.03] border border-white/10 rounded-3xl backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.06] hover:border-violet-500/30 hover:-translate-y-1">
-              <div className="w-8 h-8 mb-3">
-                <img src="/shipingshengchen-camera-filled-svgrepo-com.svg" alt="Video Generate" className="w-full h-full" />
-              </div>
-              <h4 className="font-semibold mb-1 text-white">Video Generate</h4>
-              <p className="text-xs text-zinc-500 mb-2">视频生成</p>
-              <p className="text-sm text-zinc-400">Create AI videos</p>
-            </div>
-
-            <div className="p-6 bg-white/[0.03] border border-white/10 rounded-3xl backdrop-blur-sm transition-all duration-300 hover:bg-white/[0.06] hover:border-violet-500/30 hover:-translate-y-1">
-              <div className="w-8 h-8 mb-3">
-                <img src="/zijing-svgrepo-com.svg" alt="Asset Card" className="w-full h-full" />
-              </div>
-              <h4 className="font-semibold mb-1 text-white">Asset Card</h4>
-              <p className="text-xs text-zinc-500 mb-2">资产卡</p>
-              <p className="text-sm text-zinc-400">Manage your assets</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works Section */}
-      <section className="py-32 border-t border-white/5 relative z-10">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-20 reveal">
-            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-              How it works
-            </h2>
-            <p className="text-xl text-zinc-500">
-              工作原理
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-12">
-            {/* Step 1 */}
-            <div className="relative">
-              <div className="absolute -top-4 -left-4 w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center border border-blue-500/30">
-                <span className="text-xl font-bold text-blue-400">1</span>
-              </div>
-              <div className="glass-card p-8 pt-12">
-                <h3 className="text-xl font-semibold mb-2">Drag & Drop Cards</h3>
-                <p className="text-sm text-zinc-500 mb-4">拖拽卡片</p>
-                <p className="text-zinc-400 leading-relaxed">
-                  Choose from our card library and drag them onto your infinite canvas. Each card is a building block for your creative workflow.
-                </p>
-                <p className="text-sm text-zinc-500 mt-3">
-                  从卡片库中选择并拖拽到无限画布上。每张卡片都是你创作流程的构建模块。
-                </p>
-              </div>
-            </div>
-
-            {/* Step 2 */}
-            <div className="relative">
-              <div className="absolute -top-4 -left-4 w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center border border-purple-500/30">
-                <span className="text-xl font-bold text-purple-400">2</span>
-              </div>
-              <div className="glass-card p-8 pt-12">
-                <h3 className="text-xl font-semibold mb-2">Configure & Connect</h3>
-                <p className="text-sm text-zinc-500 mb-4">配置与连接</p>
-                <p className="text-zinc-400 leading-relaxed">
-                  Set up each card with its own AI model, parameters, and inputs. Connect cards to reference outputs from other cards.
-                </p>
-                <p className="text-sm text-zinc-500 mt-3">
-                  为每张卡片设置专属的 AI 模型、参数和输入。连接卡片以引用其他卡片的输出。
-                </p>
-              </div>
-            </div>
-
-            {/* Step 3 */}
-            <div className="relative">
-              <div className="absolute -top-4 -left-4 w-12 h-12 rounded-full bg-cyan-500/20 flex items-center justify-center border border-cyan-500/30">
-                <span className="text-xl font-bold text-cyan-400">3</span>
-              </div>
-              <div className="glass-card p-8 pt-12">
-                <h3 className="text-xl font-semibold mb-2">Run & Create</h3>
-                <p className="text-sm text-zinc-500 mb-4">运行与创作</p>
-                <p className="text-zinc-400 leading-relaxed">
-                  Click Run on any card to execute it independently. Results appear directly on the card, ready to use in your next step.
-                </p>
-                <p className="text-sm text-zinc-500 mt-3">
-                  点击任意卡片的运行按钮独立执行。结果直接显示在卡片上，随时用于下一步创作。
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* CTA Section */}
       <section className="py-32 border-t border-white/5 relative z-10 bg-zinc-950/50">
         <div className="max-w-4xl mx-auto px-6 text-center">
@@ -675,113 +434,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section id="pricing" className="py-32 border-t border-white/5 relative z-10">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="text-center mb-16 reveal">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500 mb-4">Pricing</p>
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">简单透明的定价</h2>
-            <p className="text-zinc-400 text-lg">按需付费，无隐藏费用</p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
-            {/* 免费用户 */}
-            <div className="rounded-2xl overflow-hidden flex flex-col" style={{ background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}>
-              <div className="px-5 py-2.5 text-center text-xs font-bold uppercase tracking-widest" style={{ background: '#ffffff0d', color: 'rgb(180,180,180)' }}>
-                免费
-              </div>
-              <div className="p-6 flex flex-col flex-1">
-                <div className="text-3xl font-bold mb-1" style={{ color: 'rgb(238,238,238)' }}>¥0</div>
-                <div className="text-xs mb-5" style={{ color: 'rgb(96,96,96)' }}>注册即用</div>
-                <ul className="space-y-2 text-sm mb-6 flex-1" style={{ color: 'rgb(180,180,180)' }}>
-                  <li className="flex items-center gap-2"><span className="text-xs" style={{ color: 'rgb(96,96,96)' }}>✓</span> 无限画布创作</li>
-                  <li className="flex items-center gap-2"><span className="text-xs" style={{ color: 'rgb(96,96,96)' }}>✓</span> 图片生成 ¥0.3–1.5</li>
-                  <li className="flex items-center gap-2"><span className="text-xs" style={{ color: 'rgb(96,96,96)' }}>✓</span> 视频生成普通价</li>
-                  <li className="flex items-center gap-2"><span className="text-xs" style={{ color: 'rgb(96,96,96)' }}>✗</span> 文本卡片 / 角色设计</li>
-                  <li className="flex items-center gap-2"><span className="text-xs" style={{ color: 'rgb(96,96,96)' }}>✗</span> Prompt 优化</li>
-                </ul>
-                <a
-                  href="/auth"
-                  className="block w-full py-2.5 rounded-lg text-sm font-medium text-center transition-all"
-                  style={{ border: '1px solid #ffffff2e', color: 'rgb(180,180,180)' }}
-                >
-                  免费注册
-                </a>
-              </div>
-            </div>
-
-            {/* 月套餐 — 紫色强调 */}
-            <div className="rounded-2xl overflow-hidden flex flex-col" style={{ background: 'rgb(26,26,26)', border: '1px solid #8b5cf6' }}>
-              <div className="px-5 py-2.5 flex items-center justify-between text-white" style={{ background: '#8b5cf6' }}>
-                <span className="text-xs font-bold uppercase tracking-widest">月套餐</span>
-                <span className="text-xs font-bold">推荐</span>
-              </div>
-              <div className="p-6 flex flex-col flex-1">
-                <div className="text-3xl font-bold mb-0.5" style={{ color: 'rgb(238,238,238)' }}>¥39</div>
-                <div className="text-xs mb-5" style={{ color: 'rgb(96,96,96)' }}>/月 · 不自动续费</div>
-                <ul className="space-y-2 text-sm mb-6 flex-1" style={{ color: 'rgb(200,200,200)' }}>
-                  <li className="flex items-center gap-2"><span className="text-violet-400 text-xs">✓</span> 无限文本大模型</li>
-                  <li className="flex items-center gap-2"><span className="text-violet-400 text-xs">✓</span> 导演引擎功能</li>
-                  <li className="flex items-center gap-2"><span className="text-violet-400 text-xs">✓</span> 视频生成每秒省 ¥0.2</li>
-                  <li className="flex items-center gap-2"><span className="text-violet-400 text-xs">✓</span> 设计师专业工具</li>
-                </ul>
-                <button onClick={() => handlePay('membership', 39)}
-                  className="w-full py-2.5 rounded-lg bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold transition-all">
-                  立即开通
-                </button>
-              </div>
-            </div>
-
-            {/* 年套餐 — 蓝色强调 */}
-            <div className="rounded-2xl overflow-hidden flex flex-col" style={{ background: 'rgb(26,26,26)', border: '1px solid #3b82f6' }}>
-              <div className="px-5 py-2.5 flex items-center justify-between text-white" style={{ background: '#3b82f6' }}>
-                <span className="text-xs font-bold uppercase tracking-widest">年套餐</span>
-                <span className="text-xs font-bold">省 ¥9/月</span>
-              </div>
-              <div className="p-6 flex flex-col flex-1">
-                <div className="text-3xl font-bold mb-0.5" style={{ color: 'rgb(238,238,238)' }}>¥459</div>
-                <div className="text-xs mb-1" style={{ color: 'rgb(96,96,96)' }}>/年 · ≈ ¥38.25/月</div>
-                <div className="text-xs line-through mb-4" style={{ color: 'rgb(96,96,96)' }}>原价 ¥468</div>
-                <ul className="space-y-2 text-sm mb-6 flex-1" style={{ color: 'rgb(200,200,200)' }}>
-                  <li className="flex items-center gap-2"><span className="text-blue-400 text-xs">✓</span> 月套餐全部权益</li>
-                  <li className="flex items-center gap-2"><span className="text-blue-400 text-xs">✓</span> 年费专属优先服务</li>
-                  <li className="flex items-center gap-2"><span className="text-blue-400 text-xs">✓</span> 新功能优先体验</li>
-                  <li className="flex items-center gap-2"><span className="text-blue-400 text-xs">✓</span> 一次付清省钱</li>
-                </ul>
-                <button onClick={() => handlePay('membership_yearly', 459)}
-                  className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold transition-all">
-                  立即开通
-                </button>
-              </div>
-            </div>
-
-            {/* 两年套餐 — 绿色强调 */}
-            <div className="rounded-2xl overflow-hidden flex flex-col" style={{ background: 'rgb(26,26,26)', border: '1px solid #10b981' }}>
-              <div className="px-5 py-2.5 flex items-center justify-between text-white" style={{ background: '#10b981' }}>
-                <span className="text-xs font-bold uppercase tracking-widest">两年套餐</span>
-                <span className="text-xs font-bold">最划算</span>
-              </div>
-              <div className="p-6 flex flex-col flex-1">
-                <div className="text-3xl font-bold mb-0.5" style={{ color: 'rgb(238,238,238)' }}>¥899</div>
-                <div className="text-xs mb-1" style={{ color: 'rgb(96,96,96)' }}>/两年 · ≈ ¥37.42/月</div>
-                <div className="text-xs line-through mb-4" style={{ color: 'rgb(96,96,96)' }}>原价 ¥936</div>
-                <ul className="space-y-2 text-sm mb-6 flex-1" style={{ color: 'rgb(200,200,200)' }}>
-                  <li className="flex items-center gap-2"><span className="text-emerald-400 text-xs">✓</span> 年套餐全部权益</li>
-                  <li className="flex items-center gap-2"><span className="text-emerald-400 text-xs">✓</span> 两年锁定最低价</li>
-                  <li className="flex items-center gap-2"><span className="text-emerald-400 text-xs">✓</span> 专属客服支持</li>
-                  <li className="flex items-center gap-2"><span className="text-emerald-400 text-xs">✓</span> 未来功能永久享</li>
-                </ul>
-                <button onClick={() => handlePay('membership_2yearly', 899)}
-                  className="w-full py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold transition-all">
-                  立即开通
-                </button>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
       {/* Footer */}
       <footer className="border-t border-white/5 py-12 relative z-10">
         <div className="max-w-7xl mx-auto px-6">
@@ -805,7 +457,7 @@ export default function Home() {
               <h4 className="font-semibold mb-4 text-sm">Product <span className="text-xs text-zinc-500">产品</span></h4>
               <ul className="space-y-3 text-sm text-zinc-400">
                 <li><a href="#" className="hover:text-white transition-colors">Features <span className="text-xs text-zinc-600">功能</span></a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Pricing <span className="text-xs text-zinc-600">定价</span></a></li>
+                <li><a href="/pricing" className="hover:text-white transition-colors">Pricing <span className="text-xs text-zinc-600">定价</span></a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Roadmap <span className="text-xs text-zinc-600">路线图</span></a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Changelog <span className="text-xs text-zinc-600">更新日志</span></a></li>
               </ul>
