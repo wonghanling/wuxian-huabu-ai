@@ -314,10 +314,133 @@ function DoodlePreview({ isActive }: { isActive: boolean }) {
   );
 }
 
+// ============================================================
+// JSON 配置 · 动画预览（迁移自 JsonConfigDemo.tsx，内容/时序不变）
+// phase: 0 空 / 1 高亮快捷键 / 2 打字注入 / 3 完成(显示成果图)
+// 仅当 isActive 时跑循环，切走时清空定时器
+// ============================================================
+const JSON_PRESETS = ['服装装备设计'];
+const JSON_SAMPLE = `{
+  "agent": "服装装备设计师",
+  "costume": ["头部", "上装", "下装", "鞋靴", "配件"],
+  "equipment": ["主装备", "工具", "防护"],
+  "material": ["织物", "金属", "橡胶"],
+  "sheet": ["正视", "背视", "侧视", "材质拆解"],
+  "style": "导演级设计板 · 白底"
+}`;
+
+// JSON 打字机：每次循环用 key 触发重新挂载，typed 天然从 0 开始，不需要在 effect 里手动重置
+function JsonTypewriter() {
+  const [typed, setTyped] = useState(0);
+  useEffect(() => {
+    let i = 0;
+    const id = setInterval(() => {
+      i += 6;
+      setTyped(Math.min(i, JSON_SAMPLE.length));
+      if (i >= JSON_SAMPLE.length) clearInterval(id);
+    }, 24);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <pre className="text-[11px] leading-[1.6] font-mono text-zinc-200 whitespace-pre-wrap break-words m-0">
+      {JSON_SAMPLE.slice(0, typed)}
+      <span className="cursor-blink text-zinc-500">▋</span>
+    </pre>
+  );
+}
+
+function JsonConfigPreview({ isActive }: { isActive: boolean }) {
+  const [phase, setPhase] = useState(0);
+  const [cycle, setCycle] = useState(0); // 每轮循环+1，用作 JsonTypewriter 的 key 触发重新挂载
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    if (!isActive) return;
+    const run = () => {
+      timers.current.forEach(clearTimeout);
+      timers.current = [];
+      setPhase(0);
+      setCycle((c) => c + 1);
+      timers.current.push(setTimeout(() => setPhase(1), 500));
+      timers.current.push(setTimeout(() => setPhase(2), 1500));
+      timers.current.push(setTimeout(() => setPhase(3), 4200));
+      timers.current.push(setTimeout(run, 7000));
+    };
+    run();
+    return () => timers.current.forEach(clearTimeout);
+  }, [isActive]);
+
+  return (
+    <div className="w-full h-full flex flex-col p-6 md:p-8">
+      <div className="rounded-xl overflow-hidden flex-1 min-h-0 flex flex-col" style={{ background: 'linear-gradient(to bottom, rgba(24,24,27,0.7), rgba(0,0,0,0.5))', border: '1px solid #ffffff1c' }}>
+        {/* 弹窗顶栏 */}
+        <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid #ffffff14' }}>
+          <span className="text-sm font-semibold text-white flex items-center gap-2">
+            <span className="font-mono text-zinc-400">{'{ }'}</span> JSON 控制
+          </span>
+        </div>
+
+        <div className="p-4 flex-1 min-h-0 overflow-auto">
+          {/* 快捷注入 chips */}
+          <div className="flex flex-wrap gap-2 mb-3 items-center">
+            <span className="text-[11px] text-zinc-600">快捷注入</span>
+            {JSON_PRESETS.map((p, i) => {
+              const hot = i === 0;
+              const active = hot && phase >= 1;
+              return (
+                <span
+                  key={p}
+                  className="text-xs px-2.5 py-1 rounded-full border transition-all duration-300"
+                  style={{
+                    borderColor: active ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.14)',
+                    background: active ? '#fff' : 'rgba(255,255,255,0.05)',
+                    color: active ? '#000' : (hot ? '#d4d4d8' : '#71717a'),
+                    transform: active ? 'scale(1.05)' : 'scale(1)',
+                    fontWeight: active ? 600 : 400,
+                  }}
+                >
+                  {p}
+                </span>
+              );
+            })}
+          </div>
+
+          {/* JSON 文本区 */}
+          <div className="rounded-lg overflow-hidden p-3" style={{ background: '#0c0c0d', border: '1px solid #ffffff1c', height: 160 }}>
+            {phase < 2 ? (
+              <span className="text-zinc-700 text-xs font-mono">点击「服装装备设计」一键注入…</span>
+            ) : (
+              <JsonTypewriter key={cycle} />
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 成果图 */}
+      <div className="mt-3 rounded-xl overflow-hidden" style={{ border: '1px solid #ffffff1c', background: 'rgba(0,0,0,0.3)' }}>
+        <div className="relative" style={{ height: 100 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/zhuangbeifenjie2.webp"
+            alt="装备分解成果图"
+            className="absolute inset-0 w-full h-full object-contain"
+            style={{ opacity: phase >= 3 ? 1 : 0, transition: 'opacity 0.6s ease' }}
+            draggable={false}
+          />
+          {phase < 3 && (
+            <div className="absolute inset-0 flex items-center justify-center text-zinc-600 text-xs">生成中…</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // 按 item.key 分发到对应预览组件；尚未迁移的项先用占位文字兜底
 function PreviewByKey({ itemKey, title, isActive }: { itemKey: string; title: string; isActive: boolean }) {
   if (itemKey === 'script') return <ScriptStudioPreview isActive={isActive} />;
   if (itemKey === 'doodle') return <DoodlePreview isActive={isActive} />;
+  if (itemKey === 'json') return <JsonConfigPreview isActive={isActive} />;
   return (
     <div className="w-full h-full flex items-center justify-center">
       <span className="text-sm" style={{ color: 'rgb(96,96,96)' }}>{title} 预览（占位，待迁移）</span>
