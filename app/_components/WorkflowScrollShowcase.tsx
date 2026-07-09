@@ -557,8 +557,13 @@ function PreviewByKey({ itemKey, title, isActive }: { itemKey: string; title: st
 export function WorkflowScrollShowcase() {
   const [activeIndex, setActiveIndex] = useState(0);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const scrollContainer = scrollRef.current;
+    if (!scrollContainer) return;
+    // IntersectionObserver 以左侧滚动容器为 root（不是视口），
+    // 这样左侧容器内部滚动即可触发切换，不需要整页滚动
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -568,7 +573,7 @@ export function WorkflowScrollShowcase() {
           }
         });
       },
-      { rootMargin: '-35% 0px -35% 0px', threshold: 0.45 }
+      { root: scrollContainer, rootMargin: '-35% 0px -35% 0px', threshold: 0.45 }
     );
     itemRefs.current.forEach((el) => { if (el) observer.observe(el); });
     return () => observer.disconnect();
@@ -583,43 +588,45 @@ export function WorkflowScrollShowcase() {
         </h2>
       </div>
 
-      {/* 桌面端：左右联动布局 */}
-      <div className="hidden md:grid md:grid-cols-[380px_1fr] gap-16">
-        {/* 左：4项文案，正常滚动 */}
-        <div className="flex flex-col">
+      {/* 桌面端：左右联动布局，左侧有自己的滚动区域（鼠标悬停左侧即可滚动左侧列表切换右侧预览） */}
+      <div className="hidden md:grid md:grid-cols-[380px_1fr] gap-12" style={{ height: 560 }}>
+        {/* 左：4项文案，自身可滚动（overflow-y auto），高度等于右侧预览区 */}
+        <div
+          ref={scrollRef}
+          className="overflow-y-auto flex flex-col pr-4"
+          style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.15) transparent' }}
+        >
           {ITEMS.map((item, i) => (
             <div
               key={item.key}
               ref={(el) => { itemRefs.current[i] = el; }}
               className="flex flex-col justify-center transition-opacity duration-500"
-              style={{ minHeight: 320, opacity: activeIndex === i ? 1 : 0.3 }}
+              style={{ minHeight: 180, opacity: activeIndex === i ? 1 : 0.3 }}
             >
-              <h3 className="text-2xl md:text-3xl font-bold tracking-tight mb-3" style={{ color: 'rgb(238,238,238)' }}>
+              <h3 className="text-2xl font-bold tracking-tight mb-2" style={{ color: 'rgb(238,238,238)' }}>
                 {item.title}
               </h3>
-              <p className="text-base leading-relaxed" style={{ color: 'rgb(180,180,180)' }}>
+              <p className="text-sm leading-relaxed" style={{ color: 'rgb(180,180,180)' }}>
                 {item.desc}
               </p>
             </div>
           ))}
         </div>
 
-        {/* 右：sticky 预览区 */}
-        <div className="sticky self-start" style={{ top: 120 }}>
-          <div
-            className="relative rounded-3xl overflow-hidden"
-            style={{ height: 560, background: 'rgb(20,20,20)', border: '1px solid #ffffff1c' }}
-          >
-            {ITEMS.map((item, i) => (
-              <div
-                key={item.key}
-                className="absolute inset-0"
-                style={{ opacity: activeIndex === i ? 1 : 0, transition: 'opacity 0.45s ease' }}
-              >
-                <PreviewByKey itemKey={item.key} title={item.title} isActive={activeIndex === i} />
-              </div>
-            ))}
-          </div>
+        {/* 右：预览区，高度固定，不需要 sticky 了（整体高度固定，左侧内部滚动） */}
+        <div
+          className="relative rounded-3xl overflow-hidden"
+          style={{ height: 560, background: 'rgb(20,20,20)', border: '1px solid #ffffff1c' }}
+        >
+          {ITEMS.map((item, i) => (
+            <div
+              key={item.key}
+              className="absolute inset-0"
+              style={{ opacity: activeIndex === i ? 1 : 0, transition: 'opacity 0.45s ease' }}
+            >
+              <PreviewByKey itemKey={item.key} title={item.title} isActive={activeIndex === i} />
+            </div>
+          ))}
         </div>
       </div>
 
