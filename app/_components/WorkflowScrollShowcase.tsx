@@ -436,11 +436,117 @@ function JsonConfigPreview({ isActive }: { isActive: boolean }) {
   );
 }
 
+// ============================================================
+// 分镜设计 · 动画预览（迁移自 ShotboardDemo.tsx，内容/时序不变）
+// Step2: 故事模式/时空模式 打字机逐行淡入，每6秒自动切换模式
+// Step4: 导演级分镜表格图片轮播，每2.8秒切换
+// 仅当 isActive 时跑循环，切走时清空所有定时器
+// ============================================================
+const SHOTBOARD_STORY_LINES = [
+  'PANEL 01　全景　雨夜天台，孤影伫立',
+  'PANEL 02　中景　转身，目光扫过城市',
+  'PANEL 03　特写　手中硬盘红灯明灭',
+  'PANEL 04　近景　雨水顺着下颌线滑落',
+  '…按叙事节奏拆解为 9 / 25 宫格分镜提示词',
+];
+const SHOTBOARD_CINEMATIC_LINES = [
+  'FRAME 首帧　起手抬臂，蓄力',
+  'MID 02　　　重心前移，衣摆扬起',
+  'MID 03　　　手臂挥出，雨珠飞溅',
+  'FRAME 尾帧　收势定格，余韵',
+  '…分析首尾帧，补全中间帧提示词',
+];
+const SHOTBOARD_STEP4_IMAGES = ['/step4-1.webp', '/step4-3.webp'];
+
+// Step2 逐行淡入，用 key={mode} 触发重新挂载，shown 天然从0开始
+function ShotboardLines({ lines }: { lines: string[] }) {
+  const [shown, setShown] = useState(0);
+  useEffect(() => {
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    lines.forEach((_, i) => {
+      timers.push(setTimeout(() => setShown((n) => Math.max(n, i + 1)), 280 * (i + 1)));
+    });
+    return () => timers.forEach(clearTimeout);
+  }, [lines]);
+  return (
+    <div className="font-mono text-[11px] leading-[1.7]" style={{ color: 'rgb(200,200,200)' }}>
+      {lines.map((ln, i) => (
+        <div key={i} className="transition-opacity duration-500 whitespace-pre-wrap break-words" style={{ opacity: i < shown ? 1 : 0 }}>
+          {ln}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ShotboardPreview({ isActive }: { isActive: boolean }) {
+  const [mode, setMode] = useState<'story' | 'cinematic'>('story');
+  const [shot, setShot] = useState(0);
+
+  const lines = mode === 'story' ? SHOTBOARD_STORY_LINES : SHOTBOARD_CINEMATIC_LINES;
+
+  // 模式自动切换（仅 isActive 时跑；不重置 mode，切走再切回时从当前状态继续，
+  // 和 ScriptStudioPreview 的续播逻辑一致，同时避免在 effect 里直接 setState 触发连锁渲染）
+  useEffect(() => {
+    if (!isActive) return;
+    const t = setInterval(() => setMode((m) => (m === 'story' ? 'cinematic' : 'story')), 6000);
+    return () => clearInterval(t);
+  }, [isActive]);
+
+  // Step4 成果图轮播（仅 isActive 时跑，同样不在 effect 里直接重置）
+  useEffect(() => {
+    if (!isActive) return;
+    const t = setInterval(() => setShot((s) => (s + 1) % SHOTBOARD_STEP4_IMAGES.length), 2800);
+    return () => clearInterval(t);
+  }, [isActive]);
+
+  return (
+    <div className="w-full h-full flex flex-col p-6 md:p-8 gap-3">
+      {/* Step2 提示词 */}
+      <div className="rounded-xl overflow-hidden" style={{ background: 'linear-gradient(to bottom, rgba(24,24,27,0.6), rgba(0,0,0,0.4))', border: '1px solid #ffffff1c' }}>
+        <div className="flex items-center gap-2 px-4 py-2.5" style={{ borderBottom: '1px solid #ffffff14' }}>
+          <span className="text-[11px] font-mono text-zinc-500">STEP 2</span>
+          <span className="text-xs text-zinc-300">分镜提示词 · {mode === 'story' ? '故事模式' : '时空模式'}</span>
+        </div>
+        <div className="p-3" style={{ height: 130, overflow: 'hidden' }}>
+          <ShotboardLines key={mode} lines={lines} />
+        </div>
+      </div>
+
+      {/* Step4 成果图轮播 */}
+      <div className="rounded-xl overflow-hidden flex-1 min-h-0 flex flex-col" style={{ background: 'linear-gradient(to bottom, rgba(24,24,27,0.6), rgba(0,0,0,0.4))', border: '1px solid #ffffff1c' }}>
+        <div className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: '1px solid #ffffff14' }}>
+          <span className="text-xs text-zinc-300"><span className="font-mono text-zinc-500 mr-1.5 text-[11px]">STEP 4</span>导演级分镜表格</span>
+          <div className="flex gap-1.5">
+            {SHOTBOARD_STEP4_IMAGES.map((_, i) => (
+              <span key={i} className="w-1.5 h-1.5 rounded-full transition-all" style={{ background: i === shot ? '#fff' : 'rgba(255,255,255,0.25)' }} />
+            ))}
+          </div>
+        </div>
+        <div className="relative flex-1 min-h-0" style={{ background: 'rgba(0,0,0,0.3)' }}>
+          {SHOTBOARD_STEP4_IMAGES.map((src, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={src}
+              src={src}
+              alt={`导演级分镜表格 ${i + 1}`}
+              className="absolute inset-0 w-full h-full object-contain transition-opacity duration-700"
+              style={{ opacity: i === shot ? 1 : 0 }}
+              draggable={false}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // 按 item.key 分发到对应预览组件；尚未迁移的项先用占位文字兜底
 function PreviewByKey({ itemKey, title, isActive }: { itemKey: string; title: string; isActive: boolean }) {
   if (itemKey === 'script') return <ScriptStudioPreview isActive={isActive} />;
   if (itemKey === 'doodle') return <DoodlePreview isActive={isActive} />;
   if (itemKey === 'json') return <JsonConfigPreview isActive={isActive} />;
+  if (itemKey === 'shotboard') return <ShotboardPreview isActive={isActive} />;
   return (
     <div className="w-full h-full flex items-center justify-center">
       <span className="text-sm" style={{ color: 'rgb(96,96,96)' }}>{title} 预览（占位，待迁移）</span>
