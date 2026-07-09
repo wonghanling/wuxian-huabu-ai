@@ -162,7 +162,7 @@ export default function PricingPage() {
 
       {/* 4列卡片 */}
       <section className="px-6 pb-24">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mx-auto items-stretch" style={{ maxWidth: 1760 }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mx-auto items-stretch" style={{ maxWidth: 1200 }}>
           {PLANS.map((p) => {
             const action = p.action;
             return (
@@ -170,10 +170,10 @@ export default function PricingPage() {
               key={p.key}
               className="overflow-hidden flex flex-col relative transition-all duration-[250ms] ease-out hover:-translate-y-1 group"
               style={{
-                minHeight: 780,
+                minHeight: 600,
                 borderRadius: 30,
-                // 4卡统一低调对角深灰渐变：右上偏黑，左下偏灰(135deg)，非常克制
-                background: 'linear-gradient(135deg, #101011 0%, #161617 45%, #202021 100%)',
+                // 对角渐变：左下角亮灰、右上角黑，对比拉开(45deg 起点=左下 终点=右上)
+                background: 'linear-gradient(45deg, #4a4a4d 0%, #26262a 42%, #141416 70%, #08080a 100%)',
                 // 边框统一深色淡白细线(Pro卡也一样，不通体亮绿)
                 border: '1px solid rgba(255,255,255,0.1)',
                 boxShadow: '0 20px 50px -30px rgba(0,0,0,0.9)',
@@ -187,7 +187,7 @@ export default function PricingPage() {
                 />
               )}
 
-              <div className="relative flex flex-col flex-1" style={{ padding: 40 }}>
+              <div className="relative flex flex-col flex-1" style={{ padding: 28 }}>
                 {/* 名称 + 徽标 */}
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-2xl font-semibold" style={{ color: 'rgb(238,238,238)' }}>{p.name}</span>
