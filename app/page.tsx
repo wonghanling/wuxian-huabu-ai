@@ -326,9 +326,9 @@ export default function Home() {
             className="absolute cursor-pointer transition-transform duration-300 hover:scale-110 hover:z-20"
             style={{ zIndex: 2, top: '18%', left: '10%', width: 'min(220px, 20vw)' }}
           >
-            <span className="block mb-1.5 text-[12px] font-medium" style={{ color: 'rgb(160,160,160)' }}>海报设计</span>
+            <span className="block mb-1.5 text-[12px] font-medium" style={{ color: 'rgb(160,160,160)' }}>产品设计</span>
             <div className="rounded-2xl overflow-hidden" style={{ aspectRatio: '4/3', background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}>
-              <div className="w-full h-full" style={{ background: 'linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.01))' }} />
+              <img src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783578531053.jpg" alt="产品设计" className="w-full h-full object-cover" draggable={false} />
             </div>
           </div>
           <div
@@ -337,7 +337,7 @@ export default function Home() {
           >
             <span className="block mb-1.5 text-[12px] font-medium" style={{ color: 'rgb(160,160,160)' }}>角色设计</span>
             <div className="rounded-2xl overflow-hidden" style={{ aspectRatio: '4/3', background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}>
-              <div className="w-full h-full" style={{ background: 'linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.01))' }} />
+              <img src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783579669557.jpg" alt="角色设计" className="w-full h-full object-cover" draggable={false} />
             </div>
           </div>
           <div
@@ -346,16 +346,20 @@ export default function Home() {
           >
             <span className="block mb-1.5 text-[12px] font-medium" style={{ color: 'rgb(160,160,160)' }}>视频生成</span>
             <div className="rounded-2xl overflow-hidden" style={{ aspectRatio: '16/9', background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}>
-              <div className="w-full h-full" style={{ background: 'linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.01))' }} />
+              <video
+                src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/clip-1783582208638-tp8y4hee20l.mp4"
+                className="w-full h-full object-cover"
+                autoPlay muted loop playsInline
+              />
             </div>
           </div>
           <div
             className="absolute cursor-pointer transition-transform duration-300 hover:scale-110 hover:z-20"
-            style={{ zIndex: 2, top: '58%', right: '11%', width: 'min(170px, 16vw)' }}
+            style={{ zIndex: 2, top: '58%', right: '9%', width: 'min(260px, 22vw)' }}
           >
-            <span className="block mb-1.5 text-[12px] font-medium" style={{ color: 'rgb(160,160,160)' }}>分镜脚本</span>
-            <div className="rounded-2xl overflow-hidden" style={{ aspectRatio: '9/14', background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}>
-              <div className="w-full h-full" style={{ background: 'linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.01))' }} />
+            <span className="block mb-1.5 text-[12px] font-medium" style={{ color: 'rgb(160,160,160)' }}>分镜设计</span>
+            <div className="rounded-2xl overflow-hidden" style={{ aspectRatio: '16/9', background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}>
+              <img src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783580645778.jpg" alt="分镜设计" className="w-full h-full object-cover" draggable={false} />
             </div>
           </div>
         </div>
