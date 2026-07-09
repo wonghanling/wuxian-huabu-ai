@@ -617,11 +617,19 @@ export function WorkflowScrollShowcase() {
           <div style={{ minHeight: 196, flexShrink: 0 }} />
         </div>
 
-        {/* 右：预览区，高度固定，不需要 sticky 了（整体高度固定，左侧内部滚动） */}
+        {/* 右：预览区，高度固定，深色画布+网格圆点背景 */}
         <div
           className="relative rounded-3xl overflow-hidden"
           style={{ height: 560, background: 'rgb(20,20,20)', border: '1px solid #ffffff1c' }}
         >
+          {/* 多孔画布背景（网格小圆点） */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.12) 1px, transparent 1px)',
+              backgroundSize: '20px 20px',
+            }}
+          />
           {ITEMS.map((item, i) => (
             <div
               key={item.key}
