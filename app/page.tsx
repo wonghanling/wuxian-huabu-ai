@@ -127,7 +127,7 @@ export default function Home() {
   };
 
   return (
-    <div className="relative bg-[#09090b] text-white overflow-hidden">
+    <div className="relative bg-[#09090b] text-white overflow-x-hidden">
 
       {/* 活动弹窗 - 仅未登录用户自动弹出 */}
       {showPromoModal && (
