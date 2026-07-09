@@ -276,5 +276,9 @@ body::-webkit-scrollbar {
 .cursor-blink { animation: cursor-blink 1s step-end infinite; }
 @keyframes cursor-blink { 50% { opacity: 0; } }
 
+/* 隐藏滚动条(仍可滚动)：用于 WorkflowScrollShowcase 左侧文案列 */
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
 /* 剧本演示自动播放进度条 */
 @keyframes ssd-progress { from { width: 0; } to { width: 100%; } }

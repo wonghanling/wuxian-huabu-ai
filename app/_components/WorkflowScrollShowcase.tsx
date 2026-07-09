@@ -593,8 +593,7 @@ export function WorkflowScrollShowcase() {
         {/* 左：4项文案，自身可滚动（overflow-y auto），高度等于右侧预览区 */}
         <div
           ref={scrollRef}
-          className="overflow-y-auto flex flex-col pr-4"
-          style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.15) transparent' }}
+          className="overflow-y-auto flex flex-col pr-4 no-scrollbar"
         >
           {/* 顶部填充：让第1项能滚到容器中心区域 */}
           <div style={{ minHeight: 196, flexShrink: 0 }} />
@@ -617,7 +616,9 @@ export function WorkflowScrollShowcase() {
           <div style={{ minHeight: 196, flexShrink: 0 }} />
         </div>
 
-        {/* 右：预览区，高度固定，深色画布+网格圆点背景 */}
+        {/* 右：预览区，高度固定，深色画布+网格圆点背景。
+            预览内容暂时清空，仅保留多孔画布背景，等用户提供真实图片后再放置。
+            4层按 activeIndex 切换的结构先注释保留，届时把真实图片填进 PreviewByKey 即可联动。 */}
         <div
           className="relative rounded-3xl overflow-hidden"
           style={{ height: 560, background: 'rgb(20,20,20)', border: '1px solid #ffffff1c' }}
@@ -630,15 +631,6 @@ export function WorkflowScrollShowcase() {
               backgroundSize: '20px 20px',
             }}
           />
-          {ITEMS.map((item, i) => (
-            <div
-              key={item.key}
-              className="absolute inset-0"
-              style={{ opacity: activeIndex === i ? 1 : 0, transition: 'opacity 0.45s ease' }}
-            >
-              <PreviewByKey itemKey={item.key} title={item.title} isActive={activeIndex === i} />
-            </div>
-          ))}
         </div>
       </div>
 
@@ -656,7 +648,14 @@ export function WorkflowScrollShowcase() {
               className="relative rounded-2xl overflow-hidden"
               style={{ aspectRatio: '4/3', background: 'rgb(20,20,20)', border: '1px solid #ffffff1c' }}
             >
-              <PreviewByKey itemKey={item.key} title={item.title} isActive />
+              {/* 多孔画布背景，预览内容待用户提供真实图片后再放置 */}
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.12) 1px, transparent 1px)',
+                  backgroundSize: '20px 20px',
+                }}
+              />
             </div>
           </div>
         ))}
