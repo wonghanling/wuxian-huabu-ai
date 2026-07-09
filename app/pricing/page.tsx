@@ -162,36 +162,38 @@ export default function PricingPage() {
 
       {/* 4列卡片 */}
       <section className="px-6 pb-24">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 max-w-6xl mx-auto items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mx-auto items-stretch" style={{ maxWidth: 1760 }}>
           {PLANS.map((p) => {
             const action = p.action;
             return (
             <div
               key={p.key}
-              className="rounded-3xl overflow-hidden flex flex-col relative transition-transform duration-300 hover:-translate-y-1.5"
+              className="overflow-hidden flex flex-col relative transition-all duration-[250ms] ease-out hover:-translate-y-1 group"
               style={{
-                minHeight: 580,
+                minHeight: 780,
+                borderRadius: 30,
+                // 黑到灰的垂直渐变：顶部偏黑 #0b0b0b，底部微亮到灰 #2a2a2a
                 background: p.highlight
-                  ? 'linear-gradient(180deg, rgb(24,30,26) 0%, rgb(16,26,19) 55%, rgba(28,66,42,0.55) 100%)'
-                  : 'linear-gradient(180deg, rgb(26,26,28) 0%, rgb(16,16,18) 100%)',
-                border: p.highlight ? '1px solid rgba(113,208,131,0.55)' : '1px solid #ffffff14',
+                  ? 'linear-gradient(180deg, #0b0b0b 0%, #141414 60%, #1a2a1e 100%)'
+                  : 'linear-gradient(180deg, #0b0b0b 0%, #1a1a1a 70%, #2a2a2a 100%)',
+                border: p.highlight ? '1px solid rgba(104,211,125,0.65)' : '1px solid rgba(255,255,255,0.12)',
                 boxShadow: p.highlight
-                  ? '0 0 60px -10px rgba(113,208,131,0.45), inset 0 0 40px -20px rgba(113,208,131,0.4)'
+                  ? '0 0 60px -12px rgba(104,211,125,0.4)'
                   : '0 20px 50px -30px rgba(0,0,0,0.9)',
               }}
             >
-              {/* Pro 卡底部绿色辉光 */}
+              {/* Pro 卡深绿 radial 叠加 + 底部辉光 */}
               {p.highlight && (
                 <div
-                  className="absolute inset-x-0 bottom-0 pointer-events-none"
-                  style={{ height: '55%', background: 'radial-gradient(ellipse at 50% 120%, rgba(113,208,131,0.35), transparent 70%)' }}
+                  className="absolute inset-0 pointer-events-none"
+                  style={{ background: 'radial-gradient(ellipse at 50% 115%, rgba(104,211,125,0.28), transparent 65%)' }}
                 />
               )}
 
-              <div className="relative p-7 flex flex-col flex-1">
+              <div className="relative flex flex-col flex-1" style={{ padding: 40 }}>
                 {/* 名称 + 徽标 */}
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-lg font-bold" style={{ color: 'rgb(238,238,238)' }}>{p.name}</span>
+                  <span className="text-2xl font-semibold" style={{ color: 'rgb(238,238,238)' }}>{p.name}</span>
                   {p.badge && (
                     <span
                       className="text-[11px] font-bold px-2.5 py-1 rounded-full"
