@@ -172,21 +172,18 @@ export default function PricingPage() {
               style={{
                 minHeight: 780,
                 borderRadius: 30,
-                // 黑到灰的垂直渐变：顶部偏黑 #0b0b0b，底部微亮到灰 #2a2a2a
-                background: p.highlight
-                  ? 'linear-gradient(180deg, #0b0b0b 0%, #141414 60%, #1a2a1e 100%)'
-                  : 'linear-gradient(180deg, #0b0b0b 0%, #1a1a1a 70%, #2a2a2a 100%)',
-                border: p.highlight ? '1px solid rgba(104,211,125,0.65)' : '1px solid rgba(255,255,255,0.12)',
-                boxShadow: p.highlight
-                  ? '0 0 60px -12px rgba(104,211,125,0.4)'
-                  : '0 20px 50px -30px rgba(0,0,0,0.9)',
+                // 4卡统一低调对角深灰渐变：右上偏黑，左下偏灰(135deg)，非常克制
+                background: 'linear-gradient(135deg, #101011 0%, #161617 45%, #202021 100%)',
+                // 边框统一深色淡白细线(Pro卡也一样，不通体亮绿)
+                border: '1px solid rgba(255,255,255,0.1)',
+                boxShadow: '0 20px 50px -30px rgba(0,0,0,0.9)',
               }}
             >
-              {/* Pro 卡深绿 radial 叠加 + 底部辉光 */}
+              {/* Pro 卡：仅底部一小片很淡的绿色辉光(点缀，不刺眼、不在中间) */}
               {p.highlight && (
                 <div
-                  className="absolute inset-0 pointer-events-none"
-                  style={{ background: 'radial-gradient(ellipse at 50% 115%, rgba(104,211,125,0.28), transparent 65%)' }}
+                  className="absolute inset-x-0 bottom-0 pointer-events-none"
+                  style={{ height: '38%', background: 'radial-gradient(ellipse at 50% 130%, rgba(104,211,125,0.14), transparent 70%)' }}
                 />
               )}
 
