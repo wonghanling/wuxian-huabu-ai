@@ -596,12 +596,14 @@ export function WorkflowScrollShowcase() {
           className="overflow-y-auto flex flex-col pr-4"
           style={{ scrollbarWidth: 'thin', scrollbarColor: 'rgba(255,255,255,0.15) transparent' }}
         >
+          {/* 顶部填充：让第1项能滚到容器中心区域 */}
+          <div style={{ minHeight: 196, flexShrink: 0 }} />
           {ITEMS.map((item, i) => (
             <div
               key={item.key}
               ref={(el) => { itemRefs.current[i] = el; }}
               className="flex flex-col justify-center transition-opacity duration-500"
-              style={{ minHeight: 180, opacity: activeIndex === i ? 1 : 0.3 }}
+              style={{ minHeight: 200, opacity: activeIndex === i ? 1 : 0.3 }}
             >
               <h3 className="text-2xl font-bold tracking-tight mb-2" style={{ color: 'rgb(238,238,238)' }}>
                 {item.title}
@@ -611,6 +613,8 @@ export function WorkflowScrollShowcase() {
               </p>
             </div>
           ))}
+          {/* 底部填充：让最后一项能滚到容器中心区域 */}
+          <div style={{ minHeight: 196, flexShrink: 0 }} />
         </div>
 
         {/* 右：预览区，高度固定，不需要 sticky 了（整体高度固定，左侧内部滚动） */}
