@@ -323,32 +323,40 @@ export default function Home() {
 
           {/* 四周素材节点卡片：左二图片(4:3)，右上视频(16:9)，右下竖版(9:14)，hover 放大 */}
           <div
-            className="absolute rounded-2xl overflow-hidden cursor-pointer transition-transform duration-300 hover:scale-110 hover:z-20"
-            style={{ zIndex: 2, top: '18%', left: '10%', width: 'min(220px, 20vw)', aspectRatio: '4/3', background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}
+            className="absolute cursor-pointer transition-transform duration-300 hover:scale-110 hover:z-20"
+            style={{ zIndex: 2, top: '18%', left: '10%', width: 'min(220px, 20vw)' }}
           >
-            <div className="w-full h-full" style={{ background: 'linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.01))' }} />
-            <span className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full text-[11px] font-medium" style={{ background: 'rgba(0,0,0,0.6)', color: 'rgb(238,238,238)', backdropFilter: 'blur(4px)' }}>海报设计</span>
+            <span className="block mb-1.5 text-[12px] font-medium" style={{ color: 'rgb(160,160,160)' }}>海报设计</span>
+            <div className="rounded-2xl overflow-hidden" style={{ aspectRatio: '4/3', background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}>
+              <div className="w-full h-full" style={{ background: 'linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.01))' }} />
+            </div>
           </div>
           <div
-            className="absolute rounded-2xl overflow-hidden cursor-pointer transition-transform duration-300 hover:scale-110 hover:z-20"
-            style={{ zIndex: 2, top: '62%', left: '7%', width: 'min(220px, 20vw)', aspectRatio: '4/3', background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}
+            className="absolute cursor-pointer transition-transform duration-300 hover:scale-110 hover:z-20"
+            style={{ zIndex: 2, top: '62%', left: '7%', width: 'min(220px, 20vw)' }}
           >
-            <div className="w-full h-full" style={{ background: 'linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.01))' }} />
-            <span className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full text-[11px] font-medium" style={{ background: 'rgba(0,0,0,0.6)', color: 'rgb(238,238,238)', backdropFilter: 'blur(4px)' }}>角色设计</span>
+            <span className="block mb-1.5 text-[12px] font-medium" style={{ color: 'rgb(160,160,160)' }}>角色设计</span>
+            <div className="rounded-2xl overflow-hidden" style={{ aspectRatio: '4/3', background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}>
+              <div className="w-full h-full" style={{ background: 'linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.01))' }} />
+            </div>
           </div>
           <div
-            className="absolute rounded-2xl overflow-hidden cursor-pointer transition-transform duration-300 hover:scale-110 hover:z-20"
-            style={{ zIndex: 2, top: '12%', right: '9%', width: 'min(260px, 22vw)', aspectRatio: '16/9', background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}
+            className="absolute cursor-pointer transition-transform duration-300 hover:scale-110 hover:z-20"
+            style={{ zIndex: 2, top: '12%', right: '9%', width: 'min(260px, 22vw)' }}
           >
-            <div className="w-full h-full" style={{ background: 'linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.01))' }} />
-            <span className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full text-[11px] font-medium" style={{ background: 'rgba(0,0,0,0.6)', color: 'rgb(238,238,238)', backdropFilter: 'blur(4px)' }}>视频生成</span>
+            <span className="block mb-1.5 text-[12px] font-medium" style={{ color: 'rgb(160,160,160)' }}>视频生成</span>
+            <div className="rounded-2xl overflow-hidden" style={{ aspectRatio: '16/9', background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}>
+              <div className="w-full h-full" style={{ background: 'linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.01))' }} />
+            </div>
           </div>
           <div
-            className="absolute rounded-2xl overflow-hidden cursor-pointer transition-transform duration-300 hover:scale-110 hover:z-20"
-            style={{ zIndex: 2, top: '58%', right: '11%', width: 'min(170px, 16vw)', aspectRatio: '9/14', background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}
+            className="absolute cursor-pointer transition-transform duration-300 hover:scale-110 hover:z-20"
+            style={{ zIndex: 2, top: '58%', right: '11%', width: 'min(170px, 16vw)' }}
           >
-            <div className="w-full h-full" style={{ background: 'linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.01))' }} />
-            <span className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full text-[11px] font-medium" style={{ background: 'rgba(0,0,0,0.6)', color: 'rgb(238,238,238)', backdropFilter: 'blur(4px)' }}>分镜脚本</span>
+            <span className="block mb-1.5 text-[12px] font-medium" style={{ color: 'rgb(160,160,160)' }}>分镜脚本</span>
+            <div className="rounded-2xl overflow-hidden" style={{ aspectRatio: '9/14', background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}>
+              <div className="w-full h-full" style={{ background: 'linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.01))' }} />
+            </div>
           </div>
         </div>
 
