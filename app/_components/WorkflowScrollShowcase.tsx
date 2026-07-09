@@ -177,6 +177,154 @@ function ScriptStudioPreview({ isActive }: { isActive: boolean }) {
   );
 }
 
+// ============================================================
+// 涂鸦标注 · 动画预览（迁移自 DoodleDemo.tsx，内容/时序不变）
+// phase: 0 空 / 1 标注图淡入 / 2 显示发送按钮 / 3 飞向角落 / 4 落定为卡片
+// 仅当 isActive 时跑循环，切走时清空定时器
+// ============================================================
+const DOODLE_STEPS = ['上传图片', '涂抹标注', '发送到画布', '生成新卡片'];
+
+function DoodlePreview({ isActive }: { isActive: boolean }) {
+  const [phase, setPhase] = useState(0);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    if (!isActive) return;
+    const run = () => {
+      timers.current.forEach(clearTimeout);
+      timers.current = [];
+      setPhase(0);
+      timers.current.push(setTimeout(() => setPhase(1), 400));
+      timers.current.push(setTimeout(() => setPhase(2), 1800));
+      timers.current.push(setTimeout(() => setPhase(3), 2900));
+      timers.current.push(setTimeout(() => setPhase(4), 3900));
+      timers.current.push(setTimeout(run, 6800));
+    };
+    run();
+    return () => timers.current.forEach(clearTimeout);
+  }, [isActive]);
+
+  const flying = phase >= 3;
+  const landed = phase >= 4;
+
+  return (
+    <div className="w-full h-full flex flex-col p-6 md:p-8">
+      <div
+        className="relative rounded-xl overflow-hidden flex-1 min-h-0 select-none"
+        style={{ background: 'radial-gradient(circle at 50% 40%, #15171a 0%, #0a0b0c 70%)' }}
+      >
+        {/* 画布网格背景 */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage:
+              'linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)',
+            backgroundSize: '34px 34px',
+            opacity: landed ? 0.7 : 0.25,
+            transition: 'opacity 0.6s ease',
+          }}
+        />
+
+        {/* 图片:绝对定位居中，用 transform scale/translate 做飞入(不影响布局高度) */}
+        <div
+          className="absolute"
+          style={{
+            left: '50%', top: '50%',
+            transformOrigin: 'center center',
+            transform: flying
+              ? 'translate(-50%,-50%) scale(0.4) translate(70%, 0)'
+              : 'translate(-50%,-50%) scale(1)',
+            opacity: phase >= 1 ? 1 : 0,
+            filter: phase >= 1 ? 'none' : 'blur(8px)',
+            transition: 'transform 0.9s cubic-bezier(.45,.05,.2,1), opacity 0.7s ease, filter 0.7s ease',
+            width: '60%',
+          }}
+        >
+          <div
+            className="relative rounded-xl overflow-hidden border shadow-2xl"
+            style={{ borderColor: landed ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.15)', transition: 'border-color 0.4s ease' }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/tuyabiaozhu.webp" alt="涂鸦标注演示" className="w-full h-auto block" draggable={false} />
+            {/* 落定后右上角完成勾 */}
+            <div
+              className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white text-black flex items-center justify-center text-sm font-bold shadow-lg"
+              style={{
+                opacity: landed ? 1 : 0,
+                transform: landed ? 'scale(1)' : 'scale(0.4)',
+                transition: 'all 0.4s cubic-bezier(.2,.8,.2,1) 0.2s',
+              }}
+            >
+              ✓
+            </div>
+          </div>
+        </div>
+
+        {/* "发送到画布"提示(蓄势出现,飞行时隐藏) */}
+        <div
+          className="absolute inset-x-0 bottom-0 flex justify-center pb-3 pt-10"
+          style={{
+            background: 'linear-gradient(to top, rgba(0,0,0,0.55), transparent)',
+            opacity: phase === 2 ? 1 : 0,
+            transition: 'opacity 0.4s ease',
+          }}
+        >
+          <div className="px-4 py-2 rounded-full bg-white text-black text-xs font-semibold shadow-2xl flex items-center gap-1.5">
+            发送到画布 <span className="text-sm leading-none">→</span>
+          </div>
+        </div>
+
+        {/* 落定提示 */}
+        <div
+          className="absolute inset-x-0 top-0 flex justify-center pt-3 pb-10"
+          style={{
+            background: 'linear-gradient(to bottom, rgba(0,0,0,0.5), transparent)',
+            opacity: landed ? 1 : 0,
+            transition: 'opacity 0.5s ease',
+          }}
+        >
+          <div className="px-3 py-1.5 rounded-full bg-white/15 border border-white/25 text-white text-[11px] font-medium backdrop-blur-md">
+            已添加到画布 · 可连线生成
+          </div>
+        </div>
+      </div>
+
+      {/* 步骤指示 */}
+      <div className="flex items-center justify-center gap-2 mt-4 flex-wrap">
+        {DOODLE_STEPS.map((s, i) => {
+          const on = phase >= i + 1;
+          return (
+            <div key={s} className="flex items-center gap-1.5">
+              <span
+                className="text-[11px] px-2 py-1 rounded-full border transition-all duration-300"
+                style={{
+                  borderColor: on ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.1)',
+                  background: on ? 'rgba(255,255,255,0.12)' : 'transparent',
+                  color: on ? '#fff' : '#71717a',
+                }}
+              >
+                {s}
+              </span>
+              {i < DOODLE_STEPS.length - 1 && <span className="text-zinc-700 text-[11px]">→</span>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// 按 item.key 分发到对应预览组件；尚未迁移的项先用占位文字兜底
+function PreviewByKey({ itemKey, title, isActive }: { itemKey: string; title: string; isActive: boolean }) {
+  if (itemKey === 'script') return <ScriptStudioPreview isActive={isActive} />;
+  if (itemKey === 'doodle') return <DoodlePreview isActive={isActive} />;
+  return (
+    <div className="w-full h-full flex items-center justify-center">
+      <span className="text-sm" style={{ color: 'rgb(96,96,96)' }}>{title} 预览（占位，待迁移）</span>
+    </div>
+  );
+}
+
 export function WorkflowScrollShowcase() {
   const [activeIndex, setActiveIndex] = useState(0);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -239,15 +387,7 @@ export function WorkflowScrollShowcase() {
                 className="absolute inset-0"
                 style={{ opacity: activeIndex === i ? 1 : 0, transition: 'opacity 0.45s ease' }}
               >
-                {item.key === 'script' ? (
-                  <ScriptStudioPreview isActive={activeIndex === i} />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <span className="text-sm" style={{ color: 'rgb(96,96,96)' }}>
-                      {item.title} 预览（占位，待迁移）
-                    </span>
-                  </div>
-                )}
+                <PreviewByKey itemKey={item.key} title={item.title} isActive={activeIndex === i} />
               </div>
             ))}
           </div>
@@ -268,13 +408,7 @@ export function WorkflowScrollShowcase() {
               className="relative rounded-2xl overflow-hidden"
               style={{ aspectRatio: '4/3', background: 'rgb(20,20,20)', border: '1px solid #ffffff1c' }}
             >
-              {item.key === 'script' ? (
-                <ScriptStudioPreview isActive />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <span className="text-sm" style={{ color: 'rgb(96,96,96)' }}>{item.title} 预览（占位，待迁移）</span>
-                </div>
-              )}
+              <PreviewByKey itemKey={item.key} title={item.title} isActive />
             </div>
           </div>
         ))}
