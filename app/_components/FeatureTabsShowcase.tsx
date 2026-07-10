@@ -13,9 +13,16 @@ const CARDS: { key: string; title: string; desc: string; image?: string; workflo
     image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/20ce33c8-6a71-41a1-804e-4997b4d95476/1783646629738.jpg',
     workflow: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/images/20ce33c8-6a71-41a1-804e-4997b4d95476/1783649211596-zq4lqg589z.jpg',
   },
-  ...Array.from({ length: 7 }, (_, i) => ({
-    key: `card-${i + 2}`,
-    title: `占位标题 ${i + 2}`,
+  {
+    key: 'card-2',
+    title: 'seedance 真人过审设定图',
+    desc: '一键生成过审合规人物角色图',
+    image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783580645778.jpg',
+    workflow: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/images/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783651713030-tvdhe5cr0of.jpg',
+  },
+  ...Array.from({ length: 6 }, (_, i) => ({
+    key: `card-${i + 3}`,
+    title: `占位标题 ${i + 3}`,
     desc: '占位描述文字，后续替换为真实功能说明。',
   })),
 ];
