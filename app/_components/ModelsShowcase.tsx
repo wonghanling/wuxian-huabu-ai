@@ -13,10 +13,10 @@ const GROUP_1 = [
 ];
 
 const GROUP_2 = [
-  { key: 'wan', name: 'Wan 2.7', col: '1 / 2', row: '1 / 3' },           // 674x696，约0.97:1
-  { key: 'jimeng', name: 'Jimeng 3.0', col: '2 / 4', row: '1 / 2' },     // 906x338，约2.68:1
-  { key: 'seedance', name: 'Seedance 2.0', col: '2 / 3', row: '2 / 3' }, // 443x338，约1.31:1
-  { key: 'pixverse', name: 'Pixverse v6', col: '3 / 4', row: '2 / 3' },  // 443x338，约1.31:1
+  { key: 'wan', name: 'Wan 2.7', col: '1 / 2', row: '1 / 3', video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783713718482.mp4' },           // 674x696，约0.97:1(近1:1)
+  { key: 'jimeng', name: 'Jimeng 3.0', col: '2 / 4', row: '1 / 2', video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783715114219.mp4' },     // 906x338，约2.68:1
+  { key: 'seedance', name: 'Seedance 2.0', col: '2 / 3', row: '2 / 3', video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783716918790.mp4' }, // 443x338，约1.31:1
+  { key: 'pixverse', name: 'Pixverse v6', col: '3 / 4', row: '2 / 3', video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783721034251.mp4' },  // 443x338，约1.31:1
 ];
 
 // 第三组无跨行卡片，两行各自独立列宽比例，用 flex + flexGrow 还原
@@ -30,18 +30,20 @@ const GROUP_3_ROW2 = [
   { key: 'pika', name: 'pika', w: 906 },   // 约2.68:1
 ];
 
-// 小屏兜底：单列堆叠展示全部13个模型（携带 img，有图则显示）
-const ALL_MODELS_MOBILE: { key: string; name: string; img?: string }[] = [
-  ...GROUP_1.map((m) => ({ key: m.key, name: m.name, img: (m as { img?: string }).img })),
-  ...GROUP_2.map((m) => ({ key: m.key, name: m.name, img: (m as { img?: string }).img })),
-  ...GROUP_3_ROW1.map((m) => ({ key: m.key, name: m.name, img: (m as { img?: string }).img })),
-  ...GROUP_3_ROW2.map((m) => ({ key: m.key, name: m.name, img: (m as { img?: string }).img })),
+// 小屏兜底：单列堆叠展示全部13个模型（携带 img/video，有则显示）
+const ALL_MODELS_MOBILE: { key: string; name: string; img?: string; video?: string }[] = [
+  ...GROUP_1.map((m) => ({ key: m.key, name: m.name, img: (m as { img?: string }).img, video: (m as { video?: string }).video })),
+  ...GROUP_2.map((m) => ({ key: m.key, name: m.name, img: (m as { img?: string }).img, video: (m as { video?: string }).video })),
+  ...GROUP_3_ROW1.map((m) => ({ key: m.key, name: m.name, img: (m as { img?: string }).img, video: (m as { video?: string }).video })),
+  ...GROUP_3_ROW2.map((m) => ({ key: m.key, name: m.name, img: (m as { img?: string }).img, video: (m as { video?: string }).video })),
 ];
 
-function CardInner({ name, img }: { name: string; img?: string }) {
+function CardInner({ name, img, video }: { name: string; img?: string; video?: string }) {
   return (
     <>
-      {img ? (
+      {video ? (
+        <video src={video} className="absolute inset-0 w-full h-full object-cover" autoPlay muted loop playsInline />
+      ) : img ? (
         <img src={img} alt={name} className="absolute inset-0 w-full h-full object-cover" draggable={false} />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center">
@@ -121,7 +123,7 @@ export function ModelsShowcase() {
           >
             {GROUP_2.map((c) => (
               <div key={c.key} className={CARD_CLASS} style={{ gridColumn: c.col, gridRow: c.row, ...CARD_STYLE }}>
-                <CardInner name={c.name} />
+                <CardInner name={c.name} video={c.video} />
               </div>
             ))}
           </div>
@@ -149,7 +151,7 @@ export function ModelsShowcase() {
         <div className="flex md:hidden flex-col gap-4">
           {ALL_MODELS_MOBILE.map((m) => (
             <div key={m.key} className={CARD_CLASS} style={{ aspectRatio: '16 / 9', ...CARD_STYLE }}>
-              <CardInner name={m.name} img={m.img} />
+              <CardInner name={m.name} img={m.img} video={m.video} />
             </div>
           ))}
         </div>
