@@ -52,9 +52,21 @@ const CARDS: { key: string; title: string; desc: string; image?: string; video?:
       'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/images/shouwei4.png',
     ],
   },
-  ...Array.from({ length: 3 }, (_, i) => ({
-    key: `card-${i + 6}`,
-    title: `占位标题 ${i + 6}`,
+  {
+    key: 'card-6',
+    title: '导演分镜表 step4',
+    desc: '专业的导演拍摄语言用于完整的传输生成可控画面',
+    video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1781873531149.mp4',
+    aspect: '16/9',
+    workflow: [
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1781869076179.jpg',
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/images/Step4-4.png',
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1781873096752.jpg',
+    ],
+  },
+  ...Array.from({ length: 2 }, (_, i) => ({
+    key: `card-${i + 7}`,
+    title: `占位标题 ${i + 7}`,
     desc: '占位描述文字，后续替换为真实功能说明。',
   })),
 ];
