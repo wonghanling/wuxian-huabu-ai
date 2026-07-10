@@ -1,13 +1,17 @@
 'use client';
 
+import { useState, useRef, useEffect } from 'react';
+
 // 8 张卡片，4列x2行，结构对齐 flora.ai Featured Techniques
-// 每张卡可单独配 image(卡槽顶部铺满)；未配图的仍显示占位块，等后续替换
-const CARDS: { key: string; title: string; desc: string; image?: string }[] = [
+// 每张卡: image=卡槽封面图；workflow=点击后打开的完整工作流大图(可整体拖动平移查看)
+// 未配图的仍显示占位块，等后续替换
+const CARDS: { key: string; title: string; desc: string; image?: string; workflow?: string }[] = [
   {
     key: 'card-1',
-    title: '占位标题 1',
-    desc: '占位描述文字，后续替换为真实功能说明。',
+    title: '角色设计',
+    desc: '根据人物图片快速生成多视角的角色',
     image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/20ce33c8-6a71-41a1-804e-4997b4d95476/1783646629738.jpg',
+    workflow: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/images/20ce33c8-6a71-41a1-804e-4997b4d95476/1783649211596-zq4lqg589z.jpg',
   },
   ...Array.from({ length: 7 }, (_, i) => ({
     key: `card-${i + 2}`,
@@ -17,6 +21,9 @@ const CARDS: { key: string; title: string; desc: string; image?: string }[] = [
 ];
 
 export function FeatureTabsShowcase() {
+  // 当前打开的工作流大图(null 表示未打开)
+  const [openWorkflow, setOpenWorkflow] = useState<string | null>(null);
+
   return (
     <div className="max-w-7xl mx-auto px-6">
 
@@ -41,60 +48,127 @@ export function FeatureTabsShowcase() {
 
       {/* 4列×2行卡片网格 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {CARDS.map((f) => (
-          <div
-            key={f.key}
-            className="rounded-2xl overflow-hidden flex flex-col"
-            style={{ background: 'linear-gradient(160deg, rgb(30,30,30), rgb(14,14,14))' }}
-          >
-            {/* 图片区：铺满卡槽顶部 */}
+        {CARDS.map((f) => {
+          const clickable = !!f.workflow;
+          return (
             <div
-              className="w-full flex items-center justify-center overflow-hidden"
-              style={{
-                aspectRatio: '4/3',
-                background: f.image ? 'transparent' : 'linear-gradient(160deg, rgb(70,70,70), rgb(32,32,32))',
-              }}
+              key={f.key}
+              onClick={clickable ? () => setOpenWorkflow(f.workflow!) : undefined}
+              className={`rounded-2xl overflow-hidden flex flex-col transition-transform duration-300 ${clickable ? 'cursor-pointer hover:-translate-y-1' : ''}`}
+              style={{ background: 'linear-gradient(160deg, rgb(30,30,30), rgb(14,14,14))' }}
             >
-              {f.image ? (
-                <img src={f.image} alt={f.title} className="w-full h-full object-cover" draggable={false} />
-              ) : (
-                <span className="text-sm" style={{ color: 'rgb(120,120,120)' }}>占位图片</span>
-              )}
-            </div>
+              {/* 图片区：铺满卡槽顶部 */}
+              <div
+                className="w-full flex items-center justify-center overflow-hidden"
+                style={{
+                  aspectRatio: '4/3',
+                  background: f.image ? 'transparent' : 'linear-gradient(160deg, rgb(70,70,70), rgb(32,32,32))',
+                }}
+              >
+                {f.image ? (
+                  <img src={f.image} alt={f.title} className="w-full h-full object-cover" draggable={false} />
+                ) : (
+                  <span className="text-sm" style={{ color: 'rgb(120,120,120)' }}>占位图片</span>
+                )}
+              </div>
 
-            {/* 文字区 */}
-            <div className="px-4 pt-3 pb-3 flex flex-col gap-1">
-              <h3 className="text-base font-bold leading-snug" style={{ color: 'rgb(238,238,238)' }}>
-                {f.title}
-              </h3>
-              <p className="text-xs leading-relaxed line-clamp-2" style={{ color: 'rgb(150,150,150)' }}>
-                {f.desc}
-              </p>
-
-              {/* 作者行 */}
-              <div className="flex items-center gap-2 mt-2.5">
-                {/* 圆形头像占位 */}
-                <span
-                  className="w-6 h-6 rounded-full flex-shrink-0 block"
-                  style={{ background: 'rgb(60,60,60)' }}
-                />
-                <div className="flex flex-col leading-tight">
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs font-medium" style={{ color: 'rgb(220,220,220)' }}>作者名占位</span>
-                    {/* 绿色认证勾 */}
-                    <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-                      <circle cx="7" cy="7" r="7" fill="rgb(113,208,131)" />
-                      <path d="M4 7l2 2 4-4" stroke="#04170a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                  <span className="text-[11px]" style={{ color: 'rgb(100,100,100)' }}>机构占位</span>
-                </div>
+              {/* 文字区 */}
+              <div className="px-4 pt-3 pb-4 flex flex-col gap-1">
+                <h3 className="text-base font-bold leading-snug" style={{ color: 'rgb(238,238,238)' }}>
+                  {f.title}
+                </h3>
+                <p className="text-xs leading-relaxed line-clamp-2" style={{ color: 'rgb(150,150,150)' }}>
+                  {f.desc}
+                </p>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
+
+      {/* 工作流查看弹窗：整张流程图，可整体拖动平移(不是真画布，不能单独拖节点) */}
+      {openWorkflow && (
+        <WorkflowViewer src={openWorkflow} onClose={() => setOpenWorkflow(null)} />
+      )}
     </div>
   );
 }
 
+// 工作流查看器：全屏遮罩 + 可拖动平移的大图。用户可用浏览器自带缩放放大细节。
+function WorkflowViewer({ src, onClose }: { src: string; onClose: () => void }) {
+  const [pos, setPos] = useState({ x: 0, y: 0 });
+  const [dragging, setDragging] = useState(false);
+  const dragState = useRef<{ dragging: boolean; startX: number; startY: number; baseX: number; baseY: number }>({
+    dragging: false, startX: 0, startY: 0, baseX: 0, baseY: 0,
+  });
+
+  // Esc 关闭 + 打开时锁定页面滚动
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [onClose]);
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    dragState.current = { dragging: true, startX: e.clientX, startY: e.clientY, baseX: pos.x, baseY: pos.y };
+    setDragging(true);
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    const d = dragState.current;
+    if (!d.dragging) return;
+    setPos({ x: d.baseX + (e.clientX - d.startX), y: d.baseY + (e.clientY - d.startY) });
+  };
+  const onPointerUp = () => { dragState.current.dragging = false; setDragging(false); };
+
+  return (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center"
+      style={{ background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(4px)' }}
+      onClick={onClose}
+    >
+      {/* 关闭按钮 */}
+      <button
+        onClick={onClose}
+        className="absolute top-5 right-5 w-10 h-10 rounded-full flex items-center justify-center text-lg transition-colors z-10"
+        style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff' }}
+      >
+        ✕
+      </button>
+
+      {/* 提示 */}
+      <div className="absolute top-6 left-1/2 -translate-x-1/2 text-xs" style={{ color: 'rgb(150,150,150)' }}>
+        拖动查看完整工作流 · 浏览器缩放可放大细节
+      </div>
+
+      {/* 可拖动平移的工作流大图容器(点击图区不关闭，只有点遮罩才关) */}
+      <div
+        className="select-none"
+        style={{ cursor: dragging ? 'grabbing' : 'grab', touchAction: 'none' }}
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+      >
+        <img
+          src={src}
+          alt="完整工作流"
+          draggable={false}
+          style={{
+            transform: `translate(${pos.x}px, ${pos.y}px)`,
+            maxWidth: 'none',
+            maxHeight: '90vh',
+            userSelect: 'none',
+            pointerEvents: 'none',
+          }}
+        />
+      </div>
+    </div>
+  );
+}
