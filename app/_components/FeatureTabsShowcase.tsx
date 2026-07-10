@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 // 8 张卡片，4列x2行，结构对齐 flora.ai Featured Techniques
 // 每张卡: image=卡槽封面图；workflow=点击后打开的完整工作流大图(可整体拖动平移查看)
 // 未配图的仍显示占位块，等后续替换
-const CARDS: { key: string; title: string; desc: string; image?: string; workflow?: string | string[] }[] = [
+const CARDS: { key: string; title: string; desc: string; image?: string; video?: string; aspect?: string; workflow?: string | string[] }[] = [
   {
     key: 'card-1',
     title: '角色设计',
@@ -39,9 +39,22 @@ const CARDS: { key: string; title: string; desc: string; image?: string; workflo
       'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/images/kendeji5.png',
     ],
   },
-  ...Array.from({ length: 4 }, (_, i) => ({
-    key: `card-${i + 5}`,
-    title: `占位标题 ${i + 5}`,
+  {
+    key: 'card-5',
+    title: 'step3 首尾帧过渡生成词',
+    desc: '上传两张图片首帧和尾帧生成专业的过渡视频生成词',
+    video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783662982357.mp4',
+    aspect: '16/9',
+    workflow: [
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/images/shouwei1.png',
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/images/shouwei2.png',
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/images/shouwei3.png',
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/images/shouwei4.png',
+    ],
+  },
+  ...Array.from({ length: 3 }, (_, i) => ({
+    key: `card-${i + 6}`,
+    title: `占位标题 ${i + 6}`,
     desc: '占位描述文字，后续替换为真实功能说明。',
   })),
 ];
@@ -83,15 +96,17 @@ export function FeatureTabsShowcase() {
               className={`rounded-2xl overflow-hidden flex flex-col transition-transform duration-300 ${clickable ? 'cursor-pointer hover:-translate-y-1' : ''}`}
               style={{ background: 'linear-gradient(160deg, rgb(30,30,30), rgb(14,14,14))' }}
             >
-              {/* 图片区：铺满卡槽顶部 */}
+              {/* 封面区：铺满卡槽顶部，支持图片/视频，比例可按卡片自定义(默认4:3) */}
               <div
                 className="w-full flex items-center justify-center overflow-hidden"
                 style={{
-                  aspectRatio: '4/3',
-                  background: f.image ? 'transparent' : 'linear-gradient(160deg, rgb(70,70,70), rgb(32,32,32))',
+                  aspectRatio: f.aspect || '4/3',
+                  background: (f.image || f.video) ? 'transparent' : 'linear-gradient(160deg, rgb(70,70,70), rgb(32,32,32))',
                 }}
               >
-                {f.image ? (
+                {f.video ? (
+                  <video src={f.video} className="w-full h-full object-cover" autoPlay muted loop playsInline />
+                ) : f.image ? (
                   <img src={f.image} alt={f.title} className="w-full h-full object-cover" draggable={false} />
                 ) : (
                   <span className="text-sm" style={{ color: 'rgb(120,120,120)' }}>占位图片</span>
