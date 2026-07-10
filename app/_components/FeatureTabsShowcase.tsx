@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 // 8 张卡片，4列x2行，结构对齐 flora.ai Featured Techniques
 // 每张卡: image=卡槽封面图；workflow=点击后打开的完整工作流大图(可整体拖动平移查看)
 // 未配图的仍显示占位块，等后续替换
-const CARDS: { key: string; title: string; desc: string; image?: string; video?: string; aspect?: string; workflow?: string | string[] }[] = [
+const CARDS: { key: string; title: string; desc: string; image?: string; video?: string; aspect?: string; workflow?: string | string[]; audios?: { label: string; src: string }[] }[] = [
   {
     key: 'card-1',
     title: '角色设计',
@@ -78,6 +78,9 @@ const CARDS: { key: string; title: string; desc: string; image?: string; video?:
       'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/images/yuyin4.png',
       'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/images/yuyin5.png',
     ],
+    audios: [
+      { label: '战斗机作战场景音效', src: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/audio/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783666568825-3gecbsfa6kx.mp3' },
+    ],
   },
   {
     key: 'card-8',
@@ -88,7 +91,7 @@ const CARDS: { key: string; title: string; desc: string; image?: string; video?:
 
 export function FeatureTabsShowcase() {
   // 当前打开的工作流大图(null 表示未打开)
-  const [openWorkflow, setOpenWorkflow] = useState<string | string[] | null>(null);
+  const [openCard, setOpenCard] = useState<{ workflow: string | string[]; audios?: { label: string; src: string }[] } | null>(null);
 
   return (
     <div className="max-w-7xl mx-auto px-6">
@@ -119,7 +122,7 @@ export function FeatureTabsShowcase() {
           return (
             <div
               key={f.key}
-              onClick={clickable ? () => setOpenWorkflow(f.workflow!) : undefined}
+              onClick={clickable ? () => setOpenCard({ workflow: f.workflow!, audios: f.audios }) : undefined}
               className={`rounded-2xl overflow-hidden flex flex-col transition-transform duration-300 ${clickable ? 'cursor-pointer hover:-translate-y-1' : ''}`}
               style={{ background: 'linear-gradient(160deg, rgb(30,30,30), rgb(14,14,14))' }}
             >
@@ -155,15 +158,15 @@ export function FeatureTabsShowcase() {
       </div>
 
       {/* 工作流查看弹窗：整张流程图，可整体拖动平移(不是真画布，不能单独拖节点) */}
-      {openWorkflow && (
-        <WorkflowViewer src={openWorkflow} onClose={() => setOpenWorkflow(null)} />
+      {openCard && (
+        <WorkflowViewer src={openCard.workflow} audios={openCard.audios} onClose={() => setOpenCard(null)} />
       )}
     </div>
   );
 }
 
 // 工作流查看器：全屏遮罩 + 可拖动平移的大图。支持单图或多图(带左右切换)。
-function WorkflowViewer({ src, onClose }: { src: string | string[]; onClose: () => void }) {
+function WorkflowViewer({ src, audios, onClose }: { src: string | string[]; audios?: { label: string; src: string }[]; onClose: () => void }) {
   const images = Array.isArray(src) ? src : [src];
   const [idx, setIdx] = useState(0);
   const [pos, setPos] = useState({ x: 0, y: 0 });
@@ -216,6 +219,23 @@ function WorkflowViewer({ src, onClose }: { src: string | string[]; onClose: () 
         拖动查看完整工作流 · 浏览器缩放可放大细节
         {images.length > 1 && ` · ${idx + 1} / ${images.length}`}
       </div>
+
+      {/* 试听语音面板：固定在底部，不随大图拖动 */}
+      {audios && audios.length > 0 && (
+        <div
+          className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex flex-col gap-2 rounded-2xl p-4"
+          style={{ background: 'rgba(20,20,20,0.9)', border: '1px solid rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', maxWidth: '90vw' }}
+          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          {audios.map((a) => (
+            <div key={a.src} className="flex items-center gap-3">
+              <span className="text-xs whitespace-nowrap" style={{ color: 'rgb(200,200,200)' }}>{a.label}</span>
+              <audio src={a.src} controls className="h-8" style={{ maxWidth: 260 }} />
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* 多图时左右切换按钮 */}
       {images.length > 1 && (
