@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 // 8 张卡片，4列x2行，结构对齐 flora.ai Featured Techniques
 // 每张卡: image=卡槽封面图；workflow=点击后打开的完整工作流大图(可整体拖动平移查看)
 // 未配图的仍显示占位块，等后续替换
-const CARDS: { key: string; title: string; desc: string; image?: string; workflow?: string }[] = [
+const CARDS: { key: string; title: string; desc: string; image?: string; workflow?: string | string[] }[] = [
   {
     key: 'card-1',
     title: '角色设计',
@@ -27,16 +27,28 @@ const CARDS: { key: string; title: string; desc: string; image?: string; workflo
     image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783658185613.jpg',
     workflow: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/images/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783658509346-kjx0xq784p.jpg',
   },
-  ...Array.from({ length: 5 }, (_, i) => ({
-    key: `card-${i + 4}`,
-    title: `占位标题 ${i + 4}`,
+  {
+    key: 'card-4',
+    title: '智能多宫格分镜生成词',
+    desc: '一键根据多图生成专业的多宫格电影广告生成词',
+    image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783660122809.jpg',
+    workflow: [
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/images/kendeji2.png',
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/images/kendeji3.png',
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/images/kendeji4.png',
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/images/kendeji5.png',
+    ],
+  },
+  ...Array.from({ length: 4 }, (_, i) => ({
+    key: `card-${i + 5}`,
+    title: `占位标题 ${i + 5}`,
     desc: '占位描述文字，后续替换为真实功能说明。',
   })),
 ];
 
 export function FeatureTabsShowcase() {
   // 当前打开的工作流大图(null 表示未打开)
-  const [openWorkflow, setOpenWorkflow] = useState<string | null>(null);
+  const [openWorkflow, setOpenWorkflow] = useState<string | string[] | null>(null);
 
   return (
     <div className="max-w-7xl mx-auto px-6">
@@ -108,8 +120,10 @@ export function FeatureTabsShowcase() {
   );
 }
 
-// 工作流查看器：全屏遮罩 + 可拖动平移的大图。用户可用浏览器自带缩放放大细节。
-function WorkflowViewer({ src, onClose }: { src: string; onClose: () => void }) {
+// 工作流查看器：全屏遮罩 + 可拖动平移的大图。支持单图或多图(带左右切换)。
+function WorkflowViewer({ src, onClose }: { src: string | string[]; onClose: () => void }) {
+  const images = Array.isArray(src) ? src : [src];
+  const [idx, setIdx] = useState(0);
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
   const dragState = useRef<{ dragging: boolean; startX: number; startY: number; baseX: number; baseY: number }>({
@@ -158,7 +172,28 @@ function WorkflowViewer({ src, onClose }: { src: string; onClose: () => void }) 
       {/* 提示 */}
       <div className="absolute top-6 left-1/2 -translate-x-1/2 text-xs" style={{ color: 'rgb(150,150,150)' }}>
         拖动查看完整工作流 · 浏览器缩放可放大细节
+        {images.length > 1 && ` · ${idx + 1} / ${images.length}`}
       </div>
+
+      {/* 多图时左右切换按钮 */}
+      {images.length > 1 && (
+        <>
+          <button
+            className="absolute left-5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center text-lg z-10"
+            style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', opacity: idx === 0 ? 0.3 : 1 }}
+            onClick={(e) => { e.stopPropagation(); if (idx > 0) { setIdx(idx - 1); setPos({ x: 0, y: 0 }); } }}
+          >
+            ‹
+          </button>
+          <button
+            className="absolute right-16 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center text-lg z-10"
+            style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', opacity: idx === images.length - 1 ? 0.3 : 1 }}
+            onClick={(e) => { e.stopPropagation(); if (idx < images.length - 1) { setIdx(idx + 1); setPos({ x: 0, y: 0 }); } }}
+          >
+            ›
+          </button>
+        </>
+      )}
 
       {/* 可拖动平移的工作流大图容器(点击图区不关闭，只有点遮罩才关) */}
       <div
@@ -171,7 +206,7 @@ function WorkflowViewer({ src, onClose }: { src: string; onClose: () => void }) 
         onPointerCancel={onPointerUp}
       >
         <img
-          src={src}
+          src={images[idx]}
           alt="完整工作流"
           draggable={false}
           style={{
