@@ -6,10 +6,10 @@
 // 保证"一个画布，全球顶尖图像模型"等文案区宽度不超出三组矩形
 
 const GROUP_1 = [
-  { key: 'flux', name: 'FLUX', col: '1 / 3', row: '1 / 2' },                  // 1137x338，约3.36:1，主推位
-  { key: 'gptimage', name: 'ChatGPT Image 2', col: '1 / 2', row: '2 / 3' },   // 443x338，约1.31:1
-  { key: 'midjourney', name: 'Midjourney', col: '2 / 3', row: '2 / 3' },      // 674x338，约2:1
-  { key: 'nanobanana', name: 'Nano Banana Pro', col: '3 / 4', row: '1 / 3' }, // 443x695，约1:1.57
+  { key: 'flux', name: 'FLUX', col: '1 / 3', row: '1 / 2', img: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783689094758.jpg' },                  // 1137x338，约3.36:1，主推位
+  { key: 'gptimage', name: 'ChatGPT Image 2', col: '1 / 2', row: '2 / 3', img: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783691611247.jpg' },   // 443x338，约1.31:1
+  { key: 'midjourney', name: 'Midjourney', col: '2 / 3', row: '2 / 3', img: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783692353492.jpg' },      // 674x338，约2:1
+  { key: 'nanobanana', name: 'Nano Banana Pro', col: '3 / 4', row: '1 / 3', img: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783690729986.jpg' }, // 443x695，约1:1.57
 ];
 
 const GROUP_2 = [
@@ -30,20 +30,24 @@ const GROUP_3_ROW2 = [
   { key: 'pika', name: 'pika', w: 906 },   // 约2.68:1
 ];
 
-// 小屏兜底：单列堆叠展示全部13个模型
-const ALL_MODELS_MOBILE = [
-  ...GROUP_1.map(({ key, name }) => ({ key, name })),
-  ...GROUP_2.map(({ key, name }) => ({ key, name })),
-  ...GROUP_3_ROW1.map(({ key, name }) => ({ key, name })),
-  ...GROUP_3_ROW2.map(({ key, name }) => ({ key, name })),
+// 小屏兜底：单列堆叠展示全部13个模型（携带 img，有图则显示）
+const ALL_MODELS_MOBILE: { key: string; name: string; img?: string }[] = [
+  ...GROUP_1.map((m) => ({ key: m.key, name: m.name, img: (m as { img?: string }).img })),
+  ...GROUP_2.map((m) => ({ key: m.key, name: m.name, img: (m as { img?: string }).img })),
+  ...GROUP_3_ROW1.map((m) => ({ key: m.key, name: m.name, img: (m as { img?: string }).img })),
+  ...GROUP_3_ROW2.map((m) => ({ key: m.key, name: m.name, img: (m as { img?: string }).img })),
 ];
 
-function CardInner({ name }: { name: string }) {
+function CardInner({ name, img }: { name: string; img?: string }) {
   return (
     <>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-xs" style={{ color: 'rgb(90,90,90)' }}>占位视频/图片</span>
-      </div>
+      {img ? (
+        <img src={img} alt={name} className="absolute inset-0 w-full h-full object-cover" draggable={false} />
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-xs" style={{ color: 'rgb(90,90,90)' }}>占位视频/图片</span>
+        </div>
+      )}
       <div
         className="absolute inset-0"
         style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.15), rgba(0,0,0,0.55))' }}
@@ -105,7 +109,7 @@ export function ModelsShowcase() {
           >
             {GROUP_1.map((c) => (
               <div key={c.key} className={CARD_CLASS} style={{ gridColumn: c.col, gridRow: c.row, ...CARD_STYLE }}>
-                <CardInner name={c.name} />
+                <CardInner name={c.name} img={c.img} />
               </div>
             ))}
           </div>
@@ -145,7 +149,7 @@ export function ModelsShowcase() {
         <div className="flex md:hidden flex-col gap-4">
           {ALL_MODELS_MOBILE.map((m) => (
             <div key={m.key} className={CARD_CLASS} style={{ aspectRatio: '16 / 9', ...CARD_STYLE }}>
-              <CardInner name={m.name} />
+              <CardInner name={m.name} img={m.img} />
             </div>
           ))}
         </div>
