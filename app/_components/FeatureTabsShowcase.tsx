@@ -1,12 +1,20 @@
 'use client';
 
-// 8 张占位卡片，4列x2行，结构对齐 flora.ai Featured Techniques
-// 图片/标题/描述/作者信息全部占位，后续替换为真实内容
-const PLACEHOLDER_CARDS = Array.from({ length: 8 }, (_, i) => ({
-  key: `card-${i + 1}`,
-  title: `占位标题 ${i + 1}`,
-  desc: '占位描述文字，后续替换为真实功能说明。',
-}));
+// 8 张卡片，4列x2行，结构对齐 flora.ai Featured Techniques
+// 每张卡可单独配 image(卡槽顶部铺满)；未配图的仍显示占位块，等后续替换
+const CARDS: { key: string; title: string; desc: string; image?: string }[] = [
+  {
+    key: 'card-1',
+    title: '占位标题 1',
+    desc: '占位描述文字，后续替换为真实功能说明。',
+    image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/20ce33c8-6a71-41a1-804e-4997b4d95476/1783646629738.jpg',
+  },
+  ...Array.from({ length: 7 }, (_, i) => ({
+    key: `card-${i + 2}`,
+    title: `占位标题 ${i + 2}`,
+    desc: '占位描述文字，后续替换为真实功能说明。',
+  })),
+];
 
 export function FeatureTabsShowcase() {
   return (
@@ -33,25 +41,29 @@ export function FeatureTabsShowcase() {
 
       {/* 4列×2行卡片网格 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {PLACEHOLDER_CARDS.map((f) => (
+        {CARDS.map((f) => (
           <div
             key={f.key}
-            className="rounded-2xl overflow-hidden flex flex-col p-3"
+            className="rounded-2xl overflow-hidden flex flex-col"
             style={{ background: 'linear-gradient(160deg, rgb(30,30,30), rgb(14,14,14))' }}
           >
-            {/* 图片占位区：四周留白，独立圆角卡片浮在里面，带渐变质感 */}
+            {/* 图片区：铺满卡槽顶部 */}
             <div
-              className="w-full flex items-center justify-center rounded-xl"
+              className="w-full flex items-center justify-center overflow-hidden"
               style={{
                 aspectRatio: '4/3',
-                background: 'linear-gradient(160deg, rgb(70,70,70), rgb(32,32,32))',
+                background: f.image ? 'transparent' : 'linear-gradient(160deg, rgb(70,70,70), rgb(32,32,32))',
               }}
             >
-              <span className="text-sm" style={{ color: 'rgb(120,120,120)' }}>占位图片</span>
+              {f.image ? (
+                <img src={f.image} alt={f.title} className="w-full h-full object-cover" draggable={false} />
+              ) : (
+                <span className="text-sm" style={{ color: 'rgb(120,120,120)' }}>占位图片</span>
+              )}
             </div>
 
             {/* 文字区 */}
-            <div className="px-1 pt-3 pb-1 flex flex-col gap-1">
+            <div className="px-4 pt-3 pb-3 flex flex-col gap-1">
               <h3 className="text-base font-bold leading-snug" style={{ color: 'rgb(238,238,238)' }}>
                 {f.title}
               </h3>
