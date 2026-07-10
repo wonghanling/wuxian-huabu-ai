@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 // 8 张卡片，4列x2行，结构对齐 flora.ai Featured Techniques
 // 每张卡: image=卡槽封面图；workflow=点击后打开的完整工作流大图(可整体拖动平移查看)
@@ -84,8 +85,10 @@ const CARDS: { key: string; title: string; desc: string; image?: string; video?:
   },
   {
     key: 'card-8',
-    title: '占位标题 8',
-    desc: '占位描述文字，后续替换为真实功能说明。',
+    title: '3D 导演预览台',
+    desc: '可以快速解决画面人物结构问题，精准控制视频走向',
+    image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783670517747.jpg',
+    aspect: '16/9',
   },
 ];
 
@@ -199,7 +202,11 @@ function WorkflowViewer({ src, audios, onClose }: { src: string | string[]; audi
   };
   const onPointerUp = () => { dragState.current.dragging = false; setDragging(false); };
 
-  return (
+  // 查看器仅在用户点击后(纯客户端)渲染，document 必然存在；SSR 兜底判断
+  if (typeof document === 'undefined') return null;
+
+  // 用 Portal 渲染到 body，脱离任何带 transform 的祖先，保证 fixed 相对视口铺满、不与首页重叠
+  return createPortal(
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center"
       style={{ background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(4px)' }}
@@ -280,6 +287,7 @@ function WorkflowViewer({ src, audios, onClose }: { src: string | string[]; audi
           }}
         />
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
