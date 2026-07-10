@@ -18,6 +18,7 @@ const CARDS: { key: string; title: string; desc: string; image?: string; video?:
     title: 'seedance 真人过审设定图',
     desc: '一键生成过审合规人物角色图',
     image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783580645778.jpg',
+    aspect: '16/9',
     workflow: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/images/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783651713030-tvdhe5cr0of.jpg',
   },
   {
@@ -64,11 +65,25 @@ const CARDS: { key: string; title: string; desc: string; image?: string; video?:
       'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1781873096752.jpg',
     ],
   },
-  ...Array.from({ length: 2 }, (_, i) => ({
-    key: `card-${i + 7}`,
-    title: `占位标题 ${i + 7}`,
+  {
+    key: 'card-7',
+    title: '配音场景音效',
+    desc: '多功能语音生成用于配音视频画面',
+    image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783667137447.jpg',
+    aspect: '16/9',
+    workflow: [
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/images/yuyin1.png',
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/images/yuyin2.png',
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/images/yuyin3.png',
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/images/yuyin4.png',
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/images/yuyin5.png',
+    ],
+  },
+  {
+    key: 'card-8',
+    title: '占位标题 8',
     desc: '占位描述文字，后续替换为真实功能说明。',
-  })),
+  },
 ];
 
 export function FeatureTabsShowcase() {
