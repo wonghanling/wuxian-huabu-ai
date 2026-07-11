@@ -7,6 +7,7 @@ import { ScrollZoomShowcase } from './_components/ScrollZoomShowcase';
 import { ModelsShowcase } from './_components/ModelsShowcase';
 import { FeatureTabsShowcase } from './_components/FeatureTabsShowcase';
 import { WorkflowScrollShowcase } from './_components/WorkflowScrollShowcase';
+import { ScriptStudioDemo } from './_components/ScriptStudioDemo';
 import { TryOnDemo } from './_components/TryOnDemo';
 
 export default function Home() {
@@ -394,6 +395,22 @@ export default function Home() {
       {/* 功能演示区：Sticky Scroll Showcase(左侧文案滚动/右侧sticky联动切换) */}
       <section className="py-32 relative z-10" style={{ borderTop: '1px solid #ffffff0d' }}>
         <WorkflowScrollShowcase />
+      </section>
+
+      {/* 剧本工作室 · 重点功能介绍(左侧阶段点击/右侧大屏切换+自动轮播) */}
+      <section className="py-32 relative z-10" style={{ borderTop: '1px solid #ffffff0d' }}>
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="text-center mb-14">
+            <p className="text-sm tracking-[0.3em] uppercase mb-4" style={{ color: 'rgb(96,96,96)' }}>Feature · 剧本工作室</p>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-3" style={{ color: 'rgb(238,238,238)' }}>
+              从一个想法到一部可拍摄的电影
+            </h2>
+            <p className="text-base max-w-2xl mx-auto" style={{ color: 'rgb(150,150,150)' }}>
+              点击左侧任一阶段，看它如何一步步产出——完整覆盖电影工业的每一道工序
+            </p>
+          </div>
+          <ScriptStudioDemo />
+        </div>
       </section>
 
       {/* 角色换衣(虚拟试衣)· 功能介绍 */}
