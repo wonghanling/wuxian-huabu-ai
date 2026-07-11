@@ -8,7 +8,6 @@ import { ModelsShowcase } from './_components/ModelsShowcase';
 import { FeatureTabsShowcase } from './_components/FeatureTabsShowcase';
 import { WorkflowScrollShowcase } from './_components/WorkflowScrollShowcase';
 import { ScriptStudioDemo } from './_components/ScriptStudioDemo';
-import { TryOnDemo } from './_components/TryOnDemo';
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);
@@ -410,13 +409,6 @@ export default function Home() {
             </p>
           </div>
           <ScriptStudioDemo />
-        </div>
-      </section>
-
-      {/* 角色换衣(虚拟试衣)· 功能介绍 */}
-      <section className="py-32 relative z-10" style={{ borderTop: '1px solid #ffffff0d' }}>
-        <div className="max-w-7xl mx-auto px-6">
-          <TryOnDemo />
         </div>
       </section>
 
