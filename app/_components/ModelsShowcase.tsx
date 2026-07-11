@@ -15,7 +15,7 @@ const GROUP_1 = [
 const GROUP_2 = [
   {
     key: 'wan', name: 'Wan 2.7', col: '1 / 2', row: '1 / 3',
-    video: 'https://g.alicdn.com/sail-web/wan-static-resources/0.0.137/video/Landing.mp4',   // 674x696，约0.97:1(近1:1)
+    video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/Landing.mp4',   // 674x696，约0.97:1(近1:1)
     heading: 'Unleash Your Creativity',
     cta: 'Try Wan2.7 Now',
     features: [
@@ -28,7 +28,7 @@ const GROUP_2 = [
   { key: 'jimeng', name: 'Jimeng 3.0', col: '2 / 4', row: '1 / 2', video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783715114219.mp4' },     // 906x338，约2.68:1
   {
     key: 'seedance', name: 'Seedance 2.0', col: '2 / 3', row: '2 / 3',   // 443x338，约1.31:1
-    img: 'https://p16-seeyou-sg.ibyteimg.com/tos-alisg-i-2zwwjm3azk-sg/d2c413ad9d8c4d858004d96d2b2f12d7~tplv-2zwwjm3azk-image.image',
+    video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/seedance.mp4',
     cta: 'Try for free',
     features: [
       { t: 'Creators & Social content' },
@@ -37,7 +37,15 @@ const GROUP_2 = [
       { t: 'Creative & Interactive design' },
     ],
   },
-  { key: 'pixverse', name: 'Pixverse v6', col: '3 / 4', row: '2 / 3', video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783721034251.mp4' },  // 443x338，约1.31:1
+  {
+    key: 'pixverse', name: 'Pixverse v6', col: '3 / 4', row: '2 / 3',   // 443x338，约1.31:1
+    video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/pixvers.mp4',
+    features: [
+      { t: 'PixVerse Launches V6' },
+      { t: 'Advancing AI Video Generation' },
+      { t: 'Across Creative and Agentic Workflows' },
+    ],
+  },
 ];
 
 // 第三组无跨行卡片，两行各自独立列宽比例，用 flex + flexGrow 还原
@@ -117,20 +125,20 @@ function WanCardInner({ video, heading, cta, features }: {
   );
 }
 
-// Seedance 专属富文案卡(小卡)：图片背景 + 左上名称 + 底部CTA + 竖排单行功能标签
-function SeedanceCardInner({ name, img, cta, features }: {
-  name: string; img: string; cta: string; features: { t: string }[];
+// 小卡富文案：视频背景 + 左上名称(+可选CTA) + 底部竖排单行功能标签(Seedance/Pixverse 共用)
+function SeedanceCardInner({ name, video, cta, features }: {
+  name: string; video: string; cta?: string; features: { t: string }[];
 }) {
   return (
     <>
-      <img src={img} alt={name} className="absolute inset-0 w-full h-full object-cover" draggable={false} />
+      <video src={video} className="absolute inset-0 w-full h-full object-cover" autoPlay muted loop playsInline />
       <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.5), rgba(0,0,0,0.2) 35%, rgba(0,0,0,0.55) 75%, rgba(0,0,0,0.85))' }} />
       <div className="relative w-full h-full flex flex-col justify-between p-4">
-        {/* 顶部：名称 + CTA */}
+        {/* 顶部：名称 + 可选CTA */}
         <div className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#34d399' }} />
           <span className="text-white text-sm font-semibold flex-1">{name}</span>
-          <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold" style={{ background: 'rgba(255,255,255,0.92)', color: '#0a0a0a' }}>{cta}</span>
+          {cta && <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold" style={{ background: 'rgba(255,255,255,0.92)', color: '#0a0a0a' }}>{cta}</span>}
         </div>
         {/* 底部：竖排单行功能标签 */}
         <div className="flex flex-col gap-1">
@@ -206,8 +214,8 @@ export function ModelsShowcase() {
               <div key={c.key} className={CARD_CLASS} style={{ gridColumn: c.col, gridRow: c.row, ...CARD_STYLE }}>
                 {'heading' in c && c.heading ? (
                   <WanCardInner video={c.video!} heading={c.heading} cta={c.cta!} features={c.features!} />
-                ) : 'cta' in c && c.cta && c.img ? (
-                  <SeedanceCardInner name={c.name} img={c.img} cta={c.cta} features={c.features!} />
+                ) : 'features' in c && c.features && c.video ? (
+                  <SeedanceCardInner name={c.name} video={c.video} cta={c.cta} features={c.features} />
                 ) : (
                   <CardInner name={c.name} video={c.video} />
                 )}
