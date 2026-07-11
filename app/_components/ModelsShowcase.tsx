@@ -67,8 +67,15 @@ const GROUP_3_ROW1 = [
   },
 ];
 const GROUP_3_ROW2 = [
-  { key: 'marey', name: 'marey', w: 674 }, // 约1.99:1
-  { key: 'pika', name: 'pika', w: 906 },   // 约2.68:1
+  {
+    key: 'marey', name: 'marey', w: 674,   // 约1.99:1
+    video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/marey.mp4',
+  },
+  {
+    key: 'pika', name: 'Kling', w: 906,    // 约2.68:1
+    video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/King3-2.mp4',
+    features: [{ t: 'Kling AI: Next-Generation AI Creative Studio' }],
+  },
 ];
 
 // 小屏兜底：单列堆叠展示全部13个模型（携带 img/video，有则显示）
@@ -255,7 +262,11 @@ export function ModelsShowcase() {
             <div className="flex gap-5" style={{ flex: 1 }}>
               {GROUP_3_ROW2.map((c) => (
                 <div key={c.key} className={CARD_CLASS} style={{ flexGrow: c.w, flexBasis: 0, ...CARD_STYLE }}>
-                  <CardInner name={c.name} />
+                  {'features' in c && c.features ? (
+                    <SeedanceCardInner name={c.name} video={(c as { video?: string }).video} img={(c as { img?: string }).img} features={c.features} />
+                  ) : (
+                    <CardInner name={c.name} video={(c as { video?: string }).video} />
+                  )}
                 </div>
               ))}
             </div>
