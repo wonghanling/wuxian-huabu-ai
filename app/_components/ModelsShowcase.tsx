@@ -26,7 +26,17 @@ const GROUP_2 = [
     ],
   },
   { key: 'jimeng', name: 'Jimeng 3.0', col: '2 / 4', row: '1 / 2', video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783715114219.mp4' },     // 906x338，约2.68:1
-  { key: 'seedance', name: 'Seedance 2.0', col: '2 / 3', row: '2 / 3', video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783716918790.mp4' }, // 443x338，约1.31:1
+  {
+    key: 'seedance', name: 'Seedance 2.0', col: '2 / 3', row: '2 / 3',   // 443x338，约1.31:1
+    img: 'https://p16-seeyou-sg.ibyteimg.com/tos-alisg-i-2zwwjm3azk-sg/d2c413ad9d8c4d858004d96d2b2f12d7~tplv-2zwwjm3azk-image.image',
+    cta: 'Try for free',
+    features: [
+      { t: 'Creators & Social content' },
+      { t: 'Brand campaigns & Marketing' },
+      { t: 'Film, game & Creative previz' },
+      { t: 'Creative & Interactive design' },
+    ],
+  },
   { key: 'pixverse', name: 'Pixverse v6', col: '3 / 4', row: '2 / 3', video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783721034251.mp4' },  // 443x338，约1.31:1
 ];
 
@@ -107,6 +117,32 @@ function WanCardInner({ video, heading, cta, features }: {
   );
 }
 
+// Seedance 专属富文案卡(小卡)：图片背景 + 左上名称 + 底部CTA + 竖排单行功能标签
+function SeedanceCardInner({ name, img, cta, features }: {
+  name: string; img: string; cta: string; features: { t: string }[];
+}) {
+  return (
+    <>
+      <img src={img} alt={name} className="absolute inset-0 w-full h-full object-cover" draggable={false} />
+      <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.5), rgba(0,0,0,0.2) 35%, rgba(0,0,0,0.55) 75%, rgba(0,0,0,0.85))' }} />
+      <div className="relative w-full h-full flex flex-col justify-between p-4">
+        {/* 顶部：名称 + CTA */}
+        <div className="flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#34d399' }} />
+          <span className="text-white text-sm font-semibold flex-1">{name}</span>
+          <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold" style={{ background: 'rgba(255,255,255,0.92)', color: '#0a0a0a' }}>{cta}</span>
+        </div>
+        {/* 底部：竖排单行功能标签 */}
+        <div className="flex flex-col gap-1">
+          {features.map((f) => (
+            <div key={f.t} className="text-[11px] leading-tight" style={{ color: 'rgba(255,255,255,0.85)' }}>{f.t}</div>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
 const CARD_CLASS =
   'group relative overflow-hidden ring-1 ring-white/10 hover:ring-emerald-500/60 transition-all duration-500 flex items-end';
 const CARD_STYLE = {
@@ -170,6 +206,8 @@ export function ModelsShowcase() {
               <div key={c.key} className={CARD_CLASS} style={{ gridColumn: c.col, gridRow: c.row, ...CARD_STYLE }}>
                 {'heading' in c && c.heading ? (
                   <WanCardInner video={c.video!} heading={c.heading} cta={c.cta!} features={c.features!} />
+                ) : 'cta' in c && c.cta && c.img ? (
+                  <SeedanceCardInner name={c.name} img={c.img} cta={c.cta} features={c.features!} />
                 ) : (
                   <CardInner name={c.name} video={c.video} />
                 )}
