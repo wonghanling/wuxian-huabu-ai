@@ -11,8 +11,8 @@ const CARDS: { key: string; title: string; desc: string; image?: string; video?:
     key: 'card-1',
     title: '角色设计',
     desc: '根据人物图片快速生成多视角的角色',
-    image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1781871009605.jpg',
-    aspect: '1/1',
+    image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/images/5f4604d9-8f1e-43c4-9ca2-dc994ca08848/1779675071210-crb634hpttj.jpg',
+    aspect: '16/9',
     workflow: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/images/20ce33c8-6a71-41a1-804e-4997b4d95476/1783649211596-zq4lqg589z.jpg',
   },
   {
