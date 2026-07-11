@@ -13,7 +13,18 @@ const GROUP_1 = [
 ];
 
 const GROUP_2 = [
-  { key: 'wan', name: 'Wan 2.7', col: '1 / 2', row: '1 / 3', video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783713718482.mp4' },           // 674x696，约0.97:1(近1:1)
+  {
+    key: 'wan', name: 'Wan 2.7', col: '1 / 2', row: '1 / 3',
+    video: 'https://g.alicdn.com/sail-web/wan-static-resources/0.0.137/video/Landing.mp4',   // 674x696，约0.97:1(近1:1)
+    heading: 'Unleash Your Creativity',
+    cta: 'Try Wan2.7 Now',
+    features: [
+      { t: 'Image Generation', d: 'Powerful Text Rendering' },
+      { t: 'Sequential Image', d: 'Multi-Image Consistency' },
+      { t: 'Video Edit', d: 'All-in-One Video Editing' },
+      { t: 'Video Reference', d: 'Reference to Cinematic' },
+    ],
+  },
   { key: 'jimeng', name: 'Jimeng 3.0', col: '2 / 4', row: '1 / 2', video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783715114219.mp4' },     // 906x338，约2.68:1
   { key: 'seedance', name: 'Seedance 2.0', col: '2 / 3', row: '2 / 3', video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783716918790.mp4' }, // 443x338，约1.31:1
   { key: 'pixverse', name: 'Pixverse v6', col: '3 / 4', row: '2 / 3', video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783721034251.mp4' },  // 443x338，约1.31:1
@@ -57,6 +68,40 @@ function CardInner({ name, img, video }: { name: string; img?: string; video?: s
       <div className="relative p-4 flex items-center gap-2">
         <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#34d399' }} />
         <span className="text-white text-sm font-semibold">{name}</span>
+      </div>
+    </>
+  );
+}
+
+// Wan 专属富文案卡：视频背景 + 顶部标题/按钮 + 底部2x2功能文案（参照 flora 卡内文字排布）
+function WanCardInner({ video, heading, cta, features }: {
+  video: string; heading: string; cta: string; features: { t: string; d: string }[];
+}) {
+  return (
+    <>
+      <video src={video} className="absolute inset-0 w-full h-full object-cover" autoPlay muted loop playsInline />
+      {/* 上下双向渐变遮罩，保证顶部标题和底部文案都可读 */}
+      <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.55), rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.35) 70%, rgba(0,0,0,0.8))' }} />
+      <div className="relative w-full h-full flex flex-col justify-between p-5">
+        {/* 顶部：标题 + CTA */}
+        <div>
+          <h3 className="text-white text-xl md:text-2xl font-bold leading-tight mb-3">{heading}</h3>
+          <span
+            className="inline-block px-3.5 py-1.5 rounded-full text-xs font-semibold"
+            style={{ background: 'rgba(255,255,255,0.92)', color: '#0a0a0a' }}
+          >
+            {cta}
+          </span>
+        </div>
+        {/* 底部：2x2 功能文案 */}
+        <div className="grid grid-cols-2 gap-x-3 gap-y-3">
+          {features.map((f) => (
+            <div key={f.t}>
+              <div className="text-white text-[13px] font-semibold leading-tight">{f.t}</div>
+              <div className="text-[11px] leading-tight mt-0.5" style={{ color: 'rgba(255,255,255,0.6)' }}>{f.d}</div>
+            </div>
+          ))}
+        </div>
       </div>
     </>
   );
@@ -123,7 +168,11 @@ export function ModelsShowcase() {
           >
             {GROUP_2.map((c) => (
               <div key={c.key} className={CARD_CLASS} style={{ gridColumn: c.col, gridRow: c.row, ...CARD_STYLE }}>
-                <CardInner name={c.name} video={c.video} />
+                {'heading' in c && c.heading ? (
+                  <WanCardInner video={c.video!} heading={c.heading} cta={c.cta!} features={c.features!} />
+                ) : (
+                  <CardInner name={c.name} video={c.video} />
+                )}
               </div>
             ))}
           </div>
