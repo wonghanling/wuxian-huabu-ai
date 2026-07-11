@@ -14,7 +14,7 @@ import Link from 'next/link';
 // ============================================================
 
 const ITEMS = [
-  { key: 'script', title: '剧本工作室', desc: '从一个想法到一部可拍摄的电影，完整覆盖角色设定、场景多视角、镜头级提示词生成。' },
+  { key: 'tryon', title: '角色换衣', desc: '想穿什么，一秒上身。人物图 + 衣服图，AI 自动换装、保留姿势身形。一次只要 0.3 元，多换几套挑最满意的那张。' },
   { key: 'doodle', title: '涂鸦标注', desc: '在图片上直接涂抹标注修改意图，一键发送到画布生成新版本，所见即所得。' },
   { key: 'json', title: 'JSON 配置', desc: '用一段 JSON 锁定生成风格，一键注入专业模板，每次生成都按此执行。' },
   { key: 'shotboard', title: '分镜设计', desc: '分镜提示词到导演级分镜表格，时间码、景别、运镜、画面一应俱全。' },
@@ -541,9 +541,75 @@ function ShotboardPreview({ isActive }: { isActive: boolean }) {
   );
 }
 
+// ============================================================
+// 角色换衣 · 预览：人物图 + 衣服图 = 换装结果（换装公式，两组示例自动轮播）
+// 素材复用 TryOnDemo 的 huanzhuang 图；仅 isActive 时跑循环
+// ============================================================
+const TRYON_EXAMPLES = [
+  { person: '/huanzhuang2.webp', cloth: '/huanzhuang4.webp', result: '/huanzhuang3.webp' },
+  { person: '/huanzhuang5.webp', cloth: '/huanzhuang4.webp', result: '/huanzhuang6.webp' },
+];
+
+// 换装公式里的单帧(模块级，避免在渲染中创建组件)
+function TryOnFrame({ src, label, show, highlight }: { src: string; label: string; show: boolean; highlight: boolean }) {
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div
+        className="relative rounded-xl overflow-hidden transition-all duration-500"
+        style={{
+          width: 130, aspectRatio: '3/4',
+          border: highlight ? '1px solid rgb(113,208,131)' : '1px solid #ffffff1c',
+          boxShadow: highlight && show ? '0 0 24px -6px rgba(113,208,131,0.5)' : 'none',
+          opacity: show ? 1 : 0.15,
+          transform: show ? 'scale(1)' : 'scale(0.96)',
+        }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={src} alt={label} className="w-full h-full object-cover" draggable={false} />
+      </div>
+      <span className="text-[11px]" style={{ color: highlight ? 'rgb(113,208,131)' : 'rgb(150,150,150)' }}>{label}</span>
+    </div>
+  );
+}
+
+function TryOnPreview({ isActive }: { isActive: boolean }) {
+  const [idx, setIdx] = useState(0);
+  const [step, setStep] = useState(0); // 0空 1人物 2衣服 3结果
+  const ex = TRYON_EXAMPLES[idx];
+
+  useEffect(() => {
+    if (!isActive) return;
+    const seq = [
+      setTimeout(() => setStep(1), 400),
+      setTimeout(() => setStep(2), 1400),
+      setTimeout(() => setStep(3), 2400),
+      setTimeout(() => { setStep(0); setIdx((i) => (i + 1) % TRYON_EXAMPLES.length); }, 5200),
+    ];
+    return () => seq.forEach(clearTimeout);
+  }, [isActive, idx]);
+
+  return (
+    <div className="w-full h-full flex flex-col items-center justify-center p-6 md:p-8">
+      <div className="flex items-center justify-center gap-3 md:gap-4">
+        <TryOnFrame src={ex.person} label="人物" show={step >= 1} highlight={false} />
+        <span className="text-2xl font-light" style={{ color: 'rgb(120,120,120)', opacity: step >= 2 ? 1 : 0.2 }}>+</span>
+        <TryOnFrame src={ex.cloth} label="衣服" show={step >= 2} highlight={false} />
+        <span className="text-2xl font-light" style={{ color: 'rgb(120,120,120)', opacity: step >= 3 ? 1 : 0.2 }}>=</span>
+        <TryOnFrame src={ex.result} label="换装结果" show={step >= 3} highlight />
+      </div>
+      {/* 示例切换点 */}
+      <div className="flex gap-2 mt-6">
+        {TRYON_EXAMPLES.map((_, i) => (
+          <span key={i} className="w-1.5 h-1.5 rounded-full transition-all" style={{ background: i === idx ? 'rgb(113,208,131)' : 'rgb(70,70,70)' }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // 按 item.key 分发到对应预览组件；尚未迁移的项先用占位文字兜底
 function PreviewByKey({ itemKey, title, isActive }: { itemKey: string; title: string; isActive: boolean }) {
-  if (itemKey === 'script') return <ScriptStudioPreview isActive={isActive} />;
+  if (itemKey === 'tryon') return <TryOnPreview isActive={isActive} />;
   if (itemKey === 'doodle') return <DoodlePreview isActive={isActive} />;
   if (itemKey === 'json') return <JsonConfigPreview isActive={isActive} />;
   if (itemKey === 'shotboard') return <ShotboardPreview isActive={isActive} />;
@@ -616,12 +682,10 @@ export function WorkflowScrollShowcase() {
           <div style={{ minHeight: 196, flexShrink: 0 }} />
         </div>
 
-        {/* 右：预览区，高度固定，深色画布+网格圆点背景。
-            预览内容暂时清空，仅保留多孔画布背景，等用户提供真实图片后再放置。
-            4层按 activeIndex 切换的结构先注释保留，届时把真实图片填进 PreviewByKey 即可联动。 */}
+        {/* 右：预览区(sticky)，深色画布+网格圆点背景，按 activeIndex 联动切换预览内容 */}
         <div
-          className="relative rounded-3xl overflow-hidden"
-          style={{ height: 560, background: 'rgb(20,20,20)', border: '1px solid #ffffff1c' }}
+          className="relative rounded-3xl overflow-hidden sticky"
+          style={{ height: 560, top: 100, background: 'rgb(20,20,20)', border: '1px solid #ffffff1c' }}
         >
           {/* 多孔画布背景（网格小圆点） */}
           <div
@@ -631,6 +695,16 @@ export function WorkflowScrollShowcase() {
               backgroundSize: '20px 20px',
             }}
           />
+          {/* 4层预览，只有 activeIndex 对应层可见并运行动画 */}
+          {ITEMS.map((item, i) => (
+            <div
+              key={item.key}
+              className="absolute inset-0 transition-opacity duration-500"
+              style={{ opacity: i === activeIndex ? 1 : 0, pointerEvents: i === activeIndex ? 'auto' : 'none' }}
+            >
+              <PreviewByKey itemKey={item.key} title={item.title} isActive={i === activeIndex} />
+            </div>
+          ))}
         </div>
       </div>
 
@@ -648,7 +722,7 @@ export function WorkflowScrollShowcase() {
               className="relative rounded-2xl overflow-hidden"
               style={{ aspectRatio: '4/3', background: 'rgb(20,20,20)', border: '1px solid #ffffff1c' }}
             >
-              {/* 多孔画布背景，预览内容待用户提供真实图片后再放置 */}
+              {/* 多孔画布背景 */}
               <div
                 className="absolute inset-0 pointer-events-none"
                 style={{
@@ -656,6 +730,10 @@ export function WorkflowScrollShowcase() {
                   backgroundSize: '20px 20px',
                 }}
               />
+              {/* 移动端每项预览常驻显示(无联动，各自独立) */}
+              <div className="absolute inset-0">
+                <PreviewByKey itemKey={item.key} title={item.title} isActive />
+              </div>
             </div>
           </div>
         ))}
