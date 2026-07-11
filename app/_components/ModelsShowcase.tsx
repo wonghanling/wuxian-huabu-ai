@@ -50,9 +50,21 @@ const GROUP_2 = [
 
 // 第三组无跨行卡片，两行各自独立列宽比例，用 flex + flexGrow 还原
 const GROUP_3_ROW1 = [
-  { key: 'happyhorse', name: 'HappyHorse 1.0', w: 443 }, // 约1.31:1
-  { key: 'seedream', name: 'Seedream', w: 674 },         // 约1.99:1
-  { key: 'niji', name: 'stable-diffusion', w: 443 },      // 约1.31:1
+  {
+    key: 'happyhorse', name: 'HappyHorse 1.0', w: 443,   // 约1.31:1
+    video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/kuailema.mp4',
+    features: [{ t: 'Happy Horse 1.0 is live — explore the open-source AI video model now' }],
+  },
+  {
+    key: 'seedream', name: 'Seedream 5.0 Pro', w: 674,   // 约1.99:1
+    img: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/images/seedream5.webp',
+    features: [{ t: 'High-Density Infographics' }, { t: 'Interactive Editing' }],
+  },
+  {
+    key: 'niji', name: 'Stable Diffusion 3.5', w: 443,   // 约1.31:1
+    img: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/images/5f4604d9-8f1e-43c4-9ca2-dc994ca08848/stabillityai.webp',
+    features: [{ t: 'Our most powerful image model yet.' }],
+  },
 ];
 const GROUP_3_ROW2 = [
   { key: 'marey', name: 'marey', w: 674 }, // 约1.99:1
@@ -125,13 +137,17 @@ function WanCardInner({ video, heading, cta, features }: {
   );
 }
 
-// 小卡富文案：视频背景 + 左上名称(+可选CTA) + 底部竖排单行功能标签(Seedance/Pixverse 共用)
-function SeedanceCardInner({ name, video, cta, features }: {
-  name: string; video: string; cta?: string; features: { t: string }[];
+// 小卡富文案：图片/视频背景 + 左上名称(+可选CTA) + 底部竖排单行功能标签(Seedance/Pixverse/第三组 共用)
+function SeedanceCardInner({ name, video, img, cta, features }: {
+  name: string; video?: string; img?: string; cta?: string; features: { t: string }[];
 }) {
   return (
     <>
-      <video src={video} className="absolute inset-0 w-full h-full object-cover" autoPlay muted loop playsInline />
+      {video ? (
+        <video src={video} className="absolute inset-0 w-full h-full object-cover" autoPlay muted loop playsInline />
+      ) : img ? (
+        <img src={img} alt={name} className="absolute inset-0 w-full h-full object-cover" draggable={false} />
+      ) : null}
       <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.5), rgba(0,0,0,0.2) 35%, rgba(0,0,0,0.55) 75%, rgba(0,0,0,0.85))' }} />
       <div className="relative w-full h-full flex flex-col justify-between p-4">
         {/* 顶部：名称 + 可选CTA */}
@@ -228,7 +244,11 @@ export function ModelsShowcase() {
             <div className="flex gap-5" style={{ flex: 1 }}>
               {GROUP_3_ROW1.map((c) => (
                 <div key={c.key} className={CARD_CLASS} style={{ flexGrow: c.w, flexBasis: 0, ...CARD_STYLE }}>
-                  <CardInner name={c.name} />
+                  {'features' in c && c.features ? (
+                    <SeedanceCardInner name={c.name} video={(c as { video?: string }).video} img={(c as { img?: string }).img} features={c.features} />
+                  ) : (
+                    <CardInner name={c.name} />
+                  )}
                 </div>
               ))}
             </div>
