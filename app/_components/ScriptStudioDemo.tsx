@@ -325,7 +325,7 @@ function DemoImage({ src, caption }: { src: string; caption?: string }) {
   );
 }
 
-// 画廊:大图横向自动从右往左滚动展示(跑马灯),鼠标悬停暂停,可横向拖动
+// 画廊:大图横向自动从右往左滚动展示(跑马灯),鼠标悬停暂停,可横向拖动;右侧 › 按钮手动翻下一张
 function Gallery({ images }: { images: string[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const pausedRef = useRef(false);
@@ -336,7 +336,7 @@ function Gallery({ images }: { images: string[] }) {
     let raf = 0;
     const tick = () => {
       if (!pausedRef.current && el) {
-        el.scrollLeft += 0.7;
+        el.scrollLeft += 2.2;   // 自动滚动速度(加快)
         // 滚到末尾(第一份图末尾)时无缝回到开头,配合下方图片复制一份实现循环
         if (el.scrollLeft >= el.scrollWidth / 2) el.scrollLeft -= el.scrollWidth / 2;
       }
@@ -346,27 +346,47 @@ function Gallery({ images }: { images: string[] }) {
     return () => cancelAnimationFrame(raf);
   }, [images]);
 
+  // 手动翻到下一张:按第一张图的宽度平滑滚动一格
+  const next = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const first = el.querySelector('div');
+    const step = first ? (first as HTMLElement).offsetWidth + 16 : el.clientWidth * 0.8;
+    el.scrollBy({ left: step, behavior: 'smooth' });
+  };
+
   // 复制一份图片首尾相接,实现无缝循环
   const loop = [...images, ...images];
 
   return (
-    <div
-      ref={scrollRef}
-      className="flex gap-4 overflow-x-auto no-scrollbar"
-      style={{ scrollbarWidth: 'none' }}
-      onMouseEnter={() => { pausedRef.current = true; }}
-      onMouseLeave={() => { pausedRef.current = false; }}
-    >
-      {loop.map((src, i) => (
-        <div
-          key={i}
-          className="flex-shrink-0 rounded-xl overflow-hidden border border-white/10 bg-black/30"
-          style={{ height: 460 }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={src} alt="" className="h-full w-auto object-contain" draggable={false} />
-        </div>
-      ))}
+    <div className="relative">
+      <div
+        ref={scrollRef}
+        className="flex gap-4 overflow-x-auto no-scrollbar"
+        style={{ scrollbarWidth: 'none' }}
+        onMouseEnter={() => { pausedRef.current = true; }}
+        onMouseLeave={() => { pausedRef.current = false; }}
+      >
+        {loop.map((src, i) => (
+          <div
+            key={i}
+            className="flex-shrink-0 rounded-xl overflow-hidden border border-white/10 bg-black/30"
+            style={{ height: 460 }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={src} alt="" className="h-full w-auto object-contain" draggable={false} />
+          </div>
+        ))}
+      </div>
+      {/* 右侧下一张按钮 */}
+      <button
+        onClick={next}
+        aria-label="下一张"
+        className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center text-xl transition-all hover:scale-110"
+        style={{ background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(255,255,255,0.25)', color: '#fff', backdropFilter: 'blur(4px)' }}
+      >
+        ›
+      </button>
     </div>
   );
 }
