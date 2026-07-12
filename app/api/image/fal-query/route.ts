@@ -41,7 +41,12 @@ export async function GET(req: NextRequest) {
       if (!imageUrl) {
         success = true;
         console.error('[fal-query] 无法解析图片 URL，完整 data:', JSON.stringify(d).slice(0, 400));
-        return NextResponse.json({ error: `fal.ai 未返回图片 URL (data keys: ${Object.keys(d || {}).join(',')})` }, { status: 500 });
+        // 已 COMPLETED 但无图 → 永久失败，返回 failed 让前端停止(而非 500 被重试)
+        return NextResponse.json({
+          failed: true,
+          reason: '审核未通过',
+          error: '审核未通过：本次生成未产出图片，请调整描述后重试',
+        }, { status: 200 });
       }
       success = true;
       return NextResponse.json({ success: true, imageUrl, raw: d });
@@ -59,6 +64,23 @@ export async function GET(req: NextRequest) {
     if (error?.status) {
       console.error('[fal-query] error status:', error.status);
     }
+
+    // 识别"永久失败"：fal 审核未通过 / 无法生成(no_media_generated) / 422 等，
+    // 这类不该继续轮询，直接返回 failed 让前端立即停止并提示，而不是 500 被当作可重试
+    const bodyStr = JSON.stringify(error?.body || '') + ' ' + (error?.message || '');
+    const isPermanentFail =
+      error?.status === 422 ||
+      /no_media_generated|unsafe|not generate the expected|content policy|审核|violat|rejected|flagged/i.test(bodyStr);
+
+    if (isPermanentFail) {
+      success = true; // 已得到平台的明确结论(非本方 key 故障)，不算 key 失败
+      return NextResponse.json({
+        failed: true,
+        reason: '审核未通过',
+        error: '审核未通过：本次生成被平台判定为不合规或无法生成，请调整描述后重试',
+      }, { status: 200 });
+    }
+
     return NextResponse.json({
       error: error.message || JSON.stringify(error) || '查询失败',
       detail: error?.body || null,

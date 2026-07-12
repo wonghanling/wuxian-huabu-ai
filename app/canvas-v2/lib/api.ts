@@ -145,11 +145,12 @@ export async function generateImage(params: ImageGenParams): Promise<string> {
         const qRes = await fetch(`/api/image/fal-query?requestId=${encodeURIComponent(data.requestId)}&endpoint=${encodeURIComponent(endpoint)}`);
         const qData = await qRes.json();
         if (qData.success && qData.imageUrl) return qData.imageUrl;
+        if (qData.failed) throw new Error(qData.reason || qData.error || '审核未通过');
         if (qData.error) throw new Error(qData.error);
         if (attempts > 60) throw new Error('生成超时');
         return poll();
       } catch (e: any) {
-        if (e.message && (e.message.includes('超时') || e.message.includes('error'))) throw e;
+        if (e.message && (e.message.includes('超时') || e.message.includes('error') || e.message.includes('审核') || e.message.includes('失败'))) throw e;
         if (attempts > 60) throw new Error('生成超时');
         await new Promise((r) => setTimeout(r, 5000));
         return poll();
@@ -215,11 +216,12 @@ export async function generateTryOn(params: TryOnParams): Promise<string> {
         const qRes = await fetch(`/api/image/fal-query?requestId=${encodeURIComponent(data.requestId)}&endpoint=${encodeURIComponent(endpoint)}`);
         const qData = await qRes.json();
         if (qData.success && qData.imageUrl) return qData.imageUrl;
+        if (qData.failed) throw new Error(qData.reason || qData.error || '审核未通过');
         if (qData.error) throw new Error(qData.error);
         if (attempts > 60) throw new Error('生成超时');
         return poll();
       } catch (e: any) {
-        if (e.message && (e.message.includes('超时') || e.message.includes('error'))) throw e;
+        if (e.message && (e.message.includes('超时') || e.message.includes('error') || e.message.includes('审核') || e.message.includes('失败'))) throw e;
         if (attempts > 60) throw new Error('生成超时');
         await new Promise((r) => setTimeout(r, 5000));
         return poll();
@@ -714,6 +716,7 @@ export async function editDesignImage(params: {
         const qRes = await fetch(`/api/image/fal-query?requestId=${encodeURIComponent(data.requestId)}&endpoint=${encodeURIComponent(data.endpoint)}`);
         const qData = await qRes.json();
         if (qData.success && qData.imageUrl) return qData.imageUrl;
+        if (qData.failed) throw new Error(qData.reason || qData.error || '审核未通过');
         if (qData.error) throw new Error(qData.error);
         if (attempts > 80) throw new Error('编辑超时');
         return poll();
