@@ -16,10 +16,11 @@ interface Stage {
   title: string;
   en: string;
   desc: string;
-  kind: 'text' | 'image' | 'asset';
+  kind: 'text' | 'image' | 'asset' | 'gallery';
   image?: string;
   caption?: string;
   lines?: string[];           // 文字阶段:逐行打字
+  images?: string[];          // 画廊阶段:大图自动从右往左滑动展示
   assets?: { label: string; images: string[]; caption: string }[]; // 二级钻取(每个标签可含多张图)
 }
 
@@ -47,34 +48,39 @@ const STAGES: Stage[] = [
     ],
   },
   {
-    key: 'character', no: '03', title: '人物设计', en: 'Character Bible', kind: 'asset',
-    desc: '角色三视图定妆 + 服装装备连续性表，锁定跨镜头一致性',
-    assets: [
-      { label: '人物设计', images: ['https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783795675255.jpg'], caption: '主角 · 三视角定妆设计稿' },
-      { label: '服装资产', images: [
-        'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783796234874.jpg',
-        'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783796419207.jpg',
-        'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783796570329.jpg',
-      ], caption: '服装资产 · 设计稿' },
-      { label: '道具设计', images: [
-        'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783796677572.jpg',
-        'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783814136154.jpg',
-      ], caption: '道具设计 · 设计稿' },
+    key: 'character', no: '03', title: '人物设计', en: 'Character Bible', kind: 'gallery',
+    desc: '角色三视图定妆 + 服装、道具资产，锁定跨镜头一致性',
+    images: [
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783795675255.jpg',
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783796234874.jpg',
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783796419207.jpg',
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783796570329.jpg',
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783796677572.jpg',
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783814136154.jpg',
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783823322385.jpg',
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783823650889.jpg',
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783823869401.jpg',
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783824147146.jpg',
     ],
   },
   {
-    key: 'scene', no: '04', title: '场景设计', en: 'Environment Bible', kind: 'image',
+    key: 'scene', no: '04', title: '场景设计', en: 'Environment Bible', kind: 'gallery',
     desc: '场景世界观 + 多视角概念图，定义每一处空间的光影与质感',
-    image: '/changjingsheji.webp',
-    caption: '核心场景 · 概念设计图',
+    images: [
+      '/changjingsheji.webp',
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783866982616.jpg',
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783867221698.jpg',
+    ],
   },
   {
-    key: 'asset', no: '05', title: '资产分解', en: 'Asset Bible', kind: 'asset',
-    desc: '场景与人物里的每件资产，都能钻取出独立的技术分解图',
-    assets: [
-      { label: '装备分解', images: ['/zhuangbeifenjie.webp'], caption: '装备系统 · 技术分解板' },
-      { label: '近塔分解 ①', images: ['/jintafenjie1.webp'], caption: '场景资产 · 近塔结构分解' },
-      { label: '近塔分解 ②', images: ['/jintafenjie2.webp'], caption: '场景资产 · 近塔细节分解' },
+    key: 'asset', no: '05', title: '正式剧本', en: 'Screenplay', kind: 'text',
+    desc: '标准剧本格式：场景标题、动作描述、对白与镜头提示，一键成稿',
+    lines: [
+      'SC.024　内 · 档案室 · 夜',
+      '林深推开锈蚀的铁门，手电光束刺入尘埃。',
+      '　　　　林深（低声）',
+      '　　十二年了，你还在等我。',
+      '他抽出泛黄的卷宗，指尖停在那行被划掉的名字上……',
     ],
   },
   {
@@ -101,7 +107,7 @@ export function ScriptStudioDemo() {
     if (!auto) return;
     const cur = STAGES.find((s) => s.key === active)!;
     const isAsset = cur.kind === 'asset' && !!cur.assets;
-    const dwell = cur.kind === 'text' ? 4200 : isAsset ? 2600 : 3200;
+    const dwell = cur.kind === 'text' ? 4200 : cur.kind === 'gallery' ? 6000 : isAsset ? 2600 : 3200;
     const t = setTimeout(() => {
       if (isAsset && assetIdx < cur.assets!.length - 1) {
         setAssetIdx((i) => i + 1);                 // 还有下一张图,先切图
@@ -179,6 +185,9 @@ function StageScreen({ stage, assetIdx, setAssetIdx }: { stage: Stage; assetIdx:
   }
   if (stage.kind === 'image' && stage.image) {
     return <DemoImage key={stage.key} src={stage.image} caption={stage.caption} />;
+  }
+  if (stage.kind === 'gallery' && stage.images) {
+    return <Gallery key={stage.key} images={stage.images} />;
   }
   if (stage.assets) {
     const a = stage.assets[Math.min(assetIdx, stage.assets.length - 1)];
@@ -313,5 +322,51 @@ function DemoImage({ src, caption }: { src: string; caption?: string }) {
         </button>
       </div>
     </figure>
+  );
+}
+
+// 画廊:大图横向自动从右往左滚动展示(跑马灯),鼠标悬停暂停,可横向拖动
+function Gallery({ images }: { images: string[] }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const pausedRef = useRef(false);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    let raf = 0;
+    const tick = () => {
+      if (!pausedRef.current && el) {
+        el.scrollLeft += 0.7;
+        // 滚到末尾(第一份图末尾)时无缝回到开头,配合下方图片复制一份实现循环
+        if (el.scrollLeft >= el.scrollWidth / 2) el.scrollLeft -= el.scrollWidth / 2;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [images]);
+
+  // 复制一份图片首尾相接,实现无缝循环
+  const loop = [...images, ...images];
+
+  return (
+    <div
+      ref={scrollRef}
+      className="flex gap-4 overflow-x-auto no-scrollbar"
+      style={{ scrollbarWidth: 'none' }}
+      onMouseEnter={() => { pausedRef.current = true; }}
+      onMouseLeave={() => { pausedRef.current = false; }}
+    >
+      {loop.map((src, i) => (
+        <div
+          key={i}
+          className="flex-shrink-0 rounded-xl overflow-hidden border border-white/10 bg-black/30"
+          style={{ height: 460 }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={src} alt="" className="h-full w-auto object-contain" draggable={false} />
+        </div>
+      ))}
+    </div>
   );
 }
