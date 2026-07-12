@@ -20,7 +20,7 @@ interface Stage {
   image?: string;
   caption?: string;
   lines?: string[];           // 文字阶段:逐行打字
-  assets?: { label: string; image: string; caption: string }[]; // 二级钻取(场景资产)
+  assets?: { label: string; images: string[]; caption: string }[]; // 二级钻取(每个标签可含多张图)
 }
 
 const STAGES: Stage[] = [
@@ -50,9 +50,16 @@ const STAGES: Stage[] = [
     key: 'character', no: '03', title: '人物设计', en: 'Character Bible', kind: 'asset',
     desc: '角色三视图定妆 + 服装装备连续性表，锁定跨镜头一致性',
     assets: [
-      { label: '主角设计', image: '/renwusheji1.webp', caption: '主角 · 三视角定妆设计稿' },
-      { label: '机甲设计', image: '/renwusheji2.webp', caption: '机甲角色 · 三视图 + 头部细节' },
-      { label: '配角设计', image: '/renwusheji3.webp', caption: '配角 · 角色设定稿' },
+      { label: '人物设计', images: ['https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783795675255.jpg'], caption: '主角 · 三视角定妆设计稿' },
+      { label: '服装资产', images: [
+        'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783796234874.jpg',
+        'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783796419207.jpg',
+        'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783796570329.jpg',
+      ], caption: '服装资产 · 设计稿' },
+      { label: '道具设计', images: [
+        'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783796677572.jpg',
+        'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783814136154.jpg',
+      ], caption: '道具设计 · 设计稿' },
     ],
   },
   {
@@ -65,9 +72,9 @@ const STAGES: Stage[] = [
     key: 'asset', no: '05', title: '资产分解', en: 'Asset Bible', kind: 'asset',
     desc: '场景与人物里的每件资产，都能钻取出独立的技术分解图',
     assets: [
-      { label: '装备分解', image: '/zhuangbeifenjie.webp', caption: '装备系统 · 技术分解板' },
-      { label: '近塔分解 ①', image: '/jintafenjie1.webp', caption: '场景资产 · 近塔结构分解' },
-      { label: '近塔分解 ②', image: '/jintafenjie2.webp', caption: '场景资产 · 近塔细节分解' },
+      { label: '装备分解', images: ['/zhuangbeifenjie.webp'], caption: '装备系统 · 技术分解板' },
+      { label: '近塔分解 ①', images: ['/jintafenjie1.webp'], caption: '场景资产 · 近塔结构分解' },
+      { label: '近塔分解 ②', images: ['/jintafenjie2.webp'], caption: '场景资产 · 近塔细节分解' },
     ],
   },
   {
@@ -192,11 +199,33 @@ function StageScreen({ stage, assetIdx, setAssetIdx }: { stage: Stage; assetIdx:
             </button>
           ))}
         </div>
-        <DemoImage key={a.label} src={a.image} caption={a.caption} />
+        <AssetImages key={a.label} images={a.images} caption={a.caption} />
       </div>
     );
   }
   return null;
+}
+
+// 单个标签下的图片展示：一张则直接显示，多张则自动轮播(带小圆点)
+function AssetImages({ images, caption }: { images: string[]; caption?: string }) {
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    if (images.length <= 1) return;
+    const t = setInterval(() => setI((n) => (n + 1) % images.length), 2200);
+    return () => clearInterval(t);
+  }, [images]);
+  return (
+    <div>
+      <DemoImage key={images[Math.min(i, images.length - 1)]} src={images[Math.min(i, images.length - 1)]} caption={caption} />
+      {images.length > 1 && (
+        <div className="flex gap-1.5 mt-3">
+          {images.map((_, k) => (
+            <span key={k} className="w-1.5 h-1.5 rounded-full transition-all" style={{ background: k === i ? '#fff' : 'rgba(255,255,255,0.25)' }} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // 打字机:逐行浮现,最后省略号 + 发送到画布
