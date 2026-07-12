@@ -346,13 +346,15 @@ function Gallery({ images }: { images: string[] }) {
     return () => cancelAnimationFrame(raf);
   }, [images]);
 
-  // 手动翻到下一张:按第一张图的宽度平滑滚动一格
+  // 手动翻到下一张:先暂停自动滚动(否则平滑滚动被rAF每帧覆盖),平滑滚一格后恢复
   const next = () => {
     const el = scrollRef.current;
     if (!el) return;
     const first = el.querySelector('div');
     const step = first ? (first as HTMLElement).offsetWidth + 16 : el.clientWidth * 0.8;
+    pausedRef.current = true;
     el.scrollBy({ left: step, behavior: 'smooth' });
+    window.setTimeout(() => { pausedRef.current = false; }, 700);
   };
 
   // 复制一份图片首尾相接,实现无缝循环
