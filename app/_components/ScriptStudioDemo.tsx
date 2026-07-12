@@ -383,7 +383,7 @@ function Gallery({ images }: { images: string[] }) {
         onClick={next}
         aria-label="下一张"
         className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full flex items-center justify-center text-xl transition-all hover:scale-110"
-        style={{ background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(255,255,255,0.25)', color: '#fff', backdropFilter: 'blur(4px)' }}
+        style={{ zIndex: 20, background: 'rgba(0,0,0,0.65)', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', backdropFilter: 'blur(4px)' }}
       >
         ›
       </button>
