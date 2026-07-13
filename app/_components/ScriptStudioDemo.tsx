@@ -168,8 +168,8 @@ export function ScriptStudioDemo() {
           <span className="ml-3 text-sm text-zinc-400">{stage.title} · {stage.en}</span>
         </div>
 
-        {/* 屏幕内容 — 溢出内部滚动,不撑高外框 */}
-        <div className="flex-1 min-h-0 overflow-auto p-6 lg:p-8 cv2-scroll">
+        {/* 屏幕内容 — 溢出内部滚动,不撑高外框(隐藏滚动条) */}
+        <div className="flex-1 min-h-0 overflow-auto p-6 lg:p-8 no-scrollbar">
           <p className="text-sm text-zinc-500 mb-5">{stage.desc}</p>
           <StageScreen stage={stage} assetIdx={assetIdx} setAssetIdx={setAssetIdx} />
         </div>
