@@ -149,7 +149,7 @@ export function ScrollZoomShowcase() {
           <div ref={rightWrapRef} className="flex items-center gap-4 md:gap-6" style={{ willChange: 'transform, opacity' }}>
             <div className="flex flex-col gap-4">
               <PlaceholderCard label="案例 05" aspect="4/3" width={250} color="#2a2a2a" src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783603262247.mp4" />
-              <PlaceholderCard label="案例 06" aspect="4/3" width={250} color="#242424" src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783601617900.mp4" />
+              <PlaceholderCard label="案例 06" aspect="4/3" width={250} color="#242424" src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/shamo1.mp4" />
             </div>
             <PlaceholderCard label="案例 07" aspect="3/4" width={200} color="#262626" src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783602031467.mp4" />
           </div>
