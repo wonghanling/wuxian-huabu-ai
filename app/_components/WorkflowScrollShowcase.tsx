@@ -245,7 +245,7 @@ function DoodlePreview({ isActive }: { isActive: boolean }) {
             style={{ borderColor: landed ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.15)', transition: 'border-color 0.4s ease' }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/tuyabiaozhu.webp" alt="涂鸦标注演示" className="w-full h-auto block" draggable={false} />
+            <img src="/tuyabiaozhu.webp" alt="涂鸦标注演示" className="w-full h-auto block" draggable={false} loading="lazy" />
             {/* 落定后右上角完成勾 */}
             <div
               className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white text-black flex items-center justify-center text-sm font-bold shadow-lg"
@@ -565,7 +565,7 @@ function TryOnFrame({ src, label, show, highlight }: { src: string; label: strin
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} alt={label} className="w-full h-full object-cover" draggable={false} />
+        <img src={src} alt={label} className="w-full h-full object-cover" draggable={false} loading="lazy" />
       </div>
       <span className="text-[11px]" style={{ color: highlight ? 'rgb(113,208,131)' : 'rgb(150,150,150)' }}>{label}</span>
     </div>

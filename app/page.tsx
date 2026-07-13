@@ -13,7 +13,6 @@ export default function Home() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [showPromoModal, setShowPromoModal] = useState(false);
-  const [promoSlide, setPromoSlide] = useState(0);
   const [navScrolled, setNavScrolled] = useState(false);
   const supabase = createClient();
 
@@ -133,41 +132,20 @@ export default function Home() {
               className="absolute top-4 right-4 z-20 w-8 h-8 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center text-white/70 hover:text-white transition-all"
             >✕</button>
 
-            {/* 轮播图区域 */}
+            {/* 宣传视频区域 */}
             <div className="relative overflow-hidden" style={{ aspectRatio: '16/9' }}>
-              <div style={{
-                display: 'flex', width: '400%', height: '100%',
-                transform: `translateX(${-promoSlide * 25}%)`,
-                transition: 'transform 0.5s cubic-bezier(0.4,0,0.2,1)',
-              }}>
-                {[
-                  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/boluolab.com/huodongchuangkou1.webp',
-                  '/xuanchuantanchuang1.webp',
-                  '/xuanchuantanchuang2.webp',
-                  '/xuanchuantanchuang3.webp',
-                ].map((src, i) => (
-                  <img key={i} src={src} alt={`宣传图${i + 1}`}
-                    style={{ width: '25%', height: '100%', objectFit: 'cover', flexShrink: 0 }}
-                  />
-                ))}
-              </div>
-              {promoSlide > 0 && (
-                <button onClick={e => { e.stopPropagation(); setPromoSlide(s => s - 1); }}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center text-white text-xl transition-all">‹</button>
-              )}
-              {promoSlide < 3 && (
-                <button onClick={e => { e.stopPropagation(); setPromoSlide(s => s + 1); }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center text-white text-xl transition-all">›</button>
-              )}
-              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-                {[0, 1, 2, 3].map(i => (
-                  <button key={i} onClick={e => { e.stopPropagation(); setPromoSlide(i); }}
-                    style={{
-                      width: promoSlide === i ? 20 : 6, height: 6, borderRadius: 3, border: 'none', cursor: 'pointer', padding: 0,
-                      background: promoSlide === i ? 'rgba(167,139,250,1)' : 'rgba(255,255,255,0.35)',
-                      transition: 'all 0.3s',
-                    }} />
-                ))}
+              <video
+                src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/seedance2.0xuanchuanshipin.mp4"
+                className="w-full h-full object-cover"
+                autoPlay muted loop playsInline
+              />
+              {/* 视频上叠加文案 */}
+              <div
+                className="absolute inset-x-0 bottom-0 px-6 pt-12 pb-5"
+                style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.75), transparent)' }}
+              >
+                <div className="text-white font-bold text-xl mb-1">Seedance 2.0 · 让想象动起来</div>
+                <div className="text-white/70 text-sm">新一代 AI 视频生成模型</div>
               </div>
             </div>
 
@@ -350,6 +328,7 @@ export default function Home() {
                 src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/clip-1783582208638-tp8y4hee20l.mp4"
                 className="w-full h-full object-cover"
                 autoPlay muted loop playsInline
+                preload="metadata"
               />
             </div>
           </div>
@@ -424,6 +403,7 @@ export default function Home() {
                 muted
                 loop
                 playsInline
+                preload="metadata"
                 className="absolute inset-0 w-full h-full object-cover opacity-60"
                 src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/boluolab.com/hero.mp4"
               />

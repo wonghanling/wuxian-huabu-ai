@@ -360,7 +360,7 @@ function Gallery({ images }: { images: string[] }) {
           className="flex-shrink-0 rounded-xl overflow-hidden border border-white/10 bg-black/30 h-full flex items-center"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={src} alt="" className="h-full w-auto object-contain" draggable={false} />
+          <img src={src} alt="" className="h-full w-auto object-contain" draggable={false} loading="lazy" />
         </div>
       ))}
     </div>

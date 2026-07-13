@@ -90,9 +90,9 @@ function CardInner({ name, img, video }: { name: string; img?: string; video?: s
   return (
     <>
       {video ? (
-        <video src={video} className="absolute inset-0 w-full h-full object-cover" autoPlay muted loop playsInline />
+        <video src={video} className="absolute inset-0 w-full h-full object-cover" autoPlay muted loop playsInline preload="metadata" />
       ) : img ? (
-        <img src={img} alt={name} className="absolute inset-0 w-full h-full object-cover" draggable={false} />
+        <img src={img} alt={name} className="absolute inset-0 w-full h-full object-cover" draggable={false} loading="lazy" />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center">
           <span className="text-xs" style={{ color: 'rgb(90,90,90)' }}>占位视频/图片</span>
@@ -116,7 +116,7 @@ function WanCardInner({ video, heading, cta, features }: {
 }) {
   return (
     <>
-      <video src={video} className="absolute inset-0 w-full h-full object-cover" autoPlay muted loop playsInline />
+      <video src={video} className="absolute inset-0 w-full h-full object-cover" autoPlay muted loop playsInline preload="metadata" />
       {/* 上下双向渐变遮罩，保证顶部标题和底部文案都可读 */}
       <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.55), rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.35) 70%, rgba(0,0,0,0.8))' }} />
       <div className="relative w-full h-full flex flex-col justify-between p-5">
@@ -151,9 +151,9 @@ function SeedanceCardInner({ name, video, img, cta, features }: {
   return (
     <>
       {video ? (
-        <video src={video} className="absolute inset-0 w-full h-full object-cover" autoPlay muted loop playsInline />
+        <video src={video} className="absolute inset-0 w-full h-full object-cover" autoPlay muted loop playsInline preload="metadata" />
       ) : img ? (
-        <img src={img} alt={name} className="absolute inset-0 w-full h-full object-cover" draggable={false} />
+        <img src={img} alt={name} className="absolute inset-0 w-full h-full object-cover" draggable={false} loading="lazy" />
       ) : null}
       <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.5), rgba(0,0,0,0.2) 35%, rgba(0,0,0,0.55) 75%, rgba(0,0,0,0.85))' }} />
       <div className="relative w-full h-full flex flex-col justify-between p-4">

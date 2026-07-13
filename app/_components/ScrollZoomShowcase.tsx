@@ -140,6 +140,7 @@ export function ScrollZoomShowcase() {
               src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783586390706-zikbt8pm8l8.mp4"
               className="absolute inset-0 w-full h-full object-cover"
               autoPlay muted loop playsInline
+              preload="metadata"
             />
             <div ref={labelRef} className="hidden" />
           </div>
@@ -181,6 +182,7 @@ function PlaceholderCard({
           src={src}
           className="w-full h-full object-cover"
           autoPlay muted loop playsInline
+          preload="metadata"
         />
       ) : (
         <span className="text-xs font-medium" style={{ color: 'rgb(96,96,96)' }}>{label}</span>

@@ -139,9 +139,9 @@ export function FeatureTabsShowcase() {
                 }}
               >
                 {f.video ? (
-                  <video src={f.video} className="w-full h-full object-cover" autoPlay muted loop playsInline />
+                  <video src={f.video} className="w-full h-full object-cover" autoPlay muted loop playsInline preload="metadata" />
                 ) : f.image ? (
-                  <img src={f.image} alt={f.title} className="w-full h-full object-cover" draggable={false} />
+                  <img src={f.image} alt={f.title} className="w-full h-full object-cover" draggable={false} loading="lazy" />
                 ) : (
                   <span className="text-sm" style={{ color: 'rgb(120,120,120)' }}>占位图片</span>
                 )}
