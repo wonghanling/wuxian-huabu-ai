@@ -162,7 +162,7 @@ function ScriptStudioPreview({ isActive }: { isActive: boolean }) {
         <span className="text-xs font-bold tracking-wider" style={{ color: 'rgb(113,208,131)' }}>{stage.no}</span>
         <span className="text-sm font-medium" style={{ color: 'rgb(238,238,238)' }}>{stage.title}</span>
       </div>
-      <div className="flex-1 min-h-0 overflow-auto">
+      <div className="flex-1 min-h-0 overflow-hidden">
         {stage.kind === 'text' && stage.lines && <StageTypewriter key={stage.key} lines={stage.lines} />}
         {stage.kind === 'image' && stage.image && <StageImage key={stage.key} src={stage.image} caption={stage.caption} />}
         {stage.kind === 'asset' && stage.assets && (
@@ -380,7 +380,7 @@ function JsonConfigPreview({ isActive }: { isActive: boolean }) {
           </span>
         </div>
 
-        <div className="p-4 flex-1 min-h-0 overflow-auto">
+        <div className="p-4 flex-1 min-h-0 overflow-hidden">
           {/* 快捷注入 chips */}
           <div className="flex flex-wrap gap-2 mb-3 items-center">
             <span className="text-[11px] text-zinc-600">快捷注入</span>
