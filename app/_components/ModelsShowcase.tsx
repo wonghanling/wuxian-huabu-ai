@@ -6,10 +6,10 @@
 // 保证"一个画布，全球顶尖图像模型"等文案区宽度不超出三组矩形
 
 const GROUP_1 = [
-  { key: 'flux', name: 'FLUX', col: '1 / 3', row: '1 / 2', img: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783689094758.jpg' },                  // 1137x338，约3.36:1，主推位
-  { key: 'gptimage', name: 'ChatGPT Image 2', col: '1 / 2', row: '2 / 3', img: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783691611247.jpg' },   // 443x338，约1.31:1
-  { key: 'midjourney', name: 'Midjourney', col: '2 / 3', row: '2 / 3', img: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783692353492.jpg' },      // 674x338，约2:1
-  { key: 'nanobanana', name: 'Nano Banana Pro', col: '3 / 4', row: '1 / 3', img: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783690729986.jpg' }, // 443x695，约1:1.57
+  { key: 'flux', name: 'FLUX', col: '1 / 3', row: '1 / 2', img: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783689094758.jpg?quality=80' },                  // 1137x338，约3.36:1，主推位
+  { key: 'gptimage', name: 'ChatGPT Image 2', col: '1 / 2', row: '2 / 3', img: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783691611247.jpg?quality=80' },   // 443x338，约1.31:1
+  { key: 'midjourney', name: 'Midjourney', col: '2 / 3', row: '2 / 3', img: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783692353492.jpg?quality=80' },      // 674x338，约2:1
+  { key: 'nanobanana', name: 'Nano Banana Pro', col: '3 / 4', row: '1 / 3', img: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783690729986.jpg?quality=80' }, // 443x695，约1:1.57
 ];
 
 const GROUP_2 = [
@@ -57,12 +57,12 @@ const GROUP_3_ROW1 = [
   },
   {
     key: 'seedream', name: 'Seedream 5.0 Pro', w: 674,   // 约1.99:1
-    img: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/images/seedream5.webp',
+    img: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/seedream5.webp?quality=80',
     features: [{ t: 'High-Density Infographics' }, { t: 'Interactive Editing' }],
   },
   {
     key: 'niji', name: 'Stable Diffusion 3.5', w: 443,   // 约1.31:1
-    img: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/images/5f4604d9-8f1e-43c4-9ca2-dc994ca08848/stabillityai.webp',
+    img: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/5f4604d9-8f1e-43c4-9ca2-dc994ca08848/stabillityai.webp?quality=80',
     features: [{ t: 'Our most powerful image model yet.' }],
   },
 ];
