@@ -306,7 +306,7 @@ export default function Home() {
           >
             <span className="block mb-1.5 text-[12px] font-medium" style={{ color: 'rgb(160,160,160)' }}>产品设计</span>
             <div className="rounded-2xl overflow-hidden" style={{ aspectRatio: '1/1', background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}>
-              <img src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783578531053.jpg" alt="产品设计" className="w-full h-full object-cover" draggable={false} />
+              <img src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783578531053.jpg?width=1200&quality=75" alt="产品设计" className="w-full h-full object-cover" draggable={false} />
             </div>
           </div>
           <div
@@ -315,7 +315,7 @@ export default function Home() {
           >
             <span className="block mb-1.5 text-[12px] font-medium" style={{ color: 'rgb(160,160,160)' }}>角色设计</span>
             <div className="rounded-2xl overflow-hidden" style={{ aspectRatio: '4/3', background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}>
-              <img src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783579669557.jpg" alt="角色设计" className="w-full h-full object-cover" draggable={false} />
+              <img src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783579669557.jpg?width=1200&quality=75" alt="角色设计" className="w-full h-full object-cover" draggable={false} />
             </div>
           </div>
           <div
@@ -338,7 +338,7 @@ export default function Home() {
           >
             <span className="block mb-1.5 text-[12px] font-medium" style={{ color: 'rgb(160,160,160)' }}>分镜设计</span>
             <div className="rounded-2xl overflow-hidden" style={{ aspectRatio: '16/9', background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}>
-              <img src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783580645778.jpg" alt="分镜设计" className="w-full h-full object-cover" draggable={false} />
+              <img src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783580645778.jpg?width=1200&quality=75" alt="分镜设计" className="w-full h-full object-cover" draggable={false} />
             </div>
           </div>
         </div>
