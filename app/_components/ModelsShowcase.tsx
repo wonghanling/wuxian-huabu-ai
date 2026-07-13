@@ -25,7 +25,7 @@ const GROUP_2 = [
       { t: 'Video Reference', d: 'Reference to Cinematic' },
     ],
   },
-  { key: 'jimeng', name: 'Jimeng 3.0', col: '2 / 4', row: '1 / 2', video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783715114219.mp4' },     // 906x338，约2.68:1
+  { key: 'jimeng', name: 'Jimeng 3.0', col: '2 / 4', row: '1 / 2', video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/jimeng1.mp4' },     // 906x338，约2.68:1
   {
     key: 'seedance', name: 'Seedance 2.0', col: '2 / 3', row: '2 / 3',   // 443x338，约1.31:1
     video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/seedance.mp4',
