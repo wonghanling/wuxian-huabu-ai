@@ -623,13 +623,10 @@ function PreviewByKey({ itemKey, title, isActive }: { itemKey: string; title: st
 export function WorkflowScrollShowcase() {
   const [activeIndex, setActiveIndex] = useState(0);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const scrollContainer = scrollRef.current;
-    if (!scrollContainer) return;
-    // IntersectionObserver 以左侧滚动容器为 root（不是视口），
-    // 这样左侧容器内部滚动即可触发切换，不需要整页滚动
+    // IntersectionObserver 以视口为 root，跟随整页滚动触发切换，
+    // 不再让左侧列独立滚动(避免嵌套滚动条+滚动受阻)
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -639,7 +636,7 @@ export function WorkflowScrollShowcase() {
           }
         });
       },
-      { root: scrollContainer, rootMargin: '-35% 0px -35% 0px', threshold: 0.45 }
+      { rootMargin: '-40% 0px -40% 0px', threshold: 0 }
     );
     itemRefs.current.forEach((el) => { if (el) observer.observe(el); });
     return () => observer.disconnect();
@@ -654,21 +651,16 @@ export function WorkflowScrollShowcase() {
         </h2>
       </div>
 
-      {/* 桌面端：左右联动布局，左侧有自己的滚动区域（鼠标悬停左侧即可滚动左侧列表切换右侧预览） */}
-      <div className="hidden md:grid md:grid-cols-[380px_1fr] gap-12" style={{ height: 560 }}>
-        {/* 左：4项文案，自身可滚动（overflow-y auto），高度等于右侧预览区 */}
-        <div
-          ref={scrollRef}
-          className="overflow-y-auto flex flex-col pr-4 no-scrollbar"
-        >
-          {/* 顶部填充：让第1项能滚到容器中心区域 */}
-          <div style={{ minHeight: 196, flexShrink: 0 }} />
+      {/* 桌面端：左右联动布局，左侧文案跟随整页滚动，右侧预览 sticky 固定 */}
+      <div className="hidden md:grid md:grid-cols-[380px_1fr] gap-12 items-start">
+        {/* 左：4项文案，跟随页面滚动(不再独立滚动，避免嵌套滚动条) */}
+        <div className="flex flex-col">
           {ITEMS.map((item, i) => (
             <div
               key={item.key}
               ref={(el) => { itemRefs.current[i] = el; }}
               className="flex flex-col justify-center transition-opacity duration-500"
-              style={{ minHeight: 200, opacity: activeIndex === i ? 1 : 0.3 }}
+              style={{ minHeight: 320, opacity: activeIndex === i ? 1 : 0.35 }}
             >
               <h3 className="text-2xl font-bold tracking-tight mb-2" style={{ color: 'rgb(238,238,238)' }}>
                 {item.title}
@@ -678,8 +670,6 @@ export function WorkflowScrollShowcase() {
               </p>
             </div>
           ))}
-          {/* 底部填充：让最后一项能滚到容器中心区域 */}
-          <div style={{ minHeight: 196, flexShrink: 0 }} />
         </div>
 
         {/* 右：预览区(sticky)，深色画布+网格圆点背景，按 activeIndex 联动切换预览内容 */}

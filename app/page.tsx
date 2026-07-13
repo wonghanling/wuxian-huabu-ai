@@ -132,14 +132,14 @@ export default function Home() {
               className="absolute top-4 right-4 z-20 w-8 h-8 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center text-white/70 hover:text-white transition-all"
             >✕</button>
 
-            {/* 宣传视频区域 */}
+            {/* 宣传图片区域 */}
             <div className="relative overflow-hidden" style={{ aspectRatio: '16/9' }}>
-              <video
-                src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/seedance2.0xuanchuanshipin.mp4"
+              <img
+                src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/seedancexuanchuantanchuang.png?quality=80"
+                alt="Seedance 2.0"
                 className="w-full h-full object-cover"
-                autoPlay muted loop playsInline
               />
-              {/* 视频上叠加文案 */}
+              {/* 图片上叠加文案 */}
               <div
                 className="absolute inset-x-0 bottom-0 px-6 pt-12 pb-5"
                 style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.75), transparent)' }}
