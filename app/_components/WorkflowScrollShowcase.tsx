@@ -623,10 +623,12 @@ function PreviewByKey({ itemKey, title, isActive }: { itemKey: string; title: st
 export function WorkflowScrollShowcase() {
   const [activeIndex, setActiveIndex] = useState(0);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // IntersectionObserver 以视口为 root，跟随整页滚动触发切换，
-    // 不再让左侧列独立滚动(避免嵌套滚动条+滚动受阻)
+    const scrollContainer = scrollRef.current;
+    if (!scrollContainer) return;
+    // IntersectionObserver 以左侧滚动容器为 root：鼠标放在左侧区域滚动即触发切换，右侧联动
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -636,7 +638,7 @@ export function WorkflowScrollShowcase() {
           }
         });
       },
-      { rootMargin: '-40% 0px -40% 0px', threshold: 0 }
+      { root: scrollContainer, rootMargin: '-35% 0px -35% 0px', threshold: 0.45 }
     );
     itemRefs.current.forEach((el) => { if (el) observer.observe(el); });
     return () => observer.disconnect();
@@ -651,16 +653,21 @@ export function WorkflowScrollShowcase() {
         </h2>
       </div>
 
-      {/* 桌面端：左右联动布局，左侧文案跟随整页滚动，右侧预览 sticky 固定 */}
-      <div className="hidden md:grid md:grid-cols-[380px_1fr] gap-12 items-start">
-        {/* 左：4项文案，跟随页面滚动(不再独立滚动，避免嵌套滚动条) */}
-        <div className="flex flex-col">
+      {/* 桌面端：左右联动布局，左侧独立滚动(鼠标放左侧区域滚动即切换)，右侧预览固定 */}
+      <div className="hidden md:grid md:grid-cols-[380px_1fr] gap-12" style={{ height: 560 }}>
+        {/* 左：4项文案，自身独立滚动(高度=右侧预览)，隐藏滚动条 */}
+        <div
+          ref={scrollRef}
+          className="overflow-y-auto flex flex-col pr-2 no-scrollbar"
+        >
+          {/* 顶部填充：让第1项能滚到容器中心触发区 */}
+          <div style={{ minHeight: 190, flexShrink: 0 }} />
           {ITEMS.map((item, i) => (
             <div
               key={item.key}
               ref={(el) => { itemRefs.current[i] = el; }}
-              className="flex flex-col justify-center transition-opacity duration-500"
-              style={{ minHeight: 320, opacity: activeIndex === i ? 1 : 0.35 }}
+              className="flex flex-col justify-center transition-opacity duration-500 flex-shrink-0"
+              style={{ minHeight: 200, opacity: activeIndex === i ? 1 : 0.35 }}
             >
               <h3 className="text-2xl font-bold tracking-tight mb-2" style={{ color: 'rgb(238,238,238)' }}>
                 {item.title}
@@ -670,12 +677,14 @@ export function WorkflowScrollShowcase() {
               </p>
             </div>
           ))}
+          {/* 底部填充：让最后一项能滚到容器中心触发区 */}
+          <div style={{ minHeight: 190, flexShrink: 0 }} />
         </div>
 
-        {/* 右：预览区(sticky)，深色画布+网格圆点背景，按 activeIndex 联动切换预览内容 */}
+        {/* 右：预览区，深色画布+网格圆点背景，按 activeIndex 联动切换预览内容 */}
         <div
-          className="relative rounded-3xl overflow-hidden sticky"
-          style={{ height: 560, top: 100, background: 'rgb(20,20,20)', border: '1px solid #ffffff1c' }}
+          className="relative rounded-3xl overflow-hidden"
+          style={{ height: 560, background: 'rgb(20,20,20)', border: '1px solid #ffffff1c' }}
         >
           {/* 多孔画布背景（网格小圆点） */}
           <div
