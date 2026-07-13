@@ -39,7 +39,7 @@ const GROUP_2 = [
   },
   {
     key: 'pixverse', name: 'Pixverse v6', col: '3 / 4', row: '2 / 3',   // 443x338，约1.31:1
-    video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/pixvers.mp4',
+    video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/pixvers1.mp4',
     features: [
       { t: 'PixVerse Launches V6' },
       { t: 'Advancing AI Video Generation' },
