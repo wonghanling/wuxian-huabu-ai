@@ -19,6 +19,7 @@ body {
   color: #ffffff;
   margin: 0;
   padding: 0;
+  overflow-x: hidden;  /* 裁切横向溢出，放在 body 上不会像内层 div 那样产生嵌套纵向滚动 */
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
