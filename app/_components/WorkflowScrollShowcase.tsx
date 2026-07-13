@@ -18,6 +18,7 @@ const ITEMS = [
   { key: 'doodle', title: '涂鸦标注', desc: '在图片上直接涂抹标注修改意图，一键发送到画布生成新版本，所见即所得。' },
   { key: 'json', title: 'JSON 配置', desc: '用一段 JSON 锁定生成风格，一键注入专业模板，每次生成都按此执行。' },
   { key: 'shotboard', title: '分镜设计', desc: '分镜提示词到导演级分镜表格，时间码、景别、运镜、画面一应俱全。' },
+  { key: 'designer', title: '设计师', desc: 'AI 设计师坐镇画布，从灵感到成图一站式协作，实时演示完整创作流程。' },
 ] as const;
 
 // ============================================================
@@ -607,12 +608,42 @@ function TryOnPreview({ isActive }: { isActive: boolean }) {
   );
 }
 
+// 设计师 · 画布视频展示（仅当该项激活时才播放，避免一进页面就加载视频拖累性能）
+function DesignerPreview({ isActive }: { isActive: boolean }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    if (isActive) {
+      v.play().catch(() => {}); // 激活时播放(自动播放被拦截则忽略)
+    } else {
+      v.pause();
+    }
+  }, [isActive]);
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center p-4">
+      <video
+        ref={videoRef}
+        src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/export1-1783929812565.mp4"
+        className="max-w-full max-h-full rounded-xl object-contain"
+        muted
+        loop
+        playsInline
+        preload="metadata"
+      />
+    </div>
+  );
+}
+
 // 按 item.key 分发到对应预览组件；尚未迁移的项先用占位文字兜底
 function PreviewByKey({ itemKey, title, isActive }: { itemKey: string; title: string; isActive: boolean }) {
   if (itemKey === 'tryon') return <TryOnPreview isActive={isActive} />;
   if (itemKey === 'doodle') return <DoodlePreview isActive={isActive} />;
   if (itemKey === 'json') return <JsonConfigPreview isActive={isActive} />;
   if (itemKey === 'shotboard') return <ShotboardPreview isActive={isActive} />;
+  if (itemKey === 'designer') return <DesignerPreview isActive={isActive} />;
   return (
     <div className="w-full h-full flex items-center justify-center">
       <span className="text-sm" style={{ color: 'rgb(96,96,96)' }}>{title} 预览（占位，待迁移）</span>
