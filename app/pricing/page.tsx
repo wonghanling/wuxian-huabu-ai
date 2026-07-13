@@ -71,6 +71,7 @@ const PLANS: Plan[] = [
     desc: '一次付清更省钱，享年费专属优先服务',
     features: [
       { text: '月套餐全部权益', on: true },
+      { text: '专属 5 个并发生成', on: true },
       { text: '年费专属优先服务', on: true },
       { text: '新功能优先体验', on: true },
       { text: '一次付清省钱', on: true },
@@ -88,6 +89,7 @@ const PLANS: Plan[] = [
     desc: '锁定最低价，未来功能永久享',
     features: [
       { text: '年套餐全部权益', on: true },
+      { text: '专属 10 个并发生成', on: true },
       { text: '两年锁定最低价', on: true },
       { text: '专属客服支持', on: true },
       { text: '未来功能永久享', on: true },
