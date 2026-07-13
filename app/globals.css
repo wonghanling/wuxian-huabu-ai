@@ -29,15 +29,6 @@ body::-webkit-scrollbar {
   display: none;  /* Chrome, Safari, Opera */
 }
 
-/* tldraw 黑色主题 */
-.tl-background {
-  background-color: #000000 !important;
-}
-
-.tl-grid {
-  opacity: 0.05 !important;
-}
-
 /* Canvas 页面专用样式 */
 #canvas-page {
   background-color: #000000;
