@@ -245,7 +245,7 @@ function DoodlePreview({ isActive }: { isActive: boolean }) {
             style={{ borderColor: landed ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.15)', transition: 'border-color 0.4s ease' }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/tuyabiaozhu.webp" alt="涂鸦标注演示" className="w-full h-auto block" draggable={false} loading="lazy" />
+            <img src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783927049206-a9wnw3qwuqu.jpg?quality=80" alt="涂鸦标注演示" className="w-full h-auto block" draggable={false} loading="lazy" />
             {/* 落定后右上角完成勾 */}
             <div
               className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white text-black flex items-center justify-center text-sm font-bold shadow-lg"
