@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { uploadImageToStorage } from '../lib/api';
+import { uploadImageToStorage, getUserId } from '../lib/api';
 
 // ============================================================
 // 涂鸦工作台(Doodle Studio)
@@ -14,15 +14,28 @@ import { uploadImageToStorage } from '../lib/api';
 const COLORS = ['#ff3b30', '#ffcc00', '#34c759', '#0a84ff', '#ffffff', '#000000'];
 const SIZES = [4, 8, 16];
 
+// Seedream 5.0 Pro 交互编辑三种模式的引导预设(用户可再修改)
+const EDIT_MODES: { key: string; label: string; hint: string; preset: string }[] = [
+  { key: 'free', label: '自由编辑', hint: '涂抹/圈选标记区域，描述要做什么',
+    preset: '' },
+  { key: 'mark', label: '任意标记', hint: '用画笔圈出/箭头标记区域，描述在标记处添加或替换的内容',
+    preset: '根据手绘草图对图像进行编辑，在标记区域内生成对应内容，移除所有草图线条，保持构图不变，让新内容自然融入原场景。' },
+  { key: 'coord', label: '精准坐标', hint: '在图上点标记点，描述各标记点对应的编辑',
+    preset: '根据图中的标记对应关系进行局部编辑：将标注位置的元素按描述替换/定位。' },
+  { key: 'layer', label: '图层分离', hint: '无需标记，直接描述如何重排图层元素',
+    preset: '对输入图进行精确图层分离，识别并独立拆分标题文字、主体、背景与装饰元素，重新排版为更协调的构图。' },
+];
+
 type Tool = 'pen' | 'eraser' | 'text';
 
 interface Props {
   imageUrl?: string;   // 可选:从图片卡带入的图;不传则显示上传入口
   onClose: () => void;
   onConfirm: (args: { doodleUrl: string }) => void;
+  onGenerated?: (args: { imageUrl: string; prompt: string }) => void; // Seedream 生成结果 → 新建图片卡
 }
 
-export function DoodleModal({ imageUrl, onClose, onConfirm }: Props) {
+export function DoodleModal({ imageUrl, onClose, onConfirm, onGenerated }: Props) {
   const baseRef = useRef<HTMLCanvasElement>(null);   // 底图层
   const drawRef = useRef<HTMLCanvasElement>(null);   // 涂鸦层(线条+文字)
   const [imgEl, setImgEl] = useState<HTMLImageElement | null>(null);
@@ -31,6 +44,9 @@ export function DoodleModal({ imageUrl, onClose, onConfirm }: Props) {
   const [size, setSize] = useState(SIZES[1]);
   const [tool, setTool] = useState<Tool>('pen');
   const [busy, setBusy] = useState(false);
+  const [editMode, setEditMode] = useState('free');       // Seedream 交互编辑模式
+  const [prompt, setPrompt] = useState('');                // 编辑指令
+  const [generating, setGenerating] = useState(false);     // Seedream 生成中
   // 文字输入态:点击位置出现输入框
   const [textInput, setTextInput] = useState<{ x: number; y: number; cx: number; cy: number; value: string } | null>(null);
   const drawing = useRef(false);
@@ -165,6 +181,43 @@ export function DoodleModal({ imageUrl, onClose, onConfirm }: Props) {
     }
   }, [busy, onConfirm, onClose]);
 
+  // 用 Seedream 5.0 Pro 生成:合成底图+涂鸦 → 上传 → 调火山编辑 → 结果新建图片卡
+  const handleGenerate = useCallback(async () => {
+    if (!baseRef.current || !drawRef.current || generating) return;
+    if (!prompt.trim()) { alert('请先填写编辑指令'); return; }
+    setGenerating(true);
+    try {
+      const w = baseRef.current.width, h = baseRef.current.height;
+      const merged = document.createElement('canvas');
+      merged.width = w; merged.height = h;
+      const mctx = merged.getContext('2d')!;
+      mctx.drawImage(baseRef.current, 0, 0);
+      mctx.drawImage(drawRef.current, 0, 0);
+      const blob: Blob = await new Promise((resolve, reject) =>
+        merged.toBlob((b) => b ? resolve(b) : reject(new Error('合成失败')), 'image/jpeg', 0.92));
+      const file = new File([blob], `doodle-edit-${Date.now()}.jpg`, { type: 'image/jpeg' });
+      const uploadedUrl = await uploadImageToStorage(file);
+      if (!uploadedUrl) throw new Error('上传失败');
+
+      const userId = await getUserId();
+      const res = await fetch('/api/design/seedream-edit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl: uploadedUrl, prompt: prompt.trim(), userId }),
+      });
+      const data = await res.json();
+      if (data.failed) { alert(data.reason || '审核未通过'); return; }
+      if (!res.ok || !data.imageUrl) throw new Error(data.error || '生成失败');
+
+      onGenerated?.({ imageUrl: data.imageUrl, prompt: prompt.trim() });
+      onClose();
+    } catch (e: any) {
+      alert('生成失败: ' + (e?.message || e));
+    } finally {
+      setGenerating(false);
+    }
+  }, [generating, prompt, onGenerated, onClose]);
+
   return createPortal((
     <div
       className="nodrag nopan nowheel"
@@ -175,8 +228,8 @@ export function DoodleModal({ imageUrl, onClose, onConfirm }: Props) {
     >
       <div className="nodrag nopan nowheel" style={panel} onClick={(e) => e.stopPropagation()}>
         <div style={header}>
-          <span style={{ fontWeight: 700, fontSize: 16, color: '#fff' }}>涂鸦标注</span>
-          <span style={{ fontSize: 12, color: '#8b8b92' }}>上传图片,涂抹/画圈/写文字标注,发送到画布</span>
+          <span style={{ fontWeight: 700, fontSize: 16, color: '#fff' }}>图片交互编辑</span>
+          <span style={{ fontSize: 12, color: '#8b8b92' }}>上传图片，涂抹/圈选/标记 + 编辑指令，用 Seedream 5.0 Pro 生成</span>
           <button onClick={onClose} style={closeBtn} title="关闭">✕</button>
         </div>
 
@@ -243,16 +296,48 @@ export function DoodleModal({ imageUrl, onClose, onConfirm }: Props) {
           )}
         </div>
 
-        {/* 底部:发送到画布(不扣费) */}
-        <div style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12, borderTop: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
-          <span style={{ fontSize: 12, color: '#8b8b92', flex: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            发送到画布(免费 · 不生成),作为新图片卡,可连线到图片生成卡使用
-          </span>
-          <button onClick={onClose} style={cancelBtn}>取消</button>
-          <button onClick={handleSave} disabled={busy || !imgEl || !srcUrl}
-            style={{ ...genBtn, opacity: (busy || !imgEl || !srcUrl) ? 0.5 : 1, cursor: busy ? 'wait' : 'pointer', whiteSpace: 'nowrap' }}>
-            {busy ? '处理中…' : '发送到画布'}
-          </button>
+        {/* 底部:编辑模式 + 指令 + 生成/发送 */}
+        <div style={{ padding: '12px 20px', borderTop: '1px solid rgba(255,255,255,0.07)', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {/* 编辑模式选择 */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            {EDIT_MODES.map((m) => (
+              <button key={m.key}
+                onClick={() => { setEditMode(m.key); if (m.preset) setPrompt(m.preset); }}
+                style={toolBtnStyle(editMode === m.key)}>
+                {m.label}
+              </button>
+            ))}
+            <span style={{ fontSize: 11.5, color: '#71717a', marginLeft: 4 }}>
+              {EDIT_MODES.find((m) => m.key === editMode)?.hint}
+            </span>
+          </div>
+          {/* 编辑指令 */}
+          <textarea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="描述你想要的编辑，例如：把标记处替换成一杯咖啡，移除草图线条，自然融入场景"
+            rows={2}
+            style={{
+              width: '100%', resize: 'none', borderRadius: 10, padding: '9px 12px',
+              background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.14)',
+              color: '#fafafa', fontSize: 13, lineHeight: 1.5, outline: 'none',
+            }}
+          />
+          {/* 按钮行 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ fontSize: 11.5, color: '#71717a', flex: 1, minWidth: 0 }}>
+              Seedream 5.0 Pro 编辑 ¥0.6/次；或免费发送标注图到画布
+            </span>
+            <button onClick={onClose} style={cancelBtn}>取消</button>
+            <button onClick={handleSave} disabled={busy || generating || !imgEl || !srcUrl}
+              style={{ ...cancelBtn, opacity: (busy || generating || !imgEl || !srcUrl) ? 0.5 : 1, cursor: busy ? 'wait' : 'pointer', whiteSpace: 'nowrap' }}>
+              {busy ? '处理中…' : '发送到画布(免费)'}
+            </button>
+            <button onClick={handleGenerate} disabled={generating || busy || !imgEl || !srcUrl || !prompt.trim()}
+              style={{ ...genBtn, opacity: (generating || busy || !imgEl || !srcUrl || !prompt.trim()) ? 0.5 : 1, cursor: generating ? 'wait' : 'pointer', whiteSpace: 'nowrap' }}>
+              {generating ? '生成中…' : '用 Seedream 生成'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

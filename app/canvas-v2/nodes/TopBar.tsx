@@ -255,16 +255,16 @@ export function TopBar({ saveStatus, switchCanvas, getCurrentCanvasId }: Props) 
           <span>3D 导演台</span>
         </button>
 
-        {/* 涂鸦工作台入口 */}
+        {/* 图片交互编辑入口 */}
         <button
           onClick={() => setShowDoodle(true)}
           className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-white/5 backdrop-blur-md border border-white/15 text-zinc-200 hover:bg-white/10 hover:border-white/25 transition-all"
-          title="草图涂鸦:上传图片涂抹标注后发送到画布"
+          title="图片交互编辑:上传图片涂抹/圈选标记 + 指令，用 Seedream 5.0 Pro 生成"
         >
           <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
           </svg>
-          <span>涂鸦标注</span>
+          <span>图片交互编辑</span>
         </button>
 
         {/* 设计师专用入口：直接进界面，内部再上传图片 */}
@@ -323,6 +323,10 @@ export function TopBar({ saveStatus, switchCanvas, getCurrentCanvasId }: Props) 
           onClose={() => setShowDoodle(false)}
           onConfirm={({ doodleUrl }) => {
             useCanvasStore.getState().addImageCardWithRef(doodleUrl, '', 'nano-banana-pro');
+            (window as any).saveCanvasV2Now?.();
+          }}
+          onGenerated={({ imageUrl, prompt }) => {
+            useCanvasStore.getState().addImageCardWithRef(imageUrl, prompt, 'doubao-seedream-4-5-251128');
             (window as any).saveCanvasV2Now?.();
           }}
         />
