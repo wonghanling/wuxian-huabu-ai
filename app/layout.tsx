@@ -13,19 +13,19 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FanBu 帆布 | filmavo - Infinite AI Canvas",
-  description: "FanBu 帆布 · AI 创意工作流画布。随心拖拽，无限扩展，自由连接节点，一键复用工作流模板，释放无限创意。",
-  keywords: ["FanBu", "帆布", "filmavo", "AI 画布", "无限画布", "工作流", "AI 创作", "视频生成", "图像生成"],
-  authors: [{ name: "filmavo" }],
+  title: "Filmavo - Infinite AI Canvas",
+  description: "AI 创意工作流画布。随心拖拽，无限扩展，自由连接节点，一键复用工作流模板，释放无限创意。",
+  keywords: ["Filmavo", "AI 画布", "无限画布", "工作流", "AI 创作", "视频生成", "图像生成"],
+  authors: [{ name: "Filmavo" }],
   openGraph: {
-    title: "FanBu 帆布 | filmavo - Infinite AI Canvas",
+    title: "Filmavo - Infinite AI Canvas",
     description: "AI 创意工作流画布，随心拖拽无限扩展",
-    siteName: "FanBu 帆布",
+    siteName: "Filmavo",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "FanBu 帆布 | filmavo",
+    title: "Filmavo",
     description: "AI 创意工作流画布",
   },
 };

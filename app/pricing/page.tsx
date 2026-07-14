@@ -139,7 +139,7 @@ export default function PricingPage() {
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <img src="/boluo-logo-nav.svg" alt="filmavo" className="h-7 w-auto" />
-            <span className="font-semibold text-base tracking-tight" style={{ color: 'rgb(238,238,238)' }}>filmavo</span>
+            <span className="font-semibold text-base tracking-tight" style={{ color: 'rgb(238,238,238)' }}>Filmavo</span>
           </Link>
           <div className="flex items-center gap-5 text-sm">
             <Link href="/" className="transition-colors hover:text-white" style={{ color: 'rgb(180,180,180)' }}>首页</Link>

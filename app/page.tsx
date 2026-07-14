@@ -197,7 +197,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6 h-[72px] flex items-center justify-between">
           <div className="flex items-center space-x-2.5">
             <img src="/boluo-logo-nav.svg" alt="filmavo" className="h-7 w-auto" />
-            <span className="font-semibold text-base tracking-tight" style={{ color: 'rgb(238,238,238)' }}>filmavo</span>
+            <span className="font-semibold text-base tracking-tight" style={{ color: 'rgb(238,238,238)' }}>Filmavo</span>
           </div>
 
           <div className="hidden md:flex items-center space-x-10 text-sm font-medium" style={{ color: 'rgb(180,180,180)' }}>
@@ -443,7 +443,7 @@ export default function Home() {
             <div className="md:col-span-1">
               <div className="flex items-center space-x-2 mb-4">
                 <img src="/boluo-logo-nav.svg" alt="filmavo" className="h-8 w-auto" />
-                <span className="font-semibold text-lg">filmavo</span>
+                <span className="font-semibold text-lg">Filmavo</span>
               </div>
               <p className="text-sm text-zinc-500 leading-relaxed">
                 The infinite canvas for AI-powered creative workflows.

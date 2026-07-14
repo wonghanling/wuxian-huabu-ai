@@ -208,7 +208,7 @@ export default function AuthPage() {
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-2">
             <img src="/boluo-logo-nav.svg" alt="filmavo" className="h-8 w-auto" />
-            <span className="font-semibold text-lg tracking-tight">filmavo</span>
+            <span className="font-semibold text-lg tracking-tight">Filmavo</span>
           </Link>
         </div>
       </nav>
