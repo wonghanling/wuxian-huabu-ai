@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
         model: SEEDREAM_MODEL,
         prompt,
         image: imageUrl,                       // 支持 URL(涂鸦合并图上传后的 URL)
-        sequential_image_generation: 'disabled', // 5.0 Pro 只生成单图
+        // 注: Seedream 5.0 Pro 只生成单图，不支持 sequential_image_generation 参数(那是 Lite/4.x 组图用)
         response_format: 'url',
         watermark: false,
       };
