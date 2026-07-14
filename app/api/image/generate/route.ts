@@ -209,8 +209,8 @@ export async function POST(req: NextRequest) {
         const hasImages = imageUrlArray && Array.isArray(imageUrlArray) && imageUrlArray.length > 0;
         const actualEndpoint = hasImages ? 'fal-ai/nano-banana-2/edit' : 'fal-ai/nano-banana-2';
         input.resolution = imageQuality === '4k' ? '4K' : '2K';
-        // 有图时保留 aspect_ratio，让出图比例跟用户选的一致
-        if (!hasImages) delete input.aspect_ratio;
+        // 保留 aspect_ratio：nano-banana-2 文生图/图生图端点均支持该参数(枚举含1:1/16:9/9:16等)，
+        // 让出图比例始终跟用户选的一致
         delete input.num_images;
         delete input.output_format;
         delete input.safety_tolerance;
