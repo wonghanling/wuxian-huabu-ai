@@ -47,6 +47,7 @@ export function DoodleModal({ imageUrl, onClose, onConfirm, onGenerated }: Props
   const [editMode, setEditMode] = useState('free');       // Seedream 交互编辑模式
   const [prompt, setPrompt] = useState('');                // 编辑指令
   const [generating, setGenerating] = useState(false);     // Seedream 生成中
+  const [resultUrl, setResultUrl] = useState<string | null>(null); // 生成结果(弹窗内预览,不直接关窗)
   // 文字输入态:点击位置出现输入框
   const [textInput, setTextInput] = useState<{ x: number; y: number; cx: number; cy: number; value: string } | null>(null);
   const drawing = useRef(false);
@@ -209,8 +210,8 @@ export function DoodleModal({ imageUrl, onClose, onConfirm, onGenerated }: Props
       if (data.failed) { alert(data.reason || '审核未通过'); return; }
       if (!res.ok || !data.imageUrl) throw new Error(data.error || '生成失败');
 
-      onGenerated?.({ imageUrl: data.imageUrl, prompt: prompt.trim() });
-      onClose();
+      // 生成成功:弹窗内直接预览结果，不立即关窗(用户看效果后再决定发送到画布)
+      setResultUrl(data.imageUrl);
     } catch (e: any) {
       alert('生成失败: ' + (e?.message || e));
     } finally {
@@ -259,6 +260,26 @@ export function DoodleModal({ imageUrl, onClose, onConfirm, onGenerated }: Props
           <button onClick={() => setTool('eraser')} style={toolBtnStyle(tool === 'eraser')}>橡皮擦</button>
           <button onClick={clearDoodle} style={textBtn}>清空</button>
         </div>
+
+        {/* 生成结果预览浮层:成功后不关窗，先在弹窗内展示，用户决定发送到画布或继续编辑 */}
+        {resultUrl && (
+          <div style={{
+            position: 'absolute', inset: 0, zIndex: 10, background: 'rgba(10,12,11,0.94)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24,
+          }}>
+            <div style={{ fontSize: 13, color: '#34c759', fontWeight: 600 }}>✓ 生成成功</div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={resultUrl} alt="生成结果" style={{ maxWidth: '80%', maxHeight: '62vh', borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)' }} />
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button onClick={() => setResultUrl(null)} style={cancelBtn}>继续编辑</button>
+              <button
+                onClick={() => { onGenerated?.({ imageUrl: resultUrl, prompt: prompt.trim() }); onClose(); }}
+                style={genBtn}>
+                发送到画布
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* 画布区:图片直接铺,无容器无滚动条 */}
         <div style={canvasWrap} className="cv2-scroll">
@@ -357,6 +378,7 @@ const overlay: React.CSSProperties = {
   display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
 };
 const panel: React.CSSProperties = {
+  position: 'relative',
   width: 'auto', maxWidth: '96vw', maxHeight: '95vh',
   background: 'linear-gradient(180deg,#1a1d1b 0%,#141613 100%)',
   border: '1px solid rgba(255,255,255,0.1)',

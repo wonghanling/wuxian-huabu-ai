@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 import { calcImagePrice } from '@/lib/pricing';
 import { deductBalance, refundBalance } from '@/lib/billing';
@@ -9,6 +10,25 @@ export const maxDuration = 300;
 const ARK_IMAGE_URL = 'https://ark.cn-beijing.volces.com/api/v3/images/generations';
 const SEEDREAM_MODEL = 'doubao-seedream-5-0-pro-260628';
 const PRICE_KEY = 'seedream-5-pro-edit';
+
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+// 火山返回的 TOS 图片链接 24 小时后失效，转存到自己的 Supabase 拿永久 URL
+async function transferToStorage(sourceUrl: string): Promise<string> {
+  const res = await fetch(sourceUrl);
+  if (!res.ok) throw new Error(`下载生成图失败: ${res.status}`);
+  const buffer = Buffer.from(await res.arrayBuffer());
+  const filename = `images/seedream-edit/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
+  const { error } = await supabaseAdmin.storage
+    .from('assets')
+    .upload(filename, buffer, { contentType: 'image/jpeg', upsert: false });
+  if (error) throw new Error(`转存失败: ${error.message}`);
+  const { data } = supabaseAdmin.storage.from('assets').getPublicUrl(filename);
+  return data.publicUrl;
+}
 
 // 交互编辑三种模式(图层分离/精准坐标/任意标记)在 API 层无差别，均为 image + prompt → 单图
 export async function POST(req: NextRequest) {
@@ -77,7 +97,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ failed: true, reason: '审核未通过：本次编辑被平台判定为不合规或无法生成，请调整描述后重试' }, { status: 200 });
     }
 
-    return NextResponse.json({ success: true, imageUrl: outUrl });
+    // 火山图 24h 过期，转存 Supabase 拿永久 URL(转存失败则降级用原 URL，至少当次能看到)
+    let finalUrl = outUrl;
+    try {
+      finalUrl = await transferToStorage(outUrl);
+    } catch (e) {
+      console.error('[design/seedream-edit] 转存失败，降级用火山临时URL:', e);
+    }
+
+    return NextResponse.json({ success: true, imageUrl: finalUrl });
   } catch (error: any) {
     console.error('[design/seedream-edit] error:', error);
     // 火山审核类错误(常含 sensitive/safety/审核 关键词)→ 明确失败提示，避免前端把它当网络错误重试

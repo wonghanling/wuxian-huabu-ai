@@ -332,6 +332,36 @@ function CanvasV2Inner() {
     useCanvasStore.setState((s) => ({ nodes: [...s.nodes, n], selectedId: n.id }));
   }, []);
 
+  // 暴露给弹窗:把生成好的图作为成品卡落在当前视野中心(避免落到画布角落找不到)
+  useEffect(() => {
+    (window as any).addImageCardAtViewport = (url: string, prompt: string, model: string) => {
+      const c = placeRef.current++;
+      const inst = rfRef.current;
+      let x = 80 + (c % 4) * 380, y = 120 + Math.floor(c / 4) * 360;
+      if (inst) {
+        const center = inst.screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
+        x = center.x - 160 + (c % 3) * 30;
+        y = center.y - 120 + (c % 3) * 30;
+      }
+      const newId = uid();
+      const node: CardNode = {
+        id: `i${newId}`,
+        type: 'card',
+        position: { x, y },
+        data: {
+          kind: 'image',
+          status: 'done',
+          outputUrl: url,
+          text: '',
+          config: { model: model || DEFAULT_IMAGE_MODEL, prompt: prompt || '', ratio: '1:1', imageQuality: '2k', refImages: [url] },
+        },
+      };
+      useCanvasStore.setState((s) => ({ nodes: [...s.nodes, node], selectedId: node.id }));
+      (window as any).saveCanvasV2Now?.();
+    };
+    return () => { delete (window as any).addImageCardAtViewport; };
+  }, []);
+
   const addImageCard = useCallback(() => addCard(makeImageNode), [addCard]);
   const addTextCard = useCallback(() => addCard(makeTextNode), [addCard]);
   const addVideoCard = useCallback(() => addCard(makeVideoNode), [addCard]);

@@ -326,8 +326,14 @@ export function TopBar({ saveStatus, switchCanvas, getCurrentCanvasId }: Props) 
             (window as any).saveCanvasV2Now?.();
           }}
           onGenerated={({ imageUrl, prompt }) => {
-            useCanvasStore.getState().addImageCardWithRef(imageUrl, prompt, 'doubao-seedream-4-5-251128');
-            (window as any).saveCanvasV2Now?.();
+            // 落在当前视野中心(优先用视口定位；不可用时降级到原方法)
+            const place = (window as any).addImageCardAtViewport;
+            if (typeof place === 'function') {
+              place(imageUrl, prompt, 'doubao-seedream-4-5-251128');
+            } else {
+              useCanvasStore.getState().addImageCardWithRef(imageUrl, prompt, 'doubao-seedream-4-5-251128');
+              (window as any).saveCanvasV2Now?.();
+            }
           }}
         />
       )}
