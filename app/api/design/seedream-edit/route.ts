@@ -4,6 +4,8 @@ import { calcImagePrice } from '@/lib/pricing';
 import { deductBalance, refundBalance } from '@/lib/billing';
 
 export const maxDuration = 300;
+// 火山北京节点仅国内/亚太可稳定连通，指定函数跑在香港区(默认美国 iad1 连火山超时)
+export const preferredRegion = 'hkg1';
 
 // 火山引擎 Seedream 5.0 Pro 图片生成/编辑(同步返回图 URL)
 const ARK_IMAGE_URL = 'https://ark.cn-beijing.volces.com/api/v3/images/generations';
@@ -82,6 +84,9 @@ export async function POST(req: NextRequest) {
     console.error('[design/seedream-edit] error:', error);
     // 火山审核类错误(常含 sensitive/safety/审核 关键词)→ 明确失败提示，避免前端把它当网络错误重试
     const msg = error?.message || '';
+    // Node fetch 的 "fetch failed" 真正原因在 error.cause 里，带出来便于定位
+    const cause = error?.cause ? (error.cause.message || String(error.cause)) : '';
+    console.error('[design/seedream-edit] fail:', msg, '| cause:', cause);
     const isModeration = /sensitive|safety|policy|审核|违规|unsafe|risk|blocked/i.test(msg);
     if (body?.userId) {
       await refundBalance(body.userId, calcImagePrice(PRICE_KEY), 'Seedream 编辑失败退款', { model: SEEDREAM_MODEL });
@@ -89,6 +94,6 @@ export async function POST(req: NextRequest) {
     if (isModeration) {
       return NextResponse.json({ failed: true, reason: '审核未通过：本次编辑被平台判定为不合规，请调整描述后重试' }, { status: 200 });
     }
-    return NextResponse.json({ error: msg || '服务器错误' }, { status: 500 });
+    return NextResponse.json({ error: (msg || '服务器错误') + (cause ? ` (${cause})` : '') }, { status: 500 });
   }
 }
