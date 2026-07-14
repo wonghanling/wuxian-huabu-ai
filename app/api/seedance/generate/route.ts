@@ -4,8 +4,6 @@ import { checkMembership, deductBalance, refundBalance } from '@/lib/billing';
 import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 
 export const maxDuration = 60;
-// 火山北京节点仅国内/亚太可稳定连通，指定函数跑在香港区(默认美国 iad1 连火山超时)
-export const preferredRegion = 'hkg1';
 
 const ARK_API_KEY = process.env.ARK_API_KEY!;
 const ARK_BASE_URL = 'https://ark.cn-beijing.volces.com/api/v3/contents/generations/tasks';
