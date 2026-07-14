@@ -196,8 +196,8 @@ export default function Home() {
       >
         <div className="max-w-7xl mx-auto px-6 h-[72px] flex items-center justify-between">
           <div className="flex items-center space-x-2.5">
-            <img src="/boluo-logo-nav.svg" alt="Boluolab" className="h-7 w-auto" />
-            <span className="font-semibold text-base tracking-tight" style={{ color: 'rgb(238,238,238)' }}>Boluolab</span>
+            <img src="/boluo-logo-nav.svg" alt="filmavo" className="h-7 w-auto" />
+            <span className="font-semibold text-base tracking-tight" style={{ color: 'rgb(238,238,238)' }}>filmavo</span>
           </div>
 
           <div className="hidden md:flex items-center space-x-10 text-sm font-medium" style={{ color: 'rgb(180,180,180)' }}>
@@ -416,10 +416,10 @@ export default function Home() {
                   准备开始创作了吗？
                 </p>
                 <p className="text-lg text-zinc-400 mb-10 max-w-2xl mx-auto">
-                  Join thousands of creators using Boluolab to bring their ideas to life with AI-powered workflows.
+                  Join thousands of creators using filmavo to bring their ideas to life with AI-powered workflows.
                 </p>
                 <p className="text-sm text-zinc-200 mb-10 max-w-2xl mx-auto">
-                  加入数千名创作者，使用 Boluolab 通过 AI 驱动的工作流将创意变为现实。
+                  加入数千名创作者，使用 filmavo 通过 AI 驱动的工作流将创意变为现实。
                 </p>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                   <Link href="/canvas">
@@ -442,8 +442,8 @@ export default function Home() {
             {/* Brand */}
             <div className="md:col-span-1">
               <div className="flex items-center space-x-2 mb-4">
-                <img src="/boluo-logo-nav.svg" alt="Boluolab" className="h-8 w-auto" />
-                <span className="font-semibold text-lg">Boluolab</span>
+                <img src="/boluo-logo-nav.svg" alt="filmavo" className="h-8 w-auto" />
+                <span className="font-semibold text-lg">filmavo</span>
               </div>
               <p className="text-sm text-zinc-500 leading-relaxed">
                 The infinite canvas for AI-powered creative workflows.
@@ -490,7 +490,7 @@ export default function Home() {
           {/* Bottom Bar */}
           <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-zinc-500">
-              © 2026 Boluolab. All rights reserved. <span className="text-xs text-zinc-600">保留所有权利</span>
+              © 2026 filmavo. All rights reserved. <span className="text-xs text-zinc-600">保留所有权利</span>
             </p>
             <div className="flex items-center space-x-6 text-sm text-zinc-500">
               <a href="#" className="hover:text-white transition-colors">Privacy <span className="text-xs text-zinc-600">隐私</span></a>
