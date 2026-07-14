@@ -82,7 +82,8 @@ const IMAGE_MODELS: Record<string, {
   },
   'doubao-seedream-4-5-251128': {
     provider: 'n1n',
-    yunwuModel: 'doubao-seedream-4-5-251128',
+    // 内部 key 保持不变(兼容老画布已存卡)，实际调用升级为 n1n 的 Seedream 5.0
+    yunwuModel: 'doubao-seedream-5-0-260128',
     apiType: 'image-generation',
     supportsImage: true,
   },

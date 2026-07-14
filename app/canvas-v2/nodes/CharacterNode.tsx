@@ -33,7 +33,7 @@ const CHAR_MODELS = [
   { id: 'nano-banana', label: 'Nano Banana', price: '¥0.5/次', useSizeNotRatio: false, qualityOptions: null },
   { id: 'gpt-image-2', label: 'GPT Image 2', price: '¥0.5~0.8/次', useSizeNotRatio: true, qualityOptions: null },
   { id: 'flux-kontext', label: 'Flux Kontext', price: '¥0.6/次', useSizeNotRatio: false, qualityOptions: null },
-  { id: 'doubao-seedream-4-5-251128', label: '豆包 Seedream', price: '¥0.3/次', useSizeNotRatio: false, qualityOptions: null },
+  { id: 'doubao-seedream-4-5-251128', label: '豆包 Seedream 5.0', price: '¥0.7/次', useSizeNotRatio: false, qualityOptions: null },
 ];
 
 const CHAR_RATIOS = ['1:1', '16:9', '9:16', '4:3', '3:4', '3:2', '2:3'];
