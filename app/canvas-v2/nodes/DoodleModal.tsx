@@ -293,8 +293,8 @@ export function DoodleModal({ imageUrl, onClose, onConfirm, onGenerated }: Props
         {/* 画布区:图片直接铺,无容器无滚动条 */}
         <div style={canvasWrap} className="cv2-scroll">
           {srcUrl ? (
-            <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0, verticalAlign: 'top', maxWidth: '100%', maxHeight: '100%' }}>
-              <canvas ref={baseRef} style={{ display: 'block', maxWidth: '100%', maxHeight: '100%', borderRadius: 8 }} />
+            <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0, verticalAlign: 'top' }}>
+              <canvas ref={baseRef} style={{ display: 'block', maxWidth: '100%', maxHeight: 'calc(94vh - 210px)', width: 'auto', height: 'auto', borderRadius: 8 }} />
               <canvas ref={drawRef}
                 onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerLeave={onUp}
                 style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', cursor: tool === 'text' ? 'text' : 'crosshair', touchAction: 'none' }} />
@@ -388,7 +388,7 @@ const overlay: React.CSSProperties = {
 };
 const panel: React.CSSProperties = {
   position: 'relative',
-  width: 'auto', maxWidth: '96vw', height: '95vh', maxHeight: '95vh',
+  width: '92vw', maxWidth: 1400, height: '94vh', maxHeight: '94vh',
   background: 'linear-gradient(180deg,#1a1d1b 0%,#141613 100%)',
   border: '1px solid rgba(255,255,255,0.1)',
   borderRadius: 20, boxShadow: '0 40px 120px rgba(0,0,0,0.85), 0 0 0 1px rgba(16,185,129,0.06) inset',
