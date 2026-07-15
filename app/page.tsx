@@ -438,65 +438,31 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-white/5 py-12 relative z-10">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="grid md:grid-cols-4 gap-8 mb-12">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 mb-10">
             {/* Brand */}
-            <div className="md:col-span-1">
-              <div className="flex items-center space-x-2 mb-4">
+            <div>
+              <div className="flex items-center space-x-2 mb-3">
                 <img src="/filmavo-logo.svg" alt="filmavo" className="h-8 w-auto" />
                 <span className="font-semibold text-lg">Filmavo</span>
               </div>
-              <p className="text-sm text-zinc-500 leading-relaxed">
+              <p className="text-sm text-zinc-500 leading-relaxed max-w-xs">
                 The infinite canvas for AI-powered creative workflows.
               </p>
-              <p className="text-xs text-zinc-600 mt-2">
-                AI 驱动的无限创作画布
-              </p>
+              <p className="text-xs text-zinc-600 mt-1">AI 驱动的无限创作画布</p>
             </div>
-
-            {/* Product */}
-            <div>
-              <h4 className="font-semibold mb-4 text-sm">Product <span className="text-xs text-zinc-500">产品</span></h4>
-              <ul className="space-y-3 text-sm text-zinc-400">
-                <li><a href="#" className="hover:text-white transition-colors">Features <span className="text-xs text-zinc-600">功能</span></a></li>
-                <li><a href="/pricing" className="hover:text-white transition-colors">Pricing <span className="text-xs text-zinc-600">定价</span></a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Roadmap <span className="text-xs text-zinc-600">路线图</span></a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Changelog <span className="text-xs text-zinc-600">更新日志</span></a></li>
-              </ul>
-            </div>
-
-            {/* Resources */}
-            <div>
-              <h4 className="font-semibold mb-4 text-sm">Resources <span className="text-xs text-zinc-500">资源</span></h4>
-              <ul className="space-y-3 text-sm text-zinc-400">
-                <li><a href="#" className="hover:text-white transition-colors">Documentation <span className="text-xs text-zinc-600">文档</span></a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Tutorials <span className="text-xs text-zinc-600">教程</span></a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Templates <span className="text-xs text-zinc-600">模板</span></a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Community <span className="text-xs text-zinc-600">社区</span></a></li>
-              </ul>
-            </div>
-
-            {/* Company */}
-            <div>
-              <h4 className="font-semibold mb-4 text-sm">Company <span className="text-xs text-zinc-500">公司</span></h4>
-              <ul className="space-y-3 text-sm text-zinc-400">
-                <li><a href="#" className="hover:text-white transition-colors">About <span className="text-xs text-zinc-600">关于</span></a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Blog <span className="text-xs text-zinc-600">博客</span></a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Careers <span className="text-xs text-zinc-600">招聘</span></a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact <span className="text-xs text-zinc-600">联系</span></a></li>
-              </ul>
+            {/* 有效链接 */}
+            <div className="flex flex-wrap gap-6 text-sm text-zinc-400">
+              <a href="/pricing" className="hover:text-white transition-colors">定价</a>
+              <a href="/boluotv" className="hover:text-white transition-colors">作品广场</a>
+              <a href="/canvas" className="hover:text-white transition-colors">进入画布</a>
             </div>
           </div>
 
           {/* Bottom Bar */}
           <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-zinc-500">
-              © 2026 filmavo. All rights reserved. <span className="text-xs text-zinc-600">保留所有权利</span>
+              © 2026 Filmavo. All rights reserved. <span className="text-xs text-zinc-600">保留所有权利</span>
             </p>
-            <div className="flex items-center space-x-6 text-sm text-zinc-500">
-              <a href="#" className="hover:text-white transition-colors">Privacy <span className="text-xs text-zinc-600">隐私</span></a>
-              <a href="#" className="hover:text-white transition-colors">Terms <span className="text-xs text-zinc-600">条款</span></a>
-              <a href="#" className="hover:text-white transition-colors">Cookies <span className="text-xs text-zinc-600">Cookie</span></a>
-            </div>
           </div>
         </div>
       </footer>
