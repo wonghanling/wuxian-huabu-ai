@@ -38,6 +38,8 @@ interface Props {
 export function DoodleModal({ imageUrl, onClose, onConfirm, onGenerated }: Props) {
   const baseRef = useRef<HTMLCanvasElement>(null);   // 底图层
   const drawRef = useRef<HTMLCanvasElement>(null);   // 涂鸦层(线条+文字)
+  const wrapAreaRef = useRef<HTMLDivElement>(null);  // 画布区容器(测量可用空间)
+  const [fitBox, setFitBox] = useState({ w: 0, h: 0 }); // 画布区实际像素尺寸
   const [imgEl, setImgEl] = useState<HTMLImageElement | null>(null);
   const [srcUrl, setSrcUrl] = useState<string | undefined>(imageUrl); // 当前底图来源(上传后更新)
   const [color, setColor] = useState(COLORS[0]);
@@ -94,6 +96,26 @@ export function DoodleModal({ imageUrl, onClose, onConfirm, onGenerated }: Props
     [baseRef.current, drawRef.current].forEach((c) => { c.width = w; c.height = h; });
     baseRef.current.getContext('2d')?.drawImage(imgEl, 0, 0, w, h);
   }, [imgEl]);
+
+  // 测量画布区可用像素(用具体px约束canvas显示尺寸，避免%在auto高父级下失效导致截断)
+  useEffect(() => {
+    const el = wrapAreaRef.current;
+    if (!el) return;
+    const update = () => setFitBox({ w: el.clientWidth, h: el.clientHeight });
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // 按画布区尺寸 + 图片宽高比，算出等比缩放后的显示尺寸(contain)
+  const displaySize = (() => {
+    if (!imgEl || !fitBox.w || !fitBox.h) return null;
+    const pad = 24; // 留点边距
+    const availW = fitBox.w - pad, availH = fitBox.h - pad;
+    const scale = Math.min(availW / imgEl.naturalWidth, availH / imgEl.naturalHeight, 1);
+    return { w: Math.round(imgEl.naturalWidth * scale), h: Math.round(imgEl.naturalHeight * scale) };
+  })();
 
   // 显示坐标 → canvas 内部像素
   const getPos = (e: React.PointerEvent | React.MouseEvent) => {
@@ -291,10 +313,10 @@ export function DoodleModal({ imageUrl, onClose, onConfirm, onGenerated }: Props
         )}
 
         {/* 画布区:图片直接铺,无容器无滚动条 */}
-        <div style={canvasWrap} className="cv2-scroll">
+        <div ref={wrapAreaRef} style={canvasWrap} className="cv2-scroll">
           {srcUrl ? (
-            <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0, verticalAlign: 'top', maxWidth: '100%', maxHeight: '100%' }}>
-              <canvas ref={baseRef} style={{ display: 'block', maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto', borderRadius: 8 }} />
+            <div style={{ position: 'relative', lineHeight: 0, width: displaySize ? displaySize.w : 'auto', height: displaySize ? displaySize.h : 'auto' }}>
+              <canvas ref={baseRef} style={{ display: 'block', width: displaySize ? displaySize.w : 'auto', height: displaySize ? displaySize.h : 'auto', borderRadius: 8 }} />
               <canvas ref={drawRef}
                 onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerLeave={onUp}
                 style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', cursor: tool === 'text' ? 'text' : 'crosshair', touchAction: 'none' }} />
