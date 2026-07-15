@@ -359,20 +359,20 @@ export default function Home() {
 
         {/* 合作品牌 logo 行 */}
         <div className="relative z-10 flex flex-wrap items-center justify-center gap-6 mt-10 max-w-4xl mx-auto px-6 opacity-60">
-          <AlibabaCloud.Combine size={38} type={'color'} />
-          <Microsoft.Combine size={38} type={'color'} />
-          <Gemini.Combine size={38} type={'color'} />
-          <BAAI.Combine size={38} type={'color'} />
+          <AlibabaCloud.Combine size={38} />
+          <Microsoft.Combine size={38} />
+          <Gemini.Combine size={38} />
+          <BAAI.Combine size={38} />
           <ByteDance.BrandColor size={38} />
-          <Adobe.Combine size={38} type={'color'} />
-          <TencentCloud.Combine size={38} type={'color'} />
-          <Fal.Combine size={38} type={'color'} />
-          <Midjourney.Combine size={38} type={'color'} />
-          <Minimax.Combine size={38} type={'color'} />
+          <Adobe.Combine size={38} />
+          <TencentCloud.Combine size={38} />
+          <Fal.Combine size={38} />
+          <Midjourney.Combine size={38} />
+          <Minimax.Combine size={38} />
           <Aws.Color size={38} />
-          <LongCat.Combine size={38} type={'color'} />
-          <Jimeng.Combine size={38} type={'color'} />
-          <NanoBanana.Combine size={38} type={'color'} />
+          <LongCat.Combine size={38} />
+          <Jimeng.Combine size={38} />
+          <NanoBanana.Combine size={38} />
         </div>
       </main>
 
