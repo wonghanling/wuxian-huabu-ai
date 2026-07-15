@@ -32,7 +32,7 @@ const CARDS: { key: string; title: string; desc: string; image?: string; video?:
   },
   {
     key: 'card-4',
-    title: '智能多宫格分镜生成词',
+    title: 'step2 生成多宫格提示词',
     desc: '一键根据多图生成专业的多宫格电影广告生成词',
     image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783660122809.jpg?quality=80',
     workflow: [
