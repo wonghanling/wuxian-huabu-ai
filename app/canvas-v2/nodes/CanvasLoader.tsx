@@ -31,9 +31,7 @@ export function CanvasLoader({ loading }: { loading: boolean }) {
         <div style={core} />
       </div>
       <div style={label}>
-        <span style={{ color: '#f4f4f5', fontWeight: 800, letterSpacing: 5 }}>BOLUOLAB</span>
-        <span style={{ color: '#71717a', margin: '0 12px' }}>·</span>
-        <span style={{ color: '#a1a1aa', fontWeight: 500, letterSpacing: 3 }}>filmavo</span>
+        <span style={{ color: '#f4f4f5', fontWeight: 800, letterSpacing: 5 }}>FILMAVO</span>
       </div>
       <div style={dots}>
         <span style={{ ...dot, animationDelay: '0s' }} />

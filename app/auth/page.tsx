@@ -207,7 +207,7 @@ export default function AuthPage() {
       <nav className="fixed top-0 w-full z-50 border-b border-white/5 bg-zinc-950/50 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-2">
-            <img src="/boluo-logo-nav.svg" alt="filmavo" className="h-8 w-auto" />
+            <img src="/filmavo-logo.svg" alt="filmavo" className="h-8 w-auto" />
             <span className="font-semibold text-lg tracking-tight">Filmavo</span>
           </Link>
         </div>
@@ -221,7 +221,7 @@ export default function AuthPage() {
         <div className="hidden lg:flex flex-1 flex-col relative z-10">
           <div>
             <div className="text-xs tracking-[0.4em] text-violet-300 font-semibold mb-6 uppercase">
-              FILMAVO &nbsp;·&nbsp; BOLUOLAB
+              FILMAVO
             </div>
             <h1 className="text-5xl xl:text-6xl font-bold leading-[1.1] mb-5 tracking-tight">
               AI 驱动的<br />无限创作画布
@@ -260,7 +260,7 @@ export default function AuthPage() {
             {/* 移动端 title（lg 以下显示） */}
             <div className="lg:hidden text-center mb-8">
               <div className="text-xs tracking-[0.3em] text-violet-300 font-semibold mb-2 uppercase">
-                FILMAVO &nbsp;·&nbsp; BOLUOLAB
+                FILMAVO
               </div>
               <h2 className="text-2xl font-bold tracking-tight">AI 创作画布</h2>
             </div>

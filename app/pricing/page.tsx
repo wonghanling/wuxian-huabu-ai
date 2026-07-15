@@ -138,7 +138,7 @@ export default function PricingPage() {
       <nav className="sticky top-0 z-30 backdrop-blur-xl bg-black/70" style={{ borderBottom: '1px solid #ffffff14' }}>
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <img src="/boluo-logo-nav.svg" alt="filmavo" className="h-7 w-auto" />
+            <img src="/filmavo-logo.svg" alt="filmavo" className="h-7 w-auto" />
             <span className="font-semibold text-base tracking-tight" style={{ color: 'rgb(238,238,238)' }}>Filmavo</span>
           </Link>
           <div className="flex items-center gap-5 text-sm">

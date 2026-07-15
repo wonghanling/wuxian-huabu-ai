@@ -40,7 +40,7 @@ export default function BoluoTVPage() {
       <nav className="sticky top-0 z-30 backdrop-blur-xl bg-black/70 border-b border-white/8">
         <div className="max-w-[1600px] mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <span className="text-lg font-bold tracking-tight">BOLUO<span className="text-emerald-500">TV</span></span>
+            <span className="text-lg font-bold tracking-tight">FILMAVO<span className="text-emerald-500">TV</span></span>
           </Link>
           <div className="flex items-center gap-5 text-sm">
             <Link href="/" className="text-zinc-400 hover:text-white transition-colors">首页</Link>
@@ -51,7 +51,7 @@ export default function BoluoTVPage() {
 
       {/* 标题区 */}
       <section className="px-6 pt-16 pb-10 text-center">
-        <p className="text-sm tracking-[0.3em] text-emerald-500/80 uppercase mb-4">BOLUOTV · 作品广场</p>
+        <p className="text-sm tracking-[0.3em] text-emerald-500/80 uppercase mb-4">FILMAVO TV · 作品广场</p>
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">看见别人怎么创作</h1>
         <p className="text-lg text-zinc-400 max-w-2xl mx-auto">
           每个作品都可一键载入画布，完整复刻它的创作流程，在此基础上继续创作
