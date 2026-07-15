@@ -293,8 +293,8 @@ export function DoodleModal({ imageUrl, onClose, onConfirm, onGenerated }: Props
         {/* 画布区:图片直接铺,无容器无滚动条 */}
         <div style={canvasWrap} className="cv2-scroll">
           {srcUrl ? (
-            <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0, verticalAlign: 'top' }}>
-              <canvas ref={baseRef} style={{ display: 'block', maxWidth: '100%', maxHeight: 'calc(94vh - 210px)', width: 'auto', height: 'auto', borderRadius: 8 }} />
+            <div style={{ position: 'relative', display: 'inline-block', lineHeight: 0, verticalAlign: 'top', maxWidth: '100%', maxHeight: '100%' }}>
+              <canvas ref={baseRef} style={{ display: 'block', maxWidth: '100%', maxHeight: '100%', width: 'auto', height: 'auto', borderRadius: 8 }} />
               <canvas ref={drawRef}
                 onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerLeave={onUp}
                 style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', cursor: tool === 'text' ? 'text' : 'crosshair', touchAction: 'none' }} />
@@ -420,7 +420,7 @@ const textBtn: React.CSSProperties = {
   background: 'rgba(255,255,255,0.05)', color: '#d4d4d8', cursor: 'pointer', fontSize: 12.5, fontWeight: 500,
 };
 const canvasWrap: React.CSSProperties = {
-  flex: 1, minHeight: 0, overflow: 'auto',
+  flex: 1, minHeight: 0, overflow: 'hidden',
   padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
   background: '#0e100e',
 };
