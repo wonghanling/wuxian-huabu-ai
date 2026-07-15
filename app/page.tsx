@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { AlibabaCloud, Microsoft, Gemini, BAAI, ByteDance, Adobe, TencentCloud, Fal, Midjourney, Minimax, Aws, LongCat, Jimeng, NanoBanana } from '@lobehub/icons';
 import { ScrollZoomShowcase } from './_components/ScrollZoomShowcase';
 import { ModelsShowcase } from './_components/ModelsShowcase';
 import { FeatureTabsShowcase } from './_components/FeatureTabsShowcase';
@@ -354,6 +355,24 @@ export default function Home() {
               {tag}
             </span>
           ))}
+        </div>
+
+        {/* 合作品牌 logo 行 */}
+        <div className="relative z-10 flex flex-wrap items-center justify-center gap-6 mt-10 max-w-4xl mx-auto px-6 opacity-60">
+          <AlibabaCloud.Combine size={38} type={'color'} />
+          <Microsoft.Combine size={38} type={'color'} />
+          <Gemini.Combine size={38} type={'color'} />
+          <BAAI.Combine size={38} type={'color'} />
+          <ByteDance.BrandColor size={38} />
+          <Adobe.Combine size={38} type={'color'} />
+          <TencentCloud.Combine size={38} type={'color'} />
+          <Fal.Combine size={38} type={'color'} />
+          <Midjourney.Combine size={38} type={'color'} />
+          <Minimax.Combine size={38} type={'color'} />
+          <Aws.Color size={38} />
+          <LongCat.Combine size={38} type={'color'} />
+          <Jimeng.Combine size={38} type={'color'} />
+          <NanoBanana.Combine size={38} type={'color'} />
         </div>
       </main>
 
