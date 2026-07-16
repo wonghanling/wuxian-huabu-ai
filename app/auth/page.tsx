@@ -207,7 +207,7 @@ export default function AuthPage() {
       <nav className="fixed top-0 w-full z-50 border-b border-white/5 bg-zinc-950/50 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-2">
-            <img src="/filmavo-logo.svg" alt="filmavo" className="h-8 w-auto" />
+            <img src="/filmavo-logo-primary.svg" alt="filmavo" className="h-8 w-auto" />
             <span className="font-semibold text-lg tracking-tight">Filmavo</span>
           </Link>
         </div>

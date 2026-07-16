@@ -197,7 +197,7 @@ export default function Home() {
       >
         <div className="max-w-7xl mx-auto px-6 h-[72px] flex items-center justify-between">
           <div className="flex items-center space-x-2.5">
-            <img src="/filmavo-logo.svg" alt="filmavo" className="h-7 w-auto" />
+            <img src="/filmavo-logo-primary.svg" alt="filmavo" className="h-7 w-auto" />
             <span className="font-semibold text-base tracking-tight" style={{ color: 'rgb(238,238,238)' }}>Filmavo</span>
           </div>
 
@@ -461,7 +461,7 @@ export default function Home() {
             {/* Brand */}
             <div>
               <div className="flex items-center space-x-2 mb-3">
-                <img src="/filmavo-logo.svg" alt="filmavo" className="h-8 w-auto" />
+                <img src="/filmavo-logo-primary.svg" alt="filmavo" className="h-8 w-auto" />
                 <span className="font-semibold text-lg">Filmavo</span>
               </div>
               <p className="text-sm text-zinc-500 leading-relaxed max-w-xs">
