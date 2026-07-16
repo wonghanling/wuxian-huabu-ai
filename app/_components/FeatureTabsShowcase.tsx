@@ -88,7 +88,7 @@ const CARDS: { key: string; title: string; desc: string; image?: string; video?:
     key: 'card-8',
     title: '3D 导演预览台',
     desc: '可以快速解决画面人物结构问题，精准控制视频走向',
-    image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/3D.png?quality=80',
+    image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/3Ddaoyantai.png?quality=80',
     aspect: '16/9',
   },
 ];
