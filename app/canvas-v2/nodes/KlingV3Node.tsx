@@ -273,7 +273,8 @@ function KlingV3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const handleGenerate = async () => {
     // 连线传参:上游图→首帧/参考图,上游视频→refVideo,上游文案→prompt前缀
     const upstream = getUpstreamOutputs(id);
-    const rawPrompt = (data.config.prompt ?? '');
+    // 界面用 @图片N(直观),Kling API 需要 @ElementN,发给后端时转换
+    const rawPrompt = (data.config.prompt ?? '').replace(/@图片(\d+)/g, '@Element$1');
     const effPrompt = upstream.texts.length > 0
       ? `${upstream.texts.join('\n')}\n${rawPrompt}`.trim()
       : rawPrompt;
