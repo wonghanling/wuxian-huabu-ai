@@ -8,6 +8,7 @@ import { ImageNode } from './ImageNode';
 import { VideoNode } from './VideoNode';
 import { SeedanceNode } from './SeedanceNode';
 import { KlingNode } from './KlingNode';
+import { KlingV3Node } from './KlingV3Node';
 import { CharacterNode } from './CharacterNode';
 import { GemNode } from './GemNode';
 import { ExtendNode } from './ExtendNode';
@@ -27,6 +28,7 @@ function CardDispatchComponent(props: NodeProps<CardNode>) {
   if (kind === 'video') return <VideoNode {...props} />;
   if (kind === 'seedance') return <SeedanceNode {...props} />;
   if (kind === 'kling') return <KlingNode {...props} />;
+  if (kind === 'klingv3') return <KlingV3Node {...props} />;
   if (kind === 'character') return <CharacterNode {...props} />;
   if (kind === 'gem') return <GemNode {...props} />;
   if (kind === 'extend') return <ExtendNode {...props} />;

@@ -402,6 +402,69 @@ export async function generateSeedance(
   return poll();
 }
 
+// ============ Kling v3 视频(独立，走 fal，不与 Seedance 共享)============
+export interface KlingV3GenParams {
+  tier: string;               // 4k / pro / standard
+  mode: string;               // t2v / i2v / first-last / multimodal
+  prompt: string;
+  duration?: number;
+  generateAudio?: boolean;
+  firstFrameImage?: string;
+  lastFrameImage?: string;
+  refImages?: string[];       // 多模态 → elements
+  refVideoUrl?: string;       // 多模态参考视频 → elements
+  userId?: string;
+}
+
+export async function generateKlingV3(
+  params: KlingV3GenParams,
+  onProgress?: (progress: number, status: string) => void
+): Promise<string> {
+  const res = await fetch('/api/kling-v3/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      tier: params.tier,
+      mode: params.mode,
+      prompt: params.prompt,
+      duration: params.duration ?? 5,
+      generateAudio: params.generateAudio ?? false,
+      firstFrameImage: params.firstFrameImage || undefined,
+      lastFrameImage: params.lastFrameImage || undefined,
+      refImages: params.refImages && params.refImages.length > 0 ? params.refImages : undefined,
+      refVideoUrl: params.refVideoUrl || undefined,
+      userId: params.userId || undefined,
+    }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error || '提交失败');
+  const requestId = data.requestId;
+  const endpoint = data.endpoint;
+  if (!requestId || !endpoint) throw new Error('未返回 requestId');
+
+  let attempts = 0;
+  const poll = async (): Promise<string> => {
+    attempts++;
+    await new Promise((r) => setTimeout(r, 5000));
+    try {
+      const qRes = await fetch(`/api/kling-v3/query?requestId=${encodeURIComponent(requestId)}&endpoint=${encodeURIComponent(endpoint)}`);
+      const qData = await qRes.json();
+      if (qData.success && qData.videoUrl) return qData.videoUrl;
+      if (qData.failed) throw new Error(qData.reason || qData.error || '审核未通过');
+      if (attempts >= 120) throw new Error('生成超时');
+      onProgress?.(Math.min(90, 10 + attempts * 1.5), '生成中...');
+      return poll();
+    } catch (e: any) {
+      if (e?.message && (e.message.includes('超时') || e.message.includes('失败') || e.message.includes('审核'))) throw e;
+      if (attempts >= 120) throw new Error('生成超时');
+      onProgress?.(50, '网络重试中...');
+      await new Promise((r) => setTimeout(r, 8000));
+      return poll();
+    }
+  };
+  return poll();
+}
+
 // ============ Kling 对口型 ============
 // 两步:① identify-face 识别人脸拿 session_id/face_id ② advanced-lip-sync 生成 → 轮询
 // 视频/音频都传 storage URL(后端要求非 data: 的真实 URL)

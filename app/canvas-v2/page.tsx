@@ -112,6 +112,21 @@ function makeKlingNode(i: string | number, x: number, y: number): CardNode {
   };
 }
 
+function makeKlingV3Node(i: string | number, x: number, y: number): CardNode {
+  return {
+    id: `kv3${i}`,
+    type: 'card',
+    position: { x, y },
+    data: {
+      kind: 'klingv3',
+      status: 'empty',
+      outputUrl: null,
+      // preset 存模式(t2v/i2v/first-last/multimodal)；model 存 Kling v3 规格
+      config: { model: 'kling-v3-standard', prompt: '', preset: 't2v', duration: 5, audio: false, refImages: [], refVideos: [] },
+    },
+  };
+}
+
 function makeCharacterNode(i: string | number, x: number, y: number): CardNode {
   return {
     id: 'ch' + i,
@@ -366,6 +381,7 @@ function CanvasV2Inner() {
   const addTextCard = useCallback(() => addCard(makeTextNode), [addCard]);
   const addVideoCard = useCallback(() => addCard(makeVideoNode), [addCard]);
   const addSeedanceCard = useCallback(() => addCard(makeSeedanceNode), [addCard]);
+  const addKlingV3Card = useCallback(() => addCard(makeKlingV3Node), [addCard]);
   const addGem3Card = useCallback(() => addCard(makeGem3Node), [addCard]);
   const addGem4Card = useCallback(() => addCard(makeGem4Node), [addCard]);
   const addExtendCard = useCallback(() => addCard(makeExtendNode), [addCard]);
@@ -453,6 +469,7 @@ function CanvasV2Inner() {
                     <div style={toolFlyout}>
                       <button onClick={() => { addVideoCard(); setToolGroup(null); }} style={flyItem}>视频卡片</button>
                       <button onClick={() => { addSeedanceCard(); setToolGroup(null); }} style={flyItem}>Seedance 2.0</button>
+                      <button onClick={() => { addKlingV3Card(); setToolGroup(null); }} style={flyItem}>Kling v3</button>
                     </div>
                   )}
                 </div>

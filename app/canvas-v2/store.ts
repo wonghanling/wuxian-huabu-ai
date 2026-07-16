@@ -13,7 +13,7 @@ import {
 } from '@xyflow/react';
 
 // ============ 节点数据模型 ============
-export type NodeKind = 'image' | 'video' | 'text' | 'seedance' | 'kling' | 'character' | 'gem' | 'extend' | 'gem3' | 'gem4' | 'upload' | 'audio' | 'shot' | 'timeline' | 'tryon';
+export type NodeKind = 'image' | 'video' | 'text' | 'seedance' | 'kling' | 'klingv3' | 'character' | 'gem' | 'extend' | 'gem3' | 'gem4' | 'upload' | 'audio' | 'shot' | 'timeline' | 'tryon';
 export type NodeStatus = 'empty' | 'generating' | 'done' | 'error';
 
 // 端口加号菜单功能(照原网"继续创建下游卡片")
@@ -58,6 +58,7 @@ const SPAWN_RULES: Record<NodeKind, SpawnAction[]> = {
   video:     VIDEO_OUTPUT_ACTIONS,
   seedance:  VIDEO_OUTPUT_ACTIONS,
   kling:     VIDEO_OUTPUT_ACTIONS,
+  klingv3:   VIDEO_OUTPUT_ACTIONS,
   gem:       ['image'],              // Step2 仅连图片生成卡片
   gem3:      [],                     // Step3 原网无加号
   gem4:      IMAGE_OUTPUT_ACTIONS, // Step4 输出分镜图→可建 Seedance/视频/Step2 等下游
