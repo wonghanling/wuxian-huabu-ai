@@ -108,23 +108,34 @@ export async function POST(req: NextRequest) {
       input.start_image_url = await toPublicUrl(firstFrameImage, 'kling-v3/frames');
       input.end_image_url = await toPublicUrl(lastFrameImage, 'kling-v3/frames');
     } else if (mode === 'multimodal') {
-      // 多模态 → elements(角色/物体一致性)。每张参考图作为一个 element 的 frontal_image_url。
+      // 多模态 = 场景帧(start/end) + 角色元素(elements,最多3个,每个 1正面图+最多3参考图)
+      // 场景起始帧(必填,视频第一帧/主场景)
+      if (!firstFrameImage) throw new Error('多模态需要一张起始场景图');
+      input.start_image_url = await toPublicUrl(firstFrameImage, 'kling-v3/frames');
+      // 场景结束帧(可选)
+      if (lastFrameImage) {
+        input.end_image_url = await toPublicUrl(lastFrameImage, 'kling-v3/frames');
+      }
+      // 角色元素:elementsInput = [{ frontal, references:[...] }, ...]
+      const elementsInput = Array.isArray(body.elements) ? body.elements : [];
       const elements: any[] = [];
-      if (Array.isArray(refImages)) {
-        for (const img of refImages) {
-          const url = await toPublicUrl(img, 'kling-v3/refs');
-          if (url) elements.push({ frontal_image_url: url });
+      for (const el of elementsInput.slice(0, 3)) {  // 最多 3 个角色
+        if (!el?.frontal) continue;
+        const frontal = await toPublicUrl(el.frontal, 'kling-v3/elements');
+        const refs: string[] = [];
+        if (Array.isArray(el.references)) {
+          for (const r of el.references.slice(0, 3)) {  // 每角色最多 3 参考图
+            const u = await toPublicUrl(r, 'kling-v3/elements');
+            if (u) refs.push(u);
+          }
         }
+        const one: any = { frontal_image_url: frontal };
+        if (refs.length > 0) one.reference_image_urls = refs;
+        elements.push(one);
       }
-      if (refVideoUrl) {
-        elements.push({ video_url: refVideoUrl });
-      }
-      if (elements.length === 0) throw new Error('多模态模式需要至少一个参考图或视频');
-      input.elements = elements;
-      // 多模态也需要一张起始图(用第一张参考图当起始帧)
-      if (firstFrameImage) {
-        input.start_image_url = await toPublicUrl(firstFrameImage, 'kling-v3/frames');
-      }
+      // 参考视频元素(可选)
+      if (refVideoUrl) elements.push({ video_url: refVideoUrl });
+      if (elements.length > 0) input.elements = elements;
     } else {
       // t2v
       if (!prompt) throw new Error('文生视频需要提示词');

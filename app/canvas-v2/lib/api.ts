@@ -409,9 +409,9 @@ export interface KlingV3GenParams {
   prompt: string;
   duration?: number;
   generateAudio?: boolean;
-  firstFrameImage?: string;
-  lastFrameImage?: string;
-  refImages?: string[];       // 多模态 → elements
+  firstFrameImage?: string;   // 场景起始帧
+  lastFrameImage?: string;    // 场景结束帧(可选)
+  elements?: { frontal: string; references: string[] }[];  // 多模态:角色元素(最多3,每个1正面+最多3参考)
   refVideoUrl?: string;       // 多模态参考视频 → elements
   userId?: string;
 }
@@ -431,7 +431,7 @@ export async function generateKlingV3(
       generateAudio: params.generateAudio ?? false,
       firstFrameImage: params.firstFrameImage || undefined,
       lastFrameImage: params.lastFrameImage || undefined,
-      refImages: params.refImages && params.refImages.length > 0 ? params.refImages : undefined,
+      elements: params.elements && params.elements.length > 0 ? params.elements : undefined,
       refVideoUrl: params.refVideoUrl || undefined,
       userId: params.userId || undefined,
     }),

@@ -5,9 +5,9 @@ import { Handle, Position, NodeToolbar, type NodeProps } from '@xyflow/react';
 import { useCanvasStore, type CardNode } from '../store';
 import {
   KLING_V3_MODELS, DEFAULT_KLING_V3_MODEL, KLING_V3_MODES, klingV3Durations,
-  klingV3FrameNeed, klingV3Count, klingV3Price,
-  KLING_V3_MAX_IMAGES, KLING_V3_MAX_VIDEOS, KLING_V3_MAX_TOTAL,
-  type KlingV3Mode, type KlingV3Model,
+  klingV3FrameNeed, klingV3Price,
+  KLING_V3_MAX_ELEMENTS, KLING_V3_MAX_REF_PER_ELEMENT,
+  type KlingV3Mode, type KlingV3Model, type KlingV3Element,
 } from '../klingV3Config';
 import { ratioToWH } from '../imageModels';
 import { IconVideo, IconModel, IconExpand, IconShrink, IconMinus, IconPlus, IconUpload, IconScissors } from './icons';
@@ -21,10 +21,11 @@ import { uploadImageToStorage, uploadFileToStorage, generateKlingV3, mirrorOutpu
 import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 
 // ============================================================
-// Seedance 2.0 卡片 · 矩形框
-// 四模式:文生 / 图生-首帧 / 首尾帧 / 多模态(9图+3视频+音频,总12上限)
-// 宫格快捷按钮、三种参考弹窗、比例/时长/分辨率/音频
-// Seedance 自带音频,无价格区别
+// Kling v3 视频卡 · 矩形框(独立，不与 Seedance 共享)
+// 四模式:文生 / 图生-首帧 / 首尾帧 / 多模态
+// 多模态 = 场景帧(start/end) + 角色元素(最多3角色,每角色1正面图+最多3参考图)
+//   → Kling elements,prompt 用 @图片N(=@ElementN) 引用；理论最多 1+1+3×4=14 张
+// 按秒计费(有无音频不同价)，不接语言控制
 // ============================================================
 
 const GLASS_BG = 'rgba(24,24,27,0.55)';
@@ -68,26 +69,16 @@ function KlingV3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const priceSeconds = Number(duration) || 5;
   const price = klingV3Price(model.id, genAudio, priceSeconds, false);
 
-  const refImages = data.config.refImages ?? [];
-  const refVideos = data.config.refVideos ?? [];
-  const audioCount = data.config.refAudio ? 1 : 0;
-  // 连线实时:上游图→首/尾帧/参考图(照原网渲染时实时读)
+  // 连线实时:上游图→首/尾帧(i2v/首尾帧模式用;多模态场景帧不走连线,保持简单)
   const upstreamLive = useUpstream(id);
   const dispFirst = data.config.firstFrame || upstreamLive.images[0];
   const dispLast = data.config.lastFrame || upstreamLive.images[1];
   const firstFromConn = !data.config.firstFrame && !!upstreamLive.images[0];
   const lastFromConn = !data.config.lastFrame && !!upstreamLive.images[1];
-  // 多模态:本地参考图之外,连接进来的图(去重)
-  const connImages = upstreamLive.images.filter((u) => !refImages.includes(u));
-  const connVideos = upstreamLive.videos.filter((u) => !refVideos.includes(u));   // 连接进来的视频
-  const connAudio = upstreamLive.audios[0];                                        // 连接进来的音频
   const connectedTexts = upstreamLive.texts;   // 来自连接的文案(实时,自动拼入生成)
-  // 计数含连接进来的素材(照图片卡:连接的也占额度,生成时一起传给模型)
-  const connAudioCount = connAudio && !data.config.refAudio ? 1 : 0;
-  const counts = klingV3Count(
-    refImages.length + connImages.length,
-    refVideos.length + connVideos.length,
-  );
+  // 多模态:场景帧(firstFrame/lastFrame)+ 角色元素(elements)。
+  // elements 存在 config.elements,store 类型未含该字段,本文件内用 cast 读写。
+  const elements: KlingV3Element[] = ((data.config as any).elements as KlingV3Element[]) ?? [];
 
   // 卡片框:矩形,按比例(adaptive 用 16:9)
   // 卡片框只显示成品(outputUrl);参考图/首帧绝不进卡片框
@@ -111,12 +102,43 @@ function KlingV3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
       setUploading(false);
     }
   };
-  // 多模态:加参考图(尊重 9 张 + 总 12 上限,真实上传)
-  const addRefImages = async (fileList: FileList | null) => {
+  // ── 多模态角色元素管理(elements 存 config.elements,本文件内 cast 读写)──
+  const setElements = (next: KlingV3Element[]) =>
+    updateConfig(id, { elements: next } as any);
+  // 读取最新 elements(异步上传后避免闭包旧值)
+  const latestElements = (): KlingV3Element[] =>
+    ((useCanvasStore.getState().nodes.find((n) => n.id === id)?.data.config as any)?.elements as KlingV3Element[]) ?? [];
+  // 添加一个空角色(最多 KLING_V3_MAX_ELEMENTS)
+  const addElement = () => {
+    if (elements.length >= KLING_V3_MAX_ELEMENTS) return;
+    setElements([...elements, { frontal: '', references: [] }]);
+  };
+  const removeElement = (idx: number) => {
+    const next = [...latestElements()];
+    next.splice(idx, 1);
+    setElements(next);
+  };
+  // 上传/替换某角色的正面图
+  const uploadElementFrontal = async (idx: number, fileList: FileList | null) => {
+    const f = fileList?.[0];
+    if (!f) return;
+    setUploading(true);
+    try {
+      const url = await uploadImageToStorage(f);
+      if (url) {
+        const next = [...latestElements()];
+        if (next[idx]) { next[idx] = { ...next[idx], frontal: url }; setElements(next); }
+      }
+    } finally {
+      setUploading(false);
+    }
+  };
+  // 给某角色添加参考图(每角色最多 KLING_V3_MAX_REF_PER_ELEMENT)
+  const addElementRefs = async (idx: number, fileList: FileList | null) => {
     if (!fileList) return;
-    const cur = data.config.refImages ?? [];
-    // 图片额度 = min(9 - 本地图 - 连接图, 12 - 总占用);连接的也占额度
-    const room = Math.min(KLING_V3_MAX_IMAGES - cur.length - connImages.length, KLING_V3_MAX_TOTAL - counts.total);
+    const cur = elements[idx];
+    if (!cur) return;
+    const room = KLING_V3_MAX_REF_PER_ELEMENT - cur.references.length;
     if (room <= 0) return;
     const files = Array.from(fileList).slice(0, room);
     if (!files.length) return;
@@ -125,52 +147,30 @@ function KlingV3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
       for (const f of files) {
         const url = await uploadImageToStorage(f);
         if (url) {
-          const latest = useCanvasStore.getState().nodes.find((n) => n.id === id)?.data.config.refImages ?? [];
-          updateConfig(id, { refImages: [...latest, url] });
+          const next = [...latestElements()];
+          if (next[idx]) {
+            next[idx] = { ...next[idx], references: [...next[idx].references, url] };
+            setElements(next);
+          }
         }
       }
     } finally {
       setUploading(false);
     }
   };
-  const removeRefImage = (i: number) => {
-    const cur = [...(data.config.refImages ?? [])];
-    cur.splice(i, 1);
-    updateConfig(id, { refImages: cur });
+  const removeElementRef = (idx: number, refIdx: number) => {
+    const next = [...latestElements()];
+    if (!next[idx]) return;
+    const refs = [...next[idx].references];
+    refs.splice(refIdx, 1);
+    next[idx] = { ...next[idx], references: refs };
+    setElements(next);
   };
-  // 多模态:加参考视频(尊重 3 个 + 总 12 上限,真实上传)
-  const addRefVideo = async (fileList: FileList | null) => {
-    const f = fileList?.[0];
-    if (!f || !counts.canAddVideo) return;
-    setUploading(true);
-    try {
-      const url = await uploadFileToStorage(f, 'video');
-      if (url) {
-        const curV = data.config.refVideos ?? [];
-        const curN = data.config.refVideoNames ?? [];
-        updateConfig(id, { refVideos: [...curV, url], refVideoNames: [...curN, f.name] });
-      }
-    } finally {
-      setUploading(false);
-    }
-  };
-  const removeRefVideo = (i: number) => {
-    const curV = [...(data.config.refVideos ?? [])];
-    const curN = [...(data.config.refVideoNames ?? [])];
-    curV.splice(i, 1); curN.splice(i, 1);
-    updateConfig(id, { refVideos: curV, refVideoNames: curN });
-  };
-  // 多模态:加参考音频(总 12 上限,单个,真实上传)
-  const addRefAudio = async (fileList: FileList | null) => {
-    const f = fileList?.[0];
-    if (!f) return;  // Kling 多模态无音频参考(elements 仅图/视频)
-    setUploading(true);
-    try {
-      const url = await uploadFileToStorage(f, 'audio');
-      if (url) updateConfig(id, { refAudio: url, refAudioName: f.name });
-    } finally {
-      setUploading(false);
-    }
+  const clearElementFrontal = (idx: number) => {
+    const next = [...latestElements()];
+    if (!next[idx]) return;
+    next[idx] = { ...next[idx], frontal: '' };
+    setElements(next);
   };
 
   const uploadVideo = async (fileList: FileList | null) => {
@@ -280,15 +280,15 @@ function KlingV3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
       : rawPrompt;
     const effFirst = data.config.firstFrame || upstream.images[0];
     const effLast = data.config.lastFrame || upstream.images[1];
-    const effRefImages = mode === 'multimodal'
-      ? [...refImages, ...upstream.images.filter((u) => !refImages.includes(u))]
+    // 多模态:场景起始帧(必填)+ 场景结束帧(可选)+ 角色元素(只取有正面图的)
+    const mmElements = mode === 'multimodal'
+      ? elements.filter((el) => !!el.frontal)
       : undefined;
-    const effRefVideo = mode === 'multimodal' ? (data.config.refVideos?.[0] || upstream.videos[0]) : undefined;
     // 校验
     if (mode === 't2v' && !effPrompt.trim()) return;
     if ((mode === 'i2v' || mode === 'first-last') && !effFirst) return;
     if (mode === 'first-last' && !effLast) return;
-    if (mode === 'multimodal' && (effRefImages?.length ?? 0) === 0 && !effRefVideo) return;
+    if (mode === 'multimodal' && !data.config.firstFrame) return;
     updateCard(id, { status: 'generating', progress: 12 });
     try {
       const userId = await getUserId();
@@ -299,10 +299,9 @@ function KlingV3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           prompt: effPrompt,
           duration: Number(duration) || 5,
           generateAudio: !!data.config.audio,
-          firstFrameImage: mode === 'multimodal' ? effRefImages?.[0] : effFirst,
-          lastFrameImage: effLast,
-          refImages: effRefImages,
-          refVideoUrl: effRefVideo,
+          firstFrameImage: mode === 'multimodal' ? data.config.firstFrame : effFirst,
+          lastFrameImage: mode === 'multimodal' ? data.config.lastFrame : effLast,
+          elements: mmElements,
           userId,
         },
         (progress) => updateCard(id, { progress }),
@@ -413,7 +412,7 @@ function KlingV3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                     <SubItem key={m.key} active={m.key === mode} onClick={() => { setMode(m.key); setSub(null); }}>
                       <span>{m.label}</span>
                       <span style={subHint}>
-                        {m.key === 't2v' ? '纯文字' : m.key === 'i2v' ? '1张首帧' : m.key === 'first-last' ? '首帧+尾帧' : '角色/物体参考(最多4)'}
+                        {m.key === 't2v' ? '纯文字' : m.key === 'i2v' ? '1张首帧' : m.key === 'first-last' ? '首帧+尾帧' : '场景帧+角色(最多3)'}
                       </span>
                     </SubItem>
                   ))}
@@ -430,7 +429,7 @@ function KlingV3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
             placeholder={mode === 't2v' ? '描述视频内容…（必填）' : '描述视频内容…（输入 @ 引用参考图）'}
             style={promptInput}
             mentionItems={mode === 'multimodal'
-              ? [...refImages, ...connImages].map((url, i) => ({ label: `图片${i + 1}`, ref: `@图片${i + 1}`, thumb: url }))
+              ? elements.map((el, i) => ({ label: `角色${i + 1}`, ref: `@图片${i + 1}`, thumb: el.frontal }))
               : undefined}
           />
 
@@ -477,23 +476,25 @@ function KlingV3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
             {/* 参考内容按钮(i2v/first-last/multimodal 三模式都显示,内容按模式区分) */}
             {(mode === 'i2v' || mode === 'first-last' || mode === 'multimodal') && (() => {
               const hasRef = mode === 'multimodal'
-                ? (refImages.length > 0 || refVideos.length > 0 || !!data.config.refAudio)
+                ? (!!data.config.firstFrame || !!data.config.lastFrame || elements.length > 0)
                 : (!!data.config.firstFrame || (mode === 'first-last' && !!data.config.lastFrame));
-              const refLabel = mode === 'multimodal' ? `参考内容 ${counts.total}/${KLING_V3_MAX_TOTAL}` : '参考图';
+              const refLabel = mode === 'multimodal' ? `场景/角色 ${elements.length}/${KLING_V3_MAX_ELEMENTS}` : '参考图';
               return (
                 <ParamTag
                   label={<>{refLabel}{hasRef && <span style={greenDot} />}</>}
                   open={sub === 'ref'} onToggle={() => setSub(sub === 'ref' ? null : 'ref')}
-                  width={mode === 'multimodal' ? 320 : 200}
+                  width={mode === 'multimodal' ? 340 : 200}
                 >
                   {mode === 'multimodal' ? (
                     <RefPanel
-                      images={refImages} videos={refVideos} videoNames={data.config.refVideoNames ?? []}
-                      audioName={data.config.refAudioName} counts={counts} uploading={uploading}
-                      connImages={connImages} connVideos={connVideos} connAudio={connAudio}
-                      onAddImages={addRefImages} onRemoveImage={removeRefImage}
-                      onAddVideo={addRefVideo} onRemoveVideo={removeRefVideo}
-                      onAddAudio={addRefAudio} onRemoveAudio={() => updateConfig(id, { refAudio: undefined, refAudioName: undefined })}
+                      firstFrame={data.config.firstFrame} lastFrame={data.config.lastFrame}
+                      elements={elements} uploading={uploading}
+                      onUploadFrame={uploadFrame}
+                      onClearFirst={() => updateConfig(id, { firstFrame: undefined })}
+                      onClearLast={() => updateConfig(id, { lastFrame: undefined })}
+                      onAddElement={addElement} onRemoveElement={removeElement}
+                      onUploadFrontal={uploadElementFrontal} onClearFrontal={clearElementFrontal}
+                      onAddRefs={addElementRefs} onRemoveRef={removeElementRef}
                     />
                   ) : (
                     <div style={{ display: 'flex', gap: 8, padding: 4 }}>
@@ -604,83 +605,80 @@ function KlingV3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   }
 }
 
-// ===== 参考内容面板(多模态:图/视频/音频,总12上限) =====
-function RefPanel({ images, videos, videoNames, audioName, counts, uploading, connImages, connVideos, connAudio, onAddImages, onRemoveImage, onAddVideo, onRemoveVideo, onAddAudio, onRemoveAudio }: {
-  images: string[]; videos: string[]; videoNames: string[]; audioName?: string;
-  counts: ReturnType<typeof klingV3Count>;
+// ===== 多模态参考面板(Kling v3:场景帧 + 角色槽) =====
+// 顶部:场景起始帧(必填)+ 场景结束帧(可选)
+// 下方:角色列表(每个 = 正面图 + 最多 3 参考图 + 删除),底部"+ 添加角色"
+function RefPanel({
+  firstFrame, lastFrame, elements, uploading,
+  onUploadFrame, onClearFirst, onClearLast,
+  onAddElement, onRemoveElement, onUploadFrontal, onClearFrontal, onAddRefs, onRemoveRef,
+}: {
+  firstFrame?: string; lastFrame?: string;
+  elements: KlingV3Element[];
   uploading?: boolean;
-  connImages?: string[];
-  connVideos?: string[];
-  connAudio?: string;
-  onAddImages: (fl: FileList | null) => void; onRemoveImage: (i: number) => void;
-  onAddVideo: (fl: FileList | null) => void; onRemoveVideo: (i: number) => void;
-  onAddAudio: (fl: FileList | null) => void; onRemoveAudio: () => void;
+  onUploadFrame: (which: 'firstFrame' | 'lastFrame', fl: FileList | null) => void;
+  onClearFirst: () => void; onClearLast: () => void;
+  onAddElement: () => void; onRemoveElement: (idx: number) => void;
+  onUploadFrontal: (idx: number, fl: FileList | null) => void; onClearFrontal: (idx: number) => void;
+  onAddRefs: (idx: number, fl: FileList | null) => void; onRemoveRef: (idx: number, refIdx: number) => void;
 }) {
   return (
     <div style={{ padding: 4 }}>
-      {/* 上传按钮区 */}
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
-        <label style={{ ...refUploadBtn, opacity: (counts.canAddImage && !uploading) ? 1 : 0.4, pointerEvents: (counts.canAddImage && !uploading) ? 'auto' : 'none' }}>
-          {uploading ? '上传中…' : `+ 图片 (剩${Math.max(0, Math.min(KLING_V3_MAX_IMAGES - images.length - (connImages?.length ?? 0), KLING_V3_MAX_TOTAL - counts.total))})`}
-          <input type="file" accept="image/*" multiple disabled={uploading} style={{ display: 'none' }} onChange={(e) => { onAddImages(e.target.files); e.currentTarget.value = ''; }} />
-        </label>
-        <label style={{ ...refUploadBtn, opacity: (counts.canAddVideo && !uploading) ? 1 : 0.4, pointerEvents: (counts.canAddVideo && !uploading) ? 'auto' : 'none' }}>
-          {uploading ? '上传中…' : `+ 视频 (剩${Math.max(0, Math.min(KLING_V3_MAX_VIDEOS - videos.length - (connVideos?.length ?? 0), KLING_V3_MAX_TOTAL - counts.total))})`}
-          <input type="file" accept="video/*" disabled={uploading} style={{ display: 'none' }} onChange={(e) => { onAddVideo(e.target.files); e.currentTarget.value = ''; }} />
-        </label>
-      </div>
-      <div style={{ fontSize: 10, color: '#71717a', marginBottom: 6 }}>
-        已用 {counts.total}/{KLING_V3_MAX_TOTAL}（图片 {images.length + (connImages?.length ?? 0)}/{KLING_V3_MAX_IMAGES} · 视频 {videos.length + (connVideos?.length ?? 0)}/{KLING_V3_MAX_VIDEOS}）{((connImages?.length ?? 0) + (connVideos?.length ?? 0)) > 0 ? `· 含${(connImages?.length ?? 0) + (connVideos?.length ?? 0)}连接 ` : ''}{counts.total >= KLING_V3_MAX_TOTAL ? '· 已达上限' : `· 还可上传 ${KLING_V3_MAX_TOTAL - counts.total} 个`}
+      {/* 场景帧 */}
+      <div style={{ fontSize: 10, color: '#a1a1aa', margin: '2px 0 6px' }}>场景帧</div>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+        <FrameSlot label="起始帧(必填)" url={firstFrame} uploading={uploading}
+          onUpload={(fl) => onUploadFrame('firstFrame', fl)} onClear={onClearFirst} />
+        <FrameSlot label="结束帧(可选)" url={lastFrame} uploading={uploading}
+          onUpload={(fl) => onUploadFrame('lastFrame', fl)} onClear={onClearLast} />
       </div>
 
-      {/* 参考图缩略(引用方式:在提示词输入 @ 选图) */}
-      {images.length > 0 && (
-        <div style={refGrid}>
-          {images.map((img, i) => (
-            <RefThumb key={i} url={img} index={i} onRemove={() => onRemoveImage(i)} />
-          ))}
-        </div>
-      )}
-      {/* 来自连接的图(实时,照原网"来自连接";连线动态来,不可删) */}
-      {connImages && connImages.length > 0 && (
-        <>
-          <div style={{ fontSize: 10, color: '#a1a1aa', margin: '6px 0 4px' }}>来自连接 · {connImages.length} 张图</div>
-          <div style={refGrid}>
-            {connImages.map((img, i) => (
-              <RefThumb key={`c${i}`} url={img} index={i} onRemove={() => {}} />
-            ))}
+      {/* 角色元素 */}
+      <div style={{ fontSize: 10, color: '#a1a1aa', margin: '2px 0 6px' }}>
+        角色元素(@图片N 引用) · {elements.length}/{KLING_V3_MAX_ELEMENTS}
+      </div>
+      {elements.map((el, idx) => (
+        <div key={idx} style={elementBlock}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <span style={{ fontSize: 11.5, color: '#e4e4e7', fontWeight: 600 }}>角色{idx + 1}</span>
+            <span style={{ fontSize: 10, color: '#71717a' }}>@图片{idx + 1}</span>
+            <button style={{ ...refFileDel, marginLeft: 'auto', fontSize: 11 }} onClick={() => onRemoveElement(idx)}>删除</button>
           </div>
-        </>
-      )}
-      {/* 来自连接的视频(视频卡/Seedance 连进来,实时显示) */}
-      {connVideos && connVideos.length > 0 && connVideos.map((v, i) => (
-        <div key={`cv${i}`} style={{ ...refFileRow, borderColor: 'rgba(255,255,255,0.25)' }}>
-          <IconVideo size={13} />
-          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#a1a1aa' }}>来自连接的视频 {i + 1}</span>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+            {/* 正面图槽 */}
+            <FrameSlot label="正面图" url={el.frontal || undefined} uploading={uploading}
+              onUpload={(fl) => onUploadFrontal(idx, fl)} onClear={() => onClearFrontal(idx)} />
+            {/* 参考图区(最多 3) */}
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 9, color: '#71717a', marginBottom: 4 }}>
+                参考图 {el.references.length}/{KLING_V3_MAX_REF_PER_ELEMENT}
+              </div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {el.references.map((r, ri) => (
+                  <RefThumb key={ri} url={r} index={ri} onRemove={() => onRemoveRef(idx, ri)} />
+                ))}
+                {el.references.length < KLING_V3_MAX_REF_PER_ELEMENT && (
+                  <label style={{ ...refAddThumb, ...(uploading ? { opacity: 0.5, pointerEvents: 'none' } : {}) }}>
+                    <IconPlus size={14} />
+                    <input type="file" accept="image/*" multiple disabled={uploading} style={{ display: 'none' }}
+                      onChange={(e) => { onAddRefs(idx, e.target.files); e.currentTarget.value = ''; }} />
+                  </label>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       ))}
-      {/* 来自连接的音频(语音卡连进来) */}
-      {connAudio && (
-        <div style={{ ...refFileRow, borderColor: 'rgba(255,255,255,0.25)' }}>
-          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#a1a1aa' }}>🎙 来自连接的音频</span>
-        </div>
-      )}
-      {/* 参考视频列表 */}
-      {videos.map((_, i) => (
-        <div key={i} style={refFileRow}>
-          <IconVideo size={13} />
-          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{videoNames[i] || `视频 ${i + 1}`}</span>
-          <button style={refFileDel} onClick={() => onRemoveVideo(i)}>×</button>
-        </div>
-      ))}
-      {/* 参考音频 */}
-      {audioName && (
-        <div style={refFileRow}>
-          <span style={{ display: 'flex' }}>♪</span>
-          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{audioName}</span>
-          <button style={refFileDel} onClick={onRemoveAudio}>×</button>
-        </div>
-      )}
+
+      {/* 添加角色 */}
+      <label
+        style={{ ...refUploadBtn, display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 4,
+          opacity: elements.length >= KLING_V3_MAX_ELEMENTS ? 0.4 : 1,
+          pointerEvents: elements.length >= KLING_V3_MAX_ELEMENTS ? 'none' : 'auto', cursor: 'pointer' }}
+        onClick={onAddElement}
+      >
+        <IconPlus size={13} /> 添加角色
+      </label>
     </div>
   );
 }
@@ -852,6 +850,15 @@ const refUploadBtn: React.CSSProperties = {
   background: 'rgba(255,255,255,0.07)', color: '#e4e4e7', fontSize: 14, cursor: 'pointer', whiteSpace: 'nowrap',
 };
 const refGrid: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, marginBottom: 8 };
+const elementBlock: React.CSSProperties = {
+  padding: 8, marginBottom: 8, borderRadius: 10,
+  border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.2)',
+};
+const refAddThumb: React.CSSProperties = {
+  width: 56, height: 56, borderRadius: 8, flexShrink: 0,
+  border: '1px dashed rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.25)',
+  display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a1a1aa', cursor: 'pointer',
+};
 const refThumb: React.CSSProperties = {
   position: 'relative', width: '100%', aspectRatio: '1', borderRadius: 8, overflow: 'hidden',
   border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.25)', cursor: 'zoom-in' };

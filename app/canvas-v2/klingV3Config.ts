@@ -44,22 +44,17 @@ export function klingV3Durations(tier: string): string[] {
   return tier === 'standard' ? KLING_V3_DURATIONS_STANDARD : KLING_V3_DURATIONS_FULL;
 }
 
-// 多模态参考内容上限(elements:角色/物体图 + 参考视频)
-export const KLING_V3_MAX_IMAGES = 4;   // 参考图(角色/物体)最多 4
-export const KLING_V3_MAX_VIDEOS = 1;   // 参考视频最多 1(elements 支持 video_url)
-export const KLING_V3_MAX_TOTAL = 4;    // 图+视频 总上限
+// ── 多模态 = 场景帧(start/end) + 角色元素(elements)────────────────
+// Kling v3 结构: start_image_url(场景首帧) + end_image_url(场景末帧,可选)
+//   + elements 最多 3 个角色/物体，每个角色 = 1 正面图 + 最多 3 张参考图(同一角色不同角度)
+//   prompt 用 @Element1/2/3 引用
+export const KLING_V3_MAX_ELEMENTS = 3;        // 角色/物体元素最多 3 个
+export const KLING_V3_MAX_REF_PER_ELEMENT = 3; // 每个角色的额外参考图最多 3 张(不含正面图)
 
-export function klingV3Count(images: number, videos: number): {
-  total: number;
-  canAddImage: boolean;
-  canAddVideo: boolean;
-} {
-  const total = images + videos;
-  return {
-    total,
-    canAddImage: images < KLING_V3_MAX_IMAGES && total < KLING_V3_MAX_TOTAL,
-    canAddVideo: videos < KLING_V3_MAX_VIDEOS && total < KLING_V3_MAX_TOTAL,
-  };
+// 单个角色元素的数据结构(存在 node.config.elements 里)
+export interface KlingV3Element {
+  frontal: string;          // 正面图(主图)URL
+  references: string[];     // 其它角度参考图 URL(最多 3)
 }
 
 // 各模式需要的帧数(用于前端提示)
