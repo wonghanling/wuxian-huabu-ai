@@ -125,7 +125,7 @@ export default function CommissionHall() {
             <div className="rounded-3xl overflow-hidden border border-white/10 bg-zinc-900" style={{ aspectRatio: '16/9' }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/6eb47294-d8d0-4288-8fb2-1802badae3f0.png?quality=80"
+                src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/chuangzuoweituo.png?quality=80"
                 alt="创作委托"
                 className="w-full h-full object-cover"
               />
