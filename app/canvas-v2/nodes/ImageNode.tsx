@@ -170,8 +170,11 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
       });
     } catch (err: any) {
       clearInterval(timer);
-      updateCard(id, { status: 'error', progress: 0 });
-      alert('生成失败: ' + (err?.message || err));
+      const msg = String(err?.message || err);
+      // 审核类失败:已记入待人工审核退款,卡片显示"人工审核中"(亮黄),不弹刺眼的失败alert
+      const isReview = /审核|未通过|不合规|无法生成/.test(msg);
+      updateCard(id, { status: 'error', progress: 0, errorMsg: msg, reviewPending: isReview } as any);
+      if (!isReview) alert('生成失败: ' + msg);
     }
   };
 
@@ -254,6 +257,18 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               title="双击进入 Image Studio 编辑"
               style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', cursor: 'pointer' }}
             />
+          ) : (data.status === 'error' && (data as any).reviewPending) ? (
+            <div style={{ width: '82%', textAlign: 'center', padding: '10px 12px', borderRadius: 10,
+              background: 'rgba(250,204,21,0.14)', border: '1px solid rgba(250,204,21,0.55)' }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: '#facc15', marginBottom: 4 }}>⏳ 人工审核中</div>
+              <div style={{ fontSize: 10.5, color: '#eab308', lineHeight: 1.5 }}>本次未通过审核，费用正在人工核对，如平台未计费将为你退回</div>
+            </div>
+          ) : data.status === 'error' ? (
+            <div style={{ width: '82%', textAlign: 'center', padding: '10px 12px', borderRadius: 10,
+              background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.5)' }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: '#f87171', marginBottom: 4 }}>生成失败</div>
+              <div style={{ fontSize: 10.5, color: '#fca5a5', lineHeight: 1.5 }}>{((data as any).errorMsg || '请重试').slice(0, 60)}</div>
+            </div>
           ) : (
             <span style={{ fontSize: 12, color: '#5a5a5f' }}>点击选中 · 下方描述画面</span>
           )}
