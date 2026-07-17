@@ -61,6 +61,11 @@ const STAGES: Stage[] = [
       'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783823650889.jpg?quality=80',
       'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783823869401.jpg?quality=80',
       'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783824147146.jpg?quality=80',
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1784273807966.jpg?quality=80',
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1784273591085.jpg?quality=80',
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1784273363405.jpg?quality=80',
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1784273293737.jpg?quality=80',
+      'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1784273130347.jpg?quality=80',
     ],
   },
   {
@@ -335,7 +340,7 @@ function Gallery({ images }: { images: string[] }) {
     let raf = 0;
     const tick = () => {
       if (el) {
-        el.scrollLeft += 2.2;   // 自动滚动速度
+        el.scrollLeft += 3.5;   // 自动滚动速度(调快)
         // 滚到第一份图末尾时无缝回到开头(下方图片复制一份实现循环)
         if (el.scrollLeft >= el.scrollWidth / 2) el.scrollLeft -= el.scrollWidth / 2;
       }
