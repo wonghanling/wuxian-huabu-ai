@@ -121,16 +121,25 @@ export default function CommissionHall() {
 
           {/* 右半 */}
           <div className="flex flex-col gap-6">
-            {/* 上:数据统计(带图标,横排) */}
+            {/* 上:16:9 图片卡 */}
+            <div className="rounded-3xl overflow-hidden border border-white/10 bg-zinc-900" style={{ aspectRatio: '16/9' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/6eb47294-d8d0-4288-8fb2-1802badae3f0.png?quality=80"
+                alt="创作委托"
+                className="w-full h-full object-cover"
+              />
+            </div>
+
+            {/* 中:数据统计(横排,无图标) */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 rounded-3xl border border-white/10 bg-white/[0.03] p-5">
               {[
-                { n: '328+', l: '开放项目', i: '📋' },
-                { n: '1460+', l: '创作者', i: '🎬' },
-                { n: '892+', l: '已完成委托', i: '✅' },
-                { n: '96%', l: '按时交付率', i: '⏱️' },
+                { n: '328+', l: '开放项目' },
+                { n: '1460+', l: '创作者' },
+                { n: '892+', l: '已完成委托' },
+                { n: '96%', l: '按时交付率' },
               ].map((s) => (
-                <div key={s.l} className="flex flex-col items-center text-center gap-1 py-2">
-                  <div className="text-xl mb-0.5">{s.i}</div>
+                <div key={s.l} className="flex flex-col items-center text-center gap-1 py-1">
                   <div className="text-xl md:text-2xl font-bold text-emerald-400">{s.n}</div>
                   <div className="text-xs text-zinc-400">{s.l}</div>
                 </div>
@@ -138,7 +147,7 @@ export default function CommissionHall() {
             </div>
 
             {/* 下:三步流程(横排3列) */}
-            <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4 rounded-3xl border border-white/10 bg-white/[0.03] p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 rounded-3xl border border-white/10 bg-white/[0.03] p-6">
               {[
                 { n: '01', t: '发布需求', d: '描述你的项目需求和预算' },
                 { n: '02', t: '匹配创作者', d: '创作者提交作品与报价，你挑选合适的一位' },
