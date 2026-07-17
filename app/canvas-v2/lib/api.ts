@@ -142,7 +142,8 @@ export async function generateImage(params: ImageGenParams): Promise<string> {
       attempts++;
       await new Promise((r) => setTimeout(r, 3000));
       try {
-        const qRes = await fetch(`/api/image/fal-query?requestId=${encodeURIComponent(data.requestId)}&endpoint=${encodeURIComponent(endpoint)}`);
+        const refundQs = params.userId ? `&userId=${encodeURIComponent(params.userId)}&model=${encodeURIComponent(params.model)}&quality=${encodeURIComponent(params.imageQuality || '2k')}` : '';
+        const qRes = await fetch(`/api/image/fal-query?requestId=${encodeURIComponent(data.requestId)}&endpoint=${encodeURIComponent(endpoint)}${refundQs}`);
         const qData = await qRes.json();
         if (qData.success && qData.imageUrl) return qData.imageUrl;
         if (qData.failed) throw new Error(qData.reason || qData.error || '审核未通过');

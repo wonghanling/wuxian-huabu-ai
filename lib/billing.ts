@@ -67,6 +67,51 @@ export async function refundBalance(
   });
 }
 
+// 记录待审核退款(生成失败但可能需退款,人工核对上游是否扣费后再退)
+// failType: 'server_error'(500,可自动退) | 'pre_submit'(未提交上游,可自动退)
+//           | 'content_policy'(审核不过,建议不退) | 'no_media'(未产出,建议退) | 'other'
+// 返回是否已自动退款(server_error/pre_submit 会顺带自动退)
+export async function recordRefundReview(params: {
+  userId: string;
+  amount: number;
+  model?: string;
+  failType: 'server_error' | 'pre_submit' | 'content_policy' | 'no_media' | 'other';
+  failReason?: string;
+  meta?: Record<string, unknown>;
+  description?: string;
+}): Promise<{ autoRefunded: boolean }> {
+  const { userId, amount, model, failType, failReason, meta } = params;
+  // 确定处理建议:500/未提交 → 自动退(上游未收费);审核不过 → 建议不退;未产出 → 建议退
+  const autoRefund = failType === 'server_error' || failType === 'pre_submit';
+  const suggested = autoRefund ? 'auto_refunded'
+    : failType === 'no_media' ? 'suggest_refund'
+    : failType === 'content_policy' ? 'suggest_reject'
+    : 'review';
+  const refundStatus = autoRefund ? 'refunded' : 'pending';
+  try {
+    // 自动退的先退款
+    if (autoRefund && amount > 0) {
+      await refundBalance(userId, amount, params.description || `生成失败自动退款(${failType})`, { model, failType, ...meta });
+    }
+    // 记一条待审核/已退记录
+    await supabaseAdmin.from('refund_reviews').insert({
+      user_id: userId,
+      amount,
+      model: model ?? null,
+      fail_type: failType,
+      fail_reason: failReason ?? null,
+      suggested,
+      upstream_charged: autoRefund ? false : null,
+      refund_status: refundStatus,
+      meta: meta ?? {},
+    });
+  } catch (e) {
+    // 记账失败不影响主流程(旁路)
+    console.error('[recordRefundReview] 记录失败:', e);
+  }
+  return { autoRefunded: autoRefund };
+}
+
 // 获取用户余额
 export async function getBalance(userId: string): Promise<number> {
   const { data } = await supabaseAdmin
