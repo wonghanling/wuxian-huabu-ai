@@ -86,65 +86,68 @@ export default function CommissionHall() {
         </div>
       </nav>
 
-      {/* Hero:左半(背景图+标题+双按钮) + 右半(上:数据统计 下:三步流程) */}
+      {/* Hero:左半(视频背景+标题+双按钮) + 右半(上:数据统计 下:三步流程) */}
       <section className="max-w-[1400px] mx-auto px-6 pt-12 pb-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* 左半:主视觉 */}
-          <div
-            className="relative rounded-3xl overflow-hidden border border-white/10 p-8 md:p-10 flex flex-col justify-center min-h-[320px]"
-            style={{
-              backgroundImage: 'linear-gradient(135deg, rgba(16,185,129,0.18), rgba(0,0,0,0.6)), url(/commission-hero.jpg)',
-              backgroundSize: 'cover', backgroundPosition: 'center',
-            }}
-          >
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-4 leading-tight">连接创意需求<br />与专业创作者</h1>
-            <p className="text-zinc-300 text-sm md:text-[15px] mb-7 max-w-md leading-relaxed">
-              发布广告、影视、动画等创作需求，找到合适的创作者，在 Filmavo 完成高质量交付。
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <button
-                onClick={() => { if (!loggedIn) { window.location.href = '/auth'; return; } setPublishOpen(true); }}
-                className="px-6 py-3 rounded-full bg-white text-black font-semibold text-sm hover:bg-zinc-200 transition-colors"
-              >
-                发布创作委托
-              </button>
-              <a href="#projects"
-                className="px-6 py-3 rounded-full border border-white/25 text-white font-medium text-sm hover:bg-white/10 transition-colors">
-                寻找项目
-              </a>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+          {/* 左半:视频背景主视觉 */}
+          <div className="relative rounded-3xl overflow-hidden border border-white/10 min-h-[340px]">
+            <video
+              src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/chuangzaoweituo.mp4"
+              autoPlay muted loop playsInline preload="metadata"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.5) 55%, rgba(0,0,0,0.3) 100%)' }} />
+            <div className="relative p-8 md:p-10 flex flex-col justify-center h-full min-h-[340px]">
+              <h1 className="text-3xl md:text-[40px] font-bold tracking-tight mb-4 leading-tight">
+                连接创意需求<br />与专业<span className="text-emerald-400">创作者</span>
+              </h1>
+              <p className="text-zinc-300 text-sm md:text-[15px] mb-7 max-w-md leading-relaxed">
+                发布广告、影视、动画等创作需求，找到合适的创作者，在 Filmavo 完成高质量交付。
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={() => { if (!loggedIn) { window.location.href = '/auth'; return; } setPublishOpen(true); }}
+                  className="px-6 py-3 rounded-full bg-white text-black font-semibold text-sm hover:bg-zinc-200 transition-colors"
+                >
+                  发布创作委托
+                </button>
+                <a href="#projects"
+                  className="px-6 py-3 rounded-full border border-white/30 text-white font-medium text-sm hover:bg-white/10 transition-colors">
+                  寻找项目
+                </a>
+              </div>
             </div>
           </div>
 
           {/* 右半 */}
           <div className="flex flex-col gap-6">
-            {/* 上:数据统计 */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 rounded-3xl border border-white/10 bg-white/[0.03] p-6">
+            {/* 上:数据统计(带图标,横排) */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 rounded-3xl border border-white/10 bg-white/[0.03] p-5">
               {[
-                { n: '328+', l: '开放项目' },
-                { n: '1460+', l: '创作者' },
-                { n: '892+', l: '已完成委托' },
-                { n: '96%', l: '按时交付率' },
+                { n: '328+', l: '开放项目', i: '📋' },
+                { n: '1460+', l: '创作者', i: '🎬' },
+                { n: '892+', l: '已完成委托', i: '✅' },
+                { n: '96%', l: '按时交付率', i: '⏱️' },
               ].map((s) => (
-                <div key={s.l} className="text-center">
-                  <div className="text-2xl md:text-[26px] font-bold text-emerald-400">{s.n}</div>
-                  <div className="text-xs text-zinc-400 mt-1">{s.l}</div>
+                <div key={s.l} className="flex flex-col items-center text-center gap-1 py-2">
+                  <div className="text-xl mb-0.5">{s.i}</div>
+                  <div className="text-xl md:text-2xl font-bold text-emerald-400">{s.n}</div>
+                  <div className="text-xs text-zinc-400">{s.l}</div>
                 </div>
               ))}
             </div>
 
-            {/* 下:三步流程 */}
-            <div className="flex-1 rounded-3xl border border-white/10 bg-white/[0.03] p-6 flex flex-col justify-center gap-4">
+            {/* 下:三步流程(横排3列) */}
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4 rounded-3xl border border-white/10 bg-white/[0.03] p-6">
               {[
                 { n: '01', t: '发布需求', d: '描述你的项目需求和预算' },
                 { n: '02', t: '匹配创作者', d: '创作者提交作品与报价，你挑选合适的一位' },
                 { n: '03', t: '协作交付', d: '在 Filmavo 完成创作与交付' },
               ].map((s) => (
-                <div key={s.n} className="flex items-start gap-4">
-                  <div className="text-lg font-bold text-emerald-400/80 w-8 shrink-0">{s.n}</div>
-                  <div>
-                    <div className="font-semibold text-sm">{s.t}</div>
-                    <div className="text-xs text-zinc-400 mt-0.5">{s.d}</div>
-                  </div>
+                <div key={s.n} className="flex flex-col gap-2">
+                  <div className="text-2xl font-bold text-emerald-400/70">{s.n}</div>
+                  <div className="font-semibold text-sm">{s.t}</div>
+                  <div className="text-xs text-zinc-400 leading-relaxed">{s.d}</div>
                 </div>
               ))}
             </div>
