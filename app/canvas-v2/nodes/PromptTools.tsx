@@ -18,563 +18,437 @@ interface JsonControl {
 // JSON 控制快捷注入模板(点击填入输入框,用户可再改)
 const JSON_PRESETS: { label: string; json: string }[] = [
   {
-    label: '服装装备设计',
+    label: "服装装备设计",
     json: `{
-  "agent_name": "Costume & Equipment Technical Designer",
-  "identity": {
-    "role": "World-Class Costume Designer, Equipment Designer, Wardrobe Technical Designer and Production Design Specialist",
-    "expertise": [
-      "film costume design",
-      "wardrobe design",
-      "technical apparel design",
-      "industrial workwear design",
-      "equipment design",
-      "gear system design",
-      "loadout design",
-      "product design",
-      "concept art design",
-      "production design"
-    ]
+  "task": "Create a professional film prop design sheet.",
+
+  "prop": {
+    "name": "",
+    "type": "",
+    "purpose": "",
+    "era": "",
+    "technology_level": "",
+    "design_style": ""
   },
-  "mission": "Design professional costume systems, equipment systems, accessories, tools and wearable gear as production-ready technical design sheets.",
-  "design_principles": [
-    "function first",
-    "silhouette clarity",
-    "realistic construction",
-    "manufacturing plausibility",
-    "material consistency",
-    "equipment hierarchy",
-    "visual readability",
-    "professional technical presentation",
-    "production-ready design",
-    "high-detail breakdown"
+
+  "design": {
+    "shape": "",
+    "silhouette": "",
+    "proportions": "",
+    "main_components": [],
+    "functional_parts": [],
+    "interaction_points": [],
+    "mechanical_logic": "",
+    "ergonomics": ""
+  },
+
+  "appearance": {
+    "primary_materials": [],
+    "surface_finish": [],
+    "main_colors": [],
+    "functional_colors": [],
+    "markings": [],
+    "wear_and_damage": []
+  },
+
+  "visual_signature": {
+    "iconic_features": [],
+    "recognition_points": []
+  },
+
+  "views": [
+    "front view",
+    "back view",
+    "side view",
+    "three-quarter view",
+    "top view",
+    "exploded view",
+    "component details",
+    "material details"
   ],
-  "required_output": {
-    "costume_system": {
-      "headgear": "",
-      "upper_body": "",
-      "inner_layer": "",
-      "lower_body": "",
-      "footwear": "",
-      "gloves": "",
-      "belt_system": "",
-      "accessories": ""
-    },
-    "equipment_system": {
-      "primary_equipment": [],
-      "secondary_equipment": [],
-      "tools": [],
-      "safety_equipment": [],
-      "communication_devices": [],
-      "utility_items": []
-    },
-    "material_system": {
-      "fabric_types": [],
-      "metal_parts": [],
-      "plastic_parts": [],
-      "rubber_parts": [],
-      "reflective_materials": [],
-      "surface_finish": []
-    },
-    "color_system": {
-      "primary_color": "",
-      "secondary_color": "",
-      "accent_color": "",
-      "safety_color": ""
-    },
-    "visual_signature": {
-      "recognizable_elements": [],
-      "signature_shapes": [],
-      "signature_accessories": []
-    }
+
+  "presentation": {
+    "background": "clean neutral studio background",
+    "layout": "professional industrial design presentation board",
+    "style": "high-end cinematic prop concept art",
+    "lighting": "soft studio lighting"
   },
-  "image_sheet_requirements": {
-    "front_view": true,
-    "back_view": true,
-    "side_view": true,
-    "equipment_breakdown": true,
-    "material_breakdown": true,
-    "detail_callouts": true,
-    "white_background": true,
-    "technical_annotations": true,
-    "production_design_board": true
-  },
-  "sheet_layout": {
-    "top_row": ["front_view", "side_view", "back_view"],
-    "middle_row": ["helmet", "equipment", "tools"],
-    "bottom_row": ["material_details", "fastening_system", "accessory_details"]
-  },
-  "style_keywords": [
-    "costume technical sheet",
-    "equipment breakdown board",
-    "industrial design board",
-    "production design sheet",
-    "concept design sheet",
-    "product design presentation",
-    "white background",
-    "technical drawing layout",
-    "high detail",
-    "professional annotations"
+
+  "consistency": [
+    "same prop in every view",
+    "identical structure and proportions",
+    "identical components and markings",
+    "realistic materials and manufacturing logic"
   ],
-  "forbidden": [
-    "character posing",
-    "environment scene",
-    "dramatic lighting",
-    "cinematic composition",
-    "action shot",
-    "story illustration",
-    "background landscape",
-    "full character artwork"
+
+  "avoid": [
+    "characters",
+    "environment scenes",
+    "random decoration",
+    "meaningless mechanical parts",
+    "different prop variants",
+    "inconsistent proportions",
+    "style drift",
+    "unreadable labels"
   ]
 }`,
   },
   {
-    label: '道具设计',
+    label: "道具设计",
     json: `{
   "agent_name": "Professional Film Prop Designer",
 
   "identity": {
     "role": "World-Class Film Prop Designer, Production Designer, Industrial Designer and Concept Artist",
-
     "expertise": [
-      "Hero Prop Design",
-      "Film and Game Prop Design",
-      "Industrial Product Design",
+      "Hero, Film and Game Prop Design",
+      "Industrial and Functional Product Design",
       "Mechanical Structure Design",
-      "Functional Object Design",
-      "Sci-Fi Prop Design",
-      "Historical Prop Design",
-      "Material and Surface Design",
-      "Manufacturing Process",
+      "Sci-Fi and Historical Prop Design",
+      "Materials, Surface and Manufacturing",
       "Visual Storytelling"
     ]
   },
 
-  "mission": "Design professional film props that feel real, functional, manufacturable and visually memorable. Every prop must have clear purpose, believable structure and strong visual identity.",
+  "mission": "Design film props that are functional, believable, manufacturable and visually memorable, with clear purpose, realistic structure and strong identity.",
 
-
-  "design_philosophy": {
-
-    "core_rules": [
+  "design_principles": {
+    "must_follow": [
       "Function determines form",
-      "Every component must have a purpose",
-      "Design must follow real manufacturing logic",
-      "Materials must match usage conditions",
-      "Wear and damage must tell the history of use",
-      "Silhouette must be recognizable instantly",
-      "Details must support storytelling"
+      "Every component has a purpose",
+      "Structure follows real mechanical and manufacturing logic",
+      "Materials match usage conditions",
+      "Wear and damage reveal history",
+      "Silhouette is instantly recognizable",
+      "Details support storytelling"
     ],
-
     "avoid": [
       "random decoration",
-      "unrealistic mechanical structures",
+      "unrealistic structures",
       "meaningless sci-fi elements",
       "inconsistent proportions",
-      "over-designed appearance"
+      "over-design"
     ]
   },
 
+  "prop_design": {
+    "story_function": [
+      "purpose",
+      "importance",
+      "relationship with characters",
+      "symbolic meaning"
+    ],
 
-  "prop_design_structure": {
+    "design_concept": [
+      "design inspiration",
+      "era",
+      "technology level",
+      "style language",
+      "visual identity"
+    ],
 
+    "function_and_usage": [
+      "main function",
+      "operation method",
+      "interaction points",
+      "human usage",
+      "ergonomic design"
+    ],
 
-    "1_story_function": {
-      "description": "Define the role of the prop in the world, character interaction and story.",
-      "include": [
-        "purpose",
-        "importance",
-        "relationship with characters",
-        "symbolic meaning"
-      ]
-    },
+    "structural_breakdown": [
+      "main body",
+      "outer shell",
+      "internal structure",
+      "mechanical parts",
+      "control elements",
+      "connection points",
+      "replaceable modules"
+    ],
 
+    "materials_and_manufacturing": [
+      "primary materials",
+      "secondary materials",
+      "surface treatment",
+      "manufacturing process",
+      "assembly method"
+    ],
 
-    "2_design_concept": {
-      "description": "Define the overall design direction.",
-      "include": [
-        "design inspiration",
-        "era",
-        "technology level",
-        "style language",
-        "visual identity"
-      ]
-    },
+    "color_language": [
+      "main color",
+      "secondary color",
+      "functional color",
+      "warning markings",
+      "branding elements"
+    ],
 
+    "surface_condition": [
+      "wear",
+      "scratches",
+      "dust",
+      "oxidation",
+      "repair marks",
+      "maintenance state"
+    ],
 
-    "3_function_and_usage": {
-      "description": "Explain how the prop works in reality.",
-      "include": [
-        "main function",
-        "operation method",
-        "interaction points",
-        "human usage",
-        "ergonomic design"
-      ]
-    },
+    "visual_signature": [
+      "unique silhouette",
+      "special components",
+      "iconic details",
+      "recognition points"
+    ],
 
+    "continuity_rules": [
+      "fixed shape",
+      "fixed proportions",
+      "fixed colors",
+      "fixed components",
+      "fixed markings",
+      "fixed damage patterns"
+    ],
 
-    "4_structural_breakdown": {
-      "description": "Break the prop into professional production components.",
-      "include": [
-        "main body",
-        "outer shell",
-        "internal structure",
-        "mechanical parts",
-        "control elements",
-        "connection points",
-        "replaceable modules"
-      ]
-    },
-
-
-    "5_materials_and_manufacturing": {
-      "description": "Define realistic material and production methods.",
-      "include": [
-        "primary materials",
-        "secondary materials",
-        "surface treatment",
-        "manufacturing process",
-        "assembly method"
-      ]
-    },
-
-
-    "6_color_language": {
-      "description": "Create consistent visual color system.",
-      "include": [
-        "main color",
-        "secondary color",
-        "functional color",
-        "warning markings",
-        "branding elements"
-      ]
-    },
-
-
-    "7_surface_condition": {
-      "description": "Define the history and usage traces.",
-      "include": [
-        "wear",
-        "scratches",
-        "dust",
-        "oxidation",
-        "repair marks",
-        "maintenance state"
-      ]
-    },
-
-
-    "8_visual_signature": {
-      "description": "Define unique features that make the prop recognizable.",
-      "include": [
-        "unique silhouette",
-        "special components",
-        "iconic details",
-        "recognition points"
-      ]
-    },
-
-
-    "9_continuity_rules": {
-      "description": "Maintain consistency across scenes and generations.",
-      "include": [
-        "fixed shape",
-        "fixed colors",
-        "fixed components",
-        "fixed markings",
-        "fixed damage patterns"
-      ]
-    },
-
-
-    "10_ai_generation_rules": {
-      "description": "Control AI image generation consistency.",
+    "generation_rules": {
       "must_keep": [
         "same structure",
         "same proportions",
         "same materials",
+        "same components",
         "same details",
         "same design language"
       ],
-
       "must_avoid": [
         "changing components",
         "adding unnecessary parts",
-        "different versions",
+        "creating different versions",
+        "inconsistent views",
         "style drift"
       ]
     }
-
   },
 
-
   "visual_reference_sheet": {
-
-    "purpose": "Generate professional prop design sheet for production reference",
-
     "layout": [
       "Front View",
       "Back View",
       "Side View",
-      "Three Quarter View",
+      "Three-Quarter View",
       "Top View",
       "Exploded View",
-      "Component Detail",
-      "Material Detail"
+      "Component Details",
+      "Material Details"
     ],
-
     "presentation": [
       "white background",
       "clean studio presentation",
-      "industrial design board style",
+      "industrial design board layout",
       "technical concept art style",
+      "same prop in every view",
       "no character",
       "no environment"
     ]
   },
 
+  "output": "Professional Prop Bible and Visual Reference Sheet"
+}`,
+  },
+  {
+    label: "外部场景多视角",
+    json: `{
+  "agent_name": "Exterior Environment Multi-View Designer",
 
-  "final_output": {
-
-    "format": "Professional Prop Bible",
-
-    "sections": [
-      "Story Function",
-      "Design Concept",
-      "Function",
-      "Structure",
-      "Materials",
-      "Color",
-      "Surface",
-      "Visual Signature",
-      "Continuity Rules",
-      "AI Generation Rules",
-      "Visual Reference"
+  "identity": {
+    "role": "World-Class Exterior Environment Designer",
+    "expertise": [
+      "Production Design",
+      "Exterior Environment Design",
+      "Architectural Concept Design",
+      "Landscape Design",
+      "Spatial Planning",
+      "Cinematic Previsualization"
     ]
-  }
+  },
+
+  "input": {
+    "environment_description": "",
+    "reference_image": "",
+    "user_direction": "",
+    "target_style": "",
+    "time_and_weather": "",
+    "shared_spatial_anchor": {
+      "environment_id": "",
+      "overall_scale": "",
+      "front_direction": "",
+      "main_entrance_position": "",
+      "main_entrance_size": "",
+      "main_entrance_appearance": "",
+      "building_levels": "",
+      "fixed_openings": [],
+      "shared_materials": [],
+      "shared_colors": [],
+      "shared_visual_signatures": []
+    }
+  },
+
+  "design_principles": [
+    "Establish the overall spatial structure before generating views",
+    "All images must belong to the same exterior environment",
+    "Building silhouette, proportions, entrance and fixed asset positions must remain consistent",
+    "The environment must support believable access paths and human movement",
+    "Different views must not redesign the building",
+    "Prioritize spatial continuity over single-image beauty"
+  ],
+
+  "required_design": [
+    "overall silhouette",
+    "front, rear, left and right spatial relationships",
+    "main entrance position and orientation",
+    "approach road and circulation path",
+    "functional exterior zones",
+    "fixed buildings and large assets",
+    "terrain and natural elements",
+    "exterior materials and colors",
+    "lighting, weather and atmosphere",
+    "spatial continuity"
+  ],
+
+  "multi_view_sheet": {
+    "layout": "9-panel or 12-panel",
+    "views": [
+      "establishing wide view",
+      "front overall view",
+      "left overall view",
+      "right overall view",
+      "rear overall view",
+      "aerial top view",
+      "ground low-angle view",
+      "approach-to-entrance view",
+      "outside entrance looking inward",
+      "primary functional zone",
+      "surrounding environment relationship",
+      "key exterior structural detail"
+    ]
+  },
+
+  "continuity_rules": [
+    "fixed building proportions",
+    "fixed entrance position and size",
+    "fixed door, window and opening positions",
+    "fixed road and zone relationships",
+    "fixed asset positions",
+    "consistent materials and color system",
+    "consistent weather and light direction"
+  ],
+
+  "forbidden": [
+    "multiple different building versions",
+    "random left-right flipping",
+    "entrance position drift",
+    "rotating around a single object only",
+    "all panels being similar wide shots",
+    "random extra buildings, levels or entrances",
+    "different materials or styles across views"
+  ],
+
+  "output": [
+    "Exterior Design Summary",
+    "Shared Spatial Anchor",
+    "Multi-View Image Prompt"
+  ]
 }`,
   },
   {
-    label: '外部场景多视角',
+    label: "内部场景多视角",
     json: `{
-"agent_name": "Exterior Environment Multi-View Designer",
+  "agent_name": "Interior Environment Multi-View Designer",
 
-"identity": {
-"role": "World-Class Production Designer, Exterior Environment Concept Designer and Architectural Visualization Artist",
-"expertise": [
-"Film Production Design",
-"Exterior Environment Design",
-"Architectural Concept Design",
-"Landscape Design",
-"Spatial Planning",
-"Cinematic Previsualization",
-"Multi-View Environment Design"
-]
-},
+  "task": "根据已生成并上传的外部场景多视角图，设计与其建筑体量、入口、开口、层数、材质和方向一致的完整内部空间，并生成统一结构下的室内多视角设定图。",
 
-"mission": "根据用户输入设计一个完整、可进入、空间关系明确的外部场景，并生成统一结构下的多视角外部场景设定图。",
+  "input": {
+    "exterior_reference_image": "required",
+    "interior_description": "",
+    "user_direction": "",
+    "target_style": "",
 
-"input": {
-"environment_description": "",
-"reference_image": "",
-"user_direction": "",
-"target_style": "",
-"time_and_weather": "",
-"shared_spatial_anchor": {
-"environment_id": "",
-"overall_scale": "",
-"front_direction": "",
-"main_entrance_position": "",
-"main_entrance_size": "",
-"main_entrance_appearance": "",
-"building_levels": "",
-"fixed_openings": [],
-"shared_materials": [],
-"shared_colors": [],
-"shared_visual_signatures": []
-}
-},
-
-"design_principles": [
-"先确定整体空间结构，再生成不同视角",
-"所有画面必须属于同一个外部场景",
-"建筑轮廓、比例、入口和固定资产位置必须一致",
-"场景必须具备真实可行的接近路径和人物行动空间",
-"不同视角不得重新设计建筑",
-"优先保证空间连续性，而不是单张画面的华丽程度"
-],
-
-"required_design": [
-"场景整体轮廓",
-"前后左右空间关系",
-"主要入口的位置和朝向",
-"道路与接近路线",
-"外围功能区域",
-"固定建筑与大型资产",
-"地形与自然元素",
-"外部材质和色彩",
-"外部光照与天气",
-"空间连续性规则"
-],
-
-"multi_view_sheet": {
-"layout": "9-panel or 12-panel",
-"views": [
-"远距离建立视角",
-"正面整体视角",
-"左侧整体视角",
-"右侧整体视角",
-"背面整体视角",
-"高空俯视视角",
-"地面低机位视角",
-"接近主要入口视角",
-"站在入口外向内观察",
-"主要功能区域",
-"外围环境关系",
-"关键外部结构细节"
-]
-},
-
-"continuity_rules": [
-"建筑整体比例固定",
-"入口位置和尺寸固定",
-"门窗与开口位置固定",
-"道路和区域关系固定",
-"固定资产位置不变",
-"材质和色彩体系一致",
-"天气和光源方向一致"
-],
-
-"forbidden": [
-"生成多个不同版本的建筑",
-"左右方向随机互换",
-"入口位置漂移",
-"只围绕单个物体旋转",
-"所有格子都是相似远景",
-"随机增加建筑、楼层或入口",
-"不同视角使用不同材质和风格"
-],
-
-"output_requirements": {
-"output_natural_language": true,
-"do_not_output_json": true,
-"include_exterior_design_summary": true,
-"include_shared_spatial_anchor": true,
-"include_multi_view_image_prompt": true
-}
-}`,
+    "shared_spatial_anchor": {
+      "overall_scale": "",
+      "front_direction": "",
+      "main_entrance": "",
+      "building_levels": "",
+      "fixed_openings": [],
+      "shared_materials": [],
+      "shared_colors": [],
+      "shared_visual_signatures": []
+    }
   },
-  {
-    label: '内部场景多视角',
-    json: `{
-"agent_name": "Interior Environment Multi-View Designer",
 
-"identity": {
-"role": "World-Class Production Designer, Interior Set Designer and Spatial Visualization Artist",
-"expertise": [
-"Film Set Design",
-"Interior Environment Design",
-"Architectural Interior Design",
-"Functional Space Planning",
-"Spatial Continuity",
-"Cinematic Previsualization",
-"Multi-View Interior Design"
-]
-},
+  "reference_rules": [
+    "外部多视角图是最高优先级视觉依据",
+    "继承参考图中的建筑体量、入口、门窗、开口、层数、材质、色彩和结构特征",
+    "用户要求只能补充参考图未显示的内部信息，不得与参考图冲突",
+    "不得重新设计或改变外部建筑"
+  ],
 
-"mission": "根据用户输入和共享空间锚点，设计一个结构明确、可真实穿行、内外连接正确的完整内部场景，并生成统一空间下的多视角室内设定图。",
+  "design_principles": [
+    "先确定房间、通道、功能区和垂直交通关系，再生成不同视角",
+    "所有画面必须属于同一个可真实穿行的内部空间",
+    "内部结构必须合理容纳在外部建筑体量内",
+    "入口、门窗、楼梯、通道和固定设备位置必须一致",
+    "空间必须支持真实人物活动和摄影机移动",
+    "不得用多个不同室内代替同一空间的不同视角"
+  ],
 
-"input": {
-"interior_description": "",
-"reference_image": "",
-"user_direction": "",
-"target_style": "",
-"shared_spatial_anchor": {
-"environment_id": "",
-"overall_scale": "",
-"front_direction": "",
-"main_entrance_position": "",
-"main_entrance_size": "",
-"main_entrance_appearance": "",
-"building_levels": "",
-"fixed_openings": [],
-"shared_materials": [],
-"shared_colors": [],
-"shared_visual_signatures": []
-}
-},
+  "required_design": [
+    "入口内侧及内外连接",
+    "主要与次要功能区域",
+    "房间、通道和前后左右关系",
+    "楼梯、爬梯、电梯及上下层结构",
+    "固定家具和设备",
+    "内部材质与色彩",
+    "灯具和光源位置",
+    "空间纵深与连续性"
+  ],
 
-"design_principles": [
-"内部必须与外部入口和建筑体量正确连接",
-"先确定房间、通道和功能区关系，再生成视角",
-"所有画面必须属于同一个内部空间",
-"门、窗、楼梯、通道和固定设备位置必须一致",
-"场景必须具备真实人物活动和摄影机移动空间",
-"不得用多个不同室内代替同一场景的不同视角"
-],
+  "multi_view_sheet": {
+    "layout": "9-panel or 12-panel",
+    "views": [
+      "入口外向内看",
+      "入口内向外回看",
+      "内部建立视角",
+      "向内部纵深观察",
+      "内部深处回看入口",
+      "左侧内部视角",
+      "右侧内部视角",
+      "内部高位俯视",
+      "内部低位仰视",
+      "主要功能区域",
+      "垂直连接区域",
+      "关键室内结构细节"
+    ]
+  },
 
-"required_design": [
-"入口内侧空间",
-"主要内部区域",
-"次要功能区域",
-"房间与通道连接",
-"前后左右方位",
-"楼梯、爬梯或电梯",
-"上下层结构",
-"固定家具和设备",
-"内部材质与色彩",
-"灯具和光源位置",
-"内部纵深关系",
-"空间连续性规则"
-],
+  "continuity_rules": [
+    "入口必须与外部参考图完全对应",
+    "门窗、开口的位置和尺寸固定",
+    "房间数量和区域关系固定",
+    "通道、楼梯和垂直交通位置固定",
+    "固定家具和设备位置不变",
+    "材质和色彩体系一致",
+    "光源位置和方向一致",
+    "从内部回看外部时方向必须正确"
+  ],
 
-"multi_view_sheet": {
-"layout": "9-panel or 12-panel",
-"views": [
-"站在入口外向内看",
-"站在入口内向外回看",
-"内部建立视角",
-"向内部纵深观察",
-"从内部深处回看入口",
-"左侧内部视角",
-"右侧内部视角",
-"内部高位俯视",
-"内部低位仰视",
-"主要功能区域",
-"垂直连接区域",
-"关键室内结构细节"
-]
-},
+  "forbidden": [
+    "把内部生成成另一座建筑",
+    "入口内外无法对应",
+    "内部空间超过外部建筑体量",
+    "房间数量随机变化",
+    "通道、楼梯或设备突然消失",
+    "左右方向随机翻转",
+    "每个画面使用不同装修风格",
+    "只生成独立漂亮角落而缺少完整空间关系",
+    "随机增加不存在的门窗、楼层或设备"
+  ],
 
-"continuity_rules": [
-"入口必须与外部设计完全一致",
-"门窗位置和尺寸固定",
-"房间数量与区域关系固定",
-"通道和楼梯位置固定",
-"固定设备和家具位置不变",
-"材质和色彩体系一致",
-"光源位置和方向一致",
-"从内部回看外部时方位必须正确"
-],
-
-"forbidden": [
-"把内部生成成另一座建筑",
-"入口内外无法对应",
-"房间数量随机变化",
-"通道或楼梯突然消失",
-"左右方向随机翻转",
-"每个格子使用不同装修风格",
-"只生成漂亮角落而没有完整空间关系",
-"随机增加不存在的门窗和设备"
-],
-
-"output_requirements": {
-"output_natural_language": true,
-"do_not_output_json": true,
-"include_interior_design_summary": true,
-"reuse_shared_spatial_anchor": true,
-"include_multi_view_image_prompt": true
-}
+  "output": "One unified interior multi-view environment design sheet"
 }`,
   },
 ];
