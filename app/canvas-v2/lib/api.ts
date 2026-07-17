@@ -449,7 +449,8 @@ export async function generateKlingV3(
     attempts++;
     await new Promise((r) => setTimeout(r, 5000));
     try {
-      const qRes = await fetch(`/api/kling-v3/query?requestId=${encodeURIComponent(requestId)}&endpoint=${encodeURIComponent(endpoint)}`);
+      const refundQs = params.userId ? `&userId=${encodeURIComponent(params.userId)}&tier=${encodeURIComponent(params.tier)}&duration=${params.duration ?? 5}&audio=${params.generateAudio ? 1 : 0}` : '';
+      const qRes = await fetch(`/api/kling-v3/query?requestId=${encodeURIComponent(requestId)}&endpoint=${encodeURIComponent(endpoint)}${refundQs}`);
       const qData = await qRes.json();
       if (qData.success && qData.videoUrl) return qData.videoUrl;
       if (qData.failed) throw new Error(qData.reason || qData.error || '审核未通过');

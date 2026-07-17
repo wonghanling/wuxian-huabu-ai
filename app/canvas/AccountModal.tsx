@@ -51,6 +51,8 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
   const [promoMsg, setPromoMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [txLoading, setTxLoading] = useState(false);
+  // 待退款记录(用于在消费记录标"待退款"): 按金额+时间接近匹配 pending 的 refund_reviews
+  const [pendingRefunds, setPendingRefunds] = useState<{ amount: number; t: number }[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
@@ -97,6 +99,17 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
         .limit(50);
       if (error) console.error('transactions query error:', error);
       setTransactions(data ?? []);
+      // 同时查待退款(pending)记录,用于在消费记录标"待退款"
+      try {
+        const { data: refunds } = await supabase
+          .from('refund_reviews')
+          .select('amount, created_at')
+          .eq('user_id', session.user.id)
+          .eq('refund_status', 'pending')
+          .order('created_at', { ascending: false })
+          .limit(50);
+        setPendingRefunds((refunds ?? []).map((r: any) => ({ amount: Number(r.amount), t: new Date(r.created_at).getTime() })));
+      } catch { /* 无表或失败不影响 */ }
     } finally {
       setTxLoading(false);
     }
@@ -481,12 +494,22 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
                         info = { label: '音频生成', color: 'text-red-400' };
                       }
                       const isIncome = tx.amount > 0;
+                      // 待退款判定:该扣费(支出)有一条金额相同、时间接近(±3分钟)的 pending 退款记录
+                      const txTime = new Date(tx.created_at).getTime();
+                      const isPendingRefund = !isIncome && pendingRefunds.some(
+                        (r) => Math.abs(r.amount - Math.abs(tx.amount)) < 0.001 && Math.abs(r.t - txTime) < 3 * 60 * 1000
+                      );
                       return (
                         <div key={tx.id} className="flex items-center justify-between px-4 py-3 rounded-xl bg-white/3 border border-white/6">
                           <div className="flex items-center gap-3">
                             <div className={`text-xs px-2 py-0.5 rounded-full bg-white/5 ${info.color}`}>
                               {info.label}
                             </div>
+                            {isPendingRefund && (
+                              <div className="text-xs px-2 py-0.5 rounded-full border border-white/30 text-white/90">
+                                待退款
+                              </div>
+                            )}
                             <div className="text-white/30 text-xs">
                               {new Date(tx.created_at).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
                             </div>
