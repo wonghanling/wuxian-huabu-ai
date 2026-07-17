@@ -30,11 +30,36 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { plan, amount } = body;
-    // plan: 'recharge'（余额充值）| 'membership'（月付）| 'membership_yearly'（年付）| 'membership_2yearly'（两年付）
-    const ALLOWED_PLANS = ['recharge', 'membership', 'membership_yearly', 'membership_2yearly'];
+    const { plan, amount, reservationId } = body;
+    // plan: 'recharge' | 'membership' | 'membership_yearly' | 'membership_2yearly'
+    //       | 'commission_intro'(委托介绍费,需带 reservationId)
+    const ALLOWED_PLANS = ['recharge', 'membership', 'membership_yearly', 'membership_2yearly', 'commission_intro'];
     if (!plan || !amount || !ALLOWED_PLANS.includes(plan)) {
       return NextResponse.json({ error: '缺少必要参数' }, { status: 400 });
+    }
+
+    // 介绍费:金额和归属由服务端按预留校验,不信任前端传的 amount
+    let orderAmount = amount;
+    let orderMeta: Record<string, unknown> | null = null;
+    if (plan === 'commission_intro') {
+      if (!reservationId) {
+        return NextResponse.json({ error: '缺少预留ID' }, { status: 400 });
+      }
+      // 校验:该预留存在、属于当前登录创作者、待付款、未过期
+      const { data: res } = await supabaseAdmin
+        .from('project_reservations')
+        .select('id, creator_id, status, amount_cents, pay_deadline')
+        .eq('id', reservationId)
+        .single();
+      if (!res) return NextResponse.json({ error: '预留不存在' }, { status: 404 });
+      if (res.creator_id !== user.id) return NextResponse.json({ error: '无权支付该预留' }, { status: 403 });
+      if (res.status !== 'awaiting_payment') return NextResponse.json({ error: '该预留不可支付' }, { status: 400 });
+      if (res.pay_deadline && new Date(res.pay_deadline) < new Date()) {
+        return NextResponse.json({ error: '已超过付款期限' }, { status: 400 });
+      }
+      // 金额以数据库为准(服务端计算,防前端篡改)
+      orderAmount = (res.amount_cents ?? 990) / 100;
+      orderMeta = { reservation_id: reservationId };
     }
 
     const orderId = `ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -45,9 +70,10 @@ export async function POST(req: NextRequest) {
         order_no: orderId,
         user_id: user.id,
         order_type: plan,
-        amount_rmb: amount,
+        amount_rmb: orderAmount,
         status: 'pending',
         payment_method: 'alipay',
+        meta: orderMeta,
       });
 
     if (orderError) {
@@ -60,25 +86,26 @@ export async function POST(req: NextRequest) {
     const baseUrl = `${protocol}://${host}`;
 
     const SUBJECT_BY_PLAN: Record<string, string> = {
-      membership: 'Aura Canvas 会员月付',
-      membership_yearly: 'Aura Canvas 会员年付',
-      membership_2yearly: 'Aura Canvas 会员两年付',
-      recharge: 'Aura Canvas 余额充值',
+      membership: 'Filmavo 会员月付',
+      membership_yearly: 'Filmavo 会员年付',
+      membership_2yearly: 'Filmavo 会员两年付',
+      recharge: 'Filmavo 余额充值',
+      commission_intro: 'Filmavo 项目介绍服务费',
     };
-    const subject = SUBJECT_BY_PLAN[plan] ?? 'Aura Canvas 余额充值';
+    const subject = SUBJECT_BY_PLAN[plan] ?? 'Filmavo 余额充值';
 
     const paymentForm = await alipaySdk.pageExec('alipay.trade.page.pay', {
       bizContent: {
         outTradeNo: orderId,
         productCode: 'FAST_INSTANT_TRADE_PAY',
-        totalAmount: amount.toFixed(2),
+        totalAmount: orderAmount.toFixed(2),
         subject,
       },
       returnUrl: `${baseUrl}/payment/success`,
       notifyUrl: `${baseUrl}/api/payment/alipay/notify`,
     });
 
-    return NextResponse.json({ success: true, orderId, paymentForm, amount, order_type: plan });
+    return NextResponse.json({ success: true, orderId, paymentForm, amount: orderAmount, order_type: plan });
   } catch (error: any) {
     console.error('Payment API error:', error);
     return NextResponse.json({ error: error.message || '服务器错误' }, { status: 500 });

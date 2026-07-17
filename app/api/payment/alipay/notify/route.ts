@@ -109,6 +109,20 @@ export async function POST(req: NextRequest) {
             .eq('id', orderData.user_id);
 
           console.log(`Balance recharged: +${orderData.amount_rmb} for user ${orderData.user_id}`);
+        } else if (orderData.order_type === 'commission_intro') {
+          // 委托介绍费:支付成功 → 调服务端 RPC 解锁联系方式(原子事务,幂等)
+          const reservationId = orderData.meta?.reservation_id;
+          if (reservationId) {
+            const { data: unlockRes, error: unlockErr } = await supabaseAdmin
+              .rpc('unlock_contact_after_payment', { p_reservation_id: reservationId });
+            if (unlockErr) {
+              console.error('[commission_intro] 解锁失败:', unlockErr, 'reservation:', reservationId);
+            } else {
+              console.log('[commission_intro] 解锁结果:', JSON.stringify(unlockRes), 'reservation:', reservationId);
+            }
+          } else {
+            console.error('[commission_intro] 订单缺 reservation_id, order:', orderData.order_no);
+          }
         }
       }
     }
