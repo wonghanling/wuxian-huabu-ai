@@ -258,16 +258,16 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', cursor: 'pointer' }}
             />
           ) : (data.status === 'error' && (data as any).reviewPending) ? (
-            <div style={{ width: '82%', textAlign: 'center', padding: '10px 12px', borderRadius: 10,
-              background: 'rgba(250,204,21,0.14)', border: '1px solid rgba(250,204,21,0.55)' }}>
-              <div style={{ fontSize: 12.5, fontWeight: 700, color: '#facc15', marginBottom: 4 }}>⏳ 人工审核中</div>
-              <div style={{ fontSize: 10.5, color: '#eab308', lineHeight: 1.5 }}>本次未通过审核，费用正在人工核对，如平台未计费将为你退回</div>
+            <div style={{ width: '82%', textAlign: 'center', padding: '12px 14px', borderRadius: 10,
+              background: 'rgba(250,204,21,0.12)', border: '1px solid rgba(250,204,21,0.5)' }}>
+              <div style={{ fontSize: 12.5, fontWeight: 600, color: '#facc15', marginBottom: 5, letterSpacing: 0.5 }}>人工审核中</div>
+              <div style={{ fontSize: 10.5, color: '#d4d4d8', lineHeight: 1.6 }}>本次未通过审核，费用正在核对，如平台未计费将自动退回</div>
             </div>
           ) : data.status === 'error' ? (
-            <div style={{ width: '82%', textAlign: 'center', padding: '10px 12px', borderRadius: 10,
-              background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.5)' }}>
-              <div style={{ fontSize: 12.5, fontWeight: 700, color: '#f87171', marginBottom: 4 }}>生成失败</div>
-              <div style={{ fontSize: 10.5, color: '#fca5a5', lineHeight: 1.5 }}>{((data as any).errorMsg || '请重试').slice(0, 60)}</div>
+            <div style={{ width: '82%', textAlign: 'center', padding: '12px 14px', borderRadius: 10,
+              background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.45)' }}>
+              <div style={{ fontSize: 12.5, fontWeight: 600, color: '#f87171', marginBottom: 5 }}>生成失败</div>
+              <div style={{ fontSize: 10.5, color: '#d4d4d8', lineHeight: 1.6 }}>{((data as any).errorMsg || '请重试').slice(0, 60)}</div>
             </div>
           ) : (
             <span style={{ fontSize: 12, color: '#5a5a5f' }}>点击选中 · 下方描述画面</span>
