@@ -401,8 +401,9 @@ export async function POST(req: NextRequest) {
             : mode === 'motion-control'
               ? 'motion-control'
               : mode,
-        input_image_url: params.image_url || params.image || null,
-        end_image_url: params.image_tail || null,
+        // 只存 URL，不存 base64(避免把整张图塞进数据库)
+        input_image_url: (() => { const v = params.image_url || params.image; return (v && !String(v).startsWith('data:')) ? v : null; })(),
+        end_image_url: (params.image_tail && !String(params.image_tail).startsWith('data:')) ? params.image_tail : null,
         status: 'processing',
         task_id: taskId,
         endpoint: mode,

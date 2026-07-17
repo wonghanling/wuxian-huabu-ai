@@ -958,8 +958,10 @@ export async function POST(req: NextRequest) {
         aspect_ratio: aspectRatio || null,
         generate_audio: generateAudio,
         video_mode: cfg.mode === 'firstLastFrame' ? 'first-last-frame' : cfg.mode === 'i2v' ? 'first-frame' : 'text',
-        input_image_url: startFrameImage || null,
-        end_image_url: endFrameImage || null,
+        // 只存 URL，不存 base64(base64 会把整张图塞进数据库，撑爆表)。
+        // 已上传的场景优先取转换后的 URL；若原值是 base64 则不存(记 null)。
+        input_image_url: (startFrameImage && !startFrameImage.startsWith('data:')) ? startFrameImage : ((input[cfg.imageParamName || ''] as string) || null),
+        end_image_url: (endFrameImage && !endFrameImage.startsWith('data:')) ? endFrameImage : ((input[cfg.endImageParamName || ''] as string) || null),
         status: 'processing',
         task_id: taskId,
         endpoint: taskEndpoint,
