@@ -61,10 +61,22 @@ export default function CommissionHall() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [heroSlide, setHeroSlide] = useState(0);
   const [role, setRole] = useState<'client' | 'creator'>('client'); // 我是客户 / 我是创作者
+  const [stats, setStats] = useState<{
+    client: { recruiting: number; producing: number; completed: number };
+    creator: { todo: number; ongoing: number; completed: number };
+  }>({ client: { recruiting: 0, producing: 0, completed: 0 }, creator: { todo: 0, ongoing: 0, completed: 0 } });
 
   useEffect(() => {
     const sb = createClient();
-    sb?.auth.getUser().then(({ data }: { data: { user: unknown } }) => setLoggedIn(!!data.user));
+    sb?.auth.getSession().then(async ({ data }: { data: { session: { access_token: string } | null } }) => {
+      setLoggedIn(!!data.session);
+      if (data.session) {
+        try {
+          const res = await fetch('/api/commissions/stats', { headers: { Authorization: `Bearer ${data.session.access_token}` } });
+          if (res.ok) setStats(await res.json());
+        } catch { /* noop */ }
+      }
+    });
   }, []);
 
   // 中间轮播图自动左滑
@@ -198,18 +210,25 @@ export default function CommissionHall() {
             </div>
           </div>
 
-          {/* 右:3个小卡竖排 */}
+          {/* 右:3个小卡竖排(跟随 role 切换,真实数据) */}
           <div className="flex flex-col gap-4">
-            {[
-              { n: '12', l: '创意方案', s: '份待你查看', c: 'from-emerald-500/20' },
-              { n: '5', l: '制作中', s: '个进行项目', c: 'from-blue-500/20' },
-              { n: '24', l: '本周已完成', s: '个交付', c: 'from-purple-500/20' },
-            ].map((s) => (
+            {(role === 'client'
+              ? [
+                  { n: stats.client.recruiting, l: '招募中', s: '个项目在招募', c: 'from-emerald-500/20' },
+                  { n: stats.client.producing, l: '制作中', s: '个进行项目', c: 'from-blue-500/20' },
+                  { n: stats.client.completed, l: '已完成', s: '个已合作', c: 'from-purple-500/20' },
+                ]
+              : [
+                  { n: stats.creator.todo, l: '待我处理', s: '个待付款', c: 'from-yellow-500/20' },
+                  { n: stats.creator.ongoing, l: '进行中', s: '个独家沟通', c: 'from-blue-500/20' },
+                  { n: stats.creator.completed, l: '已完成', s: '个已合作', c: 'from-purple-500/20' },
+                ]
+            ).map((s) => (
               <div key={s.l}
                 className={`flex-1 rounded-2xl border border-white/10 p-5 flex flex-col justify-center bg-gradient-to-br ${s.c} to-transparent`}
                 style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)' }}
               >
-                <div className="text-3xl font-bold text-white mb-1">{s.n}</div>
+                <div className="text-3xl font-bold text-white mb-1">{loggedIn ? s.n : '—'}</div>
                 <div className="text-sm text-zinc-300">{s.l}</div>
                 <div className="text-xs text-zinc-500">{s.s}</div>
               </div>
