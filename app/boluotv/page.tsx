@@ -35,6 +35,15 @@ const CATEGORIES = [
   { key: 'other', label: '其它' },
 ];
 
+// 中间轮播图(render/image quality=80 压缩)
+const HERO_IMAGES = [
+  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/chuangzuoweituo1.png?quality=80',
+  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/chuangzuoweituo2.png?quality=80',
+  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/chuangzuoweituo3.png?quality=80',
+  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/chuangzuoweituo4.png?quality=80',
+  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/chuangzuoweituo5.png?quality=80',
+];
+
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   open: { label: '招募中', color: 'text-emerald-400' },
   reserved: { label: '待确认', color: 'text-yellow-400' },
@@ -49,10 +58,17 @@ export default function CommissionHall() {
   const [category, setCategory] = useState('all');
   const [publishOpen, setPublishOpen] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
+  const [heroSlide, setHeroSlide] = useState(0);
 
   useEffect(() => {
     const sb = createClient();
     sb?.auth.getUser().then(({ data }: { data: { user: unknown } }) => setLoggedIn(!!data.user));
+  }, []);
+
+  // 中间轮播图自动左滑
+  useEffect(() => {
+    const t = setInterval(() => setHeroSlide((s) => (s + 1) % HERO_IMAGES.length), 3500);
+    return () => clearInterval(t);
   }, []);
 
   const load = () => {
@@ -89,54 +105,68 @@ export default function CommissionHall() {
         </div>
       </nav>
 
-      {/* Hero:左(标题+双按钮+数据) 中(主推项目大卡/视频) 右(3小卡) */}
+      {/* Hero:左(视频卡槽+文案+双按钮+数据) 中(轮播图+项目文案) 右(3小卡) */}
       <section className="max-w-[1600px] mx-auto px-6 md:px-10 pt-12 pb-10">
         <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1.4fr_0.7fr] gap-6 items-stretch">
-          {/* 左:标题 + 副标题 + 双按钮 + 4数据 */}
-          <div className="flex flex-col justify-center">
-            <h1 className="text-3xl md:text-[42px] font-bold tracking-tight mb-4 leading-[1.15]">
-              把创意需求，<br />交给专业的<span className="text-emerald-400">创作者</span>
-            </h1>
-            <p className="text-zinc-400 text-sm md:text-[15px] mb-7 leading-relaxed max-w-md">
-              发布广告、影视、动画等创作需求，多位创作者免费申请，你挑选最合适的一位一对一沟通合作。
-            </p>
-            <div className="flex flex-wrap gap-4 mb-8">
-              <button
-                onClick={() => { if (!loggedIn) { window.location.href = '/auth'; return; } setPublishOpen(true); }}
-                className="px-7 py-3.5 rounded-full bg-white text-black font-semibold text-base hover:bg-zinc-200 transition-colors shadow-lg"
-              >
-                发布创作委托
-              </button>
-              <a href="#tabs"
-                className="px-7 py-3.5 rounded-full border border-white/30 text-white font-medium text-base hover:bg-white/10 transition-colors">
-                成为创作者
-              </a>
-            </div>
-            {/* 4数据横排 */}
-            <div className="grid grid-cols-4 gap-2">
-              {[
-                { n: '328+', l: '开放项目' },
-                { n: '1460+', l: '创作者' },
-                { n: '892+', l: '已完成' },
-                { n: '96%', l: '按时交付' },
-              ].map((s, i) => (
-                <div key={s.l} className={`text-center ${i > 0 ? 'border-l border-white/10' : ''}`}>
-                  <div className="text-xl md:text-2xl font-bold text-white tracking-tight">{s.n}</div>
-                  <div className="text-[11px] text-zinc-500 mt-0.5">{s.l}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* 中:主推项目大卡(视频背景) */}
-          <div className="relative rounded-3xl overflow-hidden border border-white/10 min-h-[360px]">
+          {/* 左:视频背景卡槽 + 文案 + 双按钮 + 4数据 */}
+          <div className="relative rounded-3xl overflow-hidden border border-white/10 min-h-[380px]">
             <video
               src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/chuangzaoweituo.mp4"
               autoPlay muted loop playsInline preload="metadata"
               className="absolute inset-0 w-full h-full object-cover"
             />
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.55) 60%, rgba(0,0,0,0.85) 100%)' }} />
-            <div className="relative h-full flex flex-col justify-between p-7 min-h-[360px]">
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.65) 100%)' }} />
+            <div className="relative h-full flex flex-col justify-center p-7 md:p-8 min-h-[380px]">
+              <h1 className="text-2xl md:text-[34px] font-bold tracking-tight mb-3 leading-[1.2]">
+                把创意需求，<br />交给专业的<span className="text-emerald-400">创作者</span>
+              </h1>
+              <p className="text-zinc-300 text-sm mb-6 leading-relaxed max-w-sm">
+                发布广告、影视、动画等创作需求，多位创作者免费申请，你挑选最合适的一位一对一沟通合作。
+              </p>
+              <div className="flex flex-wrap gap-3 mb-7">
+                <button
+                  onClick={() => { if (!loggedIn) { window.location.href = '/auth'; return; } setPublishOpen(true); }}
+                  className="px-6 py-3 rounded-full bg-white text-black font-semibold text-sm hover:bg-zinc-200 transition-colors shadow-lg"
+                >
+                  发布创作委托
+                </button>
+                <a href="#tabs"
+                  className="px-6 py-3 rounded-full border border-white/30 text-white font-medium text-sm hover:bg-white/10 transition-colors">
+                  成为创作者
+                </a>
+              </div>
+              {/* 4数据横排 */}
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  { n: '328+', l: '开放项目' },
+                  { n: '1460+', l: '创作者' },
+                  { n: '892+', l: '已完成' },
+                  { n: '96%', l: '按时交付' },
+                ].map((s, i) => (
+                  <div key={s.l} className={`text-center ${i > 0 ? 'border-l border-white/15' : ''}`}>
+                    <div className="text-lg md:text-xl font-bold text-white tracking-tight">{s.n}</div>
+                    <div className="text-[10px] text-zinc-400 mt-0.5">{s.l}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* 中:轮播图 + 项目文案叠加 */}
+          <div className="relative rounded-3xl overflow-hidden border border-white/10 bg-zinc-900 min-h-[380px]">
+            {/* 轮播轨道 */}
+            <div
+              className="flex h-full absolute inset-0 transition-transform duration-700 ease-out"
+              style={{ transform: `translateX(-${heroSlide * 100}%)` }}
+            >
+              {HERO_IMAGES.map((url, i) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img key={i} src={url} alt={`创作委托${i + 1}`} className="w-full h-full object-cover shrink-0" />
+              ))}
+            </div>
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.55) 55%, rgba(0,0,0,0.9) 100%)' }} />
+            {/* 项目文案叠加 */}
+            <div className="relative h-full flex flex-col justify-between p-7 min-h-[380px]">
               <div className="flex items-center gap-2">
                 <span className="px-3 py-1 rounded-full bg-emerald-500 text-black text-xs font-bold">精选推荐</span>
                 <span className="px-3 py-1 rounded-full bg-white/15 backdrop-blur text-white text-xs">正在招募中</span>
@@ -155,6 +185,17 @@ export default function CommissionHall() {
                   查看项目 →
                 </button>
               </div>
+            </div>
+            {/* 轮播指示点 */}
+            <div className="absolute top-4 right-4 flex gap-1.5 z-10">
+              {HERO_IMAGES.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setHeroSlide(i)}
+                  className={`h-1.5 rounded-full transition-all ${i === heroSlide ? 'w-5 bg-white' : 'w-1.5 bg-white/40'}`}
+                  aria-label={`第${i + 1}张`}
+                />
+              ))}
             </div>
           </div>
 
