@@ -18,6 +18,11 @@ type Application = {
   delivery_days: number | null; availability: string | null; intro: string | null;
   status: string; created_at: string;
 };
+type Reservation = {
+  id: string; creator_id: string; status: string; payment_status: string;
+  amount_cents: number; pay_deadline: string | null; contact_deadline: string | null;
+};
+type Contact = { contact_name: string | null; contact_type: string | null; contact_value: string; supplementary_notes: string | null };
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   open: { label: '招募中', color: 'text-emerald-400' },
@@ -34,10 +39,62 @@ export default function ProjectDetail() {
   const [isOwner, setIsOwner] = useState(false);
   const [applications, setApplications] = useState<Application[]>([]);
   const [myApplication, setMyApplication] = useState<Application | null>(null);
+  const [myReservation, setMyReservation] = useState<Reservation | null>(null);
+  const [contact, setContact] = useState<Contact | null>(null);
+  const [paying, setPaying] = useState(false);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [applyOpen, setApplyOpen] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
+  const [selecting, setSelecting] = useState<string | null>(null);
+
+  // 甲方选择创作者独家沟通(需确认)
+  const selectCreator = async (applicationId: string) => {
+    const ok = window.confirm('选择后，项目将暂停接受其他申请。创作者支付介绍服务费后，双方联系方式将解锁。在本轮独家沟通结束前，您不能选择其他创作者。确定选择？');
+    if (!ok) return;
+    setSelecting(applicationId);
+    try {
+      const sb = createClient();
+      const { data: { session } } = await sb!.auth.getSession();
+      if (!session) { window.location.href = '/auth'; return; }
+      const res = await fetch(`/api/commissions/${id}/select`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ applicationId }),
+      });
+      const data = await res.json();
+      if (!res.ok) { alert(data.error || '选择失败'); setSelecting(null); return; }
+      await load();
+    } catch (e: any) {
+      alert(e.message || '选择失败');
+    }
+    setSelecting(null);
+  };
+
+  // 被选创作者支付介绍费(走支付宝 commission_intro)
+  const payIntroFee = async () => {
+    if (!myReservation) return;
+    setPaying(true);
+    try {
+      const sb = createClient();
+      const { data: { session } } = await sb!.auth.getSession();
+      if (!session) { window.location.href = '/auth'; return; }
+      const res = await fetch('/api/payment/alipay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ plan: 'commission_intro', amount: (myReservation.amount_cents || 990) / 100, reservationId: myReservation.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) { alert(data.error || '下单失败'); setPaying(false); return; }
+      // 打开支付宝支付表单
+      const win = window.open('', '_blank');
+      if (win) { win.document.write(data.paymentForm); win.document.close(); }
+      else { alert('请允许弹窗以完成支付'); }
+    } catch (e: any) {
+      alert(e.message || '下单失败');
+    }
+    setPaying(false);
+  };
 
   const load = async () => {
     setLoading(true);
@@ -54,6 +111,8 @@ export default function ProjectDetail() {
       setIsOwner(data.isOwner);
       setApplications(data.applications || []);
       setMyApplication(data.myApplication || null);
+      setMyReservation(data.myReservation || null);
+      setContact(data.contact || null);
     } catch { /* noop */ }
     setLoading(false);
   };
@@ -152,8 +211,11 @@ export default function ProjectDetail() {
                       </div>
                       <div className="shrink-0">
                         {project.status === 'open' ? (
-                          <button className="px-4 py-2 rounded-full bg-white text-black text-sm font-semibold hover:bg-zinc-200 transition-colors">
-                            选择独家沟通
+                          <button
+                            onClick={() => selectCreator(a.id)}
+                            disabled={selecting !== null}
+                            className="px-4 py-2 rounded-full bg-white text-black text-sm font-semibold hover:bg-zinc-200 transition-colors disabled:opacity-50">
+                            {selecting === a.id ? '处理中…' : '选择独家沟通'}
                           </button>
                         ) : (
                           <span className="text-xs text-zinc-500">{a.status === 'selected' ? '已选择' : '—'}</span>
@@ -165,18 +227,54 @@ export default function ProjectDetail() {
               </div>
             )}
           </div>
+        ) : myReservation && myReservation.status === 'active' && contact ? (
+          /* 创作者视角: 已付款,显示甲方联系方式 */
+          <div className="mt-8 rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.08] p-6">
+            <div className="text-base font-semibold text-emerald-400 mb-3">🎉 独家沟通中 · 联系方式已解锁</div>
+            <div className="space-y-2 text-sm">
+              <div><span className="text-zinc-500">称呼：</span><span className="text-white">{contact.contact_name || '—'}</span></div>
+              <div><span className="text-zinc-500">联系方式（{contact.contact_type || ''}）：</span><span className="text-white font-medium select-all">{contact.contact_value}</span></div>
+              {contact.supplementary_notes && <div><span className="text-zinc-500">备注：</span><span className="text-white">{contact.supplementary_notes}</span></div>}
+            </div>
+            <div className="text-xs text-zinc-400 mt-4 leading-relaxed">
+              请尽快与甲方联系，确认最终价格、制作周期、修改次数、交付内容与付款方式。项目价格与合作由双方线下协商，平台不参与项目资金交易。
+            </div>
+          </div>
+        ) : myReservation && myReservation.status === 'awaiting_payment' ? (
+          /* 创作者视角: 被选中,待付款解锁 */
+          <div className="mt-8 rounded-2xl border border-yellow-500/30 bg-yellow-500/[0.08] p-6">
+            <div className="text-base font-semibold text-yellow-400 mb-2">甲方已选择与你一对一沟通</div>
+            <p className="text-sm text-zinc-300 mb-1">支付项目介绍服务费后，即可查看甲方联系方式，进入独家沟通。</p>
+            <p className="text-xs text-zinc-500 mb-4">
+              介绍费 ¥{((myReservation.amount_cents || 990) / 100).toFixed(2)}
+              {myReservation.pay_deadline ? ` · 请在 ${new Date(myReservation.pay_deadline).toLocaleString('zh-CN')} 前支付` : ''}
+            </p>
+            <div className="flex gap-3">
+              <button onClick={payIntroFee} disabled={paying}
+                className="px-6 py-3 rounded-full bg-white text-black font-semibold text-sm hover:bg-zinc-200 transition-colors disabled:opacity-50">
+                {paying ? '跳转支付…' : `支付 ¥${((myReservation.amount_cents || 990) / 100).toFixed(2)} 解锁联系方式`}
+              </button>
+              <button onClick={() => load()}
+                className="px-5 py-3 rounded-full border border-white/20 text-zinc-300 text-sm hover:bg-white/10 transition-colors">
+                我已支付，刷新
+              </button>
+            </div>
+            <p className="text-xs text-zinc-600 mt-3">介绍费独立于画布余额，通过支付宝支付。支付成功后由系统自动解锁，请勿关闭页面太久。</p>
+          </div>
+        ) : myApplication ? (
+          <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] p-6">
+            <div>
+              <div className="text-sm text-emerald-400 mb-2">✓ 你已申请该项目</div>
+              <div className="text-sm text-zinc-400">
+                报价 {myApplication.quote_min != null ? `¥${myApplication.quote_min}-${myApplication.quote_max}` : '面议'} ·
+                {myApplication.delivery_days || '?'}天 · 状态: {myApplication.status}
+              </div>
+            </div>
+          </div>
         ) : (
           /* 创作者视角: 申请入口 */
           <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] p-6">
-            {myApplication ? (
-              <div>
-                <div className="text-sm text-emerald-400 mb-2">✓ 你已申请该项目</div>
-                <div className="text-sm text-zinc-400">
-                  报价 {myApplication.quote_min != null ? `¥${myApplication.quote_min}-${myApplication.quote_max}` : '面议'} ·
-                  {myApplication.delivery_days || '?'}天 · 状态: {myApplication.status}
-                </div>
-              </div>
-            ) : project.status === 'open' ? (
+            {project.status === 'open' ? (
               <div className="flex items-center justify-between gap-4">
                 <div className="text-sm text-zinc-300">
                   <div className="font-medium mb-1">申请这个项目</div>

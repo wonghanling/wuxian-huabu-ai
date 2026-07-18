@@ -51,5 +51,30 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     myApplication = mine ?? null;
   }
 
-  return NextResponse.json({ project, isOwner, applications, myApplication });
+  // 当前查看者(创作者)在本项目的有效预留(用于付款/解锁界面)
+  let myReservation: unknown = null;
+  let contact: unknown = null;
+  if (viewerId) {
+    const { data: res } = await supabaseAdmin
+      .from('project_reservations')
+      .select('id, creator_id, status, payment_status, amount_cents, pay_deadline, contact_deadline')
+      .eq('project_id', id)
+      .eq('creator_id', viewerId)
+      .in('status', ['awaiting_payment', 'active'])
+      .maybeSingle();
+    myReservation = res ?? null;
+
+    // 已解锁(付款成功) → 返回甲方联系方式给该创作者
+    if (res && res.status === 'active' && res.payment_status === 'paid') {
+      const { data: c } = await supabaseAdmin
+        .from('project_contacts')
+        .select('contact_name, contact_type, contact_value, supplementary_notes')
+        .eq('project_id', id)
+        .maybeSingle();
+      contact = c ?? null;
+    }
+  }
+
+  // 甲方在独家沟通阶段也能看到被选创作者(这里简化:甲方在 active 后可见联系)
+  return NextResponse.json({ project, isOwner, applications, myApplication, myReservation, contact });
 }
