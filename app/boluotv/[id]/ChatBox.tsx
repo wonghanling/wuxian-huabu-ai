@@ -6,6 +6,27 @@ import { createClient } from '@/lib/supabase/client';
 // 独家沟通实时聊天(Supabase Realtime)
 type Message = { id: string; sender_id: string; content: string; created_at: string };
 
+// 按钮包一层:点击才展开聊天窗口
+export function ChatToggle({ projectId, reservationId }: { projectId: string; reservationId: string | null }) {
+  const [open, setOpen] = useState(false);
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)}
+        className="w-full py-3 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-500 transition-colors">
+        💬 进入实时聊天
+      </button>
+    );
+  }
+  return (
+    <div>
+      <div className="flex justify-end mb-2">
+        <button onClick={() => setOpen(false)} className="text-xs text-zinc-400 hover:text-white">收起聊天 ✕</button>
+      </div>
+      <ChatBox projectId={projectId} reservationId={reservationId} />
+    </div>
+  );
+}
+
 export function ChatBox({ projectId, reservationId }: { projectId: string; reservationId: string | null }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [me, setMe] = useState<string>('');

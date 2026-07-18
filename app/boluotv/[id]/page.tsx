@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { ApplyModal } from './ApplyModal';
 import { CreatorProfileModal } from './CreatorProfileModal';
-import { ChatBox } from './ChatBox';
+import { ChatToggle } from './ChatBox';
 
 // 项目详情页(独立于画布)。甲方看申请者列表+选择创作者;创作者看详情+申请入口。
 type Project = {
@@ -251,7 +251,7 @@ export default function ProjectDetail() {
         {/* 甲方视角: 独家沟通中聊天 */}
         {isOwner && myReservation?.status === 'active' && (
           <div className="mt-6">
-            <ChatBox projectId={id} reservationId={myReservation.id} />
+            <ChatToggle projectId={id} reservationId={myReservation.id} />
           </div>
         )}
 
@@ -338,7 +338,7 @@ export default function ProjectDetail() {
               </button>
             </div>
             <div className="mt-6">
-              <ChatBox projectId={id} reservationId={myReservation.id} />
+              <ChatToggle projectId={id} reservationId={myReservation.id} />
             </div>
           </div>
         ) : myReservation && myReservation.status === 'awaiting_payment' ? (
