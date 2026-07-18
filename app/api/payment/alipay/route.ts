@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
 
     if (orderError) {
       console.error('Failed to create order:', orderError);
-      return NextResponse.json({ error: '创建订单失败' }, { status: 500 });
+      return NextResponse.json({ error: '创建订单失败: ' + (orderError.message || '') }, { status: 500 });
     }
 
     const host = req.headers.get('host') || 'localhost:3000';
