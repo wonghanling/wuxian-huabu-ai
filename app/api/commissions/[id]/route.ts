@@ -77,11 +77,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       .maybeSingle();
     myReservation = res ?? null;
 
-    // 独家沟通中(已付款) → 甲方可看被选创作者联系方式
+    // 独家沟通中(已付款) → 甲方可看被选创作者联系方式(双方对等解锁)
     if (res && res.status === 'active' && res.payment_status === 'paid') {
       const { data: cc } = await supabaseAdmin
         .from('creator_profiles')
-        .select('display_name, bio')
+        .select('display_name, bio, contact_type, contact_value')
         .eq('user_id', res.creator_id)
         .maybeSingle();
       creatorContact = cc ?? null;

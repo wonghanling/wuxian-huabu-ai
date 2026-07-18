@@ -15,13 +15,22 @@ async function getUser(req: NextRequest) {
   return user;
 }
 
-// 校验:用户是该项目甲方 或 已解锁创作者
+// 校验:必须已付款进入独家沟通(存在解锁记录)后,该项目的甲方和被选创作者才能聊
+// 没付款 → 甲方和创作者都不能发/收消息
 async function canChat(projectId: string, uid: string): Promise<boolean> {
-  const { data: proj } = await supabaseAdmin.from('projects').select('client_id').eq('id', projectId).single();
-  if (proj?.client_id === uid) return true;
+  // 该项目必须有一条解锁记录(创作者付款完成),否则谁都不能聊
   const { data: unlock } = await supabaseAdmin
-    .from('contact_unlocks').select('id').eq('project_id', projectId).eq('creator_id', uid).maybeSingle();
-  return !!unlock;
+    .from('contact_unlocks')
+    .select('creator_id')
+    .eq('project_id', projectId)
+    .maybeSingle();
+  if (!unlock) return false; // 未付款解锁,不能聊
+
+  // 被选创作者本人
+  if (unlock.creator_id === uid) return true;
+  // 该项目甲方本人
+  const { data: proj } = await supabaseAdmin.from('projects').select('client_id').eq('id', projectId).single();
+  return proj?.client_id === uid;
 }
 
 // GET — 读历史消息
