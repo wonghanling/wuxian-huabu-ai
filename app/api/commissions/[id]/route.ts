@@ -39,7 +39,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       .select('id, creator_id, quote_min, quote_max, delivery_days, availability, intro, status, created_at')
       .eq('project_id', id)
       .order('created_at', { ascending: false });
-    applications = apps ?? [];
+
+    // 附上每个申请者的创作者资料(头像/昵称/擅长/简介/历史合作数)
+    const creatorIds = [...new Set((apps ?? []).map((a) => a.creator_id))];
+    const profileMap = new Map<string, unknown>();
+    if (creatorIds.length > 0) {
+      const { data: profiles } = await supabaseAdmin
+        .from('creator_profiles')
+        .select('user_id, display_name, avatar_url, specialties, bio, verification_status, completed_count')
+        .in('user_id', creatorIds);
+      for (const p of profiles ?? []) profileMap.set(p.user_id, p);
+    }
+    applications = (apps ?? []).map((a) => ({ ...a, creator_profile: profileMap.get(a.creator_id) ?? null }));
   } else if (viewerId) {
     // 创作者看自己是否申请过
     const { data: mine } = await supabaseAdmin

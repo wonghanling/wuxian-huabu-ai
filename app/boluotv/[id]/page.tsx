@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { ApplyModal } from './ApplyModal';
+import { CreatorProfileModal } from './CreatorProfileModal';
 
 // 项目详情页(独立于画布)。甲方看申请者列表+选择创作者;创作者看详情+申请入口。
 type Project = {
@@ -13,10 +14,14 @@ type Project = {
   delivery_days: number | null; cover_url: string | null; tags: string[] | null; reference_files: string[] | null;
   status: string; application_count: number; current_reservation_id: string | null; created_at: string;
 };
+type CreatorProfile = {
+  display_name: string | null; avatar_url: string | null; specialties: string[] | null;
+  bio: string | null; verification_status: string | null; completed_count: number | null;
+};
 type Application = {
   id: string; creator_id?: string; quote_min: number | null; quote_max: number | null;
   delivery_days: number | null; availability: string | null; intro: string | null;
-  status: string; created_at: string;
+  status: string; created_at: string; creator_profile?: CreatorProfile | null;
 };
 type Reservation = {
   id: string; creator_id: string; status: string; payment_status: string;
@@ -48,6 +53,7 @@ export default function ProjectDetail() {
   const [applyOpen, setApplyOpen] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
   const [selecting, setSelecting] = useState<string | null>(null);
+  const [viewCreator, setViewCreator] = useState<Application | null>(null);
 
   // 甲方选择创作者独家沟通(需确认)
   const selectCreator = async (applicationId: string) => {
@@ -255,14 +261,33 @@ export default function ProjectDetail() {
                   <div key={a.id} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500/40 to-blue-500/40" />
-                          <span className="text-sm font-medium">创作者</span>
-                          <span className="text-xs text-zinc-500">
-                            报价 {a.quote_min != null ? `¥${a.quote_min}-${a.quote_max}` : '面议'} · {a.delivery_days || '?'}天 · {a.availability || '档期待定'}
-                          </span>
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-emerald-500/40 to-blue-500/40 shrink-0">
+                            {a.creator_profile?.avatar_url && (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={a.creator_profile.avatar_url} alt="头像" className="w-full h-full object-cover" />
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium">{a.creator_profile?.display_name || '创作者'}</span>
+                              {a.creator_profile?.completed_count ? <span className="text-xs text-zinc-500">已合作{a.creator_profile.completed_count}次</span> : null}
+                            </div>
+                            <span className="text-xs text-zinc-500">
+                              报价 {a.quote_min != null ? `¥${a.quote_min}-${a.quote_max}` : '面议'} · {a.delivery_days || '?'}天 · {a.availability || '档期待定'}
+                            </span>
+                          </div>
                         </div>
+                        {a.creator_profile?.specialties && a.creator_profile.specialties.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 mb-2">
+                            {a.creator_profile.specialties.map((s) => (
+                              <span key={s} className="px-2 py-0.5 text-xs rounded-full bg-white/5 text-zinc-400 border border-white/10">{s}</span>
+                            ))}
+                          </div>
+                        )}
                         {a.intro && <p className="text-sm text-zinc-300 leading-relaxed">{a.intro}</p>}
+                        <button onClick={() => setViewCreator(a)}
+                          className="mt-2 text-xs text-emerald-400 hover:text-emerald-300">查看资料和作品 →</button>
                       </div>
                       <div className="shrink-0">
                         {project.status === 'open' ? (
@@ -360,6 +385,14 @@ export default function ProjectDetail() {
 
       {applyOpen && (
         <ApplyModal projectId={id} onClose={() => setApplyOpen(false)} onApplied={() => { setApplyOpen(false); load(); }} />
+      )}
+      {viewCreator && viewCreator.creator_id && (
+        <CreatorProfileModal
+          creatorId={viewCreator.creator_id}
+          profile={viewCreator.creator_profile ?? null}
+          application={viewCreator}
+          onClose={() => setViewCreator(null)}
+        />
       )}
     </Shell>
   );
