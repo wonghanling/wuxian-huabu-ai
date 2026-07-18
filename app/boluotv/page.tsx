@@ -35,15 +35,6 @@ const CATEGORIES = [
   { key: 'other', label: '其它' },
 ];
 
-// Hero 图片卡轮播图(render/image quality=80 压缩)
-const HERO_IMAGES = [
-  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/chuangzuoweituo1.png?quality=80',
-  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/chuangzuoweituo2.png?quality=80',
-  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/chuangzuoweituo3.png?quality=80',
-  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/chuangzuoweituo4.png?quality=80',
-  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/chuangzuoweituo5.png?quality=80',
-];
-
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   open: { label: '招募中', color: 'text-emerald-400' },
   reserved: { label: '待确认', color: 'text-yellow-400' },
@@ -58,17 +49,10 @@ export default function CommissionHall() {
   const [category, setCategory] = useState('all');
   const [publishOpen, setPublishOpen] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
-  const [heroSlide, setHeroSlide] = useState(0);
 
   useEffect(() => {
     const sb = createClient();
     sb?.auth.getUser().then(({ data }: { data: { user: unknown } }) => setLoggedIn(!!data.user));
-  }, []);
-
-  // Hero 图片卡自动左滑轮播
-  useEffect(() => {
-    const t = setInterval(() => setHeroSlide((s) => (s + 1) % HERO_IMAGES.length), 3500);
-    return () => clearInterval(t);
   }, []);
 
   const load = () => {
@@ -85,7 +69,7 @@ export default function CommissionHall() {
     <main className="min-h-screen bg-black text-white">
       {/* 顶部导航 */}
       <nav className="sticky top-0 z-30 backdrop-blur-xl bg-black/70 border-b border-white/8">
-        <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-[1600px] mx-auto px-6 md:px-10 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <span className="text-lg font-bold tracking-tight">
               Filmavo<sup className="text-emerald-500 text-[0.6em] font-bold ml-0.5 align-super">TV</sup>
@@ -105,108 +89,91 @@ export default function CommissionHall() {
         </div>
       </nav>
 
-      {/* Hero:左半(视频背景+标题+双按钮) + 右半(上:数据统计 下:三步流程) */}
-      <section className="max-w-[1400px] mx-auto px-6 pt-12 pb-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-          {/* 左半:视频背景主视觉 */}
-          <div className="relative rounded-3xl overflow-hidden border border-white/10 min-h-[340px]">
+      {/* Hero:左(标题+双按钮+数据) 中(主推项目大卡/视频) 右(3小卡) */}
+      <section className="max-w-[1600px] mx-auto px-6 md:px-10 pt-12 pb-10">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1.4fr_0.7fr] gap-6 items-stretch">
+          {/* 左:标题 + 副标题 + 双按钮 + 4数据 */}
+          <div className="flex flex-col justify-center">
+            <h1 className="text-3xl md:text-[42px] font-bold tracking-tight mb-4 leading-[1.15]">
+              把创意需求，<br />交给专业的<span className="text-emerald-400">创作者</span>
+            </h1>
+            <p className="text-zinc-400 text-sm md:text-[15px] mb-7 leading-relaxed max-w-md">
+              发布广告、影视、动画等创作需求，多位创作者免费申请，你挑选最合适的一位一对一沟通合作。
+            </p>
+            <div className="flex flex-wrap gap-4 mb-8">
+              <button
+                onClick={() => { if (!loggedIn) { window.location.href = '/auth'; return; } setPublishOpen(true); }}
+                className="px-7 py-3.5 rounded-full bg-white text-black font-semibold text-base hover:bg-zinc-200 transition-colors shadow-lg"
+              >
+                发布创作委托
+              </button>
+              <a href="#tabs"
+                className="px-7 py-3.5 rounded-full border border-white/30 text-white font-medium text-base hover:bg-white/10 transition-colors">
+                成为创作者
+              </a>
+            </div>
+            {/* 4数据横排 */}
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                { n: '328+', l: '开放项目' },
+                { n: '1460+', l: '创作者' },
+                { n: '892+', l: '已完成' },
+                { n: '96%', l: '按时交付' },
+              ].map((s, i) => (
+                <div key={s.l} className={`text-center ${i > 0 ? 'border-l border-white/10' : ''}`}>
+                  <div className="text-xl md:text-2xl font-bold text-white tracking-tight">{s.n}</div>
+                  <div className="text-[11px] text-zinc-500 mt-0.5">{s.l}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* 中:主推项目大卡(视频背景) */}
+          <div className="relative rounded-3xl overflow-hidden border border-white/10 min-h-[360px]">
             <video
               src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/chuangzaoweituo.mp4"
               autoPlay muted loop playsInline preload="metadata"
               className="absolute inset-0 w-full h-full object-cover"
             />
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.5) 55%, rgba(0,0,0,0.3) 100%)' }} />
-            <div className="relative p-8 md:p-10 flex flex-col justify-center h-full min-h-[340px]">
-              <h1 className="text-3xl md:text-[40px] font-bold tracking-tight mb-4 leading-tight">
-                连接创意需求<br />与专业<span className="text-emerald-400">创作者</span>
-              </h1>
-              <p className="text-zinc-300 text-sm md:text-[15px] mb-7 max-w-md leading-relaxed">
-                发布广告、影视、动画等创作需求，找到合适的创作者，在 Filmavo 完成高质量交付。
-              </p>
-              <div className="flex flex-wrap gap-4">
-                <button
-                  onClick={() => { if (!loggedIn) { window.location.href = '/auth'; return; } setPublishOpen(true); }}
-                  className="px-8 py-4 rounded-full bg-white text-black font-semibold text-base hover:bg-zinc-200 transition-colors shadow-lg"
-                >
-                  发布创作委托
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.55) 60%, rgba(0,0,0,0.85) 100%)' }} />
+            <div className="relative h-full flex flex-col justify-between p-7 min-h-[360px]">
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-1 rounded-full bg-emerald-500 text-black text-xs font-bold">精选推荐</span>
+                <span className="px-3 py-1 rounded-full bg-white/15 backdrop-blur text-white text-xs">正在招募中</span>
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold mb-2">高端香水品牌广告短片</h3>
+                <p className="text-zinc-300 text-sm mb-4 max-w-lg leading-relaxed">
+                  寻找有质感的创作者，制作 30 秒香水产品广告，要求电影级画面与光影质感。
+                </p>
+                <div className="flex flex-wrap items-center gap-4 text-sm mb-4">
+                  <span className="text-emerald-400 font-semibold">预算 ¥8,000-15,000</span>
+                  <span className="text-zinc-400">交付周期 14 天</span>
+                  <span className="text-zinc-400">12 人已申请</span>
+                </div>
+                <button className="px-6 py-2.5 rounded-full bg-white text-black text-sm font-semibold hover:bg-zinc-200 transition-colors">
+                  查看项目 →
                 </button>
-                <a href="#projects"
-                  className="px-8 py-4 rounded-full border border-white/30 text-white font-medium text-base hover:bg-white/10 transition-colors">
-                  找项目接单
-                </a>
               </div>
             </div>
           </div>
 
-          {/* 右半 */}
-          <div className="flex flex-col gap-6">
-            {/* 上:16:9 图片卡(左滑轮播) */}
-            <div className="relative rounded-3xl overflow-hidden border border-white/10 bg-zinc-900" style={{ aspectRatio: '16/9' }}>
-              {/* 横向滑动轨道 */}
-              <div
-                className="flex h-full transition-transform duration-700 ease-out"
-                style={{ transform: `translateX(-${heroSlide * 100}%)` }}
+          {/* 右:3个小卡竖排 */}
+          <div className="flex flex-col gap-4">
+            {[
+              { n: '12', l: '创意方案', s: '份待你查看', c: 'from-emerald-500/20' },
+              { n: '5', l: '制作中', s: '个进行项目', c: 'from-blue-500/20' },
+              { n: '24', l: '本周已完成', s: '个交付', c: 'from-purple-500/20' },
+            ].map((s) => (
+              <div key={s.l}
+                className={`flex-1 rounded-2xl border border-white/10 p-5 flex flex-col justify-center bg-gradient-to-br ${s.c} to-transparent`}
+                style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)' }}
               >
-                {HERO_IMAGES.map((url, i) => (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img key={i} src={url} alt={`创作委托${i + 1}`} className="w-full h-full object-cover shrink-0" />
-                ))}
+                <div className="text-3xl font-bold text-white mb-1">{s.n}</div>
+                <div className="text-sm text-zinc-300">{s.l}</div>
+                <div className="text-xs text-zinc-500">{s.s}</div>
               </div>
-              {/* 指示点 */}
-              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-                {HERO_IMAGES.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setHeroSlide(i)}
-                    className={`h-1.5 rounded-full transition-all ${i === heroSlide ? 'w-5 bg-white' : 'w-1.5 bg-white/40'}`}
-                    aria-label={`第${i + 1}张`}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* 中:数据统计(白色数字,分隔竖线,微光背景) */}
-            <div
-              className="grid grid-cols-2 sm:grid-cols-4 rounded-3xl border border-white/10 p-5"
-              style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))', boxShadow: '0 8px 30px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)' }}
-            >
-              {[
-                { n: '328+', l: '开放项目' },
-                { n: '1460+', l: '创作者' },
-                { n: '892+', l: '已完成委托' },
-                { n: '96%', l: '按时交付率' },
-              ].map((s, i) => (
-                <div key={s.l} className={`flex flex-col items-center text-center gap-1.5 py-1 ${i > 0 ? 'sm:border-l border-white/10' : ''}`}>
-                  <div className="text-2xl md:text-[28px] font-bold text-white tracking-tight" style={{ textShadow: '0 2px 12px rgba(255,255,255,0.15)' }}>{s.n}</div>
-                  <div className="text-[11px] text-zinc-400 tracking-wide">{s.l}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* 下:三步流程(带序号圆圈 + 立体卡片 + 悬停微动) */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {[
-                { n: '01', t: '发布需求', d: '描述你的项目需求和预算' },
-                { n: '02', t: '匹配创作者', d: '创作者提交作品与报价，你挑选合适的一位' },
-                { n: '03', t: '协作交付', d: '在 Filmavo 完成创作与交付' },
-              ].map((s) => (
-                <div
-                  key={s.n}
-                  className="group relative rounded-2xl border border-white/10 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-white/25"
-                  style={{ background: 'linear-gradient(160deg, rgba(255,255,255,0.07), rgba(255,255,255,0.015))', boxShadow: '0 6px 24px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.06)' }}
-                >
-                  {/* 序号圆圈 */}
-                  <div
-                    className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white mb-3 transition-all group-hover:scale-110"
-                    style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.9), rgba(5,120,80,0.9))', boxShadow: '0 4px 14px rgba(16,185,129,0.4)' }}
-                  >
-                    {s.n}
-                  </div>
-                  <div className="font-semibold text-sm text-white mb-1.5">{s.t}</div>
-                  <div className="text-xs text-zinc-400 leading-relaxed">{s.d}</div>
-                </div>
-              ))}
-            </div>
+            ))}
           </div>
         </div>
       </section>
