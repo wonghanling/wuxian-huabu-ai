@@ -107,7 +107,7 @@ export default function CommissionHall() {
 
       {/* Hero:左(视频卡槽+文案+双按钮+数据) 中(轮播图+项目文案) 右(3小卡) */}
       <section className="max-w-[1920px] mx-auto px-6 md:px-12 pt-12 pb-10">
-        <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1.4fr_0.7fr] gap-6 items-stretch">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1.4fr_0.5fr] gap-6 items-stretch">
           {/* 左:视频背景卡槽 + 文案 + 双按钮 + 4数据 */}
           <div className="relative rounded-3xl overflow-hidden border border-white/10 min-h-[380px]">
             <video
@@ -116,27 +116,27 @@ export default function CommissionHall() {
               className="absolute inset-0 w-full h-full object-cover"
             />
             <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.65) 100%)' }} />
-            <div className="relative h-full flex flex-col justify-center p-7 md:p-8 min-h-[380px]">
-              <h1 className="text-2xl md:text-[34px] font-bold tracking-tight mb-3 leading-[1.2]">
+            <div className="relative h-full flex flex-col justify-center p-6 md:p-7 min-h-[380px]">
+              <h1 className="text-xl md:text-[28px] font-bold tracking-tight mb-2.5 leading-[1.2]">
                 把创意需求，<br />交给专业的<span className="text-emerald-400">创作者</span>
               </h1>
-              <p className="text-zinc-300 text-sm mb-6 leading-relaxed max-w-sm">
+              <p className="text-zinc-300 text-xs md:text-[13px] mb-5 leading-relaxed max-w-xs">
                 发布广告、影视、动画等创作需求，多位创作者免费申请，你挑选最合适的一位一对一沟通合作。
               </p>
-              <div className="flex flex-wrap gap-3 mb-7">
+              <div className="flex flex-wrap gap-3 mb-6">
                 <button
                   onClick={() => { if (!loggedIn) { window.location.href = '/auth'; return; } setPublishOpen(true); }}
-                  className="px-6 py-3 rounded-full bg-white text-black font-semibold text-sm hover:bg-zinc-200 transition-colors shadow-lg"
+                  className="px-5 py-2.5 rounded-full bg-white text-black font-semibold text-sm hover:bg-zinc-200 transition-colors shadow-lg"
                 >
                   发布创作委托
                 </button>
                 <a href="#tabs"
-                  className="px-6 py-3 rounded-full border border-white/30 text-white font-medium text-sm hover:bg-white/10 transition-colors">
+                  className="px-5 py-2.5 rounded-full border border-white/30 text-white font-medium text-sm hover:bg-white/10 transition-colors">
                   成为创作者
                 </a>
               </div>
               {/* 4数据横排 */}
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-4 gap-2 max-w-sm">
                 {[
                   { n: '328+', l: '开放项目' },
                   { n: '1460+', l: '创作者' },
@@ -144,7 +144,7 @@ export default function CommissionHall() {
                   { n: '96%', l: '按时交付' },
                 ].map((s, i) => (
                   <div key={s.l} className={`text-center ${i > 0 ? 'border-l border-white/15' : ''}`}>
-                    <div className="text-lg md:text-xl font-bold text-white tracking-tight">{s.n}</div>
+                    <div className="text-base md:text-lg font-bold text-white tracking-tight">{s.n}</div>
                     <div className="text-[10px] text-zinc-400 mt-0.5">{s.l}</div>
                   </div>
                 ))}
@@ -172,10 +172,6 @@ export default function CommissionHall() {
                 <span className="px-3 py-1 rounded-full bg-white/15 backdrop-blur text-white text-xs">正在招募中</span>
               </div>
               <div>
-                <h3 className="text-2xl font-bold mb-2">高端香水品牌广告短片</h3>
-                <p className="text-zinc-300 text-sm mb-4 max-w-lg leading-relaxed">
-                  寻找有质感的创作者，制作 30 秒香水产品广告，要求电影级画面与光影质感。
-                </p>
                 <div className="flex flex-wrap items-center gap-4 text-sm mb-4">
                   <span className="text-emerald-400 font-semibold">预算 ¥8,000-15,000</span>
                   <span className="text-zinc-400">交付周期 14 天</span>
