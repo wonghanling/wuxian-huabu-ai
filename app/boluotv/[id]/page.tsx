@@ -287,7 +287,7 @@ export default function ProjectDetail() {
                         )}
                         {a.intro && <p className="text-sm text-zinc-300 leading-relaxed">{a.intro}</p>}
                         <button onClick={() => setViewCreator(a)}
-                          className="mt-2 text-xs text-emerald-400 hover:text-emerald-300">查看资料和作品 →</button>
+                          className="mt-2 text-xs text-emerald-400 hover:text-emerald-300">查看申请详情 →</button>
                       </div>
                       <div className="shrink-0">
                         {project.status === 'open' ? (
