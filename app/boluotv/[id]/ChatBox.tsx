@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 type Message = { id: string; sender_id: string; content: string; created_at: string };
 
 // 按钮包一层:点击才展开聊天窗口
-export function ChatToggle({ projectId, reservationId }: { projectId: string; reservationId: string | null }) {
+export function ChatToggle({ projectId, reservationId, paid }: { projectId: string; reservationId: string | null; paid?: boolean }) {
   const [open, setOpen] = useState(false);
   if (!open) {
     return (
@@ -22,18 +22,22 @@ export function ChatToggle({ projectId, reservationId }: { projectId: string; re
       <div className="flex justify-end mb-2">
         <button onClick={() => setOpen(false)} className="text-xs text-zinc-400 hover:text-white">收起聊天 ✕</button>
       </div>
-      <ChatBox projectId={projectId} reservationId={reservationId} />
+      <ChatBox projectId={projectId} reservationId={reservationId} paid={paid} />
     </div>
   );
 }
 
-export function ChatBox({ projectId, reservationId }: { projectId: string; reservationId: string | null }) {
+export function ChatBox({ projectId, reservationId, paid, onTriggerPay }: { projectId: string; reservationId: string | null; paid?: boolean; onTriggerPay?: () => void }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [me, setMe] = useState<string>('');
+  const [myCount, setMyCount] = useState(0);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // 付款前每人限1条
+  const preChatUsedUp = !paid && myCount >= 1;
 
   const scrollToBottom = () => {
     setTimeout(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' }); }, 50);
@@ -48,7 +52,7 @@ export function ChatBox({ projectId, reservationId }: { projectId: string; reser
       if (!session) { setLoading(false); return; }
       // 历史消息
       const res = await fetch(`/api/commissions/${projectId}/messages`, { headers: { Authorization: `Bearer ${session.access_token}` } });
-      if (res.ok) { const d = await res.json(); setMessages(d.messages || []); setMe(d.me || ''); }
+      if (res.ok) { const d = await res.json(); setMessages(d.messages || []); setMe(d.me || ''); setMyCount(d.myCount || 0); }
       setLoading(false);
       scrollToBottom();
 
@@ -83,9 +87,12 @@ export function ChatBox({ projectId, reservationId }: { projectId: string; reser
       const d = await res.json();
       if (res.ok && d.message) {
         setInput('');
+        setMyCount((c) => c + 1);
         // 乐观追加(Realtime 也会推,已去重)
         setMessages((prev) => prev.some((x) => x.id === d.message.id) ? prev : [...prev, d.message]);
         scrollToBottom();
+        // 付款前创作者发完预沟通那条 → 触发付款弹窗
+        if (d.triggerPay && onTriggerPay) setTimeout(() => onTriggerPay(), 400);
       } else {
         alert(d.error || '发送失败');
       }
@@ -121,16 +128,26 @@ export function ChatBox({ projectId, reservationId }: { projectId: string; reser
         )}
       </div>
 
+      {/* 付款前提示 */}
+      {!paid && (
+        <div className="px-4 py-2 text-xs text-yellow-400/90 bg-yellow-500/10 border-t border-white/10">
+          {preChatUsedUp
+            ? '付款前每人可发1条消息，已用完。创作者支付介绍费后可无限沟通。'
+            : '付款前每人可发1条试探消息（不能发联系方式）。支付介绍费后即可无限沟通、交换联系方式。'}
+        </div>
+      )}
+
       {/* 输入区 */}
       <div className="flex gap-2 p-3 border-t border-white/10">
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
-          placeholder="输入消息…"
-          className="flex-1 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white placeholder:text-zinc-500 outline-none focus:border-white/25"
+          placeholder={preChatUsedUp ? '付款后可继续发送…' : '输入消息…'}
+          disabled={preChatUsedUp}
+          className="flex-1 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white placeholder:text-zinc-500 outline-none focus:border-white/25 disabled:opacity-50"
         />
-        <button onClick={send} disabled={sending || !input.trim()}
+        <button onClick={send} disabled={sending || !input.trim() || preChatUsedUp}
           className="px-5 py-2.5 rounded-xl bg-white text-black text-sm font-semibold hover:bg-zinc-200 transition-colors disabled:opacity-40">
           发送
         </button>

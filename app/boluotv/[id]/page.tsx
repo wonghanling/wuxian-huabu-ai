@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { ApplyModal } from './ApplyModal';
 import { CreatorProfileModal } from './CreatorProfileModal';
-import { ChatToggle } from './ChatBox';
+import { ChatToggle, ChatBox } from './ChatBox';
 
 // 项目详情页(独立于画布)。甲方看申请者列表+选择创作者;创作者看详情+申请入口。
 type Project = {
@@ -224,6 +224,17 @@ export default function ProjectDetail() {
           </div>
         </div>
 
+        {/* 甲方视角: 已选创作者,等待其付款(可先预沟通1条) */}
+        {isOwner && myReservation?.status === 'awaiting_payment' && (
+          <div className="mt-8 space-y-4">
+            <div className="rounded-2xl border border-yellow-500/30 bg-yellow-500/[0.08] p-6">
+              <div className="text-base font-semibold text-yellow-400 mb-2">已选择创作者，等待对方支付介绍费</div>
+              <p className="text-sm text-zinc-300">你可以先发一条消息和创作者试探沟通。对方支付介绍费后，双方即可无限沟通、交换联系方式。</p>
+            </div>
+            <ChatBox projectId={id} reservationId={myReservation.id} paid={false} />
+          </div>
+        )}
+
         {/* 甲方视角: 独家沟通中(已付款) → 看创作者 + 标记合作结果 */}
         {isOwner && myReservation?.status === 'active' && (
           <div className="mt-8 rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.08] p-6">
@@ -256,7 +267,7 @@ export default function ProjectDetail() {
         {/* 甲方视角: 独家沟通中聊天 */}
         {isOwner && myReservation?.status === 'active' && (
           <div className="mt-6">
-            <ChatToggle projectId={id} reservationId={myReservation.id} />
+            <ChatToggle projectId={id} reservationId={myReservation.id} paid={true} />
           </div>
         )}
 
@@ -343,29 +354,31 @@ export default function ProjectDetail() {
               </button>
             </div>
             <div className="mt-6">
-              <ChatToggle projectId={id} reservationId={myReservation.id} />
+              <ChatToggle projectId={id} reservationId={myReservation.id} paid={true} />
             </div>
           </div>
         ) : myReservation && myReservation.status === 'awaiting_payment' ? (
-          /* 创作者视角: 被选中,待付款解锁 */
-          <div className="mt-8 rounded-2xl border border-yellow-500/30 bg-yellow-500/[0.08] p-6">
-            <div className="text-base font-semibold text-yellow-400 mb-2">甲方已选择与你一对一沟通</div>
-            <p className="text-sm text-zinc-300 mb-1">支付项目介绍服务费后，即可查看甲方联系方式，进入独家沟通。</p>
-            <p className="text-xs text-zinc-500 mb-4">
-              介绍费 ¥{((myReservation.amount_cents || 990) / 100).toFixed(2)}
-              {myReservation.pay_deadline ? ` · 请在 ${new Date(myReservation.pay_deadline).toLocaleString('zh-CN')} 前支付` : ''}
-            </p>
-            <div className="flex gap-3">
-              <button onClick={payIntroFee} disabled={paying}
-                className="px-6 py-3 rounded-full bg-white text-black font-semibold text-sm hover:bg-zinc-200 transition-colors disabled:opacity-50">
-                {paying ? '跳转支付…' : `支付 ¥${((myReservation.amount_cents || 990) / 100).toFixed(2)} 解锁联系方式`}
-              </button>
-              <button onClick={() => load()}
-                className="px-5 py-3 rounded-full border border-white/20 text-zinc-300 text-sm hover:bg-white/10 transition-colors">
-                我已支付，刷新
-              </button>
+          /* 创作者视角: 被选中,先预沟通1条→自动弹付款 */
+          <div className="mt-8 space-y-4">
+            <div className="rounded-2xl border border-yellow-500/30 bg-yellow-500/[0.08] p-6">
+              <div className="text-base font-semibold text-yellow-400 mb-2">甲方已选择与你一对一沟通</div>
+              <p className="text-sm text-zinc-300 mb-1">你可以先和甲方各发一条消息试探需求，之后支付 ¥{((myReservation.amount_cents || 990) / 100).toFixed(2)} 介绍费即可无限沟通、交换联系方式。</p>
+              <p className="text-xs text-zinc-500">
+                {myReservation.pay_deadline ? `请在 ${new Date(myReservation.pay_deadline).toLocaleString('zh-CN')} 前完成支付` : ''}
+              </p>
+              <div className="flex gap-3 mt-4">
+                <button onClick={payIntroFee} disabled={paying}
+                  className="px-6 py-3 rounded-full bg-white text-black font-semibold text-sm hover:bg-zinc-200 transition-colors disabled:opacity-50">
+                  {paying ? '跳转支付…' : `支付 ¥${((myReservation.amount_cents || 990) / 100).toFixed(2)} 开始沟通`}
+                </button>
+                <button onClick={() => load()}
+                  className="px-5 py-3 rounded-full border border-white/20 text-zinc-300 text-sm hover:bg-white/10 transition-colors">
+                  我已支付，刷新
+                </button>
+              </div>
             </div>
-            <p className="text-xs text-zinc-600 mt-3">介绍费独立于画布余额，通过支付宝支付。支付成功后由系统自动解锁，请勿关闭页面太久。</p>
+            {/* 付款前预沟通(各1条,过滤联系方式) */}
+            <ChatBox projectId={id} reservationId={myReservation.id} paid={false} onTriggerPay={payIntroFee} />
           </div>
         ) : myApplication ? (
           <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] p-6">
