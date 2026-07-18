@@ -311,8 +311,8 @@ export default function CommissionHall() {
 
       {/* 主体: 项目大厅(浏览所有开放项目) */}
       {role === 'hall' ? (
-        <div className="max-w-[1920px] mx-auto px-6 md:px-12 pb-20 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
-          {/* 左: 筛选 + 分类 + 项目列表 */}
+        <div className="max-w-[1920px] mx-auto px-6 md:px-12 pb-20">
+          {/* 筛选 + 分类 + 项目列表 */}
           <div>
             {/* 筛选栏 */}
             <div className="flex flex-wrap items-center gap-3 mb-5">
@@ -414,53 +414,6 @@ export default function CommissionHall() {
             )}
           </div>
 
-          {/* 右侧边栏(静态占位) */}
-          <aside className="flex flex-col gap-5">
-            {/* 客户工作台 */}
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-              <div className="font-semibold text-sm mb-4">客户工作台</div>
-              <div className="space-y-2.5">
-                {[
-                  { l: '草稿', n: 0 }, { l: '招募中', n: 0 }, { l: '待选择', n: 0 },
-                  { l: '制作中', n: 0 }, { l: '待验收', n: 0 },
-                ].map((it) => (
-                  <div key={it.l} className="flex items-center justify-between text-sm">
-                    <span className="text-zinc-400">{it.l}</span>
-                    <span className="text-white font-medium">{it.n}</span>
-                  </div>
-                ))}
-              </div>
-              <button onClick={() => { if (!loggedIn) { window.location.href = '/auth'; return; } setPublishOpen(true); }}
-                className="w-full mt-4 py-2.5 rounded-xl bg-white text-black text-sm font-semibold hover:bg-zinc-200 transition-colors">
-                + 发布新委托
-              </button>
-            </div>
-
-            {/* 推荐创作者(静态占位) */}
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-              <div className="font-semibold text-sm mb-4">推荐创作者</div>
-              <div className="space-y-3">
-                {['创作者招募中', '创作者招募中', '创作者招募中'].map((name, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500/40 to-blue-500/40" />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm text-zinc-300">{name}</div>
-                      <div className="text-xs text-zinc-500">等待优质创作者入驻</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* AI优化需求 */}
-            <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.06] p-5">
-              <div className="font-semibold text-sm mb-1.5">AI 优化需求</div>
-              <p className="text-xs text-zinc-400 leading-relaxed mb-3">不知道怎么写需求？用 AI 帮你把想法整理成清晰的委托描述。</p>
-              <button className="w-full py-2.5 rounded-xl border border-emerald-500/40 text-emerald-400 text-sm font-medium hover:bg-emerald-500/10 transition-colors">
-                试试 AI 优化
-              </button>
-            </div>
-          </aside>
         </div>
       ) : role === 'client' ? (
         /* 我是客户: 我发布的项目 + 发布入口 */
