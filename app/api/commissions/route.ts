@@ -56,17 +56,16 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const { title, description, category, budgetMin, budgetMax, deliveryDays, coverUrl, tags,
-            referenceFiles, contactName, contactType, contactValue, contactNotes } = body;
+            referenceFiles } = body;
 
     if (!title || !title.trim()) return NextResponse.json({ error: '请填写项目标题' }, { status: 400 });
-    if (!contactValue || !contactValue.trim()) return NextResponse.json({ error: '请填写联系方式' }, { status: 400 });
 
-    // 防绕过:标题+描述里不能有联系方式(否则介绍费模式失效)
+    // 防绕过:标题+描述里不能有联系方式(付款前不能泄露联系方式,否则介绍费模式失效)
     if (containsContactInfo(title) || containsContactInfo(description || '')) {
-      return NextResponse.json({ error: '项目标题和描述中不能包含手机号、微信、QQ、链接等联系方式，请填写在专门的联系方式栏' }, { status: 400 });
+      return NextResponse.json({ error: '项目标题和描述中不能包含手机号、微信、QQ、链接等联系方式，选择创作者后可在站内沟通' }, { status: 400 });
     }
 
-    // 创建项目(公开表,不含联系方式)
+    // 创建项目(联系方式不再收集,双方选中后站内沟通)
     const { data: proj, error: projErr } = await supabaseAdmin
       .from('projects')
       .insert({
@@ -85,23 +84,6 @@ export async function POST(req: NextRequest) {
       .select('id')
       .single();
     if (projErr || !proj) return NextResponse.json({ error: projErr?.message || '创建失败' }, { status: 500 });
-
-    // 联系方式单独存(严格 RLS 保护)
-    const { error: contactErr } = await supabaseAdmin
-      .from('project_contacts')
-      .insert({
-        project_id: proj.id,
-        client_id: user.id,
-        contact_name: contactName || null,
-        contact_type: contactType || null,
-        contact_value: contactValue.trim(),
-        supplementary_notes: contactNotes || null,
-      });
-    if (contactErr) {
-      // 联系方式存失败 → 回滚项目(避免无联系方式的孤儿项目)
-      await supabaseAdmin.from('projects').delete().eq('id', proj.id);
-      return NextResponse.json({ error: '联系方式保存失败' }, { status: 500 });
-    }
 
     return NextResponse.json({ success: true, projectId: proj.id });
   } catch (e: any) {

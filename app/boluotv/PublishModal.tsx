@@ -11,13 +11,6 @@ const CATEGORIES = [
   { key: 'anime', label: '动画' },
   { key: 'other', label: '其它' },
 ];
-const CONTACT_TYPES = [
-  { key: 'wechat', label: '微信' },
-  { key: 'qq', label: 'QQ' },
-  { key: 'phone', label: '手机' },
-  { key: 'email', label: '邮箱' },
-];
-
 export function PublishCommissionModal({ onClose, onPublished }: { onClose: () => void; onPublished: () => void }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -25,8 +18,6 @@ export function PublishCommissionModal({ onClose, onPublished }: { onClose: () =
   const [budgetMin, setBudgetMin] = useState('');
   const [budgetMax, setBudgetMax] = useState('');
   const [deliveryDays, setDeliveryDays] = useState('');
-  const [contactType, setContactType] = useState('wechat');
-  const [contactValue, setContactValue] = useState('');
   const [contactName, setContactName] = useState('');
   const [coverUrl, setCoverUrl] = useState('');
   const [refFiles, setRefFiles] = useState<string[]>([]);
@@ -75,7 +66,6 @@ export function PublishCommissionModal({ onClose, onPublished }: { onClose: () =
   const submit = async () => {
     setError('');
     if (!title.trim()) { setError('请填写项目标题'); return; }
-    if (!contactValue.trim()) { setError('请填写联系方式'); return; }
     setSubmitting(true);
     try {
       const sb = createClient();
@@ -91,7 +81,7 @@ export function PublishCommissionModal({ onClose, onPublished }: { onClose: () =
           deliveryDays: deliveryDays ? Number(deliveryDays) : null,
           coverUrl: coverUrl || null,
           referenceFiles: refFiles,
-          contactType, contactValue, contactName,
+          contactName,
         }),
       });
       const data = await res.json();
@@ -177,18 +167,8 @@ export function PublishCommissionModal({ onClose, onPublished }: { onClose: () =
           </div>
 
           <div className="pt-2 border-t border-white/10">
-            <div className="text-sm text-emerald-400 mb-3">你的联系方式(创作者支付介绍费后才能看到)</div>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="联系方式类型">
-                <select value={contactType} onChange={(e) => setContactType(e.target.value)} style={inputStyle}>
-                  {CONTACT_TYPES.map((t) => <option key={t.key} value={t.key}>{t.label}</option>)}
-                </select>
-              </Field>
-              <Field label="称呼(可选)"><input value={contactName} onChange={(e) => setContactName(e.target.value)} style={inputStyle} /></Field>
-            </div>
-            <div className="mt-3">
-              <Field label="联系方式 *"><input value={contactValue} onChange={(e) => setContactValue(e.target.value)} placeholder="微信号/QQ/手机/邮箱" style={inputStyle} /></Field>
-            </div>
+            <Field label="你的称呼(可选)"><input value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder="创作者会这样称呼你" style={inputStyle} /></Field>
+            <div className="text-xs text-zinc-500 mt-2">选择创作者后可先各发一条消息试探，支付介绍费后即可在站内无限沟通、交换联系方式。</div>
           </div>
 
           {error && <div className="text-red-400 text-sm">{error}</div>}

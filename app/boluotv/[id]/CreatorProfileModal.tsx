@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 // 内层 = 创作者作品集(读 portfolio_items,与创作者自己上传的互通)
 type Profile = {
   display_name: string | null; avatar_url: string | null; specialties: string[] | null;
-  bio: string | null; verification_status: string | null; completed_count: number | null;
+  verification_status: string | null; completed_count: number | null;
 };
 type PortfolioItem = { id: string; title: string | null; media_type: string; media_url: string };
 
@@ -110,7 +110,7 @@ function CreatorPortfolioModal({ creatorId, profile, onClose }: { creatorId: str
                 ))}
               </div>
             )}
-            {profile?.bio && <p className="text-sm text-zinc-400 mt-2 leading-relaxed">{profile.bio}</p>}
+            {/* 简介不展示给甲方(防止创作者在简介里塞联系方式绕过付款) */}
           </div>
         </div>
 

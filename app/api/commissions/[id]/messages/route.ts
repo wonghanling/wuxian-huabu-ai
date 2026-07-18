@@ -17,19 +17,13 @@ async function getUser(req: NextRequest) {
   return user;
 }
 
-// 联系方式检测(付款前预沟通禁止交换联系方式,防绕过介绍费)
+// 付款前预沟通:禁止字母/数字/中文数字,彻底防止交换微信/QQ/手机/邮箱/链接
+// 中文数字(一二三四五六七八九十零两)也拦(防"我微信一三八...")
 function containsContactInfo(text: string): boolean {
-  const patterns = [
-    /1[3-9]\d{9}/,                                   // 手机号
-    /\b[\w.-]+@[\w.-]+\.\w+\b/,                       // 邮箱
-    /(微信|weixin|wechat|vx|v信|加微|威信|薇信)\s*[:：]?\s*[\w-]{2,}/i,
-    /(qq|扣扣)\s*[:：]?\s*\d{4,}/i,
-    /(telegram|tg|电报|whatsapp)\s*[:：]?\s*@?\w{3,}/i,
-    /(https?:\/\/|www\.)[^\s]+/i,                     // 链接
-    /(二维码|扫码|加我|私聊|加好友|加个|留个|你的号|我的号)/,
-    /\d{6,}/,                                         // 连续6位以上数字(号码类)
-  ];
-  return patterns.some((p) => p.test(text));
+  if (/[a-zA-Z0-9]/.test(text || '')) return true;
+  // 出现2个以上中文数字视为号码(单独一个"三天"正常放行)
+  const cnDigits = (text || '').match(/[一二三四五六七八九十零两壹贰叁肆伍陆柒捌玖拾]/g);
+  return !!cnDigits && cnDigits.length >= 3;
 }
 
 // 返回:该用户在此项目的沟通身份和阶段

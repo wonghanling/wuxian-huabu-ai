@@ -46,7 +46,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     if (creatorIds.length > 0) {
       const { data: profiles } = await supabaseAdmin
         .from('creator_profiles')
-        .select('user_id, display_name, avatar_url, specialties, bio, verification_status, completed_count')
+        .select('user_id, display_name, avatar_url, specialties, verification_status, completed_count')
         .in('user_id', creatorIds);
       for (const p of profiles ?? []) profileMap.set(p.user_id, p);
     }

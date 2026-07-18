@@ -35,6 +35,14 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { displayName, avatarUrl, specialties, bio, contactType, contactValue } = body;
 
+    // 简介禁止字母/数字/多个中文数字(防创作者在简介里塞联系方式绕过介绍费)
+    if (bio) {
+      const cnDigits = bio.match(/[一二三四五六七八九十零两壹贰叁肆伍陆柒捌玖拾]/g);
+      if (/[a-zA-Z0-9]/.test(bio) || (cnDigits && cnDigits.length >= 3)) {
+        return NextResponse.json({ error: '个人简介不能包含字母、数字或联系方式，请用中文描述你的经验和风格' }, { status: 400 });
+      }
+    }
+
     const { error } = await supabaseAdmin
       .from('creator_profiles')
       .upsert({

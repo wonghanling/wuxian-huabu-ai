@@ -17,7 +17,7 @@ type Project = {
 };
 type CreatorProfile = {
   display_name: string | null; avatar_url: string | null; specialties: string[] | null;
-  bio: string | null; verification_status: string | null; completed_count: number | null;
+  verification_status: string | null; completed_count: number | null;
 };
 type Application = {
   id: string; creator_id?: string; quote_min: number | null; quote_max: number | null;
@@ -47,7 +47,7 @@ export default function ProjectDetail() {
   const [myApplication, setMyApplication] = useState<Application | null>(null);
   const [myReservation, setMyReservation] = useState<Reservation | null>(null);
   const [contact, setContact] = useState<Contact | null>(null);
-  const [creatorContact, setCreatorContact] = useState<{ display_name: string | null; bio: string | null; contact_type: string | null; contact_value: string | null } | null>(null);
+  const [creatorContact, setCreatorContact] = useState<{ display_name: string | null } | null>(null);
   const [paying, setPaying] = useState(false);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -241,15 +241,9 @@ export default function ProjectDetail() {
             <div className="text-base font-semibold text-emerald-400 mb-3">🎉 独家沟通中</div>
             <div className="space-y-2 text-sm mb-4">
               <div><span className="text-zinc-500">被选创作者：</span><span className="text-white">{creatorContact?.display_name || '创作者'}</span></div>
-              {creatorContact?.contact_value ? (
-                <div><span className="text-zinc-500">联系方式（{creatorContact.contact_type || ''}）：</span><span className="text-white font-medium select-all">{creatorContact.contact_value}</span></div>
-              ) : (
-                <div className="text-xs text-zinc-500">该创作者暂未填写联系方式，可在下方实时聊天沟通</div>
-              )}
-              {creatorContact?.bio && <div className="text-xs text-zinc-500">{creatorContact.bio}</div>}
             </div>
             <div className="text-xs text-zinc-400 mb-4 leading-relaxed">
-              请与创作者确认最终价格、制作周期、修改次数、交付内容与付款方式。项目款由双方线下自行结算，平台不参与项目资金交易。
+              请在下方实时沟通，确认最终价格、制作周期、修改次数、交付内容与付款方式。项目款由双方线下自行结算，平台不参与项目资金交易。
             </div>
             <div className="flex flex-wrap gap-3">
               <button onClick={() => finalizeOutcome('cooperated')}
