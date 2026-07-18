@@ -37,6 +37,7 @@ const CATEGORIES = [
 
 // 中间轮播图(render/image quality=80 压缩)
 const HERO_IMAGES = [
+  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/chuangzuoweituo.png?quality=80',
   'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/chuangzuoweituo1.png?quality=80',
   'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/chuangzuoweituo2.png?quality=80',
   'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/chuangzuoweituo3.png?quality=80',
@@ -59,6 +60,7 @@ export default function CommissionHall() {
   const [publishOpen, setPublishOpen] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
   const [heroSlide, setHeroSlide] = useState(0);
+  const [role, setRole] = useState<'client' | 'creator'>('client'); // 我是客户 / 我是创作者
 
   useEffect(() => {
     const sb = createClient();
@@ -120,7 +122,7 @@ export default function CommissionHall() {
                 <img key={i} src={url} alt={`创作委托${i + 1}`} className="w-full h-full object-cover shrink-0" />
               ))}
             </div>
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.5) 50%, rgba(0,0,0,0.9) 100%)' }} />
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.05) 45%, rgba(0,0,0,0.75) 100%)' }} />
             {/* 项目文案叠加 */}
             <div className="relative h-full flex flex-col justify-between p-7 min-h-[380px]">
               <div className="flex items-center gap-2">
@@ -128,17 +130,14 @@ export default function CommissionHall() {
                 <span className="px-3 py-1 rounded-full bg-white/15 backdrop-blur text-white text-xs">正在招募中</span>
               </div>
               <div>
-                <h3 className="text-2xl font-bold mb-2">高端香水品牌广告短片</h3>
+                <h3 className="text-2xl font-bold mb-2">正在招募中</h3>
                 <p className="text-zinc-300 text-sm mb-4 max-w-lg leading-relaxed">
-                  寻找有质感的创作者，制作 30 秒香水产品广告，要求电影级画面与光影质感。
+                  发布你的创作需求，让专业创作者为你实现。
                 </p>
-                <div className="flex flex-wrap items-center gap-4 text-sm mb-4">
-                  <span className="text-emerald-400 font-semibold">预算 ¥8,000-15,000</span>
-                  <span className="text-zinc-400">交付周期 14 天</span>
-                  <span className="text-zinc-400">12 人已申请</span>
-                </div>
-                <button className="px-6 py-2.5 rounded-full bg-white text-black text-sm font-semibold hover:bg-zinc-200 transition-colors">
-                  查看项目 →
+                <button
+                  onClick={() => { if (!loggedIn) { window.location.href = '/auth'; return; } setPublishOpen(true); }}
+                  className="px-6 py-2.5 rounded-full bg-white text-black text-sm font-semibold hover:bg-zinc-200 transition-colors">
+                  立即发布 →
                 </button>
               </div>
             </div>
@@ -162,7 +161,7 @@ export default function CommissionHall() {
               autoPlay muted loop playsInline preload="metadata"
               className="absolute inset-0 w-full h-full object-cover"
             />
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.65) 100%)' }} />
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.35) 55%, rgba(0,0,0,0.15) 100%)' }} />
             <div className="relative h-full flex flex-col justify-center p-7 md:p-8 min-h-[380px]">
               <h1 className="text-2xl md:text-[34px] font-bold tracking-tight mb-3 leading-[1.2]">
                 把创意需求，<br />交给专业的<span className="text-emerald-400">创作者</span>
@@ -219,68 +218,171 @@ export default function CommissionHall() {
         </div>
       </section>
 
-      {/* 分类筛选 */}
-      <div id="projects" className="max-w-[1400px] mx-auto px-6 flex flex-wrap gap-2 mb-8 scroll-mt-20">
-        {CATEGORIES.map((c) => (
+      {/* Tab切换区: 我是客户 / 我是创作者 */}
+      <div id="tabs" className="max-w-[1920px] mx-auto px-6 md:px-12 scroll-mt-20 mb-8">
+        <div className="flex gap-3">
           <button
-            key={c.key}
-            onClick={() => setCategory(c.key)}
-            className={`px-4 py-1.5 rounded-full text-sm transition-colors ${
-              category === c.key ? 'bg-white text-black font-medium' : 'bg-white/5 text-zinc-400 hover:bg-white/10'
+            onClick={() => setRole('client')}
+            className={`flex-1 md:flex-none md:min-w-[280px] rounded-2xl border px-6 py-4 text-left transition-all ${
+              role === 'client' ? 'border-emerald-500/60 bg-emerald-500/10' : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.06]'
             }`}
           >
-            {c.label}
+            <div className="font-semibold text-base mb-0.5">我是客户</div>
+            <div className="text-xs text-zinc-400">发布需求，找创作者</div>
           </button>
-        ))}
+          <button
+            onClick={() => setRole('creator')}
+            className={`flex-1 md:flex-none md:min-w-[280px] rounded-2xl border px-6 py-4 text-left transition-all ${
+              role === 'creator' ? 'border-emerald-500/60 bg-emerald-500/10' : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.06]'
+            }`}
+          >
+            <div className="font-semibold text-base mb-0.5">我是创作者</div>
+            <div className="text-xs text-zinc-400">寻找项目，接单赚钱</div>
+          </button>
+        </div>
       </div>
 
-      {/* 项目列表 */}
-      <div className="max-w-[1400px] mx-auto px-6 pb-20">
-        {loading ? (
-          <div className="text-center text-zinc-500 py-20">加载中…</div>
-        ) : projects.length === 0 ? (
-          <div className="text-center text-zinc-500 py-20">
-            暂无开放的委托项目
-            <div className="mt-4">
-              <button onClick={() => { if (!loggedIn) { window.location.href = '/auth'; return; } setPublishOpen(true); }}
-                className="px-5 py-2 rounded-full bg-white text-black text-sm font-medium">发布第一个委托</button>
+      {/* 主体: 我是客户 内容 */}
+      {role === 'client' ? (
+        <div className="max-w-[1920px] mx-auto px-6 md:px-12 pb-20 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+          {/* 左: 筛选 + 分类 + 项目列表 */}
+          <div>
+            {/* 筛选栏 */}
+            <div className="flex flex-wrap items-center gap-3 mb-5">
+              <div className="flex-1 min-w-[200px]">
+                <input placeholder="搜索项目关键词…"
+                  className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white placeholder:text-zinc-500 outline-none focus:border-white/25" />
+              </div>
+              {['全部预算', '交付周期', '项目状态', '发布时间'].map((f) => (
+                <button key={f} className="px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-zinc-300 hover:bg-white/10 transition-colors">
+                  {f} ▾
+                </button>
+              ))}
             </div>
+
+            {/* 分类标签 */}
+            <div className="flex flex-wrap gap-2 mb-6">
+              {CATEGORIES.map((c) => (
+                <button
+                  key={c.key}
+                  onClick={() => setCategory(c.key)}
+                  className={`px-4 py-1.5 rounded-full text-sm transition-colors ${
+                    category === c.key ? 'bg-white text-black font-medium' : 'bg-white/5 text-zinc-400 hover:bg-white/10'
+                  }`}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+
+            {/* 项目列表(横向大卡) */}
+            {loading ? (
+              <div className="text-center text-zinc-500 py-20">加载中…</div>
+            ) : projects.length === 0 ? (
+              <div className="text-center text-zinc-500 py-20 rounded-2xl border border-white/10 bg-white/[0.02]">
+                暂无开放的委托项目
+                <div className="mt-4">
+                  <button onClick={() => { if (!loggedIn) { window.location.href = '/auth'; return; } setPublishOpen(true); }}
+                    className="px-5 py-2 rounded-full bg-white text-black text-sm font-medium">发布第一个委托</button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {projects.map((p) => {
+                  const st = STATUS_LABEL[p.status] || { label: p.status, color: 'text-zinc-400' };
+                  return (
+                    <Link key={p.id} href={`/boluotv/${p.id}`}
+                      className="flex gap-4 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20 transition-all overflow-hidden p-4">
+                      {/* 左图 */}
+                      <div className="w-40 h-28 shrink-0 rounded-xl bg-zinc-900 overflow-hidden">
+                        {p.cover_url && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={p.cover_url} alt={p.title} className="w-full h-full object-cover" />
+                        )}
+                      </div>
+                      {/* 中信息 */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className={`text-xs ${st.color}`}>● {st.label}</span>
+                          {p.category && <span className="text-xs text-zinc-500">· {p.category}</span>}
+                        </div>
+                        <h3 className="font-semibold text-base mb-1 line-clamp-1">{p.title}</h3>
+                        <p className="text-zinc-400 text-sm leading-relaxed line-clamp-2 mb-2">{p.description || '—'}</p>
+                        <div className="flex flex-wrap items-center gap-4 text-xs">
+                          <span className="text-emerald-400 font-medium">
+                            {p.budget_min != null && p.budget_max != null ? `¥${p.budget_min}-${p.budget_max}` : '预算面议'}
+                          </span>
+                          {p.delivery_days ? <span className="text-zinc-500">{p.delivery_days}天交付</span> : null}
+                          <span className="text-zinc-500">{p.application_count || 0}人申请</span>
+                        </div>
+                      </div>
+                      {/* 右按钮 */}
+                      <div className="shrink-0 flex items-center">
+                        <span className="px-4 py-2 rounded-full bg-white/10 text-sm text-white hover:bg-white/20 transition-colors">查看项目 →</span>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {projects.map((p) => {
-              const st = STATUS_LABEL[p.status] || { label: p.status, color: 'text-zinc-400' };
-              return (
-                <Link key={p.id} href={`/boluotv/${p.id}`}
-                  className="block rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20 transition-all overflow-hidden">
-                  {p.cover_url && (
-                    <div className="aspect-video bg-zinc-900 overflow-hidden">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={p.cover_url} alt={p.title} className="w-full h-full object-cover" />
-                    </div>
-                  )}
-                  <div className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className={`text-xs ${st.color}`}>● {st.label}</span>
-                      {p.category && <span className="text-xs text-zinc-500">· {p.category}</span>}
-                    </div>
-                    <h3 className="font-semibold text-[15px] mb-1.5 line-clamp-1">{p.title}</h3>
-                    <p className="text-zinc-400 text-xs leading-relaxed line-clamp-2 mb-3 min-h-[32px]">{p.description || '—'}</p>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-emerald-400 font-medium">
-                        {p.budget_min != null && p.budget_max != null ? `¥${p.budget_min}-${p.budget_max}` : '预算面议'}
-                      </span>
-                      <span className="text-zinc-500">
-                        {p.delivery_days ? `${p.delivery_days}天交付 · ` : ''}{p.application_count || 0}人申请
-                      </span>
+
+          {/* 右侧边栏(静态占位) */}
+          <aside className="flex flex-col gap-5">
+            {/* 客户工作台 */}
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+              <div className="font-semibold text-sm mb-4">客户工作台</div>
+              <div className="space-y-2.5">
+                {[
+                  { l: '草稿', n: 0 }, { l: '招募中', n: 0 }, { l: '待选择', n: 0 },
+                  { l: '制作中', n: 0 }, { l: '待验收', n: 0 },
+                ].map((it) => (
+                  <div key={it.l} className="flex items-center justify-between text-sm">
+                    <span className="text-zinc-400">{it.l}</span>
+                    <span className="text-white font-medium">{it.n}</span>
+                  </div>
+                ))}
+              </div>
+              <button onClick={() => { if (!loggedIn) { window.location.href = '/auth'; return; } setPublishOpen(true); }}
+                className="w-full mt-4 py-2.5 rounded-xl bg-white text-black text-sm font-semibold hover:bg-zinc-200 transition-colors">
+                + 发布新委托
+              </button>
+            </div>
+
+            {/* 推荐创作者(静态占位) */}
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+              <div className="font-semibold text-sm mb-4">推荐创作者</div>
+              <div className="space-y-3">
+                {['创作者招募中', '创作者招募中', '创作者招募中'].map((name, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500/40 to-blue-500/40" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm text-zinc-300">{name}</div>
+                      <div className="text-xs text-zinc-500">等待优质创作者入驻</div>
                     </div>
                   </div>
-                </Link>
-              );
-            })}
+                ))}
+              </div>
+            </div>
+
+            {/* AI优化需求 */}
+            <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.06] p-5">
+              <div className="font-semibold text-sm mb-1.5">AI 优化需求</div>
+              <p className="text-xs text-zinc-400 leading-relaxed mb-3">不知道怎么写需求？用 AI 帮你把想法整理成清晰的委托描述。</p>
+              <button className="w-full py-2.5 rounded-xl border border-emerald-500/40 text-emerald-400 text-sm font-medium hover:bg-emerald-500/10 transition-colors">
+                试试 AI 优化
+              </button>
+            </div>
+          </aside>
+        </div>
+      ) : (
+        /* 我是创作者 内容(下一步做) */
+        <div className="max-w-[1920px] mx-auto px-6 md:px-12 pb-20">
+          <div className="text-center text-zinc-500 py-20 rounded-2xl border border-white/10 bg-white/[0.02]">
+            创作者视图开发中…
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {publishOpen && (
         <PublishCommissionModal onClose={() => setPublishOpen(false)} onPublished={() => { setPublishOpen(false); load(); }} />
