@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { PublishCommissionModal } from './PublishModal';
 import { CreatorView } from './CreatorView';
+import { ClientProjects } from './ClientProjects';
 
 // ============================================================
 // 创作委托大厅(独立于画布,只共用 users 账号)
@@ -61,7 +62,7 @@ export default function CommissionHall() {
   const [publishOpen, setPublishOpen] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
   const [heroSlide, setHeroSlide] = useState(0);
-  const [role, setRole] = useState<'client' | 'creator'>('client'); // 我是客户 / 我是创作者
+  const [role, setRole] = useState<'hall' | 'client' | 'creator'>('hall'); // 项目大厅 / 我是客户 / 我是创作者
   const [stats, setStats] = useState<{
     client: { recruiting: number; producing: number; completed: number };
     creator: { todo: number; ongoing: number; completed: number };
@@ -238,32 +239,41 @@ export default function CommissionHall() {
         </div>
       </section>
 
-      {/* Tab切换区: 我是客户 / 我是创作者 */}
+      {/* Tab切换区: 项目大厅 / 我是客户 / 我是创作者 */}
       <div id="tabs" className="max-w-[1920px] mx-auto px-6 md:px-12 scroll-mt-20 mb-8">
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={() => setRole('hall')}
+            className={`flex-1 md:flex-none md:min-w-[240px] rounded-2xl border px-6 py-4 text-left transition-all ${
+              role === 'hall' ? 'border-emerald-500/60 bg-emerald-500/10' : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.06]'
+            }`}
+          >
+            <div className="font-semibold text-base mb-0.5">项目大厅</div>
+            <div className="text-xs text-zinc-400">浏览所有开放项目</div>
+          </button>
           <button
             onClick={() => setRole('client')}
-            className={`flex-1 md:flex-none md:min-w-[280px] rounded-2xl border px-6 py-4 text-left transition-all ${
+            className={`flex-1 md:flex-none md:min-w-[240px] rounded-2xl border px-6 py-4 text-left transition-all ${
               role === 'client' ? 'border-emerald-500/60 bg-emerald-500/10' : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.06]'
             }`}
           >
             <div className="font-semibold text-base mb-0.5">我是客户</div>
-            <div className="text-xs text-zinc-400">发布需求，找创作者</div>
+            <div className="text-xs text-zinc-400">管理我发布的项目</div>
           </button>
           <button
             onClick={() => setRole('creator')}
-            className={`flex-1 md:flex-none md:min-w-[280px] rounded-2xl border px-6 py-4 text-left transition-all ${
+            className={`flex-1 md:flex-none md:min-w-[240px] rounded-2xl border px-6 py-4 text-left transition-all ${
               role === 'creator' ? 'border-emerald-500/60 bg-emerald-500/10' : 'border-white/10 bg-white/[0.03] hover:bg-white/[0.06]'
             }`}
           >
             <div className="font-semibold text-base mb-0.5">我是创作者</div>
-            <div className="text-xs text-zinc-400">寻找项目，接单赚钱</div>
+            <div className="text-xs text-zinc-400">我接的单，接单赚钱</div>
           </button>
         </div>
       </div>
 
-      {/* 主体: 我是客户 内容 */}
-      {role === 'client' ? (
+      {/* 主体: 项目大厅(浏览所有开放项目) */}
+      {role === 'hall' ? (
         <div className="max-w-[1920px] mx-auto px-6 md:px-12 pb-20 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
           {/* 左: 筛选 + 分类 + 项目列表 */}
           <div>
@@ -394,6 +404,21 @@ export default function CommissionHall() {
               </button>
             </div>
           </aside>
+        </div>
+      ) : role === 'client' ? (
+        /* 我是客户: 我发布的项目 + 发布入口 */
+        <div className="max-w-[1920px] mx-auto px-6 md:px-12 pb-20">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-lg font-bold">我发布的项目</h2>
+            <button onClick={() => { if (!loggedIn) { window.location.href = '/auth'; return; } setPublishOpen(true); }}
+              className="px-5 py-2.5 rounded-full bg-white text-black text-sm font-semibold hover:bg-zinc-200 transition-colors">
+              + 发布新委托
+            </button>
+          </div>
+          <ClientProjects loggedIn={loggedIn} />
+          {loggedIn && (
+            <p className="text-center text-zinc-600 text-sm mt-8">在这里管理你发布的所有项目，点项目可查看申请者、选择创作者、标记合作结果。</p>
+          )}
         </div>
       ) : (
         /* 我是创作者: 我的接单(找回订单,不依赖大厅) */
