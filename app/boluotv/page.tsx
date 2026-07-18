@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { PublishCommissionModal } from './PublishModal';
+import { CreatorView } from './CreatorView';
 
 // ============================================================
 // 创作委托大厅(独立于画布,只共用 users 账号)
@@ -395,11 +396,10 @@ export default function CommissionHall() {
           </aside>
         </div>
       ) : (
-        /* 我是创作者 内容(下一步做) */
+        /* 我是创作者: 我的接单(找回订单,不依赖大厅) */
         <div className="max-w-[1920px] mx-auto px-6 md:px-12 pb-20">
-          <div className="text-center text-zinc-500 py-20 rounded-2xl border border-white/10 bg-white/[0.02]">
-            创作者视图开发中…
-          </div>
+          <h2 className="text-lg font-bold mb-4">我的接单</h2>
+          <CreatorView loggedIn={loggedIn} />
         </div>
       )}
 
