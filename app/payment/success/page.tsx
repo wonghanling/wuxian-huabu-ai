@@ -11,6 +11,7 @@ function PaymentSuccessContent() {
   const status = searchParams.get('status');
   const [checking, setChecking] = useState(true);
   const [orderType, setOrderType] = useState<string | null>(null);
+  const [projectId, setProjectId] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === 'error') { setChecking(false); return; }
@@ -22,12 +23,21 @@ function PaymentSuccessContent() {
       const supabase = createClient();
       const { data } = await supabase
         .from('payment_orders')
-        .select('status, order_type')
+        .select('status, order_type, meta')
         .eq('order_no', orderId)
         .single();
 
       if (data?.status === 'paid') {
         setOrderType(data.order_type);
+        // 委托介绍费:根据预留查项目id,用于返回项目详情
+        if (data.order_type === 'commission_intro' && data.meta?.reservation_id) {
+          const { data: res } = await supabase
+            .from('project_reservations')
+            .select('project_id')
+            .eq('id', data.meta.reservation_id)
+            .single();
+          if (res?.project_id) setProjectId(res.project_id);
+        }
         setChecking(false);
       } else if (attempts < 15) {
         setTimeout(poll, 2000);
@@ -74,12 +84,23 @@ function PaymentSuccessContent() {
             </div>
             <h2 className="text-white text-xl font-semibold mb-2">支付成功</h2>
             <p className="text-white/40 text-sm mb-6">
-              {orderType === 'membership' ? '会员已开通，有效期 1 个月' : '余额已到账，可立即使用'}
+              {orderType === 'commission_intro'
+                ? '联系方式已解锁，进入独家沟通'
+                : orderType === 'membership' || orderType === 'membership_yearly' || orderType === 'membership_2yearly'
+                  ? '会员已开通'
+                  : '余额已到账，可立即使用'}
             </p>
-            <button
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold text-sm transition-all"
-              onClick={() => router.push('/canvas')}
-            >返回画布</button>
+            {orderType === 'commission_intro' ? (
+              <button
+                className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm transition-all"
+                onClick={() => router.push(projectId ? `/boluotv/${projectId}` : '/boluotv')}
+              >查看联系方式 / 返回项目</button>
+            ) : (
+              <button
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold text-sm transition-all"
+                onClick={() => router.push('/canvas')}
+              >返回画布</button>
+            )}
           </>
         )}
       </div>
