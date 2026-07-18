@@ -63,6 +63,10 @@ export default function CommissionHall() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [heroSlide, setHeroSlide] = useState(0);
   const [role, setRole] = useState<'hall' | 'client' | 'creator'>('hall'); // 项目大厅 / 我是客户 / 我是创作者
+  const [search, setSearch] = useState('');
+  const [budgetFilter, setBudgetFilter] = useState('all');   // all/0-1000/1000-5000/5000-20000/20000+
+  const [deliveryFilter, setDeliveryFilter] = useState('all'); // all/7/15/30/30+
+  const [sortBy, setSortBy] = useState('latest');            // latest/budget_high/applicants
   const [stats, setStats] = useState<{
     client: { recruiting: number; producing: number; completed: number };
     creator: { todo: number; ongoing: number; completed: number };
@@ -96,6 +100,39 @@ export default function CommissionHall() {
   };
 
   useEffect(() => { load(); }, [category]);
+
+  // 前端筛选 + 排序
+  const filteredProjects = projects
+    .filter((p) => {
+      // 搜索词(标题+描述)
+      if (search.trim()) {
+        const q = search.trim().toLowerCase();
+        const hit = (p.title || '').toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q);
+        if (!hit) return false;
+      }
+      // 预算区间(用 budget_max 判断)
+      if (budgetFilter !== 'all') {
+        const b = p.budget_max ?? p.budget_min ?? 0;
+        if (budgetFilter === '0-1000' && !(b > 0 && b <= 1000)) return false;
+        if (budgetFilter === '1000-5000' && !(b > 1000 && b <= 5000)) return false;
+        if (budgetFilter === '5000-20000' && !(b > 5000 && b <= 20000)) return false;
+        if (budgetFilter === '20000+' && !(b > 20000)) return false;
+      }
+      // 交付周期
+      if (deliveryFilter !== 'all') {
+        const d = p.delivery_days ?? 9999;
+        if (deliveryFilter === '7' && !(d <= 7)) return false;
+        if (deliveryFilter === '15' && !(d > 7 && d <= 15)) return false;
+        if (deliveryFilter === '30' && !(d > 15 && d <= 30)) return false;
+        if (deliveryFilter === '30+' && !(d > 30)) return false;
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'budget_high') return (b.budget_max ?? 0) - (a.budget_max ?? 0);
+      if (sortBy === 'applicants') return (b.application_count ?? 0) - (a.application_count ?? 0);
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime(); // latest
+    });
 
   return (
     <main className="min-h-screen bg-black text-white">
@@ -280,14 +317,34 @@ export default function CommissionHall() {
             {/* 筛选栏 */}
             <div className="flex flex-wrap items-center gap-3 mb-5">
               <div className="flex-1 min-w-[200px]">
-                <input placeholder="搜索项目关键词…"
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="搜索项目关键词…"
                   className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white placeholder:text-zinc-500 outline-none focus:border-white/25" />
               </div>
-              {['全部预算', '交付周期', '项目状态', '发布时间'].map((f) => (
-                <button key={f} className="px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-zinc-300 hover:bg-white/10 transition-colors">
-                  {f} ▾
-                </button>
-              ))}
+              <select value={budgetFilter} onChange={(e) => setBudgetFilter(e.target.value)}
+                className="px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-zinc-300 outline-none focus:border-white/25 cursor-pointer">
+                <option value="all">全部预算</option>
+                <option value="0-1000">¥1000 以内</option>
+                <option value="1000-5000">¥1000-5000</option>
+                <option value="5000-20000">¥5000-20000</option>
+                <option value="20000+">¥20000 以上</option>
+              </select>
+              <select value={deliveryFilter} onChange={(e) => setDeliveryFilter(e.target.value)}
+                className="px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-zinc-300 outline-none focus:border-white/25 cursor-pointer">
+                <option value="all">交付周期</option>
+                <option value="7">7 天内</option>
+                <option value="15">8-15 天</option>
+                <option value="30">16-30 天</option>
+                <option value="30+">30 天以上</option>
+              </select>
+              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}
+                className="px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-zinc-300 outline-none focus:border-white/25 cursor-pointer">
+                <option value="latest">最新发布</option>
+                <option value="budget_high">预算从高到低</option>
+                <option value="applicants">申请人数最多</option>
+              </select>
             </div>
 
             {/* 分类标签 */}
@@ -308,9 +365,9 @@ export default function CommissionHall() {
             {/* 项目列表(横向大卡) */}
             {loading ? (
               <div className="text-center text-zinc-500 py-20">加载中…</div>
-            ) : projects.length === 0 ? (
+            ) : filteredProjects.length === 0 ? (
               <div className="text-center text-zinc-500 py-20 rounded-2xl border border-white/10 bg-white/[0.02]">
-                暂无开放的委托项目
+                {projects.length === 0 ? '暂无开放的委托项目' : '没有符合筛选条件的项目'}
                 <div className="mt-4">
                   <button onClick={() => { if (!loggedIn) { window.location.href = '/auth'; return; } setPublishOpen(true); }}
                     className="px-5 py-2 rounded-full bg-white text-black text-sm font-medium">发布第一个委托</button>
@@ -318,7 +375,7 @@ export default function CommissionHall() {
               </div>
             ) : (
               <div className="flex flex-col gap-4">
-                {projects.map((p) => {
+                {filteredProjects.map((p) => {
                   const st = STATUS_LABEL[p.status] || { label: p.status, color: 'text-zinc-400' };
                   return (
                     <Link key={p.id} href={`/boluotv/${p.id}`}
