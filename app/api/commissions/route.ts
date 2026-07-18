@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const { title, description, category, budgetMin, budgetMax, deliveryDays, coverUrl, tags,
-            contactName, contactType, contactValue, contactNotes } = body;
+            referenceFiles, contactName, contactType, contactValue, contactNotes } = body;
 
     if (!title || !title.trim()) return NextResponse.json({ error: '请填写项目标题' }, { status: 400 });
     if (!contactValue || !contactValue.trim()) return NextResponse.json({ error: '请填写联系方式' }, { status: 400 });
@@ -79,6 +79,7 @@ export async function POST(req: NextRequest) {
         delivery_days: deliveryDays ?? null,
         cover_url: coverUrl || null,
         tags: Array.isArray(tags) ? tags : null,
+        reference_files: Array.isArray(referenceFiles) ? referenceFiles : null,
         status: 'open',
       })
       .select('id')

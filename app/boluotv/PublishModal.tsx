@@ -28,8 +28,49 @@ export function PublishCommissionModal({ onClose, onPublished }: { onClose: () =
   const [contactType, setContactType] = useState('wechat');
   const [contactValue, setContactValue] = useState('');
   const [contactName, setContactName] = useState('');
+  const [coverUrl, setCoverUrl] = useState('');
+  const [refFiles, setRefFiles] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  // 上传到 Supabase assets bucket, 独立 commissions/ 路径(与画布隔离)
+  const uploadToStorage = async (file: File): Promise<string | null> => {
+    try {
+      const sb = createClient();
+      const { data: { user } } = await sb!.auth.getUser();
+      if (!user) { window.location.href = '/auth'; return null; }
+      const dotExt = file.name.includes('.') ? file.name.slice(file.name.lastIndexOf('.')) : '.jpg';
+      const filename = `commissions/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}${dotExt}`;
+      const { error: upErr } = await sb!.storage.from('assets').upload(filename, file, { contentType: file.type || 'image/jpeg', upsert: false });
+      if (upErr) throw new Error(upErr.message);
+      const { data: urlData } = sb!.storage.from('assets').getPublicUrl(filename);
+      return urlData.publicUrl;
+    } catch (e: any) {
+      setError('上传失败: ' + (e.message || ''));
+      return null;
+    }
+  };
+
+  const onCoverPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true); setError('');
+    const url = await uploadToStorage(file);
+    if (url) setCoverUrl(url);
+    setUploading(false);
+  };
+
+  const onRefPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setUploading(true); setError('');
+    for (const f of files.slice(0, 6 - refFiles.length)) {
+      const url = await uploadToStorage(f);
+      if (url) setRefFiles((prev) => [...prev, url]);
+    }
+    setUploading(false);
+  };
 
   const submit = async () => {
     setError('');
@@ -48,6 +89,8 @@ export function PublishCommissionModal({ onClose, onPublished }: { onClose: () =
           budgetMin: budgetMin ? Number(budgetMin) : null,
           budgetMax: budgetMax ? Number(budgetMax) : null,
           deliveryDays: deliveryDays ? Number(deliveryDays) : null,
+          coverUrl: coverUrl || null,
+          referenceFiles: refFiles,
           contactType, contactValue, contactName,
         }),
       });
@@ -88,6 +131,42 @@ export function PublishCommissionModal({ onClose, onPublished }: { onClose: () =
                   {c.label}
                 </button>
               ))}
+            </div>
+          </Field>
+
+          {/* 封面图 */}
+          <Field label="封面图(展示在项目卡和详情页)">
+            {coverUrl ? (
+              <div className="relative rounded-xl overflow-hidden border border-white/15" style={{ aspectRatio: '16/9' }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={coverUrl} alt="封面" className="w-full h-full object-cover" />
+                <button onClick={() => setCoverUrl('')} className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/70 text-white text-sm">✕</button>
+              </div>
+            ) : (
+              <label className="flex items-center justify-center rounded-xl border border-dashed border-white/20 bg-white/5 cursor-pointer hover:bg-white/10 transition-colors" style={{ aspectRatio: '16/9' }}>
+                <input type="file" accept="image/*" className="hidden" onChange={onCoverPick} />
+                <span className="text-sm text-zinc-400">{uploading ? '上传中…' : '+ 点击上传封面图'}</span>
+              </label>
+            )}
+          </Field>
+
+          {/* 参考文件 */}
+          <Field label={`参考图/需求文件(可选,最多6个) ${refFiles.length}/6`}>
+            <div className="flex flex-wrap gap-2">
+              {refFiles.map((url, i) => (
+                <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-white/15">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={url} alt={`参考${i + 1}`} className="w-full h-full object-cover" />
+                  <button onClick={() => setRefFiles((prev) => prev.filter((_, j) => j !== i))}
+                    className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/70 text-white text-xs">✕</button>
+                </div>
+              ))}
+              {refFiles.length < 6 && (
+                <label className="w-16 h-16 flex items-center justify-center rounded-lg border border-dashed border-white/20 bg-white/5 cursor-pointer hover:bg-white/10 text-xl text-zinc-400">
+                  <input type="file" accept="image/*" multiple className="hidden" onChange={onRefPick} />
+                  +
+                </label>
+              )}
             </div>
           </Field>
 

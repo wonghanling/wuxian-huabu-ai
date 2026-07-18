@@ -10,7 +10,7 @@ import { ApplyModal } from './ApplyModal';
 type Project = {
   id: string; client_id: string; title: string; description: string | null;
   category: string | null; budget_min: number | null; budget_max: number | null;
-  delivery_days: number | null; cover_url: string | null; tags: string[] | null;
+  delivery_days: number | null; cover_url: string | null; tags: string[] | null; reference_files: string[] | null;
   status: string; application_count: number; current_reservation_id: string | null; created_at: string;
 };
 type Application = {
@@ -108,6 +108,20 @@ export default function ProjectDetail() {
                 {project.tags.map((t) => (
                   <span key={t} className="px-2.5 py-1 text-xs rounded-full bg-white/5 text-zinc-300 border border-white/10">{t}</span>
                 ))}
+              </div>
+            )}
+            {project.reference_files && project.reference_files.length > 0 && (
+              <div className="mt-5">
+                <div className="text-xs text-zinc-500 mb-2">参考资料</div>
+                <div className="flex flex-wrap gap-3">
+                  {project.reference_files.map((url, i) => (
+                    <a key={i} href={url} target="_blank" rel="noreferrer"
+                      className="w-24 h-24 rounded-lg overflow-hidden border border-white/10 bg-zinc-900 hover:border-white/30 transition-colors">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={url} alt={`参考${i + 1}`} className="w-full h-full object-cover" />
+                    </a>
+                  ))}
+                </div>
               </div>
             )}
           </div>

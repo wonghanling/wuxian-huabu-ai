@@ -23,7 +23,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   // 项目基本信息
   const { data: project, error } = await supabaseAdmin
     .from('projects')
-    .select('id, client_id, title, description, category, budget_min, budget_max, delivery_days, cover_url, tags, status, application_count, current_reservation_id, created_at')
+    .select('id, client_id, title, description, category, budget_min, budget_max, delivery_days, cover_url, tags, reference_files, status, application_count, current_reservation_id, created_at')
     .eq('id', id)
     .single();
   if (error || !project) return NextResponse.json({ error: '项目不存在' }, { status: 404 });
