@@ -35,6 +35,15 @@ const CATEGORIES = [
   { key: 'other', label: '其它' },
 ];
 
+// Hero 图片卡轮播图(render/image quality=80 压缩)
+const HERO_IMAGES = [
+  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/chuangzuoweituo1.png?quality=80',
+  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/chuangzuoweituo2.png?quality=80',
+  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/chuangzuoweituo3.png?quality=80',
+  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/chuangzuoweituo4.png?quality=80',
+  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/chuangzuoweituo5.png?quality=80',
+];
+
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   open: { label: '招募中', color: 'text-emerald-400' },
   reserved: { label: '待确认', color: 'text-yellow-400' },
@@ -49,10 +58,17 @@ export default function CommissionHall() {
   const [category, setCategory] = useState('all');
   const [publishOpen, setPublishOpen] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
+  const [heroSlide, setHeroSlide] = useState(0);
 
   useEffect(() => {
     const sb = createClient();
     sb?.auth.getUser().then(({ data }: { data: { user: unknown } }) => setLoggedIn(!!data.user));
+  }, []);
+
+  // Hero 图片卡自动左滑轮播
+  useEffect(() => {
+    const t = setInterval(() => setHeroSlide((s) => (s + 1) % HERO_IMAGES.length), 3500);
+    return () => clearInterval(t);
   }, []);
 
   const load = () => {
@@ -124,14 +140,29 @@ export default function CommissionHall() {
 
           {/* 右半 */}
           <div className="flex flex-col gap-6">
-            {/* 上:16:9 图片卡 */}
-            <div className="rounded-3xl overflow-hidden border border-white/10 bg-zinc-900" style={{ aspectRatio: '16/9' }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/chuangzuoweituo.png?quality=80"
-                alt="创作委托"
-                className="w-full h-full object-cover"
-              />
+            {/* 上:16:9 图片卡(左滑轮播) */}
+            <div className="relative rounded-3xl overflow-hidden border border-white/10 bg-zinc-900" style={{ aspectRatio: '16/9' }}>
+              {/* 横向滑动轨道 */}
+              <div
+                className="flex h-full transition-transform duration-700 ease-out"
+                style={{ transform: `translateX(-${heroSlide * 100}%)` }}
+              >
+                {HERO_IMAGES.map((url, i) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img key={i} src={url} alt={`创作委托${i + 1}`} className="w-full h-full object-cover shrink-0" />
+                ))}
+              </div>
+              {/* 指示点 */}
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                {HERO_IMAGES.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setHeroSlide(i)}
+                    className={`h-1.5 rounded-full transition-all ${i === heroSlide ? 'w-5 bg-white' : 'w-1.5 bg-white/40'}`}
+                    aria-label={`第${i + 1}张`}
+                  />
+                ))}
+              </div>
             </div>
 
             {/* 中:数据统计(白色数字,分隔竖线,微光背景) */}
