@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { ProfileModal } from './ProfileModal';
 
 // 我是创作者视图: 我申请/被选中的项目(找回订单,不依赖大厅)
 type MineItem = {
@@ -14,6 +15,7 @@ type MineItem = {
 export function CreatorView({ loggedIn }: { loggedIn: boolean }) {
   const [items, setItems] = useState<MineItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -40,14 +42,30 @@ export function CreatorView({ loggedIn }: { loggedIn: boolean }) {
     );
   }
   if (loading) return <div className="text-center text-zinc-500 py-20">加载中…</div>;
+
+  // 顶部"完善资料"按钮(登录后都显示)
+  const profileBar = (
+    <div className="flex items-center justify-between mb-5">
+      <div className="text-sm text-zinc-400">完善创作者资料，让客户更容易选择你</div>
+      <button onClick={() => setProfileOpen(true)}
+        className="px-4 py-2 rounded-full border border-white/20 text-white text-sm hover:bg-white/10 transition-colors">
+        完善我的资料
+      </button>
+    </div>
+  );
+
   if (items.length === 0) {
     return (
-      <div className="text-center text-zinc-500 py-20 rounded-2xl border border-white/10 bg-white/[0.02]">
-        你还没有申请任何项目
-        <div className="mt-4">
-          <a href="#tabs" className="text-emerald-400 text-sm">去大厅看看有什么项目 →</a>
+      <>
+        {profileBar}
+        <div className="text-center text-zinc-500 py-20 rounded-2xl border border-white/10 bg-white/[0.02]">
+          你还没有申请任何项目
+          <div className="mt-4">
+            <a href="#tabs" className="text-emerald-400 text-sm">去大厅看看有什么项目 →</a>
+          </div>
         </div>
-      </div>
+        {profileOpen && <ProfileModal onClose={() => setProfileOpen(false)} />}
+      </>
     );
   }
 
@@ -63,7 +81,9 @@ export function CreatorView({ loggedIn }: { loggedIn: boolean }) {
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <>
+      {profileBar}
+      <div className="flex flex-col gap-4">
       {items.map((it) => {
         if (!it.project) return null;
         const b = badge(it);
@@ -101,6 +121,8 @@ export function CreatorView({ loggedIn }: { loggedIn: boolean }) {
           </Link>
         );
       })}
-    </div>
+      </div>
+      {profileOpen && <ProfileModal onClose={() => setProfileOpen(false)} />}
+    </>
   );
 }
