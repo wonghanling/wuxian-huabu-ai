@@ -85,7 +85,7 @@ export default function CommissionHall() {
     <main className="min-h-screen bg-black text-white">
       {/* 顶部导航 */}
       <nav className="sticky top-0 z-30 backdrop-blur-xl bg-black/70 border-b border-white/8">
-        <div className="max-w-[1600px] mx-auto px-6 md:px-10 h-16 flex items-center justify-between">
+        <div className="max-w-[1920px] mx-auto px-6 md:px-12 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <span className="text-lg font-bold tracking-tight">
               Filmavo<sup className="text-emerald-500 text-[0.6em] font-bold ml-0.5 align-super">TV</sup>
@@ -106,7 +106,7 @@ export default function CommissionHall() {
       </nav>
 
       {/* Hero:左(视频卡槽+文案+双按钮+数据) 中(轮播图+项目文案) 右(3小卡) */}
-      <section className="max-w-[1600px] mx-auto px-6 md:px-10 pt-12 pb-10">
+      <section className="max-w-[1920px] mx-auto px-6 md:px-12 pt-12 pb-10">
         <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1.4fr_0.7fr] gap-6 items-stretch">
           {/* 左:视频背景卡槽 + 文案 + 双按钮 + 4数据 */}
           <div className="relative rounded-3xl overflow-hidden border border-white/10 min-h-[380px]">
