@@ -71,7 +71,10 @@ export default function CommissionHall() {
       <nav className="sticky top-0 z-30 backdrop-blur-xl bg-black/70 border-b border-white/8">
         <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
-            <span className="text-lg font-bold tracking-tight">Filmavo<span className="text-emerald-500"> 创作委托</span></span>
+            <span className="text-lg font-bold tracking-tight">
+              Filmavo<sup className="text-emerald-500 text-[0.6em] font-bold ml-0.5 align-super">TV</sup>
+              <span className="text-emerald-500 ml-1.5">创作委托</span>
+            </span>
           </Link>
           <div className="flex items-center gap-4 text-sm">
             <Link href="/" className="text-zinc-400 hover:text-white transition-colors">首页</Link>
@@ -104,16 +107,16 @@ export default function CommissionHall() {
               <p className="text-zinc-300 text-sm md:text-[15px] mb-7 max-w-md leading-relaxed">
                 发布广告、影视、动画等创作需求，找到合适的创作者，在 Filmavo 完成高质量交付。
               </p>
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-4">
                 <button
                   onClick={() => { if (!loggedIn) { window.location.href = '/auth'; return; } setPublishOpen(true); }}
-                  className="px-6 py-3 rounded-full bg-white text-black font-semibold text-sm hover:bg-zinc-200 transition-colors"
+                  className="px-8 py-4 rounded-full bg-white text-black font-semibold text-base hover:bg-zinc-200 transition-colors shadow-lg"
                 >
                   发布创作委托
                 </button>
                 <a href="#projects"
-                  className="px-6 py-3 rounded-full border border-white/30 text-white font-medium text-sm hover:bg-white/10 transition-colors">
-                  寻找项目
+                  className="px-8 py-4 rounded-full border border-white/30 text-white font-medium text-base hover:bg-white/10 transition-colors">
+                  找项目接单
                 </a>
               </div>
             </div>
@@ -131,31 +134,44 @@ export default function CommissionHall() {
               />
             </div>
 
-            {/* 中:数据统计(横排,无图标) */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 rounded-3xl border border-white/10 bg-white/[0.03] p-5">
+            {/* 中:数据统计(白色数字,分隔竖线,微光背景) */}
+            <div
+              className="grid grid-cols-2 sm:grid-cols-4 rounded-3xl border border-white/10 p-5"
+              style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))', boxShadow: '0 8px 30px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06)' }}
+            >
               {[
                 { n: '328+', l: '开放项目' },
                 { n: '1460+', l: '创作者' },
                 { n: '892+', l: '已完成委托' },
                 { n: '96%', l: '按时交付率' },
-              ].map((s) => (
-                <div key={s.l} className="flex flex-col items-center text-center gap-1 py-1">
-                  <div className="text-xl md:text-2xl font-bold text-emerald-400">{s.n}</div>
-                  <div className="text-xs text-zinc-400">{s.l}</div>
+              ].map((s, i) => (
+                <div key={s.l} className={`flex flex-col items-center text-center gap-1.5 py-1 ${i > 0 ? 'sm:border-l border-white/10' : ''}`}>
+                  <div className="text-2xl md:text-[28px] font-bold text-white tracking-tight" style={{ textShadow: '0 2px 12px rgba(255,255,255,0.15)' }}>{s.n}</div>
+                  <div className="text-[11px] text-zinc-400 tracking-wide">{s.l}</div>
                 </div>
               ))}
             </div>
 
-            {/* 下:三步流程(横排3列) */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 rounded-3xl border border-white/10 bg-white/[0.03] p-6">
+            {/* 下:三步流程(带序号圆圈 + 立体卡片 + 悬停微动) */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
                 { n: '01', t: '发布需求', d: '描述你的项目需求和预算' },
                 { n: '02', t: '匹配创作者', d: '创作者提交作品与报价，你挑选合适的一位' },
                 { n: '03', t: '协作交付', d: '在 Filmavo 完成创作与交付' },
               ].map((s) => (
-                <div key={s.n} className="flex flex-col gap-2">
-                  <div className="text-2xl font-bold text-emerald-400/70">{s.n}</div>
-                  <div className="font-semibold text-sm">{s.t}</div>
+                <div
+                  key={s.n}
+                  className="group relative rounded-2xl border border-white/10 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-white/25"
+                  style={{ background: 'linear-gradient(160deg, rgba(255,255,255,0.07), rgba(255,255,255,0.015))', boxShadow: '0 6px 24px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.06)' }}
+                >
+                  {/* 序号圆圈 */}
+                  <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white mb-3 transition-all group-hover:scale-110"
+                    style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.9), rgba(5,120,80,0.9))', boxShadow: '0 4px 14px rgba(16,185,129,0.4)' }}
+                  >
+                    {s.n}
+                  </div>
+                  <div className="font-semibold text-sm text-white mb-1.5">{s.t}</div>
                   <div className="text-xs text-zinc-400 leading-relaxed">{s.d}</div>
                 </div>
               ))}
