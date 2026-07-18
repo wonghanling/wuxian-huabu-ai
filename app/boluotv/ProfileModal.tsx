@@ -18,6 +18,8 @@ export function ProfileModal({ onClose, onSaved }: { onClose: () => void; onSave
   const [specialties, setSpecialties] = useState<string[]>([]);
   const [contactType, setContactType] = useState('wechat');
   const [contactValue, setContactValue] = useState('');
+  const [portfolio, setPortfolio] = useState<{ id: string; media_url: string; title: string | null }[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -39,10 +41,51 @@ export function ProfileModal({ onClose, onSaved }: { onClose: () => void; onSave
             setContactValue(d.profile.contact_value || '');
           }
         }
+        const pRes = await fetch('/api/commissions/portfolio', { headers: { Authorization: `Bearer ${session.access_token}` } });
+        if (pRes.ok) { const pd = await pRes.json(); setPortfolio(pd.items || []); }
       } catch { /* noop */ }
       setLoading(false);
     })();
   }, []);
+
+  // 上传作品到 Supabase assets(commissions/ 独立路径)
+  const onPortfolioPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setUploading(true); setError('');
+    try {
+      const sb = createClient();
+      const { data: { session } } = await sb!.auth.getSession();
+      const { data: { user } } = await sb!.auth.getUser();
+      if (!session || !user) { window.location.href = '/auth'; return; }
+      for (const f of files.slice(0, 12 - portfolio.length)) {
+        const dotExt = f.name.includes('.') ? f.name.slice(f.name.lastIndexOf('.')) : '.jpg';
+        const filename = `commissions/${user.id}/portfolio/${Date.now()}-${Math.random().toString(36).slice(2)}${dotExt}`;
+        const { error: upErr } = await sb!.storage.from('assets').upload(filename, f, { contentType: f.type || 'image/jpeg', upsert: false });
+        if (upErr) { setError('上传失败: ' + upErr.message); continue; }
+        const { data: urlData } = sb!.storage.from('assets').getPublicUrl(filename);
+        const isVideo = (f.type || '').startsWith('video');
+        const res = await fetch('/api/commissions/portfolio', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify({ mediaType: isVideo ? 'video' : 'image', mediaUrl: urlData.publicUrl }),
+        });
+        const d = await res.json();
+        if (res.ok) setPortfolio((prev) => [...prev, { id: d.id, media_url: urlData.publicUrl, title: null }]);
+      }
+    } catch (e: any) { setError(e.message || '上传失败'); }
+    setUploading(false);
+  };
+
+  const deletePortfolio = async (itemId: string) => {
+    try {
+      const sb = createClient();
+      const { data: { session } } = await sb!.auth.getSession();
+      if (!session) return;
+      const res = await fetch(`/api/commissions/portfolio?id=${itemId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${session.access_token}` } });
+      if (res.ok) setPortfolio((prev) => prev.filter((p) => p.id !== itemId));
+    } catch { /* noop */ }
+  };
 
   const toggleSpec = (s: string) => {
     setSpecialties((prev) => prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]);
@@ -98,6 +141,25 @@ export function ProfileModal({ onClose, onSaved }: { onClose: () => void; onSave
             </Field>
 
             <Field label="个人简介"><textarea value={bio} onChange={(e) => setBio(e.target.value.slice(0, 200))} rows={3} placeholder="简短介绍你的经验和风格(≤200字)" style={{ ...inputStyle, resize: 'none' }} /></Field>
+
+            <Field label={`作品集(展示给客户,最多12个) ${portfolio.length}/12`}>
+              <div className="flex flex-wrap gap-2">
+                {portfolio.map((p) => (
+                  <div key={p.id} className="relative w-20 h-20 rounded-lg overflow-hidden border border-white/15 bg-zinc-800">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={p.media_url} alt={p.title || '作品'} className="w-full h-full object-cover" />
+                    <button onClick={() => deletePortfolio(p.id)}
+                      className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/70 text-white text-xs">✕</button>
+                  </div>
+                ))}
+                {portfolio.length < 12 && (
+                  <label className="w-20 h-20 flex items-center justify-center rounded-lg border border-dashed border-white/20 bg-white/5 cursor-pointer hover:bg-white/10 text-xl text-zinc-400">
+                    <input type="file" accept="image/*,video/*" multiple className="hidden" onChange={onPortfolioPick} />
+                    {uploading ? '…' : '+'}
+                  </label>
+                )}
+              </div>
+            </Field>
 
             <div className="pt-2 border-t border-white/10">
               <div className="text-sm text-emerald-400 mb-3">你的联系方式(合作达成后甲方才能看到)</div>
