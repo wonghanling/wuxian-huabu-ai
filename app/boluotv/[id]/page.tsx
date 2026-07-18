@@ -231,7 +231,7 @@ export default function ProjectDetail() {
               <div className="text-base font-semibold text-yellow-400 mb-2">已选择创作者，等待对方支付介绍费</div>
               <p className="text-sm text-zinc-300">你可以先发一条消息和创作者试探沟通。对方支付介绍费后，双方即可无限沟通、交换联系方式。</p>
             </div>
-            <ChatBox projectId={id} reservationId={myReservation.id} paid={false} />
+            <ChatBox projectId={id} reservationId={myReservation.id} paid={false} onRefresh={() => load()} />
           </div>
         )}
 
@@ -378,7 +378,7 @@ export default function ProjectDetail() {
               </div>
             </div>
             {/* 付款前预沟通(各1条,过滤联系方式) */}
-            <ChatBox projectId={id} reservationId={myReservation.id} paid={false} onTriggerPay={payIntroFee} />
+            <ChatBox projectId={id} reservationId={myReservation.id} paid={false} onTriggerPay={payIntroFee} onRefresh={() => load()} />
           </div>
         ) : myApplication ? (
           <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] p-6">

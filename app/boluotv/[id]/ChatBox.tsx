@@ -27,7 +27,7 @@ export function ChatToggle({ projectId, reservationId, paid }: { projectId: stri
   );
 }
 
-export function ChatBox({ projectId, reservationId, paid, onTriggerPay }: { projectId: string; reservationId: string | null; paid?: boolean; onTriggerPay?: () => void }) {
+export function ChatBox({ projectId, reservationId, paid, onTriggerPay, onRefresh }: { projectId: string; reservationId: string | null; paid?: boolean; onTriggerPay?: () => void; onRefresh?: () => void }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [me, setMe] = useState<string>('');
   const [myCount, setMyCount] = useState(0);
@@ -39,8 +39,25 @@ export function ChatBox({ projectId, reservationId, paid, onTriggerPay }: { proj
   // 付款前每人限1条
   const preChatUsedUp = !paid && myCount >= 1;
 
+  const [refreshing, setRefreshing] = useState(false);
+
   const scrollToBottom = () => {
     setTimeout(() => { scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' }); }, 50);
+  };
+
+  // 手动刷新:重新拉消息 + 通知父组件刷新(识别付款状态变化)
+  const reload = async () => {
+    setRefreshing(true);
+    try {
+      const sb = createClient();
+      const { data: { session } } = await sb!.auth.getSession();
+      if (session) {
+        const res = await fetch(`/api/commissions/${projectId}/messages`, { headers: { Authorization: `Bearer ${session.access_token}` } });
+        if (res.ok) { const d = await res.json(); setMessages(d.messages || []); setMe(d.me || ''); setMyCount(d.myCount || 0); scrollToBottom(); }
+      }
+    } catch { /* noop */ }
+    onRefresh?.();
+    setRefreshing(false);
   };
 
   // 加载历史 + 订阅 Realtime
@@ -104,7 +121,13 @@ export function ChatBox({ projectId, reservationId, paid, onTriggerPay }: { proj
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden">
-      <div className="px-5 py-3 border-b border-white/10 text-sm font-semibold">实时沟通</div>
+      <div className="px-5 py-3 border-b border-white/10 flex items-center justify-between">
+        <span className="text-sm font-semibold">实时沟通</span>
+        <button onClick={reload} disabled={refreshing}
+          className="text-xs text-zinc-400 hover:text-white transition-colors disabled:opacity-50">
+          {refreshing ? '刷新中…' : '🔄 刷新'}
+        </button>
+      </div>
 
       {/* 消息区 */}
       <div ref={scrollRef} className="h-80 overflow-y-auto px-5 py-4 space-y-3">
