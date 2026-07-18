@@ -439,6 +439,7 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
                         membership_yearly:  '开通会员（年付）',
                         membership_2yearly: '开通会员（两年付）',
                         recharge:           '余额充值',
+                        commission_intro:   '创作服务',
                       };
                       const status = statusMap[order.status] ?? { text: order.status, color: 'text-white/40' };
                       return (

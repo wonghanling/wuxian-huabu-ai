@@ -24,8 +24,11 @@ const STATUS_LABEL: Record<string, { text: string; color: string }> = {
 };
 
 const TYPE_LABEL: Record<string, string> = {
-  membership: '开通会员',
-  recharge:   '余额充值',
+  membership:         '开通会员（月付）',
+  membership_yearly:  '开通会员（年付）',
+  membership_2yearly: '开通会员（两年付）',
+  recharge:           '余额充值',
+  commission_intro:   '创作服务',
 };
 
 export default function OrdersPage() {
