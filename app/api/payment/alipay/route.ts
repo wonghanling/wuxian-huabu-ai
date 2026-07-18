@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
         totalAmount: orderAmount.toFixed(2),
         subject,
       },
-      returnUrl: `${baseUrl}/payment/success`,
+      returnUrl: `${baseUrl}/payment/success?orderId=${orderId}`,
       notifyUrl: `${baseUrl}/api/payment/alipay/notify`,
     });
 
