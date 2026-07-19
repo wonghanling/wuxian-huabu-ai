@@ -72,12 +72,28 @@ export function CreatorView({ loggedIn }: { loggedIn: boolean }) {
   // 状态标签
   const badge = (it: MineItem) => {
     const r = it.reservation;
-    if (r?.status === 'awaiting_payment') return { t: '待付款解锁', c: 'text-yellow-400' };
     if (r?.status === 'active') return { t: '独家沟通中', c: 'text-emerald-400' };
-    if (r?.status === 'cooperated') return { t: '已合作', c: 'text-zinc-400' };
+    if (r?.status === 'cooperated') return { t: '已合作', c: 'text-emerald-400' };
+    if (r?.status === 'completed') return { t: '✅ 任务完成', c: 'text-blue-400' };
     if (it.application.status === 'selected') return { t: '已被选择', c: 'text-blue-400' };
     if (it.application.status === 'rejected') return { t: '未选中', c: 'text-zinc-500' };
     return { t: '申请中', c: 'text-zinc-300' };
+  };
+
+  // 删除(隐藏)已完成的接单记录
+  const hideItem = async (reservationId: string) => {
+    if (!window.confirm('确认从列表中删除该记录？（不影响对方）')) return;
+    try {
+      const sb = createClient();
+      const { data: { session } } = await sb!.auth.getSession();
+      if (!session) return;
+      const res = await fetch(`/api/commissions/${items.find((i) => i.reservation?.id === reservationId)?.project?.id}/complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ action: 'hide', reservationId }),
+      });
+      if (res.ok) setItems((prev) => prev.filter((i) => i.reservation?.id !== reservationId));
+    } catch { /* noop */ }
   };
 
   return (
@@ -87,7 +103,6 @@ export function CreatorView({ loggedIn }: { loggedIn: boolean }) {
       {items.map((it) => {
         if (!it.project) return null;
         const b = badge(it);
-        const needPay = it.reservation?.status === 'awaiting_payment';
         return (
           <Link key={it.application.id} href={`/boluotv/${it.project.id}`}
             className="flex gap-4 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20 transition-all overflow-hidden p-4">
@@ -111,9 +126,13 @@ export function CreatorView({ loggedIn }: { loggedIn: boolean }) {
                 <span className="text-zinc-500">我的报价 {it.application.quote_min != null ? `¥${it.application.quote_min}-${it.application.quote_max}` : '面议'}</span>
               </div>
             </div>
-            <div className="shrink-0 flex items-center">
-              {needPay ? (
-                <span className="px-4 py-2 rounded-full bg-yellow-500 text-black text-sm font-semibold">去付款解锁 →</span>
+            <div className="shrink-0 flex items-center gap-2">
+              {it.reservation?.status === 'completed' && it.reservation?.id ? (
+                <button
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); hideItem(it.reservation!.id); }}
+                  className="px-3 py-2 rounded-full border border-white/15 text-zinc-400 text-sm hover:bg-white/10 hover:text-white transition-colors">
+                  删除
+                </button>
               ) : (
                 <span className="px-4 py-2 rounded-full bg-white/10 text-sm text-white">查看详情 →</span>
               )}

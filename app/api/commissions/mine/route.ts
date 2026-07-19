@@ -23,10 +23,24 @@ export async function GET(req: NextRequest) {
     // 我发布的项目
     const { data } = await supabaseAdmin
       .from('projects')
-      .select('id, title, description, category, budget_min, budget_max, delivery_days, cover_url, status, application_count, created_at')
+      .select('id, title, description, category, budget_min, budget_max, delivery_days, cover_url, status, application_count, current_reservation_id, created_at')
       .eq('client_id', uid)
       .order('created_at', { ascending: false });
-    return NextResponse.json({ items: data ?? [] });
+    const projects = data ?? [];
+    // 关联当前预留(取隐藏标记+预留id,供甲方删除已完成项目)
+    const resIds = projects.map((p) => p.current_reservation_id).filter(Boolean) as string[];
+    const resMap = new Map<string, { id: string; hidden_by_client: boolean }>();
+    if (resIds.length > 0) {
+      const { data: reservations } = await supabaseAdmin
+        .from('project_reservations')
+        .select('id, hidden_by_client')
+        .in('id', resIds);
+      for (const r of reservations ?? []) resMap.set(r.id, r);
+    }
+    const items = projects
+      .map((p) => ({ ...p, reservation: p.current_reservation_id ? resMap.get(p.current_reservation_id) ?? null : null }))
+      .filter((p) => !(p.reservation && p.reservation.hidden_by_client));
+    return NextResponse.json({ items });
   }
 
   // 创作者: 我申请过的项目(带我的申请状态和预留状态)
@@ -47,7 +61,7 @@ export async function GET(req: NextRequest) {
   // 我在这些项目的预留(待付款/独家沟通)
   const { data: reservations } = await supabaseAdmin
     .from('project_reservations')
-    .select('id, project_id, status, payment_status, amount_cents, pay_deadline')
+    .select('id, project_id, status, payment_status, amount_cents, pay_deadline, hidden_by_creator')
     .eq('creator_id', uid)
     .in('project_id', projectIds);
 
@@ -58,7 +72,9 @@ export async function GET(req: NextRequest) {
     application: a,
     project: projMap.get(a.project_id) ?? null,
     reservation: resMap.get(a.project_id) ?? null,
-  })).filter((it) => it.project != null);
+  })).filter((it) => it.project != null)
+    // 过滤掉创作者自己已隐藏的
+    .filter((it) => !(it.reservation && (it.reservation as { hidden_by_creator?: boolean }).hidden_by_creator));
 
   return NextResponse.json({ items });
 }

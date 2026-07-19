@@ -9,14 +9,15 @@ type Project = {
   id: string; title: string; description: string | null; category: string | null;
   budget_min: number | null; budget_max: number | null; delivery_days: number | null;
   cover_url: string | null; status: string; application_count: number; created_at: string;
+  reservation?: { id: string; hidden_by_client: boolean } | null;
 };
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   open: { label: '招募中', color: 'text-emerald-400' },
-  reserved: { label: '待付款确认', color: 'text-yellow-400' },
+  reserved: { label: '待确认', color: 'text-yellow-400' },
   exclusive_contact: { label: '独家沟通中', color: 'text-blue-400' },
-  cooperated: { label: '已合作', color: 'text-zinc-400' },
-  closed: { label: '已关闭', color: 'text-zinc-500' },
+  cooperated: { label: '已合作', color: 'text-emerald-400' },
+  closed: { label: '✅ 任务完成', color: 'text-blue-400' },
 };
 
 export function ClientProjects({ loggedIn }: { loggedIn: boolean }) {
@@ -36,6 +37,22 @@ export function ClientProjects({ loggedIn }: { loggedIn: boolean }) {
       setLoading(false);
     })();
   }, [loggedIn]);
+
+  // 删除(隐藏)已完成项目
+  const hideItem = async (projectId: string, reservationId: string) => {
+    if (!window.confirm('确认从列表中删除该项目？（不影响对方）')) return;
+    try {
+      const sb = createClient();
+      const { data: { session } } = await sb!.auth.getSession();
+      if (!session) return;
+      const res = await fetch(`/api/commissions/${projectId}/complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ action: 'hide', reservationId }),
+      });
+      if (res.ok) setItems((prev) => prev.filter((p) => p.id !== projectId));
+    } catch { /* noop */ }
+  };
 
   if (!loggedIn) {
     return (
@@ -81,8 +98,16 @@ export function ClientProjects({ loggedIn }: { loggedIn: boolean }) {
                   <span className="text-zinc-500">{p.application_count || 0} 人申请</span>
                 </div>
               </div>
-              <div className="shrink-0 flex items-center">
-                <span className="px-4 py-2 rounded-full bg-white/10 text-sm text-white">管理项目 →</span>
+              <div className="shrink-0 flex items-center gap-2">
+                {p.status === 'closed' && p.reservation?.id ? (
+                  <button
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); hideItem(p.id, p.reservation!.id); }}
+                    className="px-3 py-2 rounded-full border border-white/15 text-zinc-400 text-sm hover:bg-white/10 hover:text-white transition-colors">
+                    删除
+                  </button>
+                ) : (
+                  <span className="px-4 py-2 rounded-full bg-white/10 text-sm text-white">管理项目 →</span>
+                )}
               </div>
             </Link>
           );
