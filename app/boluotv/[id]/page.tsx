@@ -210,11 +210,11 @@ export default function ProjectDetail() {
             <div className="flex flex-wrap gap-3 pb-4 border-b border-white/10">
               <button onClick={() => finalizeOutcome('cooperated')}
                 className="px-5 py-2.5 rounded-full bg-white text-black text-sm font-semibold hover:bg-zinc-200 transition-colors">
-                已达成合作
+                确认合作（结束项目）
               </button>
               <button onClick={() => finalizeOutcome('not_cooperated')}
                 className="px-5 py-2.5 rounded-full border border-white/20 text-zinc-300 text-sm hover:bg-white/10 transition-colors">
-                未达成合作 / 重新招募
+                未谈拢（重新招募）
               </button>
             </div>
             <div className="mt-6">
@@ -293,11 +293,11 @@ export default function ProjectDetail() {
             <div className="flex flex-wrap gap-3 pb-4 border-b border-white/10">
               <button onClick={() => finalizeOutcome('cooperated')}
                 className="px-5 py-2.5 rounded-full bg-white text-black text-sm font-semibold hover:bg-zinc-200 transition-colors">
-                已达成合作
+                确认合作（结束项目）
               </button>
               <button onClick={() => finalizeOutcome('not_cooperated')}
                 className="px-5 py-2.5 rounded-full border border-white/20 text-zinc-300 text-sm hover:bg-white/10 transition-colors">
-                未达成合作
+                未谈拢
               </button>
             </div>
             <div className="mt-6">
