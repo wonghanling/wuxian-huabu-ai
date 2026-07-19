@@ -199,27 +199,27 @@ export default function ProjectDetail() {
 
         {/* 甲方视角: 独家沟通中 → 看创作者 + 标记合作结果 */}
         {isOwner && myReservation?.status === 'active' && (
-          <div className="mt-8 rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.08] p-6">
-            <div className="text-base font-semibold text-emerald-400 mb-3">🎉 独家沟通中</div>
-            <div className="space-y-2 text-sm mb-4">
-              <div><span className="text-zinc-500">被选创作者：</span><span className="text-white">{creatorContact?.display_name || '创作者'}</span></div>
+          <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.08] p-6 h-fit">
+              <div className="text-base font-semibold text-emerald-400 mb-3">🎉 独家沟通中</div>
+              <div className="space-y-2 text-sm mb-4">
+                <div><span className="text-zinc-500">被选创作者：</span><span className="text-white">{creatorContact?.display_name || '创作者'}</span></div>
+              </div>
+              <div className="text-xs text-zinc-400 mb-4 leading-relaxed">
+                请在右侧实时沟通，确认最终价格、制作周期、修改次数、交付内容与付款方式。项目款由双方线下自行结算，平台不参与项目资金交易。
+              </div>
+              <div className="flex flex-wrap gap-3 pt-4 border-t border-white/10">
+                <button onClick={() => finalizeOutcome('cooperated')}
+                  className="px-5 py-2.5 rounded-full bg-white text-black text-sm font-semibold hover:bg-zinc-200 transition-colors">
+                  确认合作（结束项目）
+                </button>
+                <button onClick={() => finalizeOutcome('not_cooperated')}
+                  className="px-5 py-2.5 rounded-full border border-white/20 text-zinc-300 text-sm hover:bg-white/10 transition-colors">
+                  未谈拢（重新招募）
+                </button>
+              </div>
             </div>
-            <div className="text-xs text-zinc-400 mb-4 leading-relaxed">
-              请在下方实时沟通，确认最终价格、制作周期、修改次数、交付内容与付款方式。项目款由双方线下自行结算，平台不参与项目资金交易。
-            </div>
-            <div className="flex flex-wrap gap-3 pb-4 border-b border-white/10">
-              <button onClick={() => finalizeOutcome('cooperated')}
-                className="px-5 py-2.5 rounded-full bg-white text-black text-sm font-semibold hover:bg-zinc-200 transition-colors">
-                确认合作（结束项目）
-              </button>
-              <button onClick={() => finalizeOutcome('not_cooperated')}
-                className="px-5 py-2.5 rounded-full border border-white/20 text-zinc-300 text-sm hover:bg-white/10 transition-colors">
-                未谈拢（重新招募）
-              </button>
-            </div>
-            <div className="mt-6">
-              <ChatBox projectId={id} reservationId={myReservation.id} paid={true} onRefresh={() => load()} />
-            </div>
+            <ChatBox projectId={id} reservationId={myReservation.id} paid={true} onRefresh={() => load()} />
           </div>
         )}
 
@@ -284,25 +284,25 @@ export default function ProjectDetail() {
             )}
           </div>
         ) : myReservation && myReservation.status === 'active' ? (
-          /* 创作者视角: 被选中,独家沟通中(会员制:选中即聊) */
-          <div className="mt-8 rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.08] p-6">
-            <div className="text-base font-semibold text-emerald-400 mb-2">🎉 甲方选择了你，独家沟通中</div>
-            <div className="text-xs text-zinc-400 mb-4 leading-relaxed">
-              在下方与甲方沟通，确认最终价格、制作周期、修改次数、交付内容与付款方式。项目款由双方线下自行结算，平台不参与项目资金交易。
+          /* 创作者视角: 被选中,独家沟通中(双列:左信息+按钮,右聊天) */
+          <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.08] p-6 h-fit">
+              <div className="text-base font-semibold text-emerald-400 mb-2">🎉 甲方选择了你，独家沟通中</div>
+              <div className="text-xs text-zinc-400 mb-4 leading-relaxed">
+                在右侧与甲方沟通，确认最终价格、制作周期、修改次数、交付内容与付款方式。项目款由双方线下自行结算，平台不参与项目资金交易。
+              </div>
+              <div className="flex flex-wrap gap-3 pt-4 border-t border-white/10">
+                <button onClick={() => finalizeOutcome('cooperated')}
+                  className="px-5 py-2.5 rounded-full bg-white text-black text-sm font-semibold hover:bg-zinc-200 transition-colors">
+                  确认合作（结束项目）
+                </button>
+                <button onClick={() => finalizeOutcome('not_cooperated')}
+                  className="px-5 py-2.5 rounded-full border border-white/20 text-zinc-300 text-sm hover:bg-white/10 transition-colors">
+                  未谈拢
+                </button>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-3 pb-4 border-b border-white/10">
-              <button onClick={() => finalizeOutcome('cooperated')}
-                className="px-5 py-2.5 rounded-full bg-white text-black text-sm font-semibold hover:bg-zinc-200 transition-colors">
-                确认合作（结束项目）
-              </button>
-              <button onClick={() => finalizeOutcome('not_cooperated')}
-                className="px-5 py-2.5 rounded-full border border-white/20 text-zinc-300 text-sm hover:bg-white/10 transition-colors">
-                未谈拢
-              </button>
-            </div>
-            <div className="mt-6">
-              <ChatBox projectId={id} reservationId={myReservation.id} paid={true} onRefresh={() => load()} />
-            </div>
+            <ChatBox projectId={id} reservationId={myReservation.id} paid={true} onRefresh={() => load()} />
           </div>
         ) : myApplication ? (
           <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] p-6">
