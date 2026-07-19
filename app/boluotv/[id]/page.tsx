@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { ApplyModal } from './ApplyModal';
 import { CreatorProfileModal } from './CreatorProfileModal';
-import { ChatToggle, ChatBox } from './ChatBox';
+import { ChatBox } from './ChatBox';
 
 // 项目详情页(独立于画布)。甲方看申请者列表+选择创作者;创作者看详情+申请入口。
 type Project = {
@@ -28,7 +28,6 @@ type Reservation = {
   id: string; creator_id: string; status: string; payment_status: string;
   amount_cents: number; pay_deadline: string | null; contact_deadline: string | null;
 };
-type Contact = { contact_name: string | null; contact_type: string | null; contact_value: string; supplementary_notes: string | null };
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   open: { label: '招募中', color: 'text-emerald-400' },
@@ -46,9 +45,7 @@ export default function ProjectDetail() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [myApplication, setMyApplication] = useState<Application | null>(null);
   const [myReservation, setMyReservation] = useState<Reservation | null>(null);
-  const [contact, setContact] = useState<Contact | null>(null);
   const [creatorContact, setCreatorContact] = useState<{ display_name: string | null } | null>(null);
-  const [paying, setPaying] = useState(false);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [applyOpen, setApplyOpen] = useState(false);
@@ -80,29 +77,6 @@ export default function ProjectDetail() {
   };
 
   // 被选创作者支付介绍费(走支付宝 commission_intro)
-  const payIntroFee = async () => {
-    if (!myReservation) return;
-    setPaying(true);
-    try {
-      const sb = createClient();
-      const { data: { session } } = await sb!.auth.getSession();
-      if (!session) { window.location.href = '/auth'; return; }
-      const res = await fetch('/api/payment/alipay', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-        body: JSON.stringify({ plan: 'commission_intro', amount: (myReservation.amount_cents || 990) / 100, reservationId: myReservation.id }),
-      });
-      const data = await res.json();
-      if (!res.ok) { alert(data.error || '下单失败'); setPaying(false); return; }
-      // 打开支付宝支付表单
-      const win = window.open('', '_blank');
-      if (win) { win.document.write(data.paymentForm); win.document.close(); }
-      else { alert('请允许弹窗以完成支付'); }
-    } catch (e: any) {
-      alert(e.message || '下单失败');
-    }
-    setPaying(false);
-  };
 
   // 标记合作结果(已合作/未合作),双方均可操作
   const finalizeOutcome = async (result: 'cooperated' | 'not_cooperated') => {
@@ -149,7 +123,6 @@ export default function ProjectDetail() {
       setApplications(data.applications || []);
       setMyApplication(data.myApplication || null);
       setMyReservation(data.myReservation || null);
-      setContact(data.contact || null);
       setCreatorContact(data.creatorContact || null);
     } catch { /* noop */ }
     setLoading(false);
@@ -224,18 +197,7 @@ export default function ProjectDetail() {
           </div>
         </div>
 
-        {/* 甲方视角: 已选创作者,等待其付款(可先预沟通1条) */}
-        {isOwner && myReservation?.status === 'awaiting_payment' && (
-          <div className="mt-8 space-y-4">
-            <div className="rounded-2xl border border-yellow-500/30 bg-yellow-500/[0.08] p-6">
-              <div className="text-base font-semibold text-yellow-400 mb-2">已选择创作者，等待对方支付介绍费</div>
-              <p className="text-sm text-zinc-300">你可以先发一条消息和创作者试探沟通。对方支付介绍费后，双方即可无限沟通、交换联系方式。</p>
-            </div>
-            <ChatBox projectId={id} reservationId={myReservation.id} paid={false} onRefresh={() => load()} />
-          </div>
-        )}
-
-        {/* 甲方视角: 独家沟通中(已付款) → 看创作者 + 标记合作结果 */}
+        {/* 甲方视角: 独家沟通中 → 看创作者 + 标记合作结果 */}
         {isOwner && myReservation?.status === 'active' && (
           <div className="mt-8 rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.08] p-6">
             <div className="text-base font-semibold text-emerald-400 mb-3">🎉 独家沟通中</div>
@@ -245,7 +207,7 @@ export default function ProjectDetail() {
             <div className="text-xs text-zinc-400 mb-4 leading-relaxed">
               请在下方实时沟通，确认最终价格、制作周期、修改次数、交付内容与付款方式。项目款由双方线下自行结算，平台不参与项目资金交易。
             </div>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3 pb-4 border-b border-white/10">
               <button onClick={() => finalizeOutcome('cooperated')}
                 className="px-5 py-2.5 rounded-full bg-white text-black text-sm font-semibold hover:bg-zinc-200 transition-colors">
                 已达成合作
@@ -255,13 +217,9 @@ export default function ProjectDetail() {
                 未达成合作 / 重新招募
               </button>
             </div>
-          </div>
-        )}
-
-        {/* 甲方视角: 独家沟通中聊天 */}
-        {isOwner && myReservation?.status === 'active' && (
-          <div className="mt-6">
-            <ChatToggle projectId={id} reservationId={myReservation.id} paid={true} />
+            <div className="mt-6">
+              <ChatBox projectId={id} reservationId={myReservation.id} paid={true} onRefresh={() => load()} />
+            </div>
           </div>
         )}
 
@@ -325,19 +283,14 @@ export default function ProjectDetail() {
               </div>
             )}
           </div>
-        ) : myReservation && myReservation.status === 'active' && contact ? (
-          /* 创作者视角: 已付款,显示甲方联系方式 */
+        ) : myReservation && myReservation.status === 'active' ? (
+          /* 创作者视角: 被选中,独家沟通中(会员制:选中即聊) */
           <div className="mt-8 rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.08] p-6">
-            <div className="text-base font-semibold text-emerald-400 mb-3">🎉 独家沟通中 · 联系方式已解锁</div>
-            <div className="space-y-2 text-sm">
-              <div><span className="text-zinc-500">称呼：</span><span className="text-white">{contact.contact_name || '—'}</span></div>
-              <div><span className="text-zinc-500">联系方式（{contact.contact_type || ''}）：</span><span className="text-white font-medium select-all">{contact.contact_value}</span></div>
-              {contact.supplementary_notes && <div><span className="text-zinc-500">备注：</span><span className="text-white">{contact.supplementary_notes}</span></div>}
+            <div className="text-base font-semibold text-emerald-400 mb-2">🎉 甲方选择了你，独家沟通中</div>
+            <div className="text-xs text-zinc-400 mb-4 leading-relaxed">
+              在下方与甲方沟通，确认最终价格、制作周期、修改次数、交付内容与付款方式。项目款由双方线下自行结算，平台不参与项目资金交易。
             </div>
-            <div className="text-xs text-zinc-400 mt-4 mb-4 leading-relaxed">
-              请尽快与甲方联系，确认最终价格、制作周期、修改次数、交付内容与付款方式。项目价格与合作由双方线下协商，平台不参与项目资金交易。
-            </div>
-            <div className="flex flex-wrap gap-3 pt-4 border-t border-white/10">
+            <div className="flex flex-wrap gap-3 pb-4 border-b border-white/10">
               <button onClick={() => finalizeOutcome('cooperated')}
                 className="px-5 py-2.5 rounded-full bg-white text-black text-sm font-semibold hover:bg-zinc-200 transition-colors">
                 已达成合作
@@ -348,31 +301,8 @@ export default function ProjectDetail() {
               </button>
             </div>
             <div className="mt-6">
-              <ChatToggle projectId={id} reservationId={myReservation.id} paid={true} />
+              <ChatBox projectId={id} reservationId={myReservation.id} paid={true} onRefresh={() => load()} />
             </div>
-          </div>
-        ) : myReservation && myReservation.status === 'awaiting_payment' ? (
-          /* 创作者视角: 被选中,先预沟通1条→自动弹付款 */
-          <div className="mt-8 space-y-4">
-            <div className="rounded-2xl border border-yellow-500/30 bg-yellow-500/[0.08] p-6">
-              <div className="text-base font-semibold text-yellow-400 mb-2">甲方已选择与你一对一沟通</div>
-              <p className="text-sm text-zinc-300 mb-1">你可以先和甲方各发一条消息试探需求，之后支付 ¥{((myReservation.amount_cents || 990) / 100).toFixed(2)} 介绍费即可无限沟通、交换联系方式。</p>
-              <p className="text-xs text-zinc-500">
-                {myReservation.pay_deadline ? `请在 ${new Date(myReservation.pay_deadline).toLocaleString('zh-CN')} 前完成支付` : ''}
-              </p>
-              <div className="flex gap-3 mt-4">
-                <button onClick={payIntroFee} disabled={paying}
-                  className="px-6 py-3 rounded-full bg-white text-black font-semibold text-sm hover:bg-zinc-200 transition-colors disabled:opacity-50">
-                  {paying ? '跳转支付…' : `支付 ¥${((myReservation.amount_cents || 990) / 100).toFixed(2)} 开始沟通`}
-                </button>
-                <button onClick={() => load()}
-                  className="px-5 py-3 rounded-full border border-white/20 text-zinc-300 text-sm hover:bg-white/10 transition-colors">
-                  我已支付，刷新
-                </button>
-              </div>
-            </div>
-            {/* 付款前预沟通(各1条,过滤联系方式) */}
-            <ChatBox projectId={id} reservationId={myReservation.id} paid={false} onTriggerPay={payIntroFee} onRefresh={() => load()} />
           </div>
         ) : myApplication ? (
           <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] p-6">
