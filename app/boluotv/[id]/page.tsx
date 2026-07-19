@@ -87,7 +87,7 @@ export default function ProjectDetail() {
       ? (window.prompt('请简要填写未达成合作的原因(如:价格未谈拢/工期不合适/创作方向不匹配等)') || '未说明')
       : null;
     const ok = window.confirm(result === 'cooperated'
-      ? '确认已达成合作？项目将关闭，不再重新开放。'
+      ? '确认已达成合作？确认后仍可继续沟通后续制作，项目不再重新招募。'
       : '确认结束本轮沟通？项目将重新开放，可再选择其他创作者。');
     if (!ok) return;
     try {
@@ -98,6 +98,27 @@ export default function ProjectDetail() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
         body: JSON.stringify({ action: 'outcome', reservationId, result, reason }),
+      });
+      const data = await res.json();
+      if (!res.ok) { alert(data.error || '操作失败'); return; }
+      await load();
+    } catch (e: any) {
+      alert(e.message || '操作失败');
+    }
+  };
+
+  // 任务完成(cooperated → closed)
+  const completeProject = async () => {
+    if (!myReservation) return;
+    if (!window.confirm('确认任务已完成？项目将标记为已完成结束。')) return;
+    try {
+      const sb = createClient();
+      const { data: { session } } = await sb!.auth.getSession();
+      if (!session) { window.location.href = '/auth'; return; }
+      const res = await fetch(`/api/commissions/${id}/complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ action: 'complete', reservationId: myReservation.id }),
       });
       const data = await res.json();
       if (!res.ok) { alert(data.error || '操作失败'); return; }
@@ -134,7 +155,8 @@ export default function ProjectDetail() {
   if (notFound || !project) return <Shell><div className="text-center text-zinc-500 py-32">项目不存在或已删除</div></Shell>;
 
   const st = STATUS_LABEL[project.status] || { label: project.status, color: 'text-zinc-400' };
-  const inExclusive = myReservation?.status === 'active';
+  const inExclusive = myReservation?.status === 'active' || myReservation?.status === 'cooperated';
+  const isCooperated = myReservation?.status === 'cooperated';
 
   {/* 项目头 */}
   const projectHead = (
@@ -260,22 +282,35 @@ export default function ProjectDetail() {
   {/* 甲方独家沟通块(信息+按钮,竖直堆叠) */}
   const ownerExclusive = (
     <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.08] p-6">
-      <div className="text-base font-semibold text-emerald-400 mb-3">🎉 独家沟通中</div>
+      <div className="text-base font-semibold text-emerald-400 mb-3">
+        {isCooperated ? '✅ 已达成合作' : '🎉 独家沟通中'}
+      </div>
       <div className="space-y-2 text-sm mb-4">
         <div><span className="text-zinc-500">被选创作者：</span><span className="text-white">{creatorContact?.display_name || '创作者'}</span></div>
       </div>
       <div className="text-xs text-zinc-400 mb-4 leading-relaxed">
-        请在下方实时沟通，确认最终价格、制作周期、修改次数、交付内容与付款方式。项目款由双方线下自行结算，平台不参与项目资金交易。
+        {isCooperated
+          ? '你们已确认合作，可继续沟通后续制作与交付。全部完成后点"任务完成"结束项目。'
+          : '请在下方实时沟通，确认最终价格、制作周期、修改次数、交付内容与付款方式。项目款由双方线下自行结算，平台不参与项目资金交易。'}
       </div>
       <div className="flex flex-wrap gap-3 pt-4 border-t border-white/10">
-        <button onClick={() => finalizeOutcome('cooperated')}
-          className="px-5 py-2.5 rounded-full bg-white text-black text-sm font-semibold hover:bg-zinc-200 transition-colors">
-          确认合作（结束项目）
-        </button>
-        <button onClick={() => finalizeOutcome('not_cooperated')}
-          className="px-5 py-2.5 rounded-full border border-white/20 text-zinc-300 text-sm hover:bg-white/10 transition-colors">
-          未谈拢（重新招募）
-        </button>
+        {isCooperated ? (
+          <button onClick={completeProject}
+            className="px-5 py-2.5 rounded-full bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-500 transition-colors">
+            任务完成
+          </button>
+        ) : (
+          <>
+            <button onClick={() => finalizeOutcome('cooperated')}
+              className="px-5 py-2.5 rounded-full bg-white text-black text-sm font-semibold hover:bg-zinc-200 transition-colors">
+              确认合作
+            </button>
+            <button onClick={() => finalizeOutcome('not_cooperated')}
+              className="px-5 py-2.5 rounded-full border border-white/20 text-zinc-300 text-sm hover:bg-white/10 transition-colors">
+              未谈拢（重新招募）
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
@@ -283,19 +318,32 @@ export default function ProjectDetail() {
   {/* 创作者独家沟通块(信息+按钮,竖直堆叠) */}
   const creatorExclusive = (
     <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.08] p-6">
-      <div className="text-base font-semibold text-emerald-400 mb-2">🎉 甲方选择了你，独家沟通中</div>
+      <div className="text-base font-semibold text-emerald-400 mb-2">
+        {isCooperated ? '✅ 已达成合作' : '🎉 甲方选择了你，独家沟通中'}
+      </div>
       <div className="text-xs text-zinc-400 mb-4 leading-relaxed">
-        在下方与甲方沟通，确认最终价格、制作周期、修改次数、交付内容与付款方式。项目款由双方线下自行结算，平台不参与项目资金交易。
+        {isCooperated
+          ? '你们已确认合作，可继续沟通后续制作与交付。全部完成后点"任务完成"结束项目。'
+          : '在下方与甲方沟通，确认最终价格、制作周期、修改次数、交付内容与付款方式。项目款由双方线下自行结算，平台不参与项目资金交易。'}
       </div>
       <div className="flex flex-wrap gap-3 pt-4 border-t border-white/10">
-        <button onClick={() => finalizeOutcome('cooperated')}
-          className="px-5 py-2.5 rounded-full bg-white text-black text-sm font-semibold hover:bg-zinc-200 transition-colors">
-          确认合作（结束项目）
-        </button>
-        <button onClick={() => finalizeOutcome('not_cooperated')}
-          className="px-5 py-2.5 rounded-full border border-white/20 text-zinc-300 text-sm hover:bg-white/10 transition-colors">
-          未谈拢
-        </button>
+        {isCooperated ? (
+          <button onClick={completeProject}
+            className="px-5 py-2.5 rounded-full bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-500 transition-colors">
+            任务完成
+          </button>
+        ) : (
+          <>
+            <button onClick={() => finalizeOutcome('cooperated')}
+              className="px-5 py-2.5 rounded-full bg-white text-black text-sm font-semibold hover:bg-zinc-200 transition-colors">
+              确认合作
+            </button>
+            <button onClick={() => finalizeOutcome('not_cooperated')}
+              className="px-5 py-2.5 rounded-full border border-white/20 text-zinc-300 text-sm hover:bg-white/10 transition-colors">
+              未谈拢
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
