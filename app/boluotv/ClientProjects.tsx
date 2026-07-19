@@ -99,14 +99,13 @@ export function ClientProjects({ loggedIn }: { loggedIn: boolean }) {
                 </div>
               </div>
               <div className="shrink-0 flex items-center gap-2">
-                {p.status === 'closed' && p.reservation?.id ? (
+                <span className="px-4 py-2 rounded-full bg-white/10 text-sm text-white">管理项目 →</span>
+                {p.reservation?.id && (
                   <button
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); hideItem(p.id, p.reservation!.id); }}
                     className="px-3 py-2 rounded-full border border-white/15 text-zinc-400 text-sm hover:bg-white/10 hover:text-white transition-colors">
                     删除
                   </button>
-                ) : (
-                  <span className="px-4 py-2 rounded-full bg-white/10 text-sm text-white">管理项目 →</span>
                 )}
               </div>
             </Link>
