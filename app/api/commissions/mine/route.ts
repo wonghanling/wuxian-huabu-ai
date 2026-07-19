@@ -20,27 +20,14 @@ export async function GET(req: NextRequest) {
   const uid = user.id;
 
   if (role === 'client') {
-    // 我发布的项目
+    // 我发布的项目(过滤掉甲方已隐藏的)
     const { data } = await supabaseAdmin
       .from('projects')
-      .select('id, title, description, category, budget_min, budget_max, delivery_days, cover_url, status, application_count, current_reservation_id, created_at')
+      .select('id, title, description, category, budget_min, budget_max, delivery_days, cover_url, status, application_count, created_at')
       .eq('client_id', uid)
+      .or('client_hidden.is.null,client_hidden.eq.false')
       .order('created_at', { ascending: false });
-    const projects = data ?? [];
-    // 关联当前预留(取隐藏标记+预留id,供甲方删除已完成项目)
-    const resIds = projects.map((p) => p.current_reservation_id).filter(Boolean) as string[];
-    const resMap = new Map<string, { id: string; hidden_by_client: boolean }>();
-    if (resIds.length > 0) {
-      const { data: reservations } = await supabaseAdmin
-        .from('project_reservations')
-        .select('id, hidden_by_client')
-        .in('id', resIds);
-      for (const r of reservations ?? []) resMap.set(r.id, r);
-    }
-    const items = projects
-      .map((p) => ({ ...p, reservation: p.current_reservation_id ? resMap.get(p.current_reservation_id) ?? null : null }))
-      .filter((p) => !(p.reservation && p.reservation.hidden_by_client));
-    return NextResponse.json({ items });
+    return NextResponse.json({ items: data ?? [] });
   }
 
   // 创作者: 我申请过的项目(带我的申请状态和预留状态)

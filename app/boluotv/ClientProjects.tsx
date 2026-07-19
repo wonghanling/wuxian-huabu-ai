@@ -9,7 +9,6 @@ type Project = {
   id: string; title: string; description: string | null; category: string | null;
   budget_min: number | null; budget_max: number | null; delivery_days: number | null;
   cover_url: string | null; status: string; application_count: number; created_at: string;
-  reservation?: { id: string; hidden_by_client: boolean } | null;
 };
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
@@ -38,8 +37,8 @@ export function ClientProjects({ loggedIn }: { loggedIn: boolean }) {
     })();
   }, [loggedIn]);
 
-  // 删除(隐藏)已完成项目
-  const hideItem = async (projectId: string, reservationId: string) => {
+  // 删除(隐藏)项目 — 甲方按项目隐藏,任何自己的项目都能删
+  const hideItem = async (projectId: string) => {
     if (!window.confirm('确认从列表中删除该项目？（不影响对方）')) return;
     try {
       const sb = createClient();
@@ -48,9 +47,10 @@ export function ClientProjects({ loggedIn }: { loggedIn: boolean }) {
       const res = await fetch(`/api/commissions/${projectId}/complete`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-        body: JSON.stringify({ action: 'hide', reservationId }),
+        body: JSON.stringify({ action: 'hide_project' }),
       });
       if (res.ok) setItems((prev) => prev.filter((p) => p.id !== projectId));
+      else { const d = await res.json(); alert(d.error || '删除失败'); }
     } catch { /* noop */ }
   };
 
@@ -100,13 +100,11 @@ export function ClientProjects({ loggedIn }: { loggedIn: boolean }) {
               </div>
               <div className="shrink-0 flex items-center gap-2">
                 <span className="px-4 py-2 rounded-full bg-white/10 text-sm text-white">管理项目 →</span>
-                {p.reservation?.id && (
-                  <button
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); hideItem(p.id, p.reservation!.id); }}
-                    className="px-3 py-2 rounded-full border border-white/15 text-zinc-400 text-sm hover:bg-white/10 hover:text-white transition-colors">
-                    删除
-                  </button>
-                )}
+                <button
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); hideItem(p.id); }}
+                  className="px-3 py-2 rounded-full border border-white/15 text-zinc-400 text-sm hover:bg-white/10 hover:text-white transition-colors">
+                  删除
+                </button>
               </div>
             </Link>
           );
