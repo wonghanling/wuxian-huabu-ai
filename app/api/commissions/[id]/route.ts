@@ -73,7 +73,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       .from('project_reservations')
       .select('id, creator_id, status, payment_status, amount_cents, pay_deadline, contact_deadline')
       .eq('project_id', id)
-      .in('status', ['awaiting_payment', 'active'])
+      .in('status', ['awaiting_payment', 'active', 'cooperated'])
       .maybeSingle();
     myReservation = res ?? null;
 
@@ -93,7 +93,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       .select('id, creator_id, status, payment_status, amount_cents, pay_deadline, contact_deadline')
       .eq('project_id', id)
       .eq('creator_id', viewerId)
-      .in('status', ['awaiting_payment', 'active'])
+      .in('status', ['awaiting_payment', 'active', 'cooperated'])
       .maybeSingle();
     myReservation = res ?? null;
 
