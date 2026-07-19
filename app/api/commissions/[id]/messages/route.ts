@@ -27,7 +27,7 @@ async function chatContext(projectId: string, uid: string): Promise<{ role: 'cli
     .from('project_reservations')
     .select('id, creator_id, status, payment_status')
     .eq('project_id', projectId)
-    .in('status', ['awaiting_payment', 'active', 'cooperated'])
+    .in('status', ['awaiting_payment', 'active', 'cooperated', 'completed'])
     .maybeSingle();
   const paid = !!res && res.payment_status === 'paid';
   if (proj?.client_id === uid) return { role: 'client', paid, reservationId: res?.id ?? null };

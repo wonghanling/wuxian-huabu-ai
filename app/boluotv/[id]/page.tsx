@@ -155,8 +155,9 @@ export default function ProjectDetail() {
   if (notFound || !project) return <Shell><div className="text-center text-zinc-500 py-32">项目不存在或已删除</div></Shell>;
 
   const st = STATUS_LABEL[project.status] || { label: project.status, color: 'text-zinc-400' };
-  const inExclusive = myReservation?.status === 'active' || myReservation?.status === 'cooperated';
+  const inExclusive = myReservation?.status === 'active' || myReservation?.status === 'cooperated' || myReservation?.status === 'completed';
   const isCooperated = myReservation?.status === 'cooperated';
+  const isCompleted = myReservation?.status === 'completed';
 
   {/* 项目头 */}
   const projectHead = (
@@ -283,35 +284,39 @@ export default function ProjectDetail() {
   const ownerExclusive = (
     <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.08] p-6">
       <div className="text-base font-semibold text-emerald-400 mb-3">
-        {isCooperated ? '✅ 已达成合作' : '🎉 独家沟通中'}
+        {isCompleted ? '🏁 任务已完成' : isCooperated ? '✅ 已达成合作' : '🎉 独家沟通中'}
       </div>
       <div className="space-y-2 text-sm mb-4">
         <div><span className="text-zinc-500">被选创作者：</span><span className="text-white">{creatorContact?.display_name || '创作者'}</span></div>
       </div>
       <div className="text-xs text-zinc-400 mb-4 leading-relaxed">
-        {isCooperated
+        {isCompleted
+          ? '本项目已完成并结束。以下为历史沟通记录，可在下方列表中删除该记录。'
+          : isCooperated
           ? '你们已确认合作，可继续沟通后续制作与交付。全部完成后点"任务完成"结束项目。'
           : '请在下方实时沟通，确认最终价格、制作周期、修改次数、交付内容与付款方式。项目款由双方线下自行结算，平台不参与项目资金交易。'}
       </div>
-      <div className="flex flex-wrap gap-3 pt-4 border-t border-white/10">
-        {isCooperated ? (
-          <button onClick={completeProject}
-            className="px-5 py-2.5 rounded-full bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-500 transition-colors">
-            任务完成
-          </button>
-        ) : (
-          <>
-            <button onClick={() => finalizeOutcome('cooperated')}
-              className="px-5 py-2.5 rounded-full bg-white text-black text-sm font-semibold hover:bg-zinc-200 transition-colors">
-              确认合作
+      {!isCompleted && (
+        <div className="flex flex-wrap gap-3 pt-4 border-t border-white/10">
+          {isCooperated ? (
+            <button onClick={completeProject}
+              className="px-5 py-2.5 rounded-full bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-500 transition-colors">
+              任务完成
             </button>
-            <button onClick={() => finalizeOutcome('not_cooperated')}
-              className="px-5 py-2.5 rounded-full border border-white/20 text-zinc-300 text-sm hover:bg-white/10 transition-colors">
-              未谈拢（重新招募）
-            </button>
-          </>
-        )}
-      </div>
+          ) : (
+            <>
+              <button onClick={() => finalizeOutcome('cooperated')}
+                className="px-5 py-2.5 rounded-full bg-white text-black text-sm font-semibold hover:bg-zinc-200 transition-colors">
+                确认合作
+              </button>
+              <button onClick={() => finalizeOutcome('not_cooperated')}
+                className="px-5 py-2.5 rounded-full border border-white/20 text-zinc-300 text-sm hover:bg-white/10 transition-colors">
+                未谈拢（重新招募）
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 
@@ -319,32 +324,36 @@ export default function ProjectDetail() {
   const creatorExclusive = (
     <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.08] p-6">
       <div className="text-base font-semibold text-emerald-400 mb-2">
-        {isCooperated ? '✅ 已达成合作' : '🎉 甲方选择了你，独家沟通中'}
+        {isCompleted ? '🏁 任务已完成' : isCooperated ? '✅ 已达成合作' : '🎉 甲方选择了你，独家沟通中'}
       </div>
       <div className="text-xs text-zinc-400 mb-4 leading-relaxed">
-        {isCooperated
+        {isCompleted
+          ? '本项目已完成并结束。以下为历史沟通记录，可在下方列表中删除该记录。'
+          : isCooperated
           ? '你们已确认合作，可继续沟通后续制作与交付。全部完成后点"任务完成"结束项目。'
           : '在下方与甲方沟通，确认最终价格、制作周期、修改次数、交付内容与付款方式。项目款由双方线下自行结算，平台不参与项目资金交易。'}
       </div>
-      <div className="flex flex-wrap gap-3 pt-4 border-t border-white/10">
-        {isCooperated ? (
-          <button onClick={completeProject}
-            className="px-5 py-2.5 rounded-full bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-500 transition-colors">
-            任务完成
-          </button>
-        ) : (
-          <>
-            <button onClick={() => finalizeOutcome('cooperated')}
-              className="px-5 py-2.5 rounded-full bg-white text-black text-sm font-semibold hover:bg-zinc-200 transition-colors">
-              确认合作
+      {!isCompleted && (
+        <div className="flex flex-wrap gap-3 pt-4 border-t border-white/10">
+          {isCooperated ? (
+            <button onClick={completeProject}
+              className="px-5 py-2.5 rounded-full bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-500 transition-colors">
+              任务完成
             </button>
-            <button onClick={() => finalizeOutcome('not_cooperated')}
-              className="px-5 py-2.5 rounded-full border border-white/20 text-zinc-300 text-sm hover:bg-white/10 transition-colors">
-              未谈拢
-            </button>
-          </>
-        )}
-      </div>
+          ) : (
+            <>
+              <button onClick={() => finalizeOutcome('cooperated')}
+                className="px-5 py-2.5 rounded-full bg-white text-black text-sm font-semibold hover:bg-zinc-200 transition-colors">
+                确认合作
+              </button>
+              <button onClick={() => finalizeOutcome('not_cooperated')}
+                className="px-5 py-2.5 rounded-full border border-white/20 text-zinc-300 text-sm hover:bg-white/10 transition-colors">
+                未谈拢
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 
