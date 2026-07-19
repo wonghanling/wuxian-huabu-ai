@@ -124,8 +124,11 @@ export function ChatBox({ projectId, reservationId, paid, onTriggerPay, onRefres
       <div className="px-5 py-3 border-b border-white/10 flex items-center justify-between">
         <span className="text-sm font-semibold">实时沟通</span>
         <button onClick={reload} disabled={refreshing}
-          className="text-xs text-zinc-400 hover:text-white transition-colors disabled:opacity-50">
-          {refreshing ? '刷新中…' : '🔄 刷新'}
+          className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors disabled:opacity-50">
+          <svg className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          {refreshing ? '刷新中' : '刷新'}
         </button>
       </div>
 

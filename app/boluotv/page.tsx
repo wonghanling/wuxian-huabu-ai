@@ -71,6 +71,8 @@ export default function CommissionHall() {
     client: { recruiting: number; producing: number; completed: number };
     creator: { todo: number; ongoing: number; completed: number };
   }>({ client: { recruiting: 0, producing: 0, completed: 0 }, creator: { todo: 0, ongoing: 0, completed: 0 } });
+  const [membership, setMembership] = useState<{ active: boolean; expiresAt: string | null }>({ active: false, expiresAt: null });
+  const [openingMember, setOpeningMember] = useState(false);
 
   useEffect(() => {
     const sb = createClient();
@@ -80,10 +82,35 @@ export default function CommissionHall() {
         try {
           const res = await fetch('/api/commissions/stats', { headers: { Authorization: `Bearer ${data.session.access_token}` } });
           if (res.ok) setStats(await res.json());
+          const mRes = await fetch('/api/commissions/membership', { headers: { Authorization: `Bearer ${data.session.access_token}` } });
+          if (mRes.ok) setMembership(await mRes.json());
         } catch { /* noop */ }
       }
     });
   }, []);
+
+  // 开通接单会员(9.9/月,走支付宝)
+  const openMembership = async () => {
+    setOpeningMember(true);
+    try {
+      const sb = createClient();
+      const { data: { session } } = await sb!.auth.getSession();
+      if (!session) { window.location.href = '/auth'; return; }
+      const res = await fetch('/api/payment/alipay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ plan: 'creator_membership', amount: 9.9 }),
+      });
+      const data = await res.json();
+      if (!res.ok) { alert(data.error || '下单失败'); setOpeningMember(false); return; }
+      const win = window.open('', '_blank');
+      if (win) { win.document.write(data.paymentForm); win.document.close(); }
+      else { alert('请允许弹窗以完成支付'); }
+    } catch (e: any) {
+      alert(e.message || '下单失败');
+    }
+    setOpeningMember(false);
+  };
 
   // 中间轮播图自动左滑
   useEffect(() => {
@@ -146,8 +173,21 @@ export default function CommissionHall() {
             </span>
           </Link>
           <div className="flex items-center gap-4 text-sm">
-            <Link href="/" className="text-zinc-400 hover:text-white transition-colors">首页</Link>
-            <Link href="/canvas" className="text-zinc-400 hover:text-white transition-colors">进入画布</Link>
+            <Link href="/" className="text-zinc-400 hover:text-white transition-colors hidden sm:block">首页</Link>
+            <Link href="/canvas" className="text-zinc-400 hover:text-white transition-colors hidden sm:block">进入画布</Link>
+            {/* 会员状态 */}
+            {loggedIn && (
+              membership.active ? (
+                <span className="px-3 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs">
+                  接单会员 · {membership.expiresAt ? new Date(membership.expiresAt).toLocaleDateString('zh-CN') : ''} 到期
+                </span>
+              ) : (
+                <button onClick={openMembership} disabled={openingMember}
+                  className="px-3 py-1.5 rounded-full border border-emerald-500/40 text-emerald-400 text-xs hover:bg-emerald-500/10 transition-colors disabled:opacity-50">
+                  {openingMember ? '跳转支付…' : '开通接单会员 ¥9.9/月'}
+                </button>
+              )
+            )}
             <button
               onClick={() => { if (!loggedIn) { window.location.href = '/auth'; return; } setPublishOpen(true); }}
               className="px-4 py-2 rounded-full bg-white text-black font-semibold hover:bg-zinc-200 transition-colors"

@@ -84,17 +84,24 @@ function PaymentSuccessContent() {
             </div>
             <h2 className="text-white text-xl font-semibold mb-2">支付成功</h2>
             <p className="text-white/40 text-sm mb-6">
-              {orderType === 'commission_intro'
-                ? '联系方式已解锁，进入独家沟通'
+              {orderType === 'creator_membership'
+                ? '接单会员已开通，可申请所有项目'
+                : orderType === 'commission_intro'
+                ? '已进入独家沟通'
                 : orderType === 'membership' || orderType === 'membership_yearly' || orderType === 'membership_2yearly'
                   ? '会员已开通'
                   : '余额已到账，可立即使用'}
             </p>
-            {orderType === 'commission_intro' ? (
+            {orderType === 'creator_membership' ? (
+              <button
+                className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm transition-all"
+                onClick={() => router.push('/boluotv')}
+              >返回创作委托，开始接单</button>
+            ) : orderType === 'commission_intro' ? (
               <button
                 className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm transition-all"
                 onClick={() => router.push(projectId ? `/boluotv/${projectId}` : '/boluotv')}
-              >查看联系方式 / 返回项目</button>
+              >返回项目</button>
             ) : (
               <button
                 className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold text-sm transition-all"
