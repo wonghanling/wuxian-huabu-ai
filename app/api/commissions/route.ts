@@ -7,20 +7,12 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// 联系方式防绕过检测:项目标题/描述里不允许出现联系方式
+// 联系方式防绕过检测:禁字母/数字/多个中文数字(与聊天/简介同一规则,彻底防塞联系方式)
 function containsContactInfo(text: string): boolean {
   if (!text) return false;
-  const patterns = [
-    /1[3-9]\d{9}/,                          // 手机号
-    /\b[\w.-]+@[\w.-]+\.\w+\b/,             // 邮箱
-    /(微信|weixin|wechat|vx|v信|加微|威信)\s*[:：]?\s*[\w-]{4,}/i,  // 微信号
-    /(qq|扣扣)\s*[:：]?\s*\d{5,}/i,         // QQ
-    /(telegram|tg|电报)\s*[:：]?\s*@?\w{4,}/i,
-    /(whatsapp|wa)\s*[:：]?\s*[\d+]{6,}/i,
-    /(https?:\/\/|www\.)[^\s]+/i,           // 外部链接
-    /(二维码|扫码|加我|私聊|联系我|加好友)/,   // 引导私下联系的词
-  ];
-  return patterns.some((p) => p.test(text));
+  if (/[a-zA-Z0-9]/.test(text)) return true;
+  const cnDigits = text.match(/[一二三四五六七八九十零两壹贰叁肆伍陆柒捌玖拾]/g);
+  return !!cnDigits && cnDigits.length >= 3;
 }
 
 // GET /api/commissions — 列出开放的委托(支持分类/状态筛选)
