@@ -9,6 +9,9 @@ const CATEGORIES = [
   { key: 'film', label: '影视短片' },
   { key: 'short', label: '短视频' },
   { key: 'anime', label: '动画' },
+  { key: 'poster', label: '海报设计' },
+  { key: 'product', label: '产品设计' },
+  { key: 'logo', label: '商标logo设计' },
   { key: 'other', label: '其它' },
 ];
 export function PublishCommissionModal({ onClose, onPublished }: { onClose: () => void; onPublished: () => void }) {
