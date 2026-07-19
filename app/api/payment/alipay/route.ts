@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     const { plan, amount, reservationId } = body;
     // plan: 'recharge' | 'membership' | 'membership_yearly' | 'membership_2yearly'
     //       | 'commission_intro'(委托介绍费,需带 reservationId)
-    const ALLOWED_PLANS = ['recharge', 'membership', 'membership_yearly', 'membership_2yearly', 'commission_intro'];
+    const ALLOWED_PLANS = ['recharge', 'membership', 'membership_yearly', 'membership_2yearly', 'commission_intro', 'creator_membership'];
     if (!plan || !amount || !ALLOWED_PLANS.includes(plan)) {
       return NextResponse.json({ error: '缺少必要参数' }, { status: 400 });
     }
@@ -60,6 +60,12 @@ export async function POST(req: NextRequest) {
       // 金额以数据库为准(服务端计算,防前端篡改)
       orderAmount = (res.amount_cents ?? 990) / 100;
       orderMeta = { reservation_id: reservationId };
+    }
+
+    // 创作者接单会员:固定 9.9/月(服务端定价,不信前端)
+    if (plan === 'creator_membership') {
+      orderAmount = 9.9;
+      orderMeta = { membership_days: 30 };
     }
 
     const orderId = `ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -91,6 +97,7 @@ export async function POST(req: NextRequest) {
       membership_2yearly: 'Filmavo 会员两年付',
       recharge: 'Filmavo 余额充值',
       commission_intro: 'Filmavo 项目介绍服务费',
+      creator_membership: 'Filmavo 创作者接单会员(1个月)',
     };
     const subject = SUBJECT_BY_PLAN[plan] ?? 'Filmavo 余额充值';
 

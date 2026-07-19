@@ -123,6 +123,23 @@ export async function POST(req: NextRequest) {
           } else {
             console.error('[commission_intro] 订单缺 reservation_id, order:', orderData.order_no);
           }
+        } else if (orderData.order_type === 'creator_membership') {
+          // 创作者接单会员:开通/续费1个月(独立于画布会员,写 creator_profiles.membership_expires_at)
+          const { data: cp } = await supabaseAdmin
+            .from('creator_profiles')
+            .select('membership_expires_at')
+            .eq('user_id', orderData.user_id)
+            .maybeSingle();
+          const now = new Date();
+          const current = cp?.membership_expires_at ? new Date(cp.membership_expires_at) : null;
+          const base = current && current > now ? current : now;
+          const expiresAt = new Date(base);
+          expiresAt.setDate(expiresAt.getDate() + 30);
+          // upsert:创作者可能还没建 profile
+          await supabaseAdmin
+            .from('creator_profiles')
+            .upsert({ user_id: orderData.user_id, membership_expires_at: expiresAt.toISOString() }, { onConflict: 'user_id' });
+          console.log(`[creator_membership] 接单会员开通至 ${expiresAt.toISOString()} for ${orderData.user_id}`);
         }
       }
     }
