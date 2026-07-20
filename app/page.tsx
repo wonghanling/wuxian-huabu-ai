@@ -203,7 +203,7 @@ export default function Home() {
 
           <div className="hidden md:flex items-center space-x-10 text-sm font-medium" style={{ color: 'rgb(180,180,180)' }}>
             <a href="/boluotv" className="transition-colors hover:text-white" style={{ color: 'rgb(180,180,180)' }}>
-              作品广场
+              作品广场 ● <span className="text-emerald-500">创作委托</span>
             </a>
             <a href="#" className="hover:text-white transition-colors">平台</a>
             <a href="#" className="hover:text-white transition-colors">案例展示</a>
@@ -472,7 +472,7 @@ export default function Home() {
             {/* 有效链接 */}
             <div className="flex flex-wrap gap-6 text-sm text-zinc-400">
               <a href="/pricing" className="hover:text-white transition-colors">定价</a>
-              <a href="/boluotv" className="hover:text-white transition-colors">作品广场</a>
+              <a href="/boluotv" className="hover:text-white transition-colors">作品广场 ● <span className="text-emerald-500">创作委托</span></a>
               <a href="/canvas" className="hover:text-white transition-colors">进入画布</a>
             </div>
           </div>
