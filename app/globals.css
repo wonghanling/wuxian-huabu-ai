@@ -175,6 +175,9 @@ body::-webkit-scrollbar {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   animation: hero-flow-move 8s linear infinite;
+  /* 斜体字右缘会被 background-clip:text 裁切,用 inline-block+右padding 留出空间 */
+  display: inline-block;
+  padding-right: 0.15em;
 }
 
 @keyframes hero-flow-move {
