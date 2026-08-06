@@ -52,13 +52,30 @@ function readVideoDurationFromUrl(url: string): Promise<number> {
   return new Promise((resolve) => {
     try {
       const v = document.createElement('video');
-      const done = (secs: number) => { v.src = ''; resolve(secs); };
+      // 只认第一次结果:否则超时回调的 0 会覆盖已经读到的真实时长
+      let settled = false;
+      const done = (secs: number) => {
+        if (settled) return;
+        settled = true;
+        v.src = '';
+        resolve(secs);
+      };
+      // 不设 crossOrigin：读时长只需要 metadata，设了反而会触发 CORS 预检，
+      // 一旦 bucket 没返回 CORS 头就直接加载失败。
       v.preload = 'metadata';
-      v.crossOrigin = 'anonymous';
+      v.muted = true;
       v.onloadedmetadata = () => done(Number.isFinite(v.duration) ? Math.ceil(v.duration) : 0);
-      v.onerror = () => done(0);
-      // 兜底:8 秒还没读到就放弃(后端会按无视频输入单价计,不少收)
-      setTimeout(() => done(0), 8000);
+      v.onerror = () => {
+        console.warn('[Seedance] 读参考视频时长失败:', url);
+        done(0);
+      };
+      // 兜底:15 秒还没读到就放弃(后端会按无视频输入单价计,不少收)
+      setTimeout(() => {
+        if (!Number.isFinite(v.duration) || v.duration === 0) {
+          console.warn('[Seedance] 读参考视频时长超时:', url);
+        }
+        done(0);
+      }, 15000);
       v.src = url;
     } catch {
       resolve(0);
@@ -129,27 +146,36 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   // 上传的视频在 addRefVideo 里已记下时长;连线进来的只有 URL,需要在这里探测。
   // 探测结果缓存在 urlSecs,避免重复读同一个 URL。
   const uploadedSecs: number[] = data.config.refVideoSecs ?? [];
+  // urlSecs 只存"成功读到"的时长(>0)。失败不写入,下次渲染会重试 ——
+  // 避免一次网络抖动就让价格永久少算。
   const [urlSecs, setUrlSecs] = useState<Record<string, number>>({});
+  const probingRef = useRef<Set<string>>(new Set());
+
+  // 需要探测的 URL:多模态下所有参考视频(上传的+连线的),排除已有时长的
+  const allRefVideoUrls = mode === 'multimodal'
+    ? [...refVideos, ...connVideos].filter(Boolean)
+    : [];
+  const needProbe = allRefVideoUrls.filter((u, idx) => {
+    // 上传的视频若已记录时长就不用探测
+    const i = refVideos.indexOf(u);
+    if (i >= 0 && uploadedSecs[i] > 0) return false;
+    return !(urlSecs[u] > 0);
+  });
+
   useEffect(() => {
-    if (mode !== 'multimodal') return;
-    // 待探测:连线视频 + 上传但没记到时长的(老数据兼容)
-    const pending = [
-      ...connVideos,
-      ...refVideos.filter((_, i) => !uploadedSecs[i]),
-    ].filter((u) => u && urlSecs[u] === undefined);
-    if (pending.length === 0) return;
+    if (needProbe.length === 0) return;
     let alive = true;
-    Promise.all(pending.map(async (u) => [u, await readVideoDurationFromUrl(u)] as const))
-      .then((pairs) => {
-        if (!alive) return;
-        setUrlSecs((prev) => {
-          const next = { ...prev };
-          for (const [u, s] of pairs) next[u] = s;
-          return next;
-        });
+    for (const u of needProbe) {
+      if (probingRef.current.has(u)) continue;   // 该 URL 正在探测中
+      probingRef.current.add(u);
+      readVideoDurationFromUrl(u).then((secs) => {
+        probingRef.current.delete(u);
+        if (!alive || !(secs > 0)) return;       // 失败不缓存,留待重试
+        setUrlSecs((prev) => (prev[u] === secs ? prev : { ...prev, [u]: secs }));
       });
+    }
     return () => { alive = false; };
-  }, [mode, connVideos.join(','), refVideos.join(','), uploadedSecs.join(',')]);
+  }, [needProbe.join('|')]);
 
   // 参考视频总时长:上传的优先用记录值,取不到则用探测值;连线的全靠探测
   const refVideoTotalSecs = mode === 'multimodal'

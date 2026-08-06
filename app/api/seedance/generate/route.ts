@@ -95,6 +95,74 @@ function getSeedanceCharge(model: string, resolution: string, generateAudio: boo
   return Math.round(perSec * secs * 100) / 100;
 }
 
+/**
+ * 服务端探测视频时长（秒，向上取整）。
+ *
+ * 兜底用：前端读不到时长时（网络抖动、格式异常）会传 0，
+ * 若直接按"无视频输入"单价计，虽然不少收但和前端显示价不一致。
+ * 这里用 Range 只取文件头几百 KB，解析 MP4 的 mvhd box 拿时长。
+ * 解析不出返回 0，退回无视频输入单价（更高，不会漏钱）。
+ */
+function parseMvhdSeconds(buf: Buffer): number {
+  // mvhd box 结构（偏移相对 'mvhd' 这 4 个字节的起点）：
+  //   +0  'mvhd'
+  //   +4  version(1B) + flags(3B)
+  //   version 0: +8 creation(4) +12 modification(4) +16 timescale(4) +20 duration(4)
+  //   version 1: +8 creation(8) +16 modification(8) +24 timescale(4) +28 duration(8)
+  // 实测验证：timescale=1000, duration=8250 → 8.25s
+  const idx = buf.indexOf('mvhd');
+  if (idx < 0) return 0;
+  const version = buf[idx + 4];
+  let timescale = 0;
+  let duration = 0;
+  try {
+    if (version === 1) {
+      timescale = buf.readUInt32BE(idx + 24);
+      duration = Number(buf.readBigUInt64BE(idx + 28));
+    } else {
+      timescale = buf.readUInt32BE(idx + 16);
+      duration = buf.readUInt32BE(idx + 20);
+    }
+  } catch {
+    return 0;
+  }
+  if (!timescale || !duration) return 0;
+  const secs = Math.ceil(duration / timescale);
+  // 合理性检查：Kie 限制单个参考视频 2-15 秒，明显越界视为解析错误
+  return secs > 0 && secs <= 120 ? secs : 0;
+}
+
+async function fetchRange(url: string, range: string): Promise<Buffer | null> {
+  try {
+    const res = await fetch(url, { headers: { Range: range } });
+    if (!res.ok && res.status !== 206) return null;
+    return Buffer.from(await res.arrayBuffer());
+  } catch {
+    return null;
+  }
+}
+
+async function probeVideoSeconds(url: string): Promise<number> {
+  try {
+    // moov（含 mvhd）可能在文件头也可能在尾部。实测 Supabase 上的转存视频是
+    // ftyp → free → mdat(数据) → moov，即 moov 在最后，所以先探尾部。
+    const tail = await fetchRange(url, 'bytes=-262144');
+    if (tail) {
+      const secs = parseMvhdSeconds(tail);
+      if (secs > 0) return secs;
+    }
+    // 尾部没有再试头部（渐进式 MP4 的 moov 在前）
+    const head = await fetchRange(url, 'bytes=0-262143');
+    if (head) {
+      const secs = parseMvhdSeconds(head);
+      if (secs > 0) return secs;
+    }
+    return 0;
+  } catch {
+    return 0;
+  }
+}
+
 // 上传 base64 图片到 Supabase Storage，返回公开 URL
 async function uploadBase64ToStorage(base64: string, prefix: string): Promise<string> {
   if (!base64 || !base64.startsWith('data:')) return base64;
@@ -179,8 +247,17 @@ export async function POST(req: NextRequest) {
     // 扣费时机、退款逻辑、余额不足返回 402 —— 全部沿用原有约定，只是价格来源随通道切换
     if (userId && !useByok) {
       const isMember = await checkMembership(userId);
+
+      // 参考视频时长：优先用前端传来的（与用户看到的价格一致）；
+      // 前端读不到时（传 0）服务端自己探一次，避免显示价与实扣不一致
+      let billRefSecs = Number(refVideoSeconds) || 0;
+      if (SEEDANCE_CHANNEL === 'kie' && billRefSecs === 0 && mode === 'multimodal' && refVideoUrl) {
+        billRefSecs = await probeVideoSeconds(refVideoUrl);
+        if (billRefSecs > 0) console.log(`[Seedance] 服务端探测参考视频时长: ${billRefSecs}s`);
+      }
+
       chargedAmount = SEEDANCE_CHANNEL === 'kie'
-        ? getKieCharge(model, resolution, Number(duration), Number(refVideoSeconds) || 0)
+        ? getKieCharge(model, resolution, Number(duration), billRefSecs)
         : getSeedanceCharge(model, resolution, generateAudio, Number(duration), isMember);
       if (chargedAmount > 0) {
         const deduct = await deductBalance(userId, chargedAmount, 'video_deduct',
