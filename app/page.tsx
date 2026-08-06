@@ -389,6 +389,43 @@ export default function Home() {
         <ModelsShowcase />
       </section>
 
+      {/* 自带 API Key(BYOK)：官方原版模型 · 官方原价 */}
+      <section className="py-24 relative z-10" style={{ borderTop: '1px solid #ffffff0d' }}>
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center mb-12">
+            <p className="text-sm tracking-[0.3em] uppercase mb-4" style={{ color: 'rgb(96,96,96)' }}>Bring Your Own Key</p>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-3" style={{ color: 'rgb(238,238,238)' }}>
+              官方原版模型，官方原价使用
+            </h2>
+            <p className="text-base max-w-2xl mx-auto leading-relaxed" style={{ color: 'rgb(150,150,150)' }}>
+              连接你自己的官方 API 账户，直连模型官方提供的原版服务。
+              模型费用直接支付给官方，Filmavo 不收取模型调用费。
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-4 mb-10">
+            {[
+              { title: '官方直连', desc: '请求直达模型官方，不经中转，原版能力与画质' },
+              { title: '费用透明', desc: '用量与账单在官方控制台，Filmavo 不加价、不抽成' },
+              { title: '不限并发', desc: '用自己的账户额度，不受平台队列与并发限制' },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="rounded-2xl p-6"
+                style={{ background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}
+              >
+                <h3 className="text-base font-semibold mb-2" style={{ color: 'rgb(228,228,228)' }}>{item.title}</h3>
+                <p className="text-sm leading-relaxed" style={{ color: 'rgb(150,150,150)' }}>{item.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-center text-lg font-medium" style={{ color: 'rgb(210,210,210)' }}>
+            把预算，留给创作
+          </p>
+        </div>
+      </section>
+
       {/* 功能演示区：Sticky Scroll Showcase(左侧文案滚动/右侧sticky联动切换) */}
       <section className="py-32 relative z-10" style={{ borderTop: '1px solid #ffffff0d' }}>
         <WorkflowScrollShowcase />
