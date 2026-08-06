@@ -281,7 +281,12 @@ export async function generateVideo(
 
   const res = await fetch('/api/video/generate', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      // 带 token:后端据此判断用户有没有自带阿里云 key(BYOK)
+      // 没登录/没配 key 时自动走平台账号池,行为和以前一致
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    },
     body: JSON.stringify({
       prompt: params.prompt,
       model: params.model,
@@ -308,6 +313,7 @@ export async function generateVideo(
   const taskId = data.taskId;
   const endpoint = data.endpoint;
   const keyId = data.keyId;  // dashscope 必须用创建任务的同一把 key 查询
+  const byok = data.byok === true;  // 用了自带 key,轮询必须用同一把
   if (!taskId) throw new Error('未返回 taskId');
 
   // 轮询(5秒间隔,60次超时,照原网)
@@ -316,7 +322,7 @@ export async function generateVideo(
     if (attempts >= 60) throw new Error('视频生成超时,请稍后重试');
     attempts++;
     await new Promise((r) => setTimeout(r, 5000));
-    const qRes = await fetch(`/api/video/query?taskId=${encodeURIComponent(taskId)}&endpoint=${encodeURIComponent(endpoint || '')}&keyId=${encodeURIComponent(keyId || '')}`, {
+    const qRes = await fetch(`/api/video/query?taskId=${encodeURIComponent(taskId)}&endpoint=${encodeURIComponent(endpoint || '')}&keyId=${encodeURIComponent(keyId || '')}${byok ? '&byok=1' : ''}`, {
       headers: authToken ? { Authorization: `Bearer ${authToken}` } : {},
     });
     if (!qRes.ok) return poll();
@@ -355,9 +361,18 @@ export async function generateSeedance(
   params: SeedanceGenParams,
   onProgress?: (progress: number, status: string) => void
 ): Promise<string> {
+  // 带 token:后端据此判断用户有没有自带方舟 key(BYOK)
+  // 没登录/没配 key 时后端自动走平台账号池,行为和以前一致
+  const supabase = createClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  const authToken = session?.access_token || '';
+
   const res = await fetch('/api/seedance/generate', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    },
     body: JSON.stringify({
       mode: params.mode,
       model: params.model,
@@ -378,6 +393,7 @@ export async function generateSeedance(
   if (!res.ok) throw new Error(data?.error || '提交失败');
   const taskId = data.taskId;
   const arkKeyId = data.arkKeyId || '';
+  const byok = data.byok === true;   // 用了自带 key,轮询必须用同一把
   if (!taskId) throw new Error('未返回 taskId');
 
   let attempts = 0;
@@ -385,7 +401,12 @@ export async function generateSeedance(
     attempts++;
     await new Promise((r) => setTimeout(r, 5000));
     try {
-      const qRes = await fetch('/api/seedance/query?taskId=' + taskId + (arkKeyId ? '&arkKeyId=' + arkKeyId : ''));
+      const qRes = await fetch(
+        '/api/seedance/query?taskId=' + taskId
+          + (arkKeyId ? '&arkKeyId=' + arkKeyId : '')
+          + (byok ? '&byok=1' : ''),
+        { headers: authToken ? { Authorization: `Bearer ${authToken}` } : {} },
+      );
       const qData = await qRes.json();
       if (qData.status === 'completed' && qData.videoUrl) return qData.videoUrl;
       if (qData.status === 'failed') throw new Error(qData.error || 'Seedance 生成失败');

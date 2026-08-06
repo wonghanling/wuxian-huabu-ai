@@ -36,11 +36,16 @@ import { createClient } from '@supabase/supabase-js';
 export type ApiProvider = 'n1n' | 'fal' | 'dashscope' | 'ark' | 'volc';
 
 export interface KeyInfo {
-  keyId: string | null; // null 表示用的是 env fallback，release 时会跳过
+  keyId: string | null; // null 表示用的是 env fallback 或用户自带 key，release 时会跳过并发释放
   keyValue: string; // 主 key / access_key
   secondaryValue?: string; // volc 的 secret_access_key
   provider?: ApiProvider; // 记录 provider，release 时写日志用
   startedAt?: number; // 毫秒时间戳，release 时计算 duration_ms
+
+  // ── 以下仅用户自带 key（BYOK）时出现，平台池路径恒为 undefined ──
+  isUserKey?: boolean; // true = 用户自己的 key：不占池并发、不扣平台余额
+  userKeyId?: string; // user_api_keys.id，用于回执 markUserKeyResult
+  region?: 'cn' | 'intl'; // dashscope 站点归属，决定 baseURL
 }
 
 // ============================================================================
@@ -134,6 +139,102 @@ export async function pickKey(provider: ApiProvider): Promise<KeyInfo> {
     );
   }
   return { ...envKey, provider, startedAt };
+}
+
+// ============================================================================
+// userKeyToKeyInfo: 把已读出的用户 key 包装成 KeyInfo
+// ============================================================================
+// 给需要"先判断是否 BYOK 决定扣不扣费、再取 key"的路由用（如 seedance/video
+// generate）。这样只读一次库，且不会在上传图片等耗时步骤期间占着池并发槽。
+//
+// 参数 userKey 来自 user-api-keys 的 getUserKey()，此处只做结构转换。
+export function userKeyToKeyInfo(
+  userKey: { id: string; keyValue: string; secondaryValue?: string; region?: 'cn' | 'intl' },
+  provider: ApiProvider
+): KeyInfo {
+  return {
+    keyId: null, // 不在池中，release 时不释放并发槽
+    keyValue: userKey.keyValue,
+    secondaryValue: userKey.secondaryValue,
+    provider,
+    startedAt: Date.now(),
+    isUserKey: true,
+    userKeyId: userKey.id,
+    region: userKey.region,
+  };
+}
+
+// ============================================================================
+// pickKeyForUser: 优先用用户自带 key，没有则回退平台账号池
+// ============================================================================
+// 只对 ark / dashscope / volc 生效（n1n / fal 是平台自用，不开放 BYOK）。
+//
+// 关键保证：userId 为空、用户没配 key、key 已失效、解密失败 —— 任一情况都
+// 直接 return pickKey(provider)，也就是和改造前完全相同的代码路径。
+//
+// 返回的 KeyInfo 若带 isUserKey=true，调用方需要：
+//   1. 跳过 deductBalance / refundBalance（用户在官方自付）
+//   2. release 时走 releaseUserAwareKey（不释放池并发槽）
+export async function pickKeyForUser(
+  provider: ApiProvider,
+  userId: string | undefined | null
+): Promise<KeyInfo> {
+  // n1n / fal 不开放用户自带 key，直接走平台池
+  if (provider !== 'ark' && provider !== 'dashscope' && provider !== 'volc') {
+    return pickKey(provider);
+  }
+
+  // 动态 import 避免平台池路径（n1n/fal 等）多加载一个模块
+  const { lookupUserKey, userKeyInvalidMessage } = await import('./user-api-keys');
+
+  let lookup: Awaited<ReturnType<typeof lookupUserKey>>;
+  try {
+    lookup = await lookupUserKey(userId, provider);
+  } catch (err) {
+    // 读库本身失败（不是"key 失效"）：回退平台池，不因基础设施抖动阻塞用户
+    console.warn(`[api-key-pool] pickKeyForUser(${provider}) 读用户 key 失败，回退平台池:`, err);
+    return pickKey(provider);
+  }
+
+  // 用户填过 key 但已失效 → 抛错，绝不静默回退平台池。
+  // 回退会悄悄扣用户的画布余额，而他以为在用自己的账号。
+  if (lookup.kind === 'invalid') {
+    const err: any = new Error(userKeyInvalidMessage(provider as any, lookup.lastError));
+    err.byokInvalid = true;
+    err.status = 402;
+    throw err;
+  }
+
+  if (lookup.kind === 'active') {
+    return userKeyToKeyInfo(lookup.key, provider);
+  }
+
+  // kind === 'none'：用户没配 key，走平台池（改造前行为）
+  return pickKey(provider);
+}
+
+// ============================================================================
+// releaseUserAwareKey: 兼容用户 key 和平台池 key 的统一释放入口
+// ============================================================================
+// 平台池 key → 原样调 releaseKey（释放并发槽 + 写日志）
+// 用户自带 key → 跳过并发释放（本来就没占槽），改为写 user_api_keys 回执，
+//                同时照常写 api_call_logs 便于排查
+export async function releaseUserAwareKey(
+  keyInfo: KeyInfo,
+  success: boolean,
+  errorType?: 'rate_limit' | 'auth' | 'content' | 'timeout' | 'other',
+  errorMsg?: string
+): Promise<void> {
+  if (keyInfo.isUserKey && keyInfo.userKeyId) {
+    try {
+      const { markUserKeyResult } = await import('./user-api-keys');
+      await markUserKeyResult(keyInfo.userKeyId, success, errorType, errorMsg);
+    } catch (err) {
+      console.error('[api-key-pool] markUserKeyResult 失败（不影响主流程）:', err);
+    }
+  }
+  // keyId 为 null 时 releaseKey 已会跳过并发释放，只写日志
+  await releaseKey(keyInfo, success, errorType, errorMsg);
 }
 
 // ============================================================================

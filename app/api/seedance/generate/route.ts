@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { checkMembership, deductBalance, refundBalance } from '@/lib/billing';
-import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
+import { pickKey, userKeyToKeyInfo, releaseUserAwareKey, categorizeError, type KeyInfo } from '@/lib/api-key-pool';
+import { lookupUserKey, userKeyInvalidMessage } from '@/lib/user-api-keys';
 
 export const maxDuration = 60;
 
@@ -46,6 +47,21 @@ async function uploadBase64ToStorage(base64: string, prefix: string): Promise<st
   return data.publicUrl;
 }
 
+// 从 Authorization Bearer token 解出 userId（BYOK 取 key 用）
+// 不能用请求体里的 userId，否则可伪造成别人蹭 key
+async function getAuthedUserId(req: NextRequest): Promise<string | null> {
+  const authHeader = req.headers.get('authorization');
+  if (!authHeader) return null;
+  const token = authHeader.replace('Bearer ', '').trim();
+  if (!token) return null;
+  try {
+    const { data: { user } } = await supabaseAdmin.auth.getUser(token);
+    return user?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(req: NextRequest) {
   let body: any = {};
   let chargedAmount = 0;
@@ -68,12 +84,31 @@ export async function POST(req: NextRequest) {
       userId,
     } = body;
 
-    if (!ARK_API_KEY) {
+    // ── BYOK：先看用户有没有自带方舟 key（userId 从 token 解，不信请求体）──
+    //   active  → 用他的 key、不扣平台余额
+    //   invalid → 直接报错，绝不回退平台池（否则会悄悄扣他的画布余额）
+    //   none    → 走平台池 + 正常扣费（改造前行为）
+    const authedUserId = await getAuthedUserId(req);
+    const arkLookup = await lookupUserKey(authedUserId, 'ark');
+
+    if (arkLookup.kind === 'invalid') {
+      // 此时还没扣费、没提交上游，直接返回即可
+      return NextResponse.json(
+        { error: userKeyInvalidMessage('ark', arkLookup.lastError), byokInvalid: true },
+        { status: 402 }
+      );
+    }
+
+    const userArkKey = arkLookup.kind === 'active' ? arkLookup.key : null;
+    const useByok = !!userArkKey;
+
+    // 平台池路径才要求 env 有 ARK_API_KEY 兜底；BYOK 路径不依赖它
+    if (!useByok && !ARK_API_KEY) {
       return NextResponse.json({ error: '未配置 ARK_API_KEY' }, { status: 500 });
     }
 
-    // 扣费
-    if (userId) {
+    // 扣费（BYOK 跳过：用户在火山引擎控制台自付）
+    if (userId && !useByok) {
       const isMember = await checkMembership(userId);
       chargedAmount = getSeedanceCharge(model, resolution, generateAudio, Number(duration), isMember);
       if (chargedAmount > 0) {
@@ -152,8 +187,10 @@ export async function POST(req: NextRequest) {
 
     console.log('Seedance 请求:', JSON.stringify({ model, mode, ratio, resolution, duration, generate_audio: generateAudio }));
 
-    // 账号池：取一个 ARK key
-    const keyInfo = await pickKey('ark');
+    // 取 key：BYOK 用用户自己的（上面已读出，不重复查库）；否则走平台账号池
+    const keyInfo: KeyInfo = userArkKey
+      ? userKeyToKeyInfo(userArkKey, 'ark')
+      : await pickKey('ark');
     let arkSuccess = false;
     let arkErr: any = null;
     let data: any;
@@ -180,17 +217,19 @@ export async function POST(req: NextRequest) {
       if (!arkErr) arkErr = err;
       throw err;
     } finally {
-      await releaseKey(keyInfo.keyId, arkSuccess, arkSuccess ? undefined : categorizeError(arkErr));
+      await releaseUserAwareKey(keyInfo, arkSuccess, arkSuccess ? undefined : categorizeError(arkErr), arkErr ? String(arkErr?.message || arkErr) : undefined);
     }
 
     const taskId = data.id;
     if (!taskId) throw new Error('未返回任务ID');
 
-    return NextResponse.json({ success: true, taskId, arkKeyId: keyInfo.keyId });
+    // byok=true 时前端轮询要带上，query 才知道该用用户 key 而不是平台池
+    return NextResponse.json({ success: true, taskId, arkKeyId: keyInfo.keyId, byok: useByok });
 
   } catch (error: any) {
     console.error('Seedance 生成错误:', error);
 
+    // chargedAmount 在 BYOK 路径恒为 0，所以这里天然不会误退款
     if (body?.userId && chargedAmount > 0) {
       await refundBalance(body.userId, chargedAmount, `Seedance 视频生成失败退款`, {
         model: body.model, resolution: body.resolution, mode: body.mode,

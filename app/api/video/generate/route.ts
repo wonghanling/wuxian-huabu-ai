@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fal as falSingleton, createFalClient } from '@fal-ai/client';
-import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
+import { pickKey, releaseKey, userKeyToKeyInfo, releaseUserAwareKey, categorizeError, type KeyInfo } from '@/lib/api-key-pool';
+import { lookupUserKey, userKeyInvalidMessage, dashscopeHost } from '@/lib/user-api-keys';
 
 export const maxDuration = 60;
 
@@ -26,6 +27,21 @@ const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
+
+// 从 Authorization Bearer token 解出 userId（BYOK 取 key 用）
+// 不能用请求体里的 userId，否则可伪造成别人蹭 key
+async function getAuthedUserId(req: NextRequest): Promise<string | null> {
+  const authHeader = req.headers.get('authorization');
+  if (!authHeader) return null;
+  const token = authHeader.replace('Bearer ', '').trim();
+  if (!token) return null;
+  try {
+    const { data: { user } } = await supabaseAdmin.auth.getUser(token);
+    return user?.id ?? null;
+  } catch {
+    return null;
+  }
+}
 
 type ModelConfig = {
   name: string;
@@ -595,8 +611,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '该模型需要上传图片' }, { status: 400 });
     }
 
-    // ── 扣费 ──────────────────────────────────────────────────
-    if (userId) {
+    // ── BYOK：只对 dashscope 模型生效 ────────────────────────────
+    // 用户填了阿里云百炼 key → 用他的 key、不扣平台余额、不占池并发
+    // 没填 / 非 dashscope 模型 → 走平台池 + 正常扣费（改造前行为完全不变）
+    // 注意 jimeng / fal 分支不受影响：userDashscopeKey 只在 dashscope 分支被用到
+    //   active  → 用他的 key、不扣平台余额
+    //   invalid → 直接报错，绝不回退平台池（否则会悄悄扣他的画布余额）
+    //   none    → 走平台池 + 正常扣费（改造前行为）
+    const isDashscopeModel = cfg.provider === 'dashscope' || cfg.endpoint === 'dashscope27';
+    const authedUserId = isDashscopeModel ? await getAuthedUserId(req) : null;
+    const dsLookup = isDashscopeModel
+      ? await lookupUserKey(authedUserId, 'dashscope')
+      : ({ kind: 'none' } as const);
+
+    if (dsLookup.kind === 'invalid') {
+      // 此时还没扣费、没提交上游，直接返回即可
+      return NextResponse.json(
+        { error: userKeyInvalidMessage('dashscope', dsLookup.lastError), byokInvalid: true },
+        { status: 402 }
+      );
+    }
+
+    const userDashscopeKey = dsLookup.kind === 'active' ? dsLookup.key : null;
+    const useByok = !!userDashscopeKey;
+
+    // ── 扣费（BYOK 跳过：用户在阿里云控制台自付）──────────────────
+    if (userId && !useByok) {
       // 先查会员状态
       const { data: userData } = await supabaseAdmin
         .from('users')
@@ -763,7 +803,10 @@ export async function POST(req: NextRequest) {
 
     } else if (cfg.endpoint === 'dashscope27') {
       // wan2.7 新协议：input.media 数组格式（与旧版 input.image_url 不同）
-      const dsKeyInfo = await pickKey('dashscope');
+      // BYOK：有用户 key 用他的（上面已读出，不重复查库），否则走平台池
+      const dsKeyInfo: KeyInfo = userDashscopeKey
+        ? userKeyToKeyInfo(userDashscopeKey, 'dashscope')
+        : await pickKey('dashscope');
       let dsSuccess = false;
       let dsErr: any = null;
       try {
@@ -823,8 +866,9 @@ export async function POST(req: NextRequest) {
         if (duration) dsParams.duration = Number(duration);
         if (resolution) dsParams.resolution = resolution;
 
+        // BYOK 时按用户填的站点切 baseURL；平台池恒为国际站（改造前行为）
         const dsRes = await fetch(
-          'https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/video-generation/video-synthesis',
+          `${dashscopeHost(dsKeyInfo.region)}/api/v1/services/aigc/video-generation/video-synthesis`,
           {
             method: 'POST',
             headers: {
@@ -860,12 +904,14 @@ export async function POST(req: NextRequest) {
         if (!dsErr) dsErr = err;
         throw err;
       } finally {
-        await releaseKey(dsKeyInfo.keyId, dsSuccess, dsSuccess ? undefined : categorizeError(dsErr));
+        await releaseUserAwareKey(dsKeyInfo, dsSuccess, dsSuccess ? undefined : categorizeError(dsErr), dsErr ? String(dsErr?.message || dsErr) : undefined);
       }
 
     } else if (cfg.provider === 'dashscope') {
-      // DashScope 官方 API（账号池）
-      const dsKeyInfo = await pickKey('dashscope');
+      // DashScope 官方 API（BYOK 优先，否则平台账号池）
+      const dsKeyInfo: KeyInfo = userDashscopeKey
+        ? userKeyToKeyInfo(userDashscopeKey, 'dashscope')
+        : await pickKey('dashscope');
       let dsSuccess = false;
       let dsErr: any = null;
       try {
@@ -887,8 +933,9 @@ export async function POST(req: NextRequest) {
       }
 
       const dsTask = cfg.dashscopeModel?.includes('kf2v') ? 'image2video' : 'video-generation';
+      // BYOK 时按用户填的站点切 baseURL；平台池恒为国际站（改造前行为）
       const dsRes = await fetch(
-        `https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/${dsTask}/video-synthesis`,
+        `${dashscopeHost(dsKeyInfo.region)}/api/v1/services/aigc/${dsTask}/video-synthesis`,
         {
           method: 'POST',
           headers: {
@@ -924,7 +971,7 @@ export async function POST(req: NextRequest) {
         if (!dsErr) dsErr = err;
         throw err;
       } finally {
-        await releaseKey(dsKeyInfo.keyId, dsSuccess, dsSuccess ? undefined : categorizeError(dsErr));
+        await releaseUserAwareKey(dsKeyInfo, dsSuccess, dsSuccess ? undefined : categorizeError(dsErr), dsErr ? String(dsErr?.message || dsErr) : undefined);
       }
 
     } else {
@@ -974,6 +1021,8 @@ export async function POST(req: NextRequest) {
       taskId,
       endpoint: taskEndpoint,
       keyId: taskKeyId,
+      // byok=true 时前端轮询要带上，query 才知道该用用户 key 而不是平台池
+      byok: useByok,
       status: 'queued',
     });
 

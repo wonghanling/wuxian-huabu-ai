@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Service } from '@volcengine/openapi';
 import { createClient } from '@supabase/supabase-js';
-import { pickKey, pickKeyById, releaseKey, categorizeError } from '@/lib/api-key-pool';
+import { pickKey, pickKeyById, userKeyToKeyInfo, releaseKey, releaseUserAwareKey, categorizeError, type KeyInfo } from '@/lib/api-key-pool';
+import { lookupUserKey, userKeyInvalidMessage, dashscopeHost } from '@/lib/user-api-keys';
 
 const FAL_KEY = process.env.FAL_KEY!;
 const DASHSCOPE_KEY = process.env.DASHSCOPE_API_KEY!;
@@ -40,18 +41,25 @@ export async function GET(request: NextRequest) {
     const taskId   = searchParams.get('taskId');
     const endpoint = searchParams.get('endpoint');
     const keyId    = searchParams.get('keyId');  // dashscope 创建任务的同一把 key
+    const byok     = searchParams.get('byok') === '1';  // 任务由用户自带 key 提交
 
     if (!taskId || !endpoint) {
       return NextResponse.json({ error: '缺少 taskId 或 endpoint' }, { status: 400 });
     }
 
     // 验证用户身份
+    // userId 用于视频转存路径（未登录兜成 'anonymous'）
+    // authedUserId 用于查 BYOK key（未登录必须是 null，不能用 'anonymous' 查库）
     const authHeader = request.headers.get('authorization');
     let userId = 'anonymous';
+    let authedUserId: string | null = null;
     if (authHeader) {
       const token = authHeader.replace('Bearer ', '');
       const { data: { user } } = await supabase.auth.getUser(token);
-      if (user) userId = user.id;
+      if (user) {
+        userId = user.id;
+        authedUserId = user.id;
+      }
     }
 
     let status = 'processing';
@@ -118,23 +126,64 @@ export async function GET(request: NextRequest) {
         }
       }
     } else if (endpoint.startsWith('dashscope:')) {
-      // DashScope 官方 API 查询（账号池）
-      // 关键:task_id 只能用创建它的同一把 key 查询,否则查不到 → 用 keyId 锁定
-      const dsQKeyInfo = keyId ? await pickKeyById(keyId, 'dashscope') : await pickKey('dashscope');
+      // DashScope 官方 API 查询
+      // 关键:task_id 只能用创建它的同一把 key 查询,否则查不到
+      //   BYOK  → 用该用户自己的 key（提交时用的就是它）
+      //   平台池 → 用 keyId 锁定创建任务的那把
+      // 轮询中途 key 被标记失效 / 被删除时，都不能换平台池 key 继续查：
+      // 换了也查不到这个任务，更不能让用户以为还在用自己的账号
+      const dsLookup = byok
+        ? await lookupUserKey(authedUserId, 'dashscope')
+        : ({ kind: 'none' } as const);
+
+      if (dsLookup.kind === 'invalid') {
+        return NextResponse.json({
+          success: true,
+          taskId,
+          status: 'failed',
+          progress: 0,
+          videoUrl: null,
+          errorDetail: userKeyInvalidMessage('dashscope', dsLookup.lastError),
+        });
+      }
+
+      const userDsKey = dsLookup.kind === 'active' ? dsLookup.key : null;
+
+      if (byok && !userDsKey) {
+        return NextResponse.json({
+          success: true,
+          taskId,
+          status: 'failed',
+          progress: 0,
+          videoUrl: null,
+          errorDetail: '这个任务是用你自己的 API Key 提交的，但该 Key 已被删除，无法继续查询结果。',
+        });
+      }
+
+      const dsQKeyInfo: KeyInfo = userDsKey
+        ? userKeyToKeyInfo(userDsKey, 'dashscope')
+        : (keyId ? await pickKeyById(keyId, 'dashscope') : await pickKey('dashscope'));
       let dsQSuccess = false;
       let dsQErr: any = null;
       let res: Response;
       try {
+        // BYOK 时按用户填的站点切 baseURL；平台池恒为国际站（改造前行为）
         res = await fetch(
-          `https://dashscope-intl.aliyuncs.com/api/v1/tasks/${taskId}`,
+          `${dashscopeHost(dsQKeyInfo.region)}/api/v1/tasks/${taskId}`,
           { headers: { 'Authorization': `Bearer ${dsQKeyInfo.keyValue}` } }
         );
         dsQSuccess = res.ok;
+        // 非 2xx 时构造带 status 的错误，让 categorizeError 能识别 401/403，
+        // BYOK 路径才会把用户 key 标记为 invalid
+        if (!res.ok) {
+          dsQErr = new Error(`DashScope 查询失败: HTTP ${res.status}`);
+          (dsQErr as any).status = res.status;
+        }
       } catch (err) {
         dsQErr = err;
         throw err;
       } finally {
-        await releaseKey(dsQKeyInfo.keyId, dsQSuccess, dsQSuccess ? undefined : categorizeError(dsQErr));
+        await releaseUserAwareKey(dsQKeyInfo, dsQSuccess, dsQSuccess ? undefined : categorizeError(dsQErr), dsQErr ? String(dsQErr?.message || dsQErr) : undefined);
       }
 
       if (!res.ok) {

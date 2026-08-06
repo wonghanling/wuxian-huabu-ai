@@ -7,6 +7,7 @@ import { isAdmin } from '@/lib/admin';
 import { listCanvases, createCanvas, deleteCanvas } from '@/lib/canvas-storage';
 import AccountModal from '@/app/canvas/AccountModal';
 import { SaveTemplateModal } from './SaveTemplateModal';
+import { ApiKeyModal } from './ApiKeyModal';
 import { ScriptStudioModal } from './ScriptStudioModal';
 import { DirectorDesk3DModal } from './DirectorDesk3DModal';
 import { DoodleModal } from './DoodleModal';
@@ -32,6 +33,7 @@ export function TopBar({ saveStatus, switchCanvas, getCurrentCanvasId }: Props) 
   const [showScriptStudio, setShowScriptStudio] = useState(false);
   const [show3DStudio, setShow3DStudio] = useState(false);
   const [showDoodle, setShowDoodle] = useState(false);
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [imageStudioUrl, setImageStudioUrl] = useState<string | null>(null);  // null=关闭，''=打开无图，url=打开有图
   const [studioUploading, setStudioUploading] = useState(false);
   const [canvases, setCanvases] = useState<{ id: string; title: string; updated_at: string }[]>([]);
@@ -279,6 +281,18 @@ export function TopBar({ saveStatus, switchCanvas, getCurrentCanvasId }: Props) 
           <span>设计师专用</span>
         </button>
 
+        {/* 我的 API Key 入口(自带火山/阿里云 Key,不扣余额不受并发限制) */}
+        <button
+          onClick={() => setShowApiKeyModal(true)}
+          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full bg-white/5 backdrop-blur-md border border-white/15 text-zinc-200 hover:bg-white/10 hover:border-white/25 transition-all"
+          title="填入自己的火山引擎/阿里云 API Key:不扣画布余额、不受平台并发限制"
+        >
+          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+          </svg>
+          <span>我的 API Key</span>
+        </button>
+
         {/* 返回主页按钮 */}
         <button
           onClick={goHome}
@@ -305,6 +319,11 @@ export function TopBar({ saveStatus, switchCanvas, getCurrentCanvasId }: Props) 
       {/* 保存为模板弹窗(canvas-v2 版,存 {nodes,edges}) */}
       {showSaveTemplateModal && (
         <SaveTemplateModal onClose={() => setShowSaveTemplateModal(false)} />
+      )}
+
+      {/* 我的 API Key 弹窗(BYOK:自带火山方舟/阿里云百炼/即梦 Key) */}
+      {showApiKeyModal && (
+        <ApiKeyModal onClose={() => setShowApiKeyModal(false)} />
       )}
 
       {/* 剧本工作室全屏弹窗 */}
