@@ -618,22 +618,35 @@ export async function POST(req: NextRequest) {
     //   active  → 用他的 key、不扣平台余额
     //   invalid → 直接报错，绝不回退平台池（否则会悄悄扣他的画布余额）
     //   none    → 走平台池 + 正常扣费（改造前行为）
-    const isDashscopeModel = cfg.provider === 'dashscope' || cfg.endpoint === 'dashscope27';
-    const authedUserId = isDashscopeModel ? await getAuthedUserId(req) : null;
-    const dsLookup = isDashscopeModel
-      ? await lookupUserKey(authedUserId, 'dashscope')
+    //
+    // 同一张视频卡片的下拉里混着三个上游，按本次选中模型的 cfg.provider 分流：
+    //   jimeng    → volc（即梦，AK/SK 双 key）
+    //   dashscope → dashscope（Wan / 快乐马）
+    //   fal       → 不开放 BYOK（Pixverse 等）
+    // 用户只填了阿里云 key 却选即梦时，byokProvider 是 volc、查不到 → 照常走平台池，不会串。
+    const byokProvider: 'volc' | 'dashscope' | null =
+      cfg.provider === 'jimeng' ? 'volc'
+      : (cfg.provider === 'dashscope' || cfg.endpoint === 'dashscope27') ? 'dashscope'
+      : null;
+
+    const authedUserId = byokProvider ? await getAuthedUserId(req) : null;
+    const byokLookup = byokProvider
+      ? await lookupUserKey(authedUserId, byokProvider)
       : ({ kind: 'none' } as const);
 
-    if (dsLookup.kind === 'invalid') {
+    if (byokLookup.kind === 'invalid') {
       // 此时还没扣费、没提交上游，直接返回即可
       return NextResponse.json(
-        { error: userKeyInvalidMessage('dashscope', dsLookup.lastError), byokInvalid: true },
+        { error: userKeyInvalidMessage(byokProvider!, byokLookup.lastError), byokInvalid: true },
         { status: 402 }
       );
     }
 
-    const userDashscopeKey = dsLookup.kind === 'active' ? dsLookup.key : null;
-    const useByok = !!userDashscopeKey;
+    const userByokKey = byokLookup.kind === 'active' ? byokLookup.key : null;
+    const useByok = !!userByokKey;
+    // 各上游分支只认自己那把，避免拿错 provider 的 key
+    const userDashscopeKey = byokProvider === 'dashscope' ? userByokKey : null;
+    const userVolcKey = byokProvider === 'volc' ? userByokKey : null;
 
     // ── 扣费（BYOK 跳过：用户在阿里云控制台自付）──────────────────
     if (userId && !useByok) {
@@ -735,8 +748,11 @@ export async function POST(req: NextRequest) {
     let taskKeyId: string | null = null;   // dashscope 任务必须用创建它的同一 key 查询
 
     if (cfg.provider === 'jimeng') {
-      // 即梦 火山引擎 API（账号池：每次请求取一组双 key 动态创建 volcService）
-      const jmKeyInfo = await pickKey('volc');
+      // 即梦 火山引擎 API（BYOK 优先，否则平台账号池取一组双 key）
+      // 两种情况都是"一组 AK/SK 动态创建 volcService"，只是 key 来源不同
+      const jmKeyInfo: KeyInfo = userVolcKey
+        ? userKeyToKeyInfo(userVolcKey, 'volc')
+        : await pickKey('volc');
       const jmVolcService = new Service({
         host: 'visual.volcengineapi.com',
         region: 'cn-north-1',
@@ -798,7 +814,7 @@ export async function POST(req: NextRequest) {
         if (!jmErr) jmErr = err;
         throw err;
       } finally {
-        await releaseKey(jmKeyInfo.keyId, jmSuccess, jmSuccess ? undefined : categorizeError(jmErr));
+        await releaseUserAwareKey(jmKeyInfo, jmSuccess, jmSuccess ? undefined : categorizeError(jmErr), jmErr ? String(jmErr?.message || jmErr) : undefined);
       }
 
     } else if (cfg.endpoint === 'dashscope27') {

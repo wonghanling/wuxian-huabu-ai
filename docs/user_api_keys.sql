@@ -19,7 +19,7 @@ create table if not exists user_api_keys (
   -- provider 取值（与 lib/api-key-pool.ts 的 ApiProvider 一致，但只开放这三个）：
   --   'ark'       = 火山引擎方舟（Seedance 2.0）→ 单 key，Bearer
   --   'dashscope' = 阿里云百炼（Wan / 快乐马）  → 单 key，Bearer，需配合 region
-  --   'volc'      = 火山引擎即梦                → 双 key（AK + SK），暂未开放
+  --   'volc'      = 火山引擎即梦                → 双 key（AK + SK）
   provider text not null check (provider in ('ark', 'dashscope', 'volc')),
 
   -- 密文（AES-256-GCM，格式 iv:authTag:ciphertext，全部 base64）

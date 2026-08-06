@@ -68,9 +68,42 @@ export async function GET(request: NextRequest) {
     let errorDetail: any = null;
 
     if (endpoint.startsWith('jimeng:')) {
-      // 即梦 火山引擎查询（账号池：每次请求取一组双 key 动态创建）
+      // 即梦 火山引擎查询（BYOK 优先，否则平台账号池取一组双 key）
       const reqKey = endpoint.replace('jimeng:', '');
-      const jmKeyInfo = await pickKey('volc');
+
+      // 轮询中途 key 被标记失效 / 被删除时，都不能换平台池 key 继续查：
+      // 换了也查不到这个任务，更不能让用户以为还在用自己的账号
+      const jmLookup = byok
+        ? await lookupUserKey(authedUserId, 'volc')
+        : ({ kind: 'none' } as const);
+
+      if (jmLookup.kind === 'invalid') {
+        return NextResponse.json({
+          success: true,
+          taskId,
+          status: 'failed',
+          progress: 0,
+          videoUrl: null,
+          errorDetail: userKeyInvalidMessage('volc', jmLookup.lastError),
+        });
+      }
+
+      const userVolcKey = jmLookup.kind === 'active' ? jmLookup.key : null;
+
+      if (byok && !userVolcKey) {
+        return NextResponse.json({
+          success: true,
+          taskId,
+          status: 'failed',
+          progress: 0,
+          videoUrl: null,
+          errorDetail: '这个任务是用你自己的 API Key 提交的，但该 Key 已被删除，无法继续查询结果。',
+        });
+      }
+
+      const jmKeyInfo: KeyInfo = userVolcKey
+        ? userKeyToKeyInfo(userVolcKey, 'volc')
+        : await pickKey('volc');
       const jmVolcService = new Service({
         host: 'visual.volcengineapi.com',
         region: 'cn-north-1',
@@ -90,7 +123,7 @@ export async function GET(request: NextRequest) {
         jmErr = err;
         throw err;
       } finally {
-        await releaseKey(jmKeyInfo.keyId, jmSuccess, jmSuccess ? undefined : categorizeError(jmErr));
+        await releaseUserAwareKey(jmKeyInfo, jmSuccess, jmSuccess ? undefined : categorizeError(jmErr), jmErr ? String(jmErr?.message || jmErr) : undefined);
       }
 
       console.log('即梦查询结果:', JSON.stringify(jmRes).slice(0, 500));

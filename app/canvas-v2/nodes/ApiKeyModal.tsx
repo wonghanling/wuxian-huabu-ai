@@ -402,8 +402,9 @@ export function ApiKeyModal({ onClose }: Props) {
 
         {/* 底部说明 */}
         <div className="px-5 py-3 border-t border-white/5 text-[11px] text-gray-500 leading-relaxed">
-          Key 加密存储，页面只显示掩码。其他模型（Midjourney、Nano Banana、Flux、Kling、Pixverse 等）
-          暂不支持自带 Key，继续走平台账号。
+          Key 加密存储，页面只显示掩码。按每次选中的模型自动判断用谁的账号 ——
+          同一张视频卡片里选即梦或 Wan 走你的 Key，选 Pixverse 仍走平台账号（照常扣余额）。
+          Midjourney、Nano Banana、Flux、Kling 等也暂不支持自带 Key。
         </div>
       </div>
     </div>
