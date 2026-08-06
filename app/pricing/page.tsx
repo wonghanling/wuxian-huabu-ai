@@ -267,6 +267,35 @@ export default function PricingPage() {
             );
           })}
         </div>
+
+        {/* 自带 API Key 说明：套餐与自带 Key 是两件事 */}
+        <div className="max-w-3xl mx-auto mt-16">
+          <div
+            className="rounded-2xl p-7"
+            style={{ background: 'rgb(20,20,20)', border: '1px solid #ffffff14' }}
+          >
+            <h3 className="text-base font-semibold mb-3" style={{ color: 'rgb(228,228,228)' }}>
+              关于自带 API Key
+            </h3>
+            <p className="text-sm leading-relaxed mb-4" style={{ color: 'rgb(150,150,150)' }}>
+              以上套餐与自带 API Key 无关。你可以在画布中连接自己的官方 API 账户（火山引擎方舟、
+              阿里云百炼、即梦），这些模型的费用直接支付给官方，Filmavo 不收取模型调用费，
+              也不占用平台并发额度。
+            </p>
+            <ul className="space-y-2">
+              {[
+                '自带 Key 的模型调用不扣画布余额，用量与账单在官方控制台查看',
+                '图片生成等按量计费功能，不需要开通套餐',
+                '套餐解锁的是剧本工作室、分镜脚本、导演引擎等文本创作功能',
+              ].map((t) => (
+                <li key={t} className="flex items-start gap-2.5 text-sm" style={{ color: 'rgb(160,160,160)' }}>
+                  <span className="mt-[7px] w-1 h-1 rounded-full flex-shrink-0" style={{ background: 'rgb(113,208,131)' }} />
+                  <span className="leading-relaxed">{t}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
       </section>
     </div>
   );
