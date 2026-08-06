@@ -1,20 +1,83 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { checkMembership, deductBalance, refundBalance } from '@/lib/billing';
-import { pickKey, userKeyToKeyInfo, releaseUserAwareKey, categorizeError, type KeyInfo } from '@/lib/api-key-pool';
+import { pickKey, releaseKey, userKeyToKeyInfo, releaseUserAwareKey, categorizeError, type KeyInfo } from '@/lib/api-key-pool';
 import { lookupUserKey, userKeyInvalidMessage } from '@/lib/user-api-keys';
 
 export const maxDuration = 60;
 
 const ARK_API_KEY = process.env.ARK_API_KEY!;
 const ARK_BASE_URL = 'https://ark.cn-beijing.volces.com/api/v3/contents/generations/tasks';
+const KIE_CREATE_URL = 'https://api.kie.ai/api/v1/jobs/createTask';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Seedance 定价（用户侧价格，会员/普通）
+// ============================================================================
+// 通道开关：'kie' = 走 Kie AI（当前），'ark' = 走火山方舟（旧版，可回退）
+// ============================================================================
+// 两套请求格式不同（方舟用 content 数组，Kie 用扁平 input 对象），代码并存。
+// 要回退方舟：把这个常量改回 'ark' 即可，方舟那套逻辑和定价原样保留。
+const SEEDANCE_CHANNEL: 'kie' | 'ark' = 'kie';
+
+// ============================================================================
+// Kie AI 定价：成本 + 0.1/秒，不分会员
+// ============================================================================
+// 售价公式：
+//   无视频输入 = (成本单价 + 0.1) × 输出时长
+//   带视频输入 = (成本单价 + 0.1) × (输入视频总时长 + 输出时长)
+// 带视频输入单价更低，但计费基数含输入时长，所以传长参考视频反而更贵。
+const KIE_PRICE: Record<string, { noVideo: number; withVideo: number }> = {
+  // 标准版 bytedance/seedance-2
+  'seedance-2_480p':  { noVideo: 0.74, withVideo: 0.49 },
+  'seedance-2_720p':  { noVideo: 1.49, withVideo: 0.95 },
+  'seedance-2_1080p': { noVideo: 3.55, withVideo: 2.20 },
+  'seedance-2_4k':    { noVideo: 7.14, withVideo: 4.43 },
+  // Fast 版 bytedance/seedance-2-fast
+  'seedance-2-fast_480p': { noVideo: 0.62, withVideo: 0.40 },
+  'seedance-2-fast_720p': { noVideo: 1.22, withVideo: 0.78 },
+  // Mini 版 bytedance/seedance-2-mini
+  'seedance-2-mini_480p': { noVideo: 0.42, withVideo: 0.30 },
+  'seedance-2-mini_720p': { noVideo: 0.79, withVideo: 0.52 },
+};
+
+// 画布模型 ID → Kie 模型 ID
+const KIE_MODEL_MAP: Record<string, string> = {
+  'doubao-seedance-2-0-260128':      'bytedance/seedance-2',
+  'doubao-seedance-2-0-fast-260128': 'bytedance/seedance-2-fast',
+  'doubao-seedance-2-0-mini-260128': 'bytedance/seedance-2-mini',
+};
+
+/**
+ * Kie 计费。refVideoSeconds 是参考视频总时长（秒），>0 时按"带视频输入"计价，
+ * 且计费基数为 输入时长 + 输出时长。
+ *
+ * 保守设计：前端拿不到视频时长时传 0，此时按"无视频输入"单价计（单价更高），
+ * 宁可多收也不少收 —— 少收就是平台净亏。
+ */
+function getKieCharge(
+  model: string,
+  resolution: string,
+  duration: number,
+  refVideoSeconds: number
+): number {
+  const kieModel = (KIE_MODEL_MAP[model] || '').replace('bytedance/', '');
+  const price = KIE_PRICE[`${kieModel}_${(resolution || '').toLowerCase()}`];
+  if (!price) return 0;
+
+  const outSecs = duration === -1 ? 5 : Math.max(1, duration);
+  const hasVideo = refVideoSeconds > 0;
+  const perSec = hasVideo ? price.withVideo : price.noVideo;
+  const billedSecs = hasVideo ? refVideoSeconds + outSecs : outSecs;
+
+  return Math.round(perSec * billedSecs * 100) / 100;
+}
+
+// ============================================================================
+// 火山方舟定价（旧版，SEEDANCE_CHANNEL='ark' 时启用）
+// ============================================================================
 const SEEDANCE_PRICE: Record<string, { member: number; normal: number }> = {
   'doubao-seedance-2-0-260128_480p':  { member: 0.71, normal: 0.91 },
   'doubao-seedance-2-0-260128_720p':  { member: 1.29, normal: 1.49 },
@@ -81,6 +144,7 @@ export async function POST(req: NextRequest) {
       refImages,
       refVideoUrl,
       refAudioBase64,
+      refVideoSeconds,   // 参考视频总时长(秒)，Kie"带视频输入"计费要用；前端读 video.duration 传来
       userId,
     } = body;
 
@@ -88,8 +152,12 @@ export async function POST(req: NextRequest) {
     //   active  → 用他的 key、不扣平台余额
     //   invalid → 直接报错，绝不回退平台池（否则会悄悄扣他的画布余额）
     //   none    → 走平台池 + 正常扣费（改造前行为）
-    const authedUserId = await getAuthedUserId(req);
-    const arkLookup = await lookupUserKey(authedUserId, 'ark');
+    // 注意：BYOK 只对方舟通道有意义（用户填的是方舟 Key）。走 Kie 时一律用平台
+    // 账号池并正常扣费，否则会拿用户的方舟 Key 去调 Kie、或误判为失效而拦住生成。
+    const authedUserId = SEEDANCE_CHANNEL === 'ark' ? await getAuthedUserId(req) : null;
+    const arkLookup = SEEDANCE_CHANNEL === 'ark'
+      ? await lookupUserKey(authedUserId, 'ark')
+      : ({ kind: 'none' } as const);
 
     if (arkLookup.kind === 'invalid') {
       // 此时还没扣费、没提交上游，直接返回即可
@@ -102,15 +170,18 @@ export async function POST(req: NextRequest) {
     const userArkKey = arkLookup.kind === 'active' ? arkLookup.key : null;
     const useByok = !!userArkKey;
 
-    // 平台池路径才要求 env 有 ARK_API_KEY 兜底；BYOK 路径不依赖它
-    if (!useByok && !ARK_API_KEY) {
+    // 仅方舟通道的平台池路径要求 env 有 ARK_API_KEY 兜底；Kie 和 BYOK 都不依赖它
+    if (SEEDANCE_CHANNEL === 'ark' && !useByok && !ARK_API_KEY) {
       return NextResponse.json({ error: '未配置 ARK_API_KEY' }, { status: 500 });
     }
 
     // 扣费（BYOK 跳过：用户在火山引擎控制台自付）
+    // 扣费时机、退款逻辑、余额不足返回 402 —— 全部沿用原有约定，只是价格来源随通道切换
     if (userId && !useByok) {
       const isMember = await checkMembership(userId);
-      chargedAmount = getSeedanceCharge(model, resolution, generateAudio, Number(duration), isMember);
+      chargedAmount = SEEDANCE_CHANNEL === 'kie'
+        ? getKieCharge(model, resolution, Number(duration), Number(refVideoSeconds) || 0)
+        : getSeedanceCharge(model, resolution, generateAudio, Number(duration), isMember);
       if (chargedAmount > 0) {
         const deduct = await deductBalance(userId, chargedAmount, 'video_deduct',
           `Seedance 视频生成 ${model} ${resolution} ${generateAudio ? '有声' : '无声'}`,
@@ -185,8 +256,87 @@ export async function POST(req: NextRequest) {
       requestBody.duration = Number(duration) || 5;
     }
 
-    console.log('Seedance 请求:', JSON.stringify({ model, mode, ratio, resolution, duration, generate_audio: generateAudio }));
+    console.log('Seedance 请求:', JSON.stringify({ channel: SEEDANCE_CHANNEL, model, mode, ratio, resolution, duration, generate_audio: generateAudio }));
 
+    // ========================================================================
+    // Kie AI 通道（当前启用）
+    // ========================================================================
+    // 与方舟的差异仅在请求格式和响应字段：Kie 用扁平 input 对象、返回 data.taskId。
+    // 对前端的契约完全一致：同样返回 { success, taskId }，同样轮询 /api/seedance/query。
+    if (SEEDANCE_CHANNEL === 'kie') {
+      const kieModel = KIE_MODEL_MAP[model];
+      if (!kieModel) {
+        return NextResponse.json({ error: `不支持的模型: ${model}` }, { status: 400 });
+      }
+
+      // 复用上面已上传好的 URL（uploadBase64ToStorage 的结果都在 content 里）
+      const pick = (role: string) =>
+        content.find((c: any) => c.role === role)?.image_url?.url as string | undefined;
+
+      const kieInput: Record<string, unknown> = {
+        prompt: prompt || undefined,
+        resolution: (resolution || '720p').toLowerCase(),
+        aspect_ratio: ratio || '16:9',
+        duration: duration === -1 ? 5 : (Number(duration) || 5),
+        generate_audio: !!generateAudio,
+      };
+
+      if (mode === 'i2v') {
+        kieInput.first_frame_url = pick('first_frame');
+      } else if (mode === 'first-last') {
+        kieInput.first_frame_url = pick('first_frame');
+        kieInput.last_frame_url = pick('last_frame');
+      } else if (mode === 'multimodal') {
+        const refImgs = content
+          .filter((c: any) => c.role === 'reference_image')
+          .map((c: any) => c.image_url?.url)
+          .filter(Boolean);
+        if (refImgs.length > 0) kieInput.reference_image_urls = refImgs;
+        if (refVideoUrl) kieInput.reference_video_urls = [refVideoUrl];
+        if (refAudioBase64) kieInput.reference_audio_urls = [refAudioBase64];
+      }
+
+      const kieKeyInfo = await pickKey('kie');
+      let kieSuccess = false;
+      let kieErr: any = null;
+      let kieData: any;
+      try {
+        const res = await fetch(KIE_CREATE_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${kieKeyInfo.keyValue}`,
+          },
+          body: JSON.stringify({ model: kieModel, input: kieInput }),
+        });
+
+        kieData = await res.json();
+        console.log('Kie 提交结果:', JSON.stringify(kieData).slice(0, 300));
+
+        // Kie 用 body 里的 code 表达错误，HTTP 状态可能仍是 200
+        if (!res.ok || kieData?.code !== 200) {
+          kieErr = new Error(kieData?.msg || kieData?.message || '提交失败');
+          (kieErr as any).status = kieData?.code || res.status;
+          throw kieErr;
+        }
+        kieSuccess = true;
+      } catch (err) {
+        if (!kieErr) kieErr = err;
+        throw err;
+      } finally {
+        await releaseKey(kieKeyInfo.keyId, kieSuccess, kieSuccess ? undefined : categorizeError(kieErr), kieErr ? String(kieErr?.message || kieErr) : undefined);
+      }
+
+      const kieTaskId = kieData?.data?.taskId;
+      if (!kieTaskId) throw new Error('未返回任务ID');
+
+      // channel 回传给前端，轮询时带上，query 才知道查哪个上游
+      return NextResponse.json({ success: true, taskId: kieTaskId, channel: 'kie' });
+    }
+
+    // ========================================================================
+    // 火山方舟通道（旧版，SEEDANCE_CHANNEL='ark' 时启用）
+    // ========================================================================
     // 取 key：BYOK 用用户自己的（上面已读出，不重复查库）；否则走平台账号池
     const keyInfo: KeyInfo = userArkKey
       ? userKeyToKeyInfo(userArkKey, 'ark')

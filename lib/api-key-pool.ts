@@ -33,7 +33,7 @@ import { createClient } from '@supabase/supabase-js';
 // ============================================================================
 // Provider 类型
 // ============================================================================
-export type ApiProvider = 'n1n' | 'fal' | 'dashscope' | 'ark' | 'volc';
+export type ApiProvider = 'n1n' | 'fal' | 'dashscope' | 'ark' | 'volc' | 'kie';
 
 export interface KeyInfo {
   keyId: string | null; // null 表示用的是 env fallback 或用户自带 key，release 时会跳过并发释放
@@ -72,6 +72,10 @@ const ENV_FALLBACKS: Record<ApiProvider, () => KeyInfo | null> = {
     const id = process.env.VOLC_ACCESS_KEY_ID;
     const secret = process.env.VOLC_SECRET_ACCESS_KEY;
     return id && secret ? { keyId: null, keyValue: id, secondaryValue: secret } : null;
+  },
+  kie: () => {
+    const k = process.env.KIE_API_KEY;
+    return k ? { keyId: null, keyValue: k } : null;
   },
 };
 

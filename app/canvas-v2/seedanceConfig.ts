@@ -12,9 +12,12 @@ export interface SeedanceModel {
   resolutions: string[];   // 标准版有 1080p,Fast 只到 720p
 }
 
+// 模型 ID 保持 doubao-* 前缀不变(兼容已存的老画布卡片),后端映射到对应上游模型。
+// 标准版新增 4K,Mini 为新档位(最低价)。
 export const SEEDANCE_MODELS: SeedanceModel[] = [
-  { id: 'doubao-seedance-2-0-260128', label: 'Seedance 2.0', resolutions: ['480p', '720p', '1080p'] },
+  { id: 'doubao-seedance-2-0-260128', label: 'Seedance 2.0', resolutions: ['480p', '720p', '1080p', '4k'] },
   { id: 'doubao-seedance-2-0-fast-260128', label: 'Seedance 2.0 Fast', resolutions: ['480p', '720p'] },
+  { id: 'doubao-seedance-2-0-mini-260128', label: 'Seedance 2.0 Mini', resolutions: ['480p', '720p'] },
 ];
 
 export const DEFAULT_SEEDANCE_MODEL = 'doubao-seedance-2-0-260128';

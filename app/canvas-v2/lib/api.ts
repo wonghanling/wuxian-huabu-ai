@@ -354,6 +354,7 @@ export interface SeedanceGenParams {
   refImages?: string[];       // 多模态参考图(URL 数组)
   refVideoUrl?: string;       // 参考视频 URL
   refAudioUrl?: string;       // 参考音频 URL(后端字段叫 refAudioBase64,但传URL)
+  refVideoSeconds?: number;   // 参考视频总时长(秒):带视频输入按 (输入+输出) 计费
   userId?: string;
 }
 
@@ -386,6 +387,7 @@ export async function generateSeedance(
       refImages: params.refImages && params.refImages.length > 0 ? params.refImages : undefined,
       refVideoUrl: params.refVideoUrl || undefined,
       refAudioBase64: params.refAudioUrl || undefined,  // 后端字段名,实际传 URL
+      refVideoSeconds: params.refVideoSeconds || 0,     // 带视频输入计费用
       userId: params.userId || undefined,
     }),
   });
@@ -394,6 +396,7 @@ export async function generateSeedance(
   const taskId = data.taskId;
   const arkKeyId = data.arkKeyId || '';
   const byok = data.byok === true;   // 用了自带 key,轮询必须用同一把
+  const channel = data.channel || '';  // 'kie' = 走 Kie AI;空 = 方舟(老任务兼容)
   if (!taskId) throw new Error('未返回 taskId');
 
   let attempts = 0;
@@ -404,7 +407,8 @@ export async function generateSeedance(
       const qRes = await fetch(
         '/api/seedance/query?taskId=' + taskId
           + (arkKeyId ? '&arkKeyId=' + arkKeyId : '')
-          + (byok ? '&byok=1' : ''),
+          + (byok ? '&byok=1' : '')
+          + (channel ? '&channel=' + channel : ''),
         { headers: authToken ? { Authorization: `Bearer ${authToken}` } : {} },
       );
       const qData = await qRes.json();

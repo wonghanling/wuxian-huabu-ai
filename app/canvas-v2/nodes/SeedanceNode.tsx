@@ -28,6 +28,24 @@ import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 // Seedance 自带音频,无价格区别
 // ============================================================
 
+// 读本地视频时长(秒,向上取整)。Seedance"带视频输入"按 (输入+输出) 计费,
+// 后端需要这个值。读不到返回 0 —— 后端会退回按"无视频输入"单价计(单价更高,不少收)。
+function readVideoDuration(file: File): Promise<number> {
+  return new Promise((resolve) => {
+    try {
+      const v = document.createElement('video');
+      const url = URL.createObjectURL(file);
+      const done = (secs: number) => { URL.revokeObjectURL(url); resolve(secs); };
+      v.preload = 'metadata';
+      v.onloadedmetadata = () => done(Number.isFinite(v.duration) ? Math.ceil(v.duration) : 0);
+      v.onerror = () => done(0);
+      v.src = url;
+    } catch {
+      resolve(0);
+    }
+  });
+}
+
 const GLASS_BG = 'rgba(24,24,27,0.55)';
 const GLASS_BORDER = 'rgba(255,255,255,0.12)';
 const SEL_BORDER = 'rgba(192,192,192,0.45)';
@@ -64,10 +82,25 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const duration = String(data.config.duration ?? '5');
   const resolution = data.config.resolution ?? '720p';
   const need = seedanceFrameNeed(mode);
-  // 价格(Seedance 自带音频,有声无声同价 → hasAudio 传 false 即可)
-  // 智能时长(-1)按 5 秒估算
-  const priceSeconds = duration === '-1' ? 5 : Number(duration);
-  const price = videoPrice(model.id, resolution, priceSeconds, false);
+  // ── 价格(Seedance 会员/普通同价;自带音频,有声无声同价 → hasAudio 传 false)──
+  // 智能时长(-1)按 5 秒估算。
+  //
+  // 多模态传了参考视频时,计价规则变化(与后端 getKieCharge 保持一致):
+  //   单价改用 {分辨率}_video 档(更低),但计费秒数 = 参考视频总时长 + 输出时长
+  // 所以传长参考视频会让总价变高,用户在点生成前就能看到真实价格。
+  const outSeconds = duration === '-1' ? 5 : Number(duration);
+  const refVideoSecsList: number[] = data.config.refVideoSecs ?? [];
+  const refVideoTotalSecs = mode === 'multimodal'
+    ? refVideoSecsList.reduce((s, n) => s + (Number(n) || 0), 0)
+    : 0;
+  const hasRefVideo = refVideoTotalSecs > 0;
+  const priceSeconds = hasRefVideo ? refVideoTotalSecs + outSeconds : outSeconds;
+  const price = videoPrice(
+    model.id,
+    hasRefVideo ? `${resolution}_video` : resolution,
+    priceSeconds,
+    false,
+  );
 
   const refImages = data.config.refImages ?? [];
   const refVideos = data.config.refVideos ?? [];
@@ -141,16 +174,25 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     updateConfig(id, { refImages: cur });
   };
   // 多模态:加参考视频(尊重 3 个 + 总 12 上限,真实上传)
+  // 同时记录时长:Seedance"带视频输入"按 (输入时长 + 输出时长) 计费,后端要用
   const addRefVideo = async (fileList: FileList | null) => {
     const f = fileList?.[0];
     if (!f || !counts.canAddVideo) return;
     setUploading(true);
     try {
-      const url = await uploadFileToStorage(f, 'video');
+      const [url, secs] = await Promise.all([
+        uploadFileToStorage(f, 'video'),
+        readVideoDuration(f),
+      ]);
       if (url) {
         const curV = data.config.refVideos ?? [];
         const curN = data.config.refVideoNames ?? [];
-        updateConfig(id, { refVideos: [...curV, url], refVideoNames: [...curN, f.name] });
+        const curS = data.config.refVideoSecs ?? [];
+        updateConfig(id, {
+          refVideos: [...curV, url],
+          refVideoNames: [...curN, f.name],
+          refVideoSecs: [...curS, secs],
+        });
       }
     } finally {
       setUploading(false);
@@ -159,8 +201,9 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const removeRefVideo = (i: number) => {
     const curV = [...(data.config.refVideos ?? [])];
     const curN = [...(data.config.refVideoNames ?? [])];
-    curV.splice(i, 1); curN.splice(i, 1);
-    updateConfig(id, { refVideos: curV, refVideoNames: curN });
+    const curS = [...(data.config.refVideoSecs ?? [])];
+    curV.splice(i, 1); curN.splice(i, 1); curS.splice(i, 1);
+    updateConfig(id, { refVideos: curV, refVideoNames: curN, refVideoSecs: curS });
   };
   // 多模态:加参考音频(总 12 上限,单个,真实上传)
   const addRefAudio = async (fileList: FileList | null) => {
@@ -309,6 +352,8 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           refImages: effRefImages,
           refVideoUrl: effRefVideo,
           refAudioUrl: effRefAudio,
+          // 参考视频总时长:与上面 price 用的是同一个值,保证显示价与实扣一致
+          refVideoSeconds: effRefVideo ? refVideoTotalSecs : 0,
           userId,
         },
         (progress) => updateCard(id, { progress }),
@@ -454,7 +499,7 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                     <span style={{ fontWeight: 600 }}>{m.label}</span>
                     {m.resolutions.map((r) => {
                       const pp = videoPrice(m.id, r, 1, false);
-                      return <span key={r} style={priceLine}>{r.toUpperCase()} 会员¥{pp.member.toFixed(2)}/普通¥{pp.normal.toFixed(2)} 每秒</span>;
+                      return <span key={r} style={priceLine}>{r.toUpperCase()} ¥{pp.member.toFixed(2)} 每秒</span>;
                     })}
                   </div>
                 </SubItem>
@@ -483,7 +528,7 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                 return (
                   <SubItem key={r} active={r === resolution} onClick={() => { updateConfig(id, { resolution: r }); setSub(null); }}>
                     <span>{r.toUpperCase()}</span>
-                    <span style={subHint}>会员¥{pp.member.toFixed(2)}/普通¥{pp.normal.toFixed(2)} 每秒</span>
+                    <span style={subHint}>¥{pp.member.toFixed(2)} 每秒</span>
                   </SubItem>
                 );
               })}
@@ -531,13 +576,15 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
             </button>
           </div>
 
-          {/* 底行:实时价格(会员/普通) + Generate */}
+          {/* 底行:实时价格(Seedance 会员/普通同价,显示单一价格) + Generate */}
           <div style={{ display: 'flex', alignItems: 'center', padding: '2px 6px 4px', gap: 8 }}>
             <span style={{ fontSize: 11.5, color: '#e4e4e7' }}>
-              会员 <b style={{ color: '#fff' }}>¥{price.member.toFixed(2)}</b>
-              <span style={{ color: '#71717a' }}> / 普通 ¥{price.normal.toFixed(2)}</span>
+              <b style={{ color: '#fff' }}>¥{price.member.toFixed(2)}</b>
             </span>
-            <span style={{ fontSize: 10, color: '#52525b' }}>{duration === '-1' ? '智能~5s' : duration + 's'} · {resolution.toUpperCase()} · 自带音频</span>
+            <span style={{ fontSize: 10, color: '#52525b' }}>
+              {duration === '-1' ? '智能~5s' : duration + 's'} · {resolution.toUpperCase()} · 自带音频
+              {hasRefVideo && ` · 含参考视频${refVideoTotalSecs}s(计费${priceSeconds}s)`}
+            </span>
             <button onClick={handleGenerate} disabled={data.status === 'generating'} style={{ ...generateBtn, opacity: data.status === 'generating' ? 0.4 : 1, cursor: data.status === 'generating' ? 'default' : 'pointer' }}>{data.status === 'generating' ? '生成中…' : 'Generate'}</button>
           </div>
         </div>

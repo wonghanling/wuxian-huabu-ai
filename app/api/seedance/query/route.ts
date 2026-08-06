@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { pickKey, pickKeyById, userKeyToKeyInfo, releaseUserAwareKey, categorizeError, type KeyInfo } from '@/lib/api-key-pool';
+import { pickKey, pickKeyById, releaseKey, userKeyToKeyInfo, releaseUserAwareKey, categorizeError, type KeyInfo } from '@/lib/api-key-pool';
 import { lookupUserKey, userKeyInvalidMessage } from '@/lib/user-api-keys';
 
 const ARK_API_KEY = process.env.ARK_API_KEY!;
 const ARK_QUERY_URL = 'https://ark.cn-beijing.volces.com/api/v3/contents/generations/tasks/';
+const KIE_QUERY_URL = 'https://api.kie.ai/api/v1/jobs/recordInfo';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -48,7 +49,76 @@ export async function GET(request: NextRequest) {
     const taskId = request.nextUrl.searchParams.get('taskId');
     const arkKeyId = request.nextUrl.searchParams.get('arkKeyId');
     const byok = request.nextUrl.searchParams.get('byok') === '1';
+    // generate 回传的通道标记。只有 'kie' 走新分支，其余(含缺失)一律走原方舟逻辑，
+    // 保证老任务和回退方舟时行为不变。
+    const channel = request.nextUrl.searchParams.get('channel');
     if (!taskId) return NextResponse.json({ error: '缺少 taskId' }, { status: 400 });
+
+    // ========================================================================
+    // Kie AI 通道（generate 回传 channel=kie 时）
+    // ========================================================================
+    // 返回格式与方舟分支完全一致：{ status, videoUrl, progress }，前端无需区分。
+    // Kie 的 state: waiting / success / fail；结果在 resultJson（JSON 字符串，需二次解析）
+    if (channel === 'kie') {
+      const kieKeyInfo = await pickKey('kie');
+      let kieSuccess = false;
+      let kieErr: any = null;
+      let kieBody: any;
+      try {
+        const kRes = await fetch(`${KIE_QUERY_URL}?taskId=${encodeURIComponent(taskId)}`, {
+          headers: { 'Authorization': `Bearer ${kieKeyInfo.keyValue}` },
+        });
+        kieBody = await kRes.json();
+        kieSuccess = kRes.ok && kieBody?.code === 200;
+        if (!kieSuccess) {
+          kieErr = new Error(kieBody?.msg || `Kie 查询失败: HTTP ${kRes.status}`);
+          (kieErr as any).status = kieBody?.code || kRes.status;
+        }
+      } catch (err) {
+        kieErr = err;
+        throw err;
+      } finally {
+        await releaseKey(kieKeyInfo.keyId, kieSuccess, kieSuccess ? undefined : categorizeError(kieErr), kieErr ? String(kieErr?.message || kieErr) : undefined);
+      }
+
+      console.log('Kie 查询结果:', JSON.stringify(kieBody).slice(0, 300));
+
+      if (!kieSuccess) {
+        return NextResponse.json({ status: 'failed', error: kieBody?.msg || '查询失败', progress: 0 });
+      }
+
+      const d = kieBody?.data || {};
+      const state = d.state;
+
+      if (state === 'success') {
+        // resultJson 是 JSON 字符串：{"resultUrls":["https://..."]}
+        let rawUrl = '';
+        try {
+          rawUrl = JSON.parse(d.resultJson || '{}')?.resultUrls?.[0] || '';
+        } catch {
+          rawUrl = '';
+        }
+        if (!rawUrl) return NextResponse.json({ status: 'failed', error: '未返回视频URL', progress: 0 });
+        // 照原逻辑转存到自己的 Storage 拿永久 URL（Kie 的 tempfile 域名会过期）
+        const videoUrl = await uploadVideoToStorage(rawUrl);
+        return NextResponse.json({ status: 'completed', videoUrl, progress: 100 });
+      }
+
+      if (state === 'fail') {
+        return NextResponse.json({
+          status: 'failed',
+          error: d.failMsg || `生成失败${d.failCode ? ` (${d.failCode})` : ''}`,
+          progress: 0,
+        });
+      }
+
+      if (state === 'waiting') {
+        return NextResponse.json({ status: 'queued', progress: 10 });
+      }
+
+      // 其他中间态（如 generating/queuing）统一按进行中处理
+      return NextResponse.json({ status: 'processing', progress: 50 });
+    }
 
     // BYOK：任务是用用户自己的 key 提交的，必须用同一把 key 查，否则查不到。
     // 轮询中途 key 被标记失效时也不能换平台池 key（换了也查不到这个任务，

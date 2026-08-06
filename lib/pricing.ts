@@ -117,6 +117,16 @@ function tierSeedance(costPerSec: number): VideoTierPrice {
   return tier(costPerSec);
 }
 
+// 统一价（会员与普通同价）。Seedance 走 Kie 后不再区分会员，直接给最终售价。
+// costPerSec 按售价填，仅用于展示，实际扣费由后端 getKieCharge 计算。
+function flat(pricePerSec: number): VideoTierPrice {
+  return {
+    costPerSec: pricePerSec,
+    memberPerSec: pricePerSec,
+    normalPerSec: pricePerSec,
+  };
+}
+
 export const VIDEO_PRICING: Record<string, VideoModelPrice> = {
 
   // ── 即梦 3.0 ──────────────────────────────────────────────
@@ -261,27 +271,39 @@ export const VIDEO_PRICING: Record<string, VideoModelPrice> = {
     },
   },
 
-  // ── Seedance 2.0（新规则：成本+0.2会员 / +0.4普通）────────
-  // 有声 = 无声成本 + 0.2/秒（音频额外成本）
+  // ── Seedance 2.0 系列（走 Kie AI：成本 + 0.1/秒，不分会员）──────
+  // 与其他模型不同，Seedance 会员和普通同价，所以 member/normal 填同一个值。
+  // 音频自带、有声无声同价，故不设 audioVariants。
+  // 这里是"无视频输入"单价；多模态传参考视频时按 (输入+输出) 计费，
+  // 单价更低但基数含输入时长，实际扣费由后端 getKieCharge 计算。
+  // _video 后缀 = 多模态传了参考视频时的单价（更低），
+  // 但计费基数变成 (参考视频时长 + 输出时长)，实际总价通常更高。
   'doubao-seedance-2-0-260128': {
-    audioVariants: true,
     resolutions: {
-      '480p':        tierSeedance(0.51), // 会员 0.71 / 普通 0.91
-      '480p_audio':  tierSeedance(0.71), // 会员 0.91 / 普通 1.11
-      '720p':        tierSeedance(1.09), // 会员 1.29 / 普通 1.49
-      '720p_audio':  tierSeedance(1.29), // 会员 1.49 / 普通 1.69
-      '1080p':       tierSeedance(2.61), // 会员 2.81 / 普通 3.01
-      '1080p_audio': tierSeedance(2.81), // 会员 3.01 / 普通 3.21
+      '480p':        flat(0.74),   // 成本 0.64
+      '720p':        flat(1.49),   // 成本 1.39
+      '1080p':       flat(3.55),   // 成本 3.45
+      '4k':          flat(7.14),   // 成本 7.04
+      '480p_video':  flat(0.49),   // 成本 0.39
+      '720p_video':  flat(0.95),   // 成本 0.85
+      '1080p_video': flat(2.20),   // 成本 2.10
+      '4k_video':    flat(4.43),   // 成本 4.33
     },
   },
-  // ── Seedance 2.0 Fast（新规则）────────────────────────────
   'doubao-seedance-2-0-fast-260128': {
-    audioVariants: true,
     resolutions: {
-      '480p':        tierSeedance(0.40), // 会员 0.60 / 普通 0.80
-      '480p_audio':  tierSeedance(0.60), // 会员 0.80 / 普通 1.00
-      '720p':        tierSeedance(0.86), // 会员 1.06 / 普通 1.26
-      '720p_audio':  tierSeedance(1.06), // 会员 1.26 / 普通 1.46
+      '480p':       flat(0.62),    // 成本 0.52
+      '720p':       flat(1.22),    // 成本 1.12
+      '480p_video': flat(0.40),    // 成本 0.30
+      '720p_video': flat(0.78),    // 成本 0.68
+    },
+  },
+  'doubao-seedance-2-0-mini-260128': {
+    resolutions: {
+      '480p':       flat(0.42),    // 成本 0.32
+      '720p':       flat(0.79),    // 成本 0.69
+      '480p_video': flat(0.30),    // 成本 0.20
+      '720p_video': flat(0.52),    // 成本 0.42
     },
   },
 

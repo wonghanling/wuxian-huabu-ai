@@ -108,6 +108,7 @@ export interface CardData extends Record<string, unknown> {
     // Seedance 多模态专用
     refVideos?: string[];       // 参考视频 URL 数组(最多 3 个)
     refVideoNames?: string[];   // 参考视频名数组
+    refVideoSecs?: number[];    // 参考视频时长数组(秒):Seedance"带视频输入"按 (输入+输出) 计费
     refAudio?: string;          // 参考音频 URL
     refAudioName?: string;      // 参考音频名
     editVideo?: string;         // wan2.7/happyhorse 视频编辑:待编辑视频 URL
