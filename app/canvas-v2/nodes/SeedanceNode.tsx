@@ -46,6 +46,26 @@ function readVideoDuration(file: File): Promise<number> {
   });
 }
 
+// 从 URL 读视频时长(秒,向上取整)。用于连线进来的参考视频 —— 它们只有 URL,
+// 没经过本地上传流程,拿不到 File 对象。只读 metadata,不下载整个视频。
+function readVideoDurationFromUrl(url: string): Promise<number> {
+  return new Promise((resolve) => {
+    try {
+      const v = document.createElement('video');
+      const done = (secs: number) => { v.src = ''; resolve(secs); };
+      v.preload = 'metadata';
+      v.crossOrigin = 'anonymous';
+      v.onloadedmetadata = () => done(Number.isFinite(v.duration) ? Math.ceil(v.duration) : 0);
+      v.onerror = () => done(0);
+      // 兜底:8 秒还没读到就放弃(后端会按无视频输入单价计,不少收)
+      setTimeout(() => done(0), 8000);
+      v.src = url;
+    } catch {
+      resolve(0);
+    }
+  });
+}
+
 const GLASS_BG = 'rgba(24,24,27,0.55)';
 const GLASS_BORDER = 'rgba(255,255,255,0.12)';
 const SEL_BORDER = 'rgba(192,192,192,0.45)';
@@ -89,18 +109,6 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   //   单价改用 {分辨率}_video 档(更低),但计费秒数 = 参考视频总时长 + 输出时长
   // 所以传长参考视频会让总价变高,用户在点生成前就能看到真实价格。
   const outSeconds = duration === '-1' ? 5 : Number(duration);
-  const refVideoSecsList: number[] = data.config.refVideoSecs ?? [];
-  const refVideoTotalSecs = mode === 'multimodal'
-    ? refVideoSecsList.reduce((s, n) => s + (Number(n) || 0), 0)
-    : 0;
-  const hasRefVideo = refVideoTotalSecs > 0;
-  const priceSeconds = hasRefVideo ? refVideoTotalSecs + outSeconds : outSeconds;
-  const price = videoPrice(
-    model.id,
-    hasRefVideo ? `${resolution}_video` : resolution,
-    priceSeconds,
-    false,
-  );
 
   const refImages = data.config.refImages ?? [];
   const refVideos = data.config.refVideos ?? [];
@@ -116,6 +124,53 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const connVideos = upstreamLive.videos.filter((u) => !refVideos.includes(u));   // 连接进来的视频
   const connAudio = upstreamLive.audios[0];                                        // 连接进来的音频
   const connectedTexts = upstreamLive.texts;   // 来自连接的文案(实时,自动拼入生成)
+
+  // ── 参考视频时长(计费用)────────────────────────────────────
+  // 上传的视频在 addRefVideo 里已记下时长;连线进来的只有 URL,需要在这里探测。
+  // 探测结果缓存在 urlSecs,避免重复读同一个 URL。
+  const uploadedSecs: number[] = data.config.refVideoSecs ?? [];
+  const [urlSecs, setUrlSecs] = useState<Record<string, number>>({});
+  useEffect(() => {
+    if (mode !== 'multimodal') return;
+    // 待探测:连线视频 + 上传但没记到时长的(老数据兼容)
+    const pending = [
+      ...connVideos,
+      ...refVideos.filter((_, i) => !uploadedSecs[i]),
+    ].filter((u) => u && urlSecs[u] === undefined);
+    if (pending.length === 0) return;
+    let alive = true;
+    Promise.all(pending.map(async (u) => [u, await readVideoDurationFromUrl(u)] as const))
+      .then((pairs) => {
+        if (!alive) return;
+        setUrlSecs((prev) => {
+          const next = { ...prev };
+          for (const [u, s] of pairs) next[u] = s;
+          return next;
+        });
+      });
+    return () => { alive = false; };
+  }, [mode, connVideos.join(','), refVideos.join(','), uploadedSecs.join(',')]);
+
+  // 参考视频总时长:上传的优先用记录值,取不到则用探测值;连线的全靠探测
+  const refVideoTotalSecs = mode === 'multimodal'
+    ? [
+        ...refVideos.map((u, i) => uploadedSecs[i] || urlSecs[u] || 0),
+        ...connVideos.map((u) => urlSecs[u] || 0),
+      ].reduce((s, n) => s + n, 0)
+    : 0;
+  const hasRefVideoUrl = mode === 'multimodal' && (refVideos.length + connVideos.length) > 0;
+  const hasRefVideo = refVideoTotalSecs > 0;
+
+  // ── 价格(Seedance 会员/普通同价;自带音频,有声无声同价 → hasAudio 传 false)──
+  // 多模态传了参考视频时:单价改用 {分辨率}_video 档(更低),
+  // 但计费秒数 = 参考视频总时长 + 输出时长。与后端 getKieCharge 同一套公式。
+  const priceSeconds = hasRefVideo ? refVideoTotalSecs + outSeconds : outSeconds;
+  const price = videoPrice(
+    model.id,
+    hasRefVideo ? `${resolution}_video` : resolution,
+    priceSeconds,
+    false,
+  );
   // 计数含连接进来的素材(照图片卡:连接的也占额度,生成时一起传给模型)
   const connAudioCount = connAudio && !data.config.refAudio ? 1 : 0;
   const counts = multimodalCount(
@@ -583,7 +638,9 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
             </span>
             <span style={{ fontSize: 10, color: '#52525b' }}>
               {duration === '-1' ? '智能~5s' : duration + 's'} · {resolution.toUpperCase()} · 自带音频
-              {hasRefVideo && ` · 含参考视频${refVideoTotalSecs}s(计费${priceSeconds}s)`}
+              {hasRefVideo
+                ? ` · 含参考视频${refVideoTotalSecs}s(计费${priceSeconds}s)`
+                : hasRefVideoUrl ? ' · 读取参考视频时长…' : ''}
             </span>
             <button onClick={handleGenerate} disabled={data.status === 'generating'} style={{ ...generateBtn, opacity: data.status === 'generating' ? 0.4 : 1, cursor: data.status === 'generating' ? 'default' : 'pointer' }}>{data.status === 'generating' ? '生成中…' : 'Generate'}</button>
           </div>
