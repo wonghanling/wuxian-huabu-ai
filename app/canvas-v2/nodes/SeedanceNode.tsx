@@ -37,7 +37,8 @@ function readVideoDuration(file: File): Promise<number> {
       const url = URL.createObjectURL(file);
       const done = (secs: number) => { URL.revokeObjectURL(url); resolve(secs); };
       v.preload = 'metadata';
-      v.onloadedmetadata = () => done(Number.isFinite(v.duration) ? Math.ceil(v.duration) : 0);
+      // 四舍五入(与后端一致),避免 5.04s 的视频被算成 6 秒
+      v.onloadedmetadata = () => done(Number.isFinite(v.duration) ? Math.round(v.duration) : 0);
       v.onerror = () => done(0);
       v.src = url;
     } catch {
@@ -64,7 +65,9 @@ function readVideoDurationFromUrl(url: string): Promise<number> {
       // 一旦 bucket 没返回 CORS 头就直接加载失败。
       v.preload = 'metadata';
       v.muted = true;
-      v.onloadedmetadata = () => done(Number.isFinite(v.duration) ? Math.ceil(v.duration) : 0);
+      // 四舍五入(与后端 parseMvhdSeconds 一致):视频实际时长常带小数
+      // (帧数/帧率,如 25fps 126 帧 = 5.04s),向上取整会把 5 秒算成 6 秒
+      v.onloadedmetadata = () => done(Number.isFinite(v.duration) ? Math.round(v.duration) : 0);
       v.onerror = () => {
         console.warn('[Seedance] 读参考视频时长失败:', url);
         done(0);
@@ -579,8 +582,16 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%' }}>
                     <span style={{ fontWeight: 600 }}>{m.label}</span>
                     {m.resolutions.map((r) => {
+                      // 两种单价:无参考视频 / 有参考视频(后者单价低但按 输入+输出 计费)
                       const pp = videoPrice(m.id, r, 1, false);
-                      return <span key={r} style={priceLine}>{r.toUpperCase()} ¥{pp.member.toFixed(2)} 每秒</span>;
+                      const pv = videoPrice(m.id, `${r}_video`, 1, false);
+                      return (
+                        <span key={r} style={priceLine}>
+                          {r.toUpperCase()} ¥{pp.member.toFixed(2)}
+                          {pv.member > 0 && <span style={{ color: '#71717a' }}> / 带视频¥{pv.member.toFixed(2)}</span>}
+                          {' 每秒'}
+                        </span>
+                      );
                     })}
                   </div>
                 </SubItem>
@@ -605,11 +616,20 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
             <ParamTag label={<>清晰度 {resolution.toUpperCase()}</>} open={sub === 'quality'} onToggle={() => setSub(sub === 'quality' ? null : 'quality')} width={260}>
               {model.resolutions.map((r) => {
+                // 带参考视频时单价更低但按 (参考视频时长+输出时长) 计费,
+                // 所以两种单价都列出来,当前生效的那个高亮
                 const pp = videoPrice(model.id, r, 1, false);
+                const pv = videoPrice(model.id, `${r}_video`, 1, false);
                 return (
                   <SubItem key={r} active={r === resolution} onClick={() => { updateConfig(id, { resolution: r }); setSub(null); }}>
                     <span>{r.toUpperCase()}</span>
-                    <span style={subHint}>¥{pp.member.toFixed(2)} 每秒</span>
+                    <span style={subHint}>
+                      <span style={{ color: hasRefVideo ? '#71717a' : '#a1a1aa' }}>¥{pp.member.toFixed(2)}</span>
+                      {pv.member > 0 && (
+                        <span style={{ color: hasRefVideo ? '#e4e4e7' : '#52525b' }}> / 带视频¥{pv.member.toFixed(2)}</span>
+                      )}
+                      {' 每秒'}
+                    </span>
                   </SubItem>
                 );
               })}

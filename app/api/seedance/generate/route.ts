@@ -127,7 +127,9 @@ function parseMvhdSeconds(buf: Buffer): number {
     return 0;
   }
   if (!timescale || !duration) return 0;
-  const secs = Math.ceil(duration / timescale);
+  // 四舍五入而非向上取整：视频实际时长常带小数（帧数/帧率，如 25fps 126 帧 = 5.04s），
+  // 向上取整会把 5 秒视频算成 6 秒，用户会认为乱收费。
+  const secs = Math.round(duration / timescale);
   // 合理性检查：Kie 限制单个参考视频 2-15 秒，明显越界视为解析错误
   return secs > 0 && secs <= 120 ? secs : 0;
 }
