@@ -39,6 +39,100 @@ const EXTEND_RATIOS = ['1:1', '16:9', '9:16', '4:3', '3:4', '3:2', '2:3'];
 
 type SubPanel = 'model' | 'ratio' | 'quality' | 'camera' | null;
 
+// ============================================================
+// Camera Translator:Yaw/Pitch → 纯摄影语言
+// ============================================================
+// Yaw/Pitch 只在程序内部用,最终 prompt 里不出现任何角度数值 ——
+// 标签式 prompt("Yaw=35° | front view")对 Nano Banana / Gemini Image Edit
+// 效果差,模型倾向保持原视角。
+//
+// Pitch 方向的几何依据(别凭直觉改):摄像机图标固定在 translateZ(55px),
+// 父容器做 rotateX(-pitch),图标屏幕纵坐标 y = 55·sin(pitch),CSS 的 y 朝下。
+//   pitch≈90  → 图标在画面下方 → 摄像机在物体下方 → 仰视 worm's-eye
+//   pitch≈270 → 图标在画面上方 → 摄像机在物体上方 → 俯视 bird's-eye
+
+const norm360 = (deg: number) => ((deg % 360) + 360) % 360;
+
+/** Yaw → 水平机位的摄影描述(祈使句,告诉模型往哪移) */
+function yawInstruction(yaw: number): string {
+  const y = norm360(yaw);
+  if (y <= 15 || y > 345) return 'Keep the camera directly in front of the subject for a frontal composition.';
+  if (y <= 40) return "Move the camera slightly to the subject's right while maintaining a mostly frontal composition.";
+  if (y <= 75) return "Move the camera to the subject's front-right for a three-quarter view.";
+  if (y <= 105) return "Move the camera to the subject's right side for a full profile side view.";
+  if (y <= 140) return "Move the camera behind and to the subject's right for a rear three-quarter view.";
+  if (y <= 195) return 'Move the camera directly behind the subject for a rear view.';
+  if (y <= 220) return "Move the camera behind and to the subject's left for a rear three-quarter view.";
+  if (y <= 255) return "Move the camera to the subject's left side for a full profile side view.";
+  if (y <= 290) return "Move the camera to the subject's front-left for a three-quarter view.";
+  if (y <= 320) return "Move the camera to the subject's front-left, still mostly frontal.";
+  return "Move the camera slightly to the subject's left while maintaining a mostly frontal composition.";
+}
+
+/** Pitch → 垂直机位的摄影描述(祈使句) */
+function pitchInstruction(pitch: number): string {
+  const p = norm360(pitch);
+  if (p <= 15 || p > 345) return 'Keep the camera at the subject\'s eye level, perfectly horizontal.';
+  // 15-165:摄像机在物体下方 → 仰视
+  if (p <= 55) return 'Place the camera below eye level and angle it gently upward.';
+  if (p <= 120) return "Place the camera on the ground below the subject and point it sharply upward to create a true worm's-eye view, so the underside of the subject dominates the frame.";
+  if (p <= 165) return 'Place the camera low behind the subject and angle it upward.';
+  if (p <= 195) return 'Keep the camera at eye level.';
+  // 195-345:摄像机在物体上方 → 俯视
+  if (p <= 240) return 'Place the camera high behind the subject and angle it downward.';
+  if (p <= 300) return "Move the camera directly above the subject and look straight downward to create a true bird's-eye view, so the top surface dominates the frame.";
+  return 'Place the camera slightly above eye level and angle it gently downward.';
+}
+
+/** 简短角度标签,仅用于 UI 显示(不进 prompt) */
+export function cameraAngleLabel(yaw: number, pitch: number): string {
+  const y = norm360(yaw), p = norm360(pitch);
+  const h = (y <= 22.5 || y > 337.5) ? '正面'
+    : y <= 67.5 ? '右前 3/4' : y <= 112.5 ? '右侧'
+    : y <= 157.5 ? '右后 3/4' : y <= 202.5 ? '背面'
+    : y <= 247.5 ? '左后 3/4' : y <= 292.5 ? '左侧' : '左前 3/4';
+  const v = (p <= 15 || p > 345) ? '平视'
+    : p <= 55 ? '微仰' : p <= 120 ? '仰视(底部)' : p <= 165 ? '后下方仰视'
+    : p <= 195 ? '平视' : p <= 240 ? '后上方俯视'
+    : p <= 300 ? '俯视(顶部)' : '微俯';
+  return `${h} · ${v}`;
+}
+
+// 强制换机位的前置指令:模型必须真的移动机位,而不是旋转/复制原图
+const CAMERA_OVERRIDE = [
+  'Use the uploaded image as the only visual reference.',
+  'Regenerate the SAME scene from a NEW camera position.',
+  'The camera MUST physically move to the requested location.',
+  'Do NOT preserve the original camera viewpoint.',
+  'Only the camera position and perspective should change.',
+  "Preserve the subject's identity, pose, clothing, lighting, environment and scene layout as much as possible.",
+  'If the new viewpoint reveals areas that were previously hidden, reconstruct them naturally while maintaining consistency.',
+  'Do NOT rotate the existing image.',
+  'Instead, regenerate the entire scene as if a real photographer moved to the new camera position and captured a new photograph.',
+].join('\n');
+
+const CAMERA_TAIL = [
+  'Changing the camera position is the highest priority.',
+  'Generate a completely new photograph from this camera location.',
+  'The result should look like it was captured by a real camera physically positioned at the requested viewpoint.',
+].join('\n');
+
+/** 组装最终 prompt:override + 摄影语言机位 + 用户描述 + 收尾强调 */
+export function buildCameraPrompt(yaw: number, pitch: number, userPrompt?: string): string {
+  const parts = [
+    CAMERA_OVERRIDE,
+    '',
+    'New camera position:',
+    yawInstruction(yaw),
+    pitchInstruction(pitch),
+  ];
+  if (userPrompt && userPrompt.trim()) {
+    parts.push('', `Additional instructions: ${userPrompt.trim()}`);
+  }
+  parts.push('', CAMERA_TAIL);
+  return parts.join('\n');
+}
+
 // 摄像机控制球 — 照搬原网真实 3D 实现(preserve-3d 球体 + 轨道环)
 // 关键:onPointerDown e.stopPropagation() 阻止 React Flow 节点拖拽
 function CameraController({ vertical, horizontal, onChange }: {
@@ -174,50 +268,10 @@ function ExtendNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const cameraV = (data.config as any).cameraVertical ?? 0;
   const cameraH = (data.config as any).cameraHorizontal ?? 0;
 
-  // Yaw 0-360: 0=front, 90=right, 180=back, 270=left
-  const getYawDesc = (yaw: number): string => {
-    const y = ((yaw % 360) + 360) % 360;
-    if (y <= 22.5 || y > 337.5) return 'front view';
-    if (y <= 67.5) return 'front-right three-quarter view';
-    if (y <= 112.5) return 'right side view';
-    if (y <= 157.5) return 'back-right three-quarter view';
-    if (y <= 202.5) return 'back view';
-    if (y <= 247.5) return 'back-left three-quarter view';
-    if (y <= 292.5) return 'left side view';
-    return 'front-left three-quarter view';
-  };
-  // Pitch: 往上拖增大 = 摄像机升到物体上方 = 俯视(high angle,看到物体顶部)
-  //         往下拖减小(绕到 337.5 以下) = 摄像机降到物体下方 = 仰视(low angle,看到物体底部)
-  //
-  // 用标准摄影术语描述"怎么拍物体",而不是描述"摄像机朝哪指" ——
-  // 之前写成 front-down/straight down view,AI 理解成俯视,与用户把摄像机
-  // 拖到下方期望的仰视正好相反,所以"不听使唤"。
-  const getPitchDesc = (pitch: number): string => {
-    const p = ((pitch % 360) + 360) % 360;
-    // 0 附近 = 水平机位
-    if (p <= 15 || p > 345) return 'eye-level shot';
-    // 15-165：摄像机在物体上方 → 俯视，越接近 90 越接近正上方
-    if (p <= 60) return 'high angle shot looking down at the subject';
-    if (p <= 120) return 'top-down bird\'s-eye view directly above the subject, showing the top surface';
-    if (p <= 165) return 'high angle shot from behind and above the subject';
-    // 165-195：翻到正后方，仍是水平
-    if (p <= 195) return 'eye-level shot from behind the subject';
-    // 195-345：摄像机在物体下方 → 仰视，越接近 270 越接近正下方
-    if (p <= 240) return 'low angle shot from behind and below the subject';
-    if (p <= 300) return 'extreme low angle worm\'s-eye view directly below the subject, showing the underside';
-    return 'low angle shot looking up at the subject from below';
-  };
-  const yawDesc = getYawDesc(cameraH);
-  const pitchDesc = getPitchDesc(cameraV);
-  // 'front level view' 是默认平视,只需标 yaw;其他 pitch 都要标
-  const angleLabel = pitchDesc === 'front level view'
-    ? yawDesc
-    : `${yawDesc}, ${pitchDesc}`;
-  // 数值(精确) + 语义标签,两者都保留让 AI 能读
-  const anglePrompt = `camera: yaw=${Math.round(cameraH)}°, pitch=${Math.round(cameraV)}° | ${angleLabel}`;
-  const cameraPrompt = data.config.prompt
-    ? `${data.config.prompt}, ${anglePrompt}`
-    : anglePrompt;
+  // 角度语义标签(仅用于 UI 显示,不进 prompt)
+  const angleLabel = cameraAngleLabel(cameraH, cameraV);
+  // 发给模型的 prompt:纯摄影语言 + 强制换机位指令,不含任何角度数值
+  const cameraPrompt = buildCameraPrompt(cameraH, cameraV, data.config.prompt);
 
   const mult = enlarged ? 1.7 : 1;
   const dims = ratioToWH(ratio, 360 * mult);
@@ -375,6 +429,10 @@ function ExtendNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                     <span style={{ fontSize: 11, color: '#9ca3af' }}>Yaw (水平) </span>
                     <span style={{ fontSize: 13, color: '#fff', fontFamily: 'monospace', fontWeight: 700 }}>{Math.round(cameraH)}°</span>
                   </div>
+                </div>
+                {/* 当前机位的中文描述,让用户确认拖到的位置和预期一致 */}
+                <div style={{ marginTop: 6, textAlign: 'center', fontSize: 11, color: '#d4d4d8' }}>
+                  {angleLabel}
                 </div>
               </div>
             </ParamTag>
