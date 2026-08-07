@@ -186,17 +186,26 @@ function ExtendNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     if (y <= 292.5) return 'left side view';
     return 'front-left three-quarter view';
   };
-  // Pitch 0-360: 0=front level, 90=straight up, 180=back level, 270=straight down
+  // Pitch: 往上拖增大 = 摄像机升到物体上方 = 俯视(high angle,看到物体顶部)
+  //         往下拖减小(绕到 337.5 以下) = 摄像机降到物体下方 = 仰视(low angle,看到物体底部)
+  //
+  // 用标准摄影术语描述"怎么拍物体",而不是描述"摄像机朝哪指" ——
+  // 之前写成 front-down/straight down view,AI 理解成俯视,与用户把摄像机
+  // 拖到下方期望的仰视正好相反,所以"不听使唤"。
   const getPitchDesc = (pitch: number): string => {
     const p = ((pitch % 360) + 360) % 360;
-    if (p <= 22.5 || p > 337.5) return 'front level view';
-    if (p <= 67.5) return 'front-up view';
-    if (p <= 112.5) return 'straight up view';
-    if (p <= 157.5) return 'back-up view';
-    if (p <= 202.5) return 'back level view';
-    if (p <= 247.5) return 'back-down view';
-    if (p <= 292.5) return 'straight down view';
-    return 'front-down view';
+    // 0 附近 = 水平机位
+    if (p <= 15 || p > 345) return 'eye-level shot';
+    // 15-165：摄像机在物体上方 → 俯视，越接近 90 越接近正上方
+    if (p <= 60) return 'high angle shot looking down at the subject';
+    if (p <= 120) return 'top-down bird\'s-eye view directly above the subject, showing the top surface';
+    if (p <= 165) return 'high angle shot from behind and above the subject';
+    // 165-195：翻到正后方，仍是水平
+    if (p <= 195) return 'eye-level shot from behind the subject';
+    // 195-345：摄像机在物体下方 → 仰视，越接近 270 越接近正下方
+    if (p <= 240) return 'low angle shot from behind and below the subject';
+    if (p <= 300) return 'extreme low angle worm\'s-eye view directly below the subject, showing the underside';
+    return 'low angle shot looking up at the subject from below';
   };
   const yawDesc = getYawDesc(cameraH);
   const pitchDesc = getPitchDesc(cameraV);
