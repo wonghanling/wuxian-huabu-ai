@@ -10,6 +10,12 @@ const ARK_API_KEY = process.env.ARK_API_KEY!;
 const ARK_BASE_URL = 'https://ark.cn-beijing.volces.com/api/v3/contents/generations/tasks';
 const KIE_CREATE_URL = 'https://api.kie.ai/api/v1/jobs/createTask';
 
+// Kie 限流：每账户每 10 秒最多 20 个新生成请求，超出返回 429 且不入队。
+// 首次 + 2 次重试，每次间隔 4 秒 —— 覆盖一个 10 秒窗口，总耗时最多 +8 秒，
+// 仍在 maxDuration(60s) 内。撞限流的概率很低（需要 10 秒内 20 个用户同时点生成）。
+const KIE_RATE_LIMIT_RETRIES = 3;
+const KIE_RATE_LIMIT_WAIT_MS = 4000;
+
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -380,22 +386,42 @@ export async function POST(req: NextRequest) {
       let kieErr: any = null;
       let kieData: any;
       try {
-        const res = await fetch(KIE_CREATE_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${kieKeyInfo.keyValue}`,
-          },
-          body: JSON.stringify({ model: kieModel, input: kieInput }),
-        });
+        // Kie 限流：每账户每 10 秒最多 20 个新请求，超出返回 429 且不入队。
+        // 撞上就等几秒重试（等待窗口内额度会释放），用户无感。
+        // 只对 429 重试，其他错误立即抛出 —— 行为与改动前一致。
+        let res: Response | null = null;
+        for (let attempt = 0; attempt < KIE_RATE_LIMIT_RETRIES; attempt++) {
+          res = await fetch(KIE_CREATE_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${kieKeyInfo.keyValue}`,
+            },
+            body: JSON.stringify({ model: kieModel, input: kieInput }),
+          });
 
-        kieData = await res.json();
+          kieData = await res.json();
+          const code = kieData?.code ?? res.status;
+          const isRateLimited = code === 429 || res.status === 429;
+
+          if (!isRateLimited) break;                        // 非限流：跳出，走下面的统一判定
+          if (attempt === KIE_RATE_LIMIT_RETRIES - 1) break; // 最后一次也限流：放弃重试
+
+          console.warn(`[Seedance] Kie 限流(429)，${KIE_RATE_LIMIT_WAIT_MS}ms 后重试 (${attempt + 1}/${KIE_RATE_LIMIT_RETRIES - 1})`);
+          await new Promise((r) => setTimeout(r, KIE_RATE_LIMIT_WAIT_MS));
+        }
+
         console.log('Kie 提交结果:', JSON.stringify(kieData).slice(0, 300));
 
         // Kie 用 body 里的 code 表达错误，HTTP 状态可能仍是 200
-        if (!res.ok || kieData?.code !== 200) {
-          kieErr = new Error(kieData?.msg || kieData?.message || '提交失败');
-          (kieErr as any).status = kieData?.code || res.status;
+        if (!res || !res.ok || kieData?.code !== 200) {
+          const code = kieData?.code ?? res?.status;
+          kieErr = new Error(
+            code === 429
+              ? '当前生成请求过多，请稍等几秒再试'
+              : (kieData?.msg || kieData?.message || '提交失败')
+          );
+          (kieErr as any).status = code;
           throw kieErr;
         }
         kieSuccess = true;

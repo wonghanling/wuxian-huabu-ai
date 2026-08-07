@@ -448,8 +448,13 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
         (window as any).saveCanvasV2Now?.();
       });
     } catch (err: any) {
-      updateCard(id, { status: 'error', progress: 0 });
-      alert('Seedance 生成失败: ' + (err?.message || err));
+      const msg = String(err?.message || err);
+      // 照图片卡的做法:审核类失败(已记入待人工审核退款)显示"人工审核中"而不弹刺眼 alert;
+      // 限流类("请求过多")也不弹 alert —— 用户稍等重试即可,不是真失败
+      const isReview = /审核|未通过|不合规|无法生成/.test(msg);
+      const isBusy = /请求过多|429|rate limit/i.test(msg);
+      updateCard(id, { status: 'error', progress: 0, errorMsg: msg, reviewPending: isReview } as any);
+      if (!isReview && !isBusy) alert('Seedance 生成失败: ' + msg);
     }
   };
 
@@ -524,6 +529,19 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               onMouseEnter={(e) => { if (!selected) (e.currentTarget as HTMLVideoElement).play().catch(() => {}); }}
               onMouseLeave={(e) => { if (!selected) { const v = e.currentTarget as HTMLVideoElement; v.pause(); v.currentTime = 0; } }}
             />
+          ) : (data.status === 'error' && (data as any).reviewPending) ? (
+            /* 审核类失败:已记入待人工审核退款,不弹 alert(照 ImageNode) */
+            <div style={{ width: '82%', textAlign: 'center', padding: '12px 14px', borderRadius: 10,
+              background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.25)' }}>
+              <div style={{ fontSize: 12.5, fontWeight: 600, color: '#ffffff', marginBottom: 5, letterSpacing: 0.5 }}>人工审核中</div>
+              <div style={{ fontSize: 10.5, color: '#d4d4d8', lineHeight: 1.6 }}>本次未通过审核，费用正在核对，如平台未计费将自动退回</div>
+            </div>
+          ) : data.status === 'error' ? (
+            <div style={{ width: '82%', textAlign: 'center', padding: '12px 14px', borderRadius: 10,
+              background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)' }}>
+              <div style={{ fontSize: 12.5, fontWeight: 600, color: '#ffffff', marginBottom: 5 }}>生成失败</div>
+              <div style={{ fontSize: 10.5, color: '#a1a1aa', lineHeight: 1.6 }}>{((data as any).errorMsg || '请重试').slice(0, 60)}</div>
+            </div>
           ) : (
             <span style={{ fontSize: 12, color: '#5a5a5f' }}>点击选中 · 下方描述视频</span>
           )}
@@ -648,6 +666,12 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                   width={mode === 'multimodal' ? 320 : 200}
                 >
                   {mode === 'multimodal' ? (
+                    <>
+                    {/* 计费规则说明:传参考视频后单价降低但按 输入+输出 计费,总价通常更高 */}
+                    <div style={{ fontSize: 10, color: '#a1a1aa', lineHeight: 1.6, padding: '4px 6px 8px', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: 6 }}>
+                      加参考视频后按<b style={{ color: '#e4e4e7' }}>「参考视频时长 + 输出时长」</b>计费(单价会降低)。
+                      参考图和音频不计入时长。
+                    </div>
                     <RefPanel
                       images={refImages} videos={refVideos} videoNames={data.config.refVideoNames ?? []}
                       audioName={data.config.refAudioName} counts={counts} uploading={uploading}
@@ -656,6 +680,7 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                       onAddVideo={addRefVideo} onRemoveVideo={removeRefVideo}
                       onAddAudio={addRefAudio} onRemoveAudio={() => updateConfig(id, { refAudio: undefined, refAudioName: undefined })}
                     />
+                    </>
                   ) : (
                     <div style={{ display: 'flex', gap: 8, padding: 4 }}>
                       <FrameSlot label={firstFromConn ? (mode === 'first-last' ? '首帧·连接' : '参考图·连接') : (mode === 'first-last' ? '首帧' : '参考图')} url={dispFirst} uploading={uploading}
@@ -685,7 +710,7 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
             <span style={{ fontSize: 10, color: '#52525b' }}>
               {duration === '-1' ? '智能~5s' : duration + 's'} · {resolution.toUpperCase()} · 自带音频
               {hasRefVideo
-                ? ` · 含参考视频${refVideoTotalSecs}s(计费${priceSeconds}s)`
+                ? ` · 参考视频${refVideoTotalSecs}s + 输出${outSeconds}s = 计费${priceSeconds}s`
                 : hasRefVideoUrl ? ' · 读取参考视频时长…' : ''}
             </span>
             <button onClick={handleGenerate} disabled={data.status === 'generating'} style={{ ...generateBtn, opacity: data.status === 'generating' ? 0.4 : 1, cursor: data.status === 'generating' ? 'default' : 'pointer' }}>{data.status === 'generating' ? '生成中…' : 'Generate'}</button>
