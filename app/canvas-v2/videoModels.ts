@@ -23,6 +23,14 @@ export interface VideoModel {
    * MiniMax H3 支持 9 图 + 3 视频 + 3 音频。
    */
   refLimits?: { images: number; videos: number; audios: number; total: number };
+  /**
+   * r2v 支持上传参考音频。两种语义不同,UI 文案区分:
+   *   'voice'     Wan 2.7 的"音色",按参考素材顺序(图先视频后)依次分配
+   *   'reference' MiniMax H3 的"参考音频",整体作为风格参考,
+   *               且不能单独使用(必须配合参考图或参考视频)
+   * 不设则该模型没有音频入口。
+   */
+  refAudioKind?: 'voice' | 'reference';
 }
 
 /** 取某模型的 r2v 素材上限;未声明的沿用 Wan 2.7 的总数 5 */
@@ -59,7 +67,7 @@ export const VIDEO_MODELS: VideoModel[] = [
   // r2v 素材上限 9图/3视频/3音频(视频卡默认是总数 5,这里显式放开)。
   { id: 'minimax-h3-t2v', label: 'MiniMax H3 文生', mode: 't2v', durations: [4, 6, 10], aspectRatios: ['16:9','9:16','1:1','4:3'], resolutions: ['768p','2k'], defaultResolution: '768p', supportsAudio: false, price: '768P ¥0.85/2K ¥1.33 每秒' },
   { id: 'minimax-h3-i2v', label: 'MiniMax H3 首帧', mode: 'i2v', durations: [4, 6, 10], aspectRatios: [], resolutions: ['768p','2k'], defaultResolution: '768p', supportsAudio: false, price: '768P ¥0.85/2K ¥1.33 每秒' },
-  { id: 'minimax-h3-r2v', label: 'MiniMax H3 参考生视频', mode: 'r2v', durations: [4, 6, 10], aspectRatios: ['16:9','9:16','1:1','4:3'], resolutions: ['768p','2k'], defaultResolution: '768p', supportsAudio: false, price: '768P ¥0.85/2K ¥1.33 每秒', refLimits: { images: 9, videos: 3, audios: 3, total: 15 } },
+  { id: 'minimax-h3-r2v', label: 'MiniMax H3 参考生视频', mode: 'r2v', durations: [4, 6, 10], aspectRatios: ['16:9','9:16','1:1','4:3'], resolutions: ['768p','2k'], defaultResolution: '768p', supportsAudio: false, price: '768P ¥0.85/2K ¥1.33 每秒', refLimits: { images: 9, videos: 3, audios: 3, total: 15 }, refAudioKind: 'reference' },
 
   { id: 'pixverse-t2v', label: 'Pixverse v6 文生', mode: 't2v', durations: [5, 8], aspectRatios: ['16:9','9:16','1:1'], resolutions: ['720p','1080p'], defaultResolution: '720p', supportsAudio: false, price: '会员 720P¥0.6/1080P¥0.9 起' },
   { id: 'pixverse-i2v', label: 'Pixverse v6 首帧', mode: 'i2v', durations: [5, 8], aspectRatios: [], resolutions: ['720p','1080p'], defaultResolution: '720p', supportsAudio: false, price: '会员 720P¥0.6/1080P¥0.9 起' },
@@ -71,7 +79,7 @@ export const VIDEO_MODELS: VideoModel[] = [
   { id: 'happyhorse-1.0-video-edit', label: '快乐马 视频编辑', mode: 'videoedit', durations: [5, 10], aspectRatios: [], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '会员 720P¥6.25/1080P¥10.0 起 · 含自动音频' },
 
   // —— Wan 2.7 参考内容 / 视频编辑 ——
-  { id: 'wan2.7-r2v', label: 'Wan 2.7 参考内容', mode: 'r2v', durations: [5, 10], aspectRatios: ['16:9','9:16','1:1','4:3'], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '会员 720P¥4.65/1080P¥6.5 起 · 含自动音频' },
+  { id: 'wan2.7-r2v', label: 'Wan 2.7 参考内容', mode: 'r2v', durations: [5, 10], aspectRatios: ['16:9','9:16','1:1','4:3'], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '会员 720P¥4.65/1080P¥6.5 起 · 含自动音频', refAudioKind: 'voice' },
   { id: 'wan2.7-videoedit', label: 'Wan 2.7 视频编辑', mode: 'videoedit', durations: [5, 10], aspectRatios: [], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '会员 720P¥4.65/1080P¥6.5 起 · 含自动音频' },
 ];
 

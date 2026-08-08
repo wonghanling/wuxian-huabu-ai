@@ -311,6 +311,7 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     let effRefVideos: string[] | undefined;
     let effRefImageVoices: string[] | undefined;
     let effRefVideoVoices: string[] | undefined;
+    let effRefAudios: string[] | undefined;   // H3 的参考音频(整体传,不与素材配对)
     let effEditVideo: string | undefined;
     if (model.mode === 'r2v') {
       const localImgs = data.config.refImages ?? [];
@@ -318,14 +319,19 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
       effRefImages = [...localImgs, ...upstream.images.filter((u) => !localImgs.includes(u))];
       effRefVideos = [...localVids, ...upstream.videos.filter((u) => !localVids.includes(u))];
       if (effRefImages.length === 0 && effRefVideos.length === 0) return;
-      // 音色仅 wan2.7-r2v:按参考素材顺序(图先视频后)依次分配,本地上传(refVoices)优先,连线语音(语音卡)补在后面
-      if (model.id === 'wan2.7-r2v') {
-        const pool = [...(data.config.refVoices ?? []), ...upstream.audios];
-        if (pool.length > 0) {
-          let k = 0;
-          effRefImageVoices = effRefImages.map(() => pool[k++] || '');
-          effRefVideoVoices = effRefVideos.map(() => pool[k++] || '');
-        }
+      // 音频按模型语义分两种走法:
+      //   voice(Wan 2.7)     — 按参考素材顺序(图先视频后)逐个配对,后端拆成
+      //                        每个 media 项的 reference_voice
+      //   reference(H3)      — 整体列表作为风格参考,后端原样传 reference_audio_urls
+      // 本地上传(refVoices)优先,连线语音(语音卡)补在后面
+      const audioPool = [...(data.config.refVoices ?? []), ...upstream.audios];
+      if (model.refAudioKind === 'voice' && audioPool.length > 0) {
+        let k = 0;
+        effRefImageVoices = effRefImages.map(() => audioPool[k++] || '');
+        effRefVideoVoices = effRefVideos.map(() => audioPool[k++] || '');
+      } else if (model.refAudioKind === 'reference' && audioPool.length > 0) {
+        // 不做配对,整体传;上游要求音频不能单独用,而此处已保证有图或有视频
+        effRefAudios = audioPool.filter(Boolean);
       }
     } else if (model.mode === 'videoedit') {
       effEditVideo = data.config.editVideo || upstream.videos[0];
@@ -348,9 +354,13 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           startFrameImage: effFirst,
           endFrameImage: effLast,
           refImages: effRefImages,
-          refVoices: effRefImageVoices && effRefVideoVoices
-            ? [...effRefImageVoices, ...effRefVideoVoices].filter(Boolean)
-            : undefined,
+          // Wan 走配对后的音色序列;H3 走整体参考音频列表。两者复用同一字段,
+          // 后端按 provider 各自解读(Wan 拆成 reference_voice,H3 传 reference_audio_urls)
+          refVoices: effRefAudios
+            ? effRefAudios
+            : (effRefImageVoices && effRefVideoVoices
+              ? [...effRefImageVoices, ...effRefVideoVoices].filter(Boolean)
+              : undefined),
           refVideos: effRefVideos,
           editVideo: effEditVideo,
           userId,
@@ -516,9 +526,12 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               const connVids = upstreamLive.videos.filter((u) => !vids.includes(u));
               const total = imgs.length + vids.length + connImgs.length + connVids.length;
               const has = total > 0;
-              const showVoice = model.id === 'wan2.7-r2v';  // 音色仅 wan2.7-r2v 支持
+              // 音频入口按模型能力开放:Wan 2.7 是"音色"(按顺序分配),
+              // MiniMax H3 是"参考音频"(整体参考,且不能单独用)
+              const audioKind = model.refAudioKind;
+              const showVoice = !!audioKind;
               const voices = data.config.refVoices ?? [];
-              const connAudioN = upstreamLive.audios.length;  // 连线音频(语音卡)数,自动当音色
+              const connAudioN = upstreamLive.audios.length;  // 连线音频(语音卡)数,自动计入
               return (
                 <ParamTag label={<>参考内容 {total}/{refLimits.total}{has && <span style={greenDot} />}</>} open={sub === 'refContent'} onToggle={() => setSub(sub === 'refContent' ? null : 'refContent')} width={300}>
                   <div style={{ fontSize: 11, color: '#a1a1aa', padding: '4px 6px 6px' }}>
@@ -564,27 +577,41 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                       </label>
                     )}
                   </div>
-                  {/* 音色(仅 wan2.7-r2v):本地上传音频 + 连线语音,按参考素材顺序(图先视频后)分配 */}
-                  {showVoice && (
+                  {/* 音频:Wan 2.7 是"音色"(按素材顺序分配),H3 是"参考音频"(整体参考) */}
+                  {showVoice && (() => {
+                    const isVoice = audioKind === 'voice';
+                    const audioWord = isVoice ? '音色' : '参考音频';
+                    const usedAudios = voices.length + connAudioN;
+                    // 音色(Wan)无独立上限,仅参考音频(H3)受 refLimits.audios 约束
+                    const canAddAudio = isVoice || usedAudios < refLimits.audios;
+                    return (
                     <div style={{ padding: '4px 6px 6px', borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: 2 }}>
-                      <div style={{ fontSize: 11, color: '#a1a1aa', paddingBottom: 6 }}>🎤 音色(可选,wav/mp3):按参考素材顺序依次分配</div>
+                      <div style={{ fontSize: 11, color: '#a1a1aa', paddingBottom: 6 }}>
+                        🎤 {audioWord}(可选,wav/mp3)
+                        {isVoice
+                          ? ':按参考素材顺序依次分配'
+                          : `:整体作为风格参考,需配合参考图或视频 · ≤${refLimits.audios}`}
+                      </div>
                       {voices.map((_, i) => (
                         <div key={`vo${i}`} style={refVidRow}>
-                          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>🎤 本地音色{i + 1}</span>
+                          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>🎤 本地{audioWord}{i + 1}</span>
                           <button onClick={() => removeRefVoice(i)} style={{ ...refRm, position: 'static' }}>✕</button>
                         </div>
                       ))}
                       {upstreamLive.audios.map((_, i) => (
                         <div key={`ca${i}`} style={{ ...refVidRow, opacity: 0.85 }}>
-                          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>🎤 连接音色{i + 1}</span>
+                          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>🎤 连接{audioWord}{i + 1}</span>
                         </div>
                       ))}
-                      <label style={{ ...refVidRow, cursor: 'pointer', justifyContent: 'center', color: '#a1a1aa' }}>
-                        {uploading ? '上传中…' : '+ 上传音色音频'}
-                        <input type="file" accept="audio/*,.wav,.mp3" style={{ display: 'none' }} onChange={(e) => addRefVoice(e.target.files)} />
-                      </label>
+                      {canAddAudio && (
+                        <label style={{ ...refVidRow, cursor: 'pointer', justifyContent: 'center', color: '#a1a1aa' }}>
+                          {uploading ? '上传中…' : `+ 上传${audioWord}`}
+                          <input type="file" accept="audio/*,.wav,.mp3" style={{ display: 'none' }} onChange={(e) => addRefVoice(e.target.files)} />
+                        </label>
+                      )}
                     </div>
-                  )}
+                    );
+                  })()}
                 </ParamTag>
               );
             })()}
