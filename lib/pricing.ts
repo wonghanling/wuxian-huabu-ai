@@ -316,6 +316,21 @@ export const VIDEO_PRICING: Record<string, VideoModelPrice> = {
     },
   },
 
+  // ── FLUX 3（走 fal，会员/普通同价，按秒）──────────────────
+  // 720p ¥1.24/秒 · 1080p ¥2.05/秒；四种模式同价
+  'flux-3-t2v': {
+    resolutions: { '720p': flat(1.24), '1080p': flat(2.05) },
+  },
+  'flux-3-i2v': {
+    resolutions: { '720p': flat(1.24), '1080p': flat(2.05) },
+  },
+  'flux-3-first-last': {
+    resolutions: { '720p': flat(1.24), '1080p': flat(2.05) },
+  },
+  'flux-3-extend': {
+    resolutions: { '720p': flat(1.24), '1080p': flat(2.05) },
+  },
+
   // ── MiniMax H3（走 Kie，会员/普通同价，按秒）──────────────
   // 768P ¥0.85/秒 · 2K ¥1.33/秒；三种模式同价
   'minimax-h3-t2v': {

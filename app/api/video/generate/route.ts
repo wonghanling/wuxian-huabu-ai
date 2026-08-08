@@ -182,6 +182,67 @@ const VIDEO_MODELS: Record<string, ModelConfig> = {
     provider: 'kie',
   },
 
+  // ── FLUX 3（走 fal 队列，复用现有 fal 分支）────────────────
+  // 分辨率 720p/1080p，时长 5-20；自带音频生成。
+  // 首尾帧用 start_image_url / end_image_url（与其他模型的字段名不同）。
+  'flux-3-t2v': {
+    name: 'FLUX 3 文生视频',
+    endpoint: 'blackforestlabs/flux-3/text-to-video',
+    mode: 't2v',
+    durations: [5, 6, 8, 10, 12, 15, 20],
+    aspectRatios: ['16:9', '9:16', '1:1', '4:3', '3:4', '21:9', '2:1'],
+    resolutions: ['720p', '1080p'],
+    defaultResolution: '720p',
+    supportsAudio: false,
+    audioBuiltIn: true,
+    supportsEndFrame: false,
+    durationFormat: 'number',
+  },
+  'flux-3-i2v': {
+    name: 'FLUX 3 首帧生视频',
+    endpoint: 'blackforestlabs/flux-3/image-to-video',
+    mode: 'i2v',
+    durations: [5, 6, 8, 10, 12, 15, 20],
+    aspectRatios: [],
+    resolutions: ['720p', '1080p'],
+    defaultResolution: '720p',
+    supportsAudio: false,
+    audioBuiltIn: true,
+    supportsEndFrame: false,
+    durationFormat: 'number',
+    imageParamName: 'image_url',
+    i2vNoAspectRatio: true,
+  },
+  'flux-3-first-last': {
+    name: 'FLUX 3 首尾帧生视频',
+    endpoint: 'blackforestlabs/flux-3/first-last-frame-to-video',
+    mode: 'firstLastFrame',
+    durations: [5, 6, 8, 10, 12, 15, 20],
+    aspectRatios: [],
+    resolutions: ['720p', '1080p'],
+    defaultResolution: '720p',
+    supportsAudio: false,
+    audioBuiltIn: true,
+    supportsEndFrame: true,
+    durationFormat: 'number',
+    imageParamName: 'start_image_url',
+    endImageParamName: 'end_image_url',
+    i2vNoAspectRatio: true,
+  },
+  'flux-3-extend': {
+    name: 'FLUX 3 扩展视频',
+    endpoint: 'blackforestlabs/flux-3/extend-video',
+    mode: 'videoedit',
+    durations: [5, 6, 8, 10, 12, 15, 20],
+    aspectRatios: ['16:9', '9:16', '1:1', '4:3', '3:4', '21:9', '2:1'],
+    resolutions: ['720p', '1080p'],
+    defaultResolution: '720p',
+    supportsAudio: false,
+    audioBuiltIn: true,
+    supportsEndFrame: false,
+    durationFormat: 'number',
+  },
+
   'pixverse-t2v': {
     name: 'Pixverse v6 文生视频',
     endpoint: 'fal-ai/pixverse/v6/text-to-video',
@@ -788,6 +849,21 @@ export async function POST(req: NextRequest) {
       }
       if (cfg.imageParamName) input[cfg.imageParamName] = await toPublicUrl(startFrameImage);
       if (cfg.endImageParamName) input[cfg.endImageParamName] = await toPublicUrl(endFrameImage);
+    }
+
+    // FLUX 3 扩展视频：走 fal，需要传入待扩展的视频 URL
+    // （其他 videoedit 模型走 dashscope 的 media 数组，与此无关）
+    if (cfg.endpoint.startsWith('blackforestlabs/flux-3/extend-video')) {
+      if (!editVideo) {
+        return NextResponse.json({ error: '扩展视频需要先上传一个视频' }, { status: 400 });
+      }
+      input.video_url = editVideo;
+    }
+
+    // FLUX 3：自带音频生成（默认 true），安全等级用较宽松的 3
+    if (cfg.endpoint.startsWith('blackforestlabs/flux-3/')) {
+      input.generate_audio = true;
+      input.safety_tolerance = 3;
     }
     let taskId: string;
     let taskEndpoint: string;

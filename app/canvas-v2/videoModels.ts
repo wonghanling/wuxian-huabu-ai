@@ -69,6 +69,14 @@ export const VIDEO_MODELS: VideoModel[] = [
   { id: 'minimax-h3-i2v', label: 'MiniMax H3 首帧', mode: 'i2v', durations: [4, 6, 10], aspectRatios: [], resolutions: ['768p','2k'], defaultResolution: '768p', supportsAudio: false, price: '768P ¥0.85/2K ¥1.33 每秒' },
   { id: 'minimax-h3-r2v', label: 'MiniMax H3 参考生视频', mode: 'r2v', durations: [4, 6, 10], aspectRatios: ['16:9','9:16','1:1','4:3'], resolutions: ['768p','2k'], defaultResolution: '768p', supportsAudio: false, price: '768P ¥0.85/2K ¥1.33 每秒', refLimits: { images: 9, videos: 3, audios: 3, total: 15 }, refAudioKind: 'reference' },
 
+  // —— FLUX 3（走 fal）——
+  // 四个端点;分辨率 720p/1080p,时长 5-20 秒(首尾帧不支持 auto,须给明确时长)。
+  // 自带音频生成(generate_audio 默认 true),不额外收费。
+  { id: 'flux-3-t2v', label: 'FLUX 3 文生', mode: 't2v', durations: [5, 6, 8, 10, 12, 15, 20], aspectRatios: ['16:9','9:16','1:1','4:3','3:4','21:9','2:1'], resolutions: ['720p','1080p'], defaultResolution: '720p', supportsAudio: false, price: '720P ¥1.24/1080P ¥2.05 每秒' },
+  { id: 'flux-3-i2v', label: 'FLUX 3 首帧', mode: 'i2v', durations: [5, 6, 8, 10, 12, 15, 20], aspectRatios: [], resolutions: ['720p','1080p'], defaultResolution: '720p', supportsAudio: false, price: '720P ¥1.24/1080P ¥2.05 每秒' },
+  { id: 'flux-3-first-last', label: 'FLUX 3 首尾帧', mode: 'firstLastFrame', durations: [5, 6, 8, 10, 12, 15, 20], aspectRatios: [], resolutions: ['720p','1080p'], defaultResolution: '720p', supportsAudio: false, price: '720P ¥1.24/1080P ¥2.05 每秒' },
+  { id: 'flux-3-extend', label: 'FLUX 3 扩展视频', mode: 'videoedit', durations: [5, 6, 8, 10, 12, 15, 20], aspectRatios: ['16:9','9:16','1:1','4:3','3:4','21:9','2:1'], resolutions: ['720p','1080p'], defaultResolution: '720p', supportsAudio: false, price: '720P ¥1.24/1080P ¥2.05 每秒' },
+
   { id: 'pixverse-t2v', label: 'Pixverse v6 文生', mode: 't2v', durations: [5, 8], aspectRatios: ['16:9','9:16','1:1'], resolutions: ['720p','1080p'], defaultResolution: '720p', supportsAudio: false, price: '会员 720P¥0.6/1080P¥0.9 起' },
   { id: 'pixverse-i2v', label: 'Pixverse v6 首帧', mode: 'i2v', durations: [5, 8], aspectRatios: [], resolutions: ['720p','1080p'], defaultResolution: '720p', supportsAudio: false, price: '会员 720P¥0.6/1080P¥0.9 起' },
 
