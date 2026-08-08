@@ -9,6 +9,7 @@ import { ModelsShowcase } from './_components/ModelsShowcase';
 import { FeatureTabsShowcase } from './_components/FeatureTabsShowcase';
 import { WorkflowScrollShowcase } from './_components/WorkflowScrollShowcase';
 import { ScriptStudioDemo } from './_components/ScriptStudioDemo';
+import { UpcomingModels } from './_components/UpcomingModels';
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);
@@ -375,6 +376,11 @@ export default function Home() {
           <NanoBanana.Combine size={38} />
         </div>
       </main>
+
+      {/* 活动区：新模型上线倒计时(紧跟 Hero) */}
+      <section className="py-24 relative z-10" style={{ borderTop: '1px solid #ffffff0d' }}>
+        <UpcomingModels />
+      </section>
 
       {/* 滚动缩放展示区(占位版，先验证交互效果) */}
       <ScrollZoomShowcase />
