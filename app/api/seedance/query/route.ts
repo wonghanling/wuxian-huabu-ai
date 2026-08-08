@@ -90,7 +90,8 @@ export async function GET(request: NextRequest) {
         kieErr = err;
         throw err;
       } finally {
-        await releaseKey(kieKeyInfo.keyId, kieSuccess, kieSuccess ? undefined : categorizeError(kieErr), kieErr ? String(kieErr?.message || kieErr) : undefined);
+        // 传完整 KeyInfo：releaseKey 需要 provider + startedAt 才会写 api_call_logs
+        await releaseKey(kieKeyInfo, kieSuccess, kieSuccess ? undefined : categorizeError(kieErr), kieErr ? String(kieErr?.message || kieErr) : undefined);
       }
 
       console.log('Kie 查询结果:', JSON.stringify(kieBody).slice(0, 300));

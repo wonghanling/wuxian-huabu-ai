@@ -432,7 +432,9 @@ export async function POST(req: NextRequest) {
         if (!kieErr) kieErr = err;
         throw err;
       } finally {
-        await releaseKey(kieKeyInfo.keyId, kieSuccess, kieSuccess ? undefined : categorizeError(kieErr), kieErr ? String(kieErr?.message || kieErr) : undefined);
+        // 传完整 KeyInfo(而非仅 keyId)：releaseKey 需要 provider + startedAt
+        // 才会写 api_call_logs。之前只传 keyId 导致 Kie 的调用没有日志记录。
+        await releaseKey(kieKeyInfo, kieSuccess, kieSuccess ? undefined : categorizeError(kieErr), kieErr ? String(kieErr?.message || kieErr) : undefined);
       }
 
       const kieTaskId = kieData?.data?.taskId;
