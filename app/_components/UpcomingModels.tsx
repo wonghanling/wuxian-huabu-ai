@@ -1,230 +1,168 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 // ============================================================
-// 首页活动区：新模型上线倒计时
+// 首页活动区：新模型上线（自动轮播）
 // ============================================================
-// 三张卡片统一 16:9，视频用 object-cover 裁切，保证不同源比例视觉一致。
-// 倒计时在客户端算（服务端渲染时不算，避免 hydration 不一致）。
+// 卡片整体就是 16:9，文案直接压在画面上，不额外占高度、不留空白。
+// 三张卡横排常驻：激活的那张更亮并播放视频，其余压暗并暂停。
+// 每 5 秒自动切换，移入暂停，底部小圆点可点击跳转。
+// 点击卡片直接进画布。
 //
-// 改上线时间/文案：直接改下面的 MODELS 数组。
-// releaseAt 为 null = 显示「即将上线」，不跑倒计时。
+// 改文案只需改下面的 SLIDES 数组。
 // ============================================================
 
-interface UpcomingModel {
+interface Slide {
   id: string;
-  name: string;
-  tag: string;
-  desc: string;
+  /** 主标题（广告词） */
+  title: string;
+  /** 副标题（卖点） */
+  subtitle: string;
+  /** 右上角徽标文案 */
+  badge: string;
   video: string;
-  /** ISO 时间字符串；null = 待定，只显示「即将上线」 */
-  releaseAt: string | null;
-  accent: string;
 }
 
-const MODELS: UpcomingModel[] = [
+const SLIDES: Slide[] = [
   {
     id: 'seedance-2-5',
-    name: 'Seedance 2.5',
-    tag: '视频生成',
-    desc: '更强的运动连贯性与物理表现，原生音画同步',
+    title: '时长更长，运动更稳',
+    subtitle: 'Seedance 2.5 · 多模态参考 + 原生音画同步，最高 4K',
+    badge: '已上线',
     video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/seedance2.5.mp4',
-    releaseAt: '2026-08-22T12:00:00+08:00',
-    accent: 'rgb(113,208,131)',
   },
   {
     id: 'minimax-h3',
-    name: 'MiniMax H3',
-    tag: '视频生成',
-    desc: '影视级镜头语言，复杂长镜头稳定输出',
+    title: '影视级镜头语言',
+    subtitle: 'MiniMax H3 · 复杂长镜头稳定输出，一次成片',
+    badge: '已上线',
     video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/minnmax%20h3.mp4',
-    releaseAt: '2026-08-29T12:00:00+08:00',
-    accent: 'rgb(120,170,255)',
   },
   {
     id: 'flux-3',
-    name: 'FLUX 3',
-    tag: '图像生成',
-    desc: '更精准的指令理解与文字渲染，细节表现全面提升',
+    title: '指令即所得',
+    subtitle: 'FLUX 3 · 文字渲染与细节控制全面升级',
+    badge: '已上线',
     video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/flux3.mp4',
-    releaseAt: null,
-    accent: 'rgb(196,150,255)',
   },
 ];
 
-type Remain = { d: number; h: number; m: number; s: number } | null;
+const INTERVAL_MS = 5000;
 
-function diff(target: string): Remain {
-  const ms = new Date(target).getTime() - Date.now();
-  if (ms <= 0) return null;
-  return {
-    d: Math.floor(ms / 86400000),
-    h: Math.floor((ms % 86400000) / 3600000),
-    m: Math.floor((ms % 3600000) / 60000),
-    s: Math.floor((ms % 60000) / 1000),
-  };
-}
+function Card({ s, active, onActivate }: { s: Slide; active: boolean; onActivate: () => void }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
 
-function Countdown({ releaseAt, accent }: { releaseAt: string; accent: string }) {
-  // 首帧渲染 null，挂载后再算 —— 避免服务端/客户端时间不一致导致 hydration 报错
-  const [remain, setRemain] = useState<Remain>(null);
-  const [mounted, setMounted] = useState(false);
-
+  // 只让激活的那张播放 —— 三个视频同时播会明显吃性能
   useEffect(() => {
-    setMounted(true);
-    setRemain(diff(releaseAt));
-    const t = setInterval(() => setRemain(diff(releaseAt)), 1000);
-    return () => clearInterval(t);
-  }, [releaseAt]);
-
-  if (!mounted) {
-    return <div style={{ height: 46 }} />;   // 占位，防止挂载后跳动
-  }
-  if (!remain) {
-    return (
-      <div className="text-sm font-semibold" style={{ color: accent }}>
-        已上线，前往画布体验
-      </div>
-    );
-  }
-
-  const cells: { v: number; label: string }[] = [
-    { v: remain.d, label: '天' },
-    { v: remain.h, label: '时' },
-    { v: remain.m, label: '分' },
-    { v: remain.s, label: '秒' },
-  ];
+    const v = videoRef.current;
+    if (!v) return;
+    if (active) v.play().catch(() => {});
+    else v.pause();
+  }, [active]);
 
   return (
-    <div className="flex items-center gap-1.5">
-      {cells.map((c, i) => (
-        <div key={c.label} className="flex items-center gap-1.5">
-          <div
-            className="flex flex-col items-center justify-center rounded-lg"
-            style={{
-              minWidth: 40, padding: '5px 6px',
-              background: 'rgba(255,255,255,0.06)',
-              border: '1px solid rgba(255,255,255,0.12)',
-            }}
-          >
-            <span className="text-[15px] font-bold leading-none tabular-nums" style={{ color: 'rgb(245,245,245)' }}>
-              {String(c.v).padStart(2, '0')}
-            </span>
-            <span className="text-[9px] mt-0.5 leading-none" style={{ color: 'rgb(130,130,130)' }}>
-              {c.label}
-            </span>
-          </div>
-          {i < cells.length - 1 && (
-            <span className="text-[13px] font-bold" style={{ color: 'rgb(80,80,80)' }}>:</span>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function ModelCard({ m }: { m: UpcomingModel }) {
-  const [hover, setHover] = useState(false);
-
-  return (
-    <div
-      className="group relative rounded-2xl overflow-hidden transition-all duration-300"
+    <a
+      href="/canvas"
+      onMouseEnter={onActivate}
+      className="group relative block w-full rounded-2xl overflow-hidden"
       style={{
-        background: 'rgb(20,20,20)',
-        border: `1px solid ${hover ? 'rgba(255,255,255,0.22)' : '#ffffff1c'}`,
-        transform: hover ? 'translateY(-4px)' : 'none',
-        boxShadow: hover ? '0 24px 50px -30px rgba(0,0,0,0.95)' : 'none',
+        aspectRatio: '16/9',
+        background: 'rgb(12,12,12)',
+        border: `1px solid ${active ? 'rgba(255,255,255,0.2)' : '#ffffff14'}`,
+        opacity: active ? 1 : 0.5,
+        transform: active ? 'translateY(-2px)' : 'none',
+        boxShadow: active ? '0 26px 55px -32px rgba(0,0,0,0.95)' : 'none',
+        transition: 'opacity .45s ease, transform .45s ease, border-color .45s ease, box-shadow .45s ease',
       }}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
     >
-      {/* 视频预览：统一 16:9 + object-cover，不同源比例也能对齐 */}
-      <div className="relative overflow-hidden" style={{ aspectRatio: '16/9', background: 'rgb(12,12,12)' }}>
-        <video
-          src={m.video}
-          muted
-          loop
-          playsInline
-          autoPlay
-          preload="metadata"
-          className="w-full h-full"
-          style={{
-            objectFit: 'cover',
-            display: 'block',
-            transform: hover ? 'scale(1.04)' : 'scale(1)',
-            transition: 'transform .5s ease',
-          }}
-        />
-        {/* 底部渐变，压住视频保证文字可读 */}
-        <div
-          className="absolute inset-x-0 bottom-0 pointer-events-none"
-          style={{ height: '55%', background: 'linear-gradient(to top, rgba(20,20,20,0.95), transparent)' }}
-        />
-        {/* 左上角标签 */}
-        <div className="absolute top-3 left-3 flex items-center gap-2">
+      <video
+        ref={videoRef}
+        src={s.video}
+        muted
+        loop
+        playsInline
+        preload="metadata"
+        className="absolute inset-0 w-full h-full"
+        style={{ objectFit: 'cover', display: 'block' }}
+      />
+
+      {/* 底部渐变遮罩：保证压在画面上的文字可读 */}
+      <div
+        className="absolute inset-x-0 bottom-0 pointer-events-none"
+        style={{ height: '62%', background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 45%, transparent 100%)' }}
+      />
+
+      {/* 右上角徽标 */}
+      <div className="absolute top-3 right-3">
+        <span
+          className="inline-flex items-center gap-1.5 text-[10px] font-semibold px-2 py-1 rounded-full backdrop-blur-md"
+          style={{ background: 'rgba(0,0,0,0.45)', border: '1px solid rgba(113,208,131,0.45)', color: 'rgb(113,208,131)' }}
+        >
           <span
-            className="text-[10px] font-semibold px-2 py-1 rounded-full backdrop-blur-md"
-            style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.18)', color: 'rgb(225,225,225)' }}
-          >
-            {m.tag}
-          </span>
-        </div>
-        {/* 右上角状态 */}
-        <div className="absolute top-3 right-3">
-          <span
-            className="text-[10px] font-semibold px-2 py-1 rounded-full backdrop-blur-md flex items-center gap-1.5"
-            style={{ background: 'rgba(0,0,0,0.5)', border: `1px solid ${m.accent}55`, color: m.accent }}
-          >
-            <span
-              className="inline-block rounded-full"
-              style={{ width: 5, height: 5, background: m.accent, boxShadow: `0 0 6px ${m.accent}` }}
-            />
-            {m.releaseAt ? '即将上线' : '敬请期待'}
-          </span>
-        </div>
+            className="inline-block rounded-full"
+            style={{ width: 5, height: 5, background: 'rgb(113,208,131)', boxShadow: '0 0 6px rgb(113,208,131)' }}
+          />
+          {s.badge}
+        </span>
       </div>
 
-      {/* 文字区 */}
-      <div className="px-5 pt-4 pb-5">
-        <h3 className="text-lg font-bold tracking-tight mb-1.5" style={{ color: 'rgb(240,240,240)' }}>
-          {m.name}
+      {/* 文案：直接压在画面上 */}
+      <div className="absolute inset-x-0 bottom-0 px-5 pb-4">
+        <h3
+          className="font-bold tracking-tight mb-1"
+          style={{ fontSize: 19, color: '#fff', textShadow: '0 2px 12px rgba(0,0,0,0.65)' }}
+        >
+          {s.title}
         </h3>
-        <p className="text-[13px] leading-relaxed mb-4" style={{ color: 'rgb(150,150,150)', minHeight: 38 }}>
-          {m.desc}
+        <p
+          style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.8)', textShadow: '0 1px 8px rgba(0,0,0,0.65)' }}
+        >
+          {s.subtitle}
         </p>
-        {m.releaseAt ? (
-          <Countdown releaseAt={m.releaseAt} accent={m.accent} />
-        ) : (
-          <div className="flex items-center" style={{ height: 46 }}>
-            <span className="text-sm font-medium" style={{ color: 'rgb(170,170,170)' }}>
-              上线时间待公布
-            </span>
-          </div>
-        )}
       </div>
-    </div>
+    </a>
   );
 }
 
 export function UpcomingModels() {
+  const [idx, setIdx] = useState(0);
+  const [paused, setPaused] = useState(false);
+
+  useEffect(() => {
+    if (paused) return;
+    const t = setInterval(() => setIdx((i) => (i + 1) % SLIDES.length), INTERVAL_MS);
+    return () => clearInterval(t);
+  }, [paused]);
+
   return (
-    <div className="max-w-7xl mx-auto px-6">
-      <div className="text-center mb-12">
-        <p className="text-sm tracking-[0.3em] uppercase mb-4" style={{ color: 'rgb(96,96,96)' }}>
-          Coming Soon · 新模型
-        </p>
-        <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-3" style={{ color: 'rgb(238,238,238)' }}>
-          新模型陆续接入
-        </h2>
-        <p className="text-base max-w-2xl mx-auto" style={{ color: 'rgb(150,150,150)' }}>
-          上线即可在画布中直接调用，无需等待适配
-        </p>
+    <div
+      className="max-w-7xl mx-auto px-6"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
+      <div className="grid md:grid-cols-3 gap-4">
+        {SLIDES.map((s, i) => (
+          <Card key={s.id} s={s} active={i === idx} onActivate={() => setIdx(i)} />
+        ))}
       </div>
 
-      <div className="grid md:grid-cols-3 gap-5">
-        {MODELS.map((m) => (
-          <ModelCard key={m.id} m={m} />
+      {/* 底部指示器 */}
+      <div className="flex items-center justify-center gap-2 mt-5">
+        {SLIDES.map((s, i) => (
+          <button
+            key={s.id}
+            onClick={() => setIdx(i)}
+            aria-label={`切换到 ${s.title}`}
+            style={{
+              width: i === idx ? 22 : 8,
+              height: 5,
+              borderRadius: 99,
+              background: i === idx ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.22)',
+              transition: 'width .35s ease, background .35s ease',
+              cursor: 'pointer',
+            }}
+          />
         ))}
       </div>
     </div>
