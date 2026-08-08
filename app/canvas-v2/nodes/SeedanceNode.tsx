@@ -86,6 +86,42 @@ function readVideoDurationFromUrl(url: string): Promise<number> {
   });
 }
 
+// 把上游的英文报错翻译成用户看得懂的中文提示。
+// 上游(火山方舟/Kie)的审核与参数报错都是英文,直接截断显示用户无法理解,
+// 例如 "The request failed because the input image 'content[2]' may contain
+// real person" 截到 60 字符就断在 "may"。
+function friendlyError(raw?: string): { title: string; detail: string } {
+  const msg = String(raw || '');
+  if (!msg) return { title: '生成失败', detail: '请重试' };
+
+  // 真人检测:方舟会指出第几个 content 项,换算成用户视角的"第 N 张参考图"
+  if (/real person|真人/i.test(msg)) {
+    const m = msg.match(/content\[(\d+)\]/);
+    // content[0] 通常是文本 prompt,图片从 [1] 开始
+    const nth = m ? Math.max(1, Number(m[1])) : 0;
+    return {
+      title: '参考图含真人，未通过审核',
+      detail: nth
+        ? `第 ${nth} 张参考图被识别为真实人物，上游拒绝生成。费用已退回。请换用非真人素材，或先用「真人设定」功能做隐私遮挡。`
+        : '参考图被识别为真实人物，上游拒绝生成。费用已退回。请换用非真人素材。',
+    };
+  }
+  if (/nsfw|sensitive|not allowed|violat|prohibited|policy|moderation|不合规|违规/i.test(msg)) {
+    return { title: '内容未通过审核', detail: '提示词或参考素材被上游判定为不合规，费用已退回。请调整后重试。' };
+  }
+  if (/请求过多|429|rate limit/i.test(msg)) {
+    return { title: '当前排队较多', detail: '生成请求过于密集，请等几秒后再试。未产生费用。' };
+  }
+  if (/余额|insufficient|credits/i.test(msg)) {
+    return { title: '余额不足', detail: '请充值后重试。' };
+  }
+  if (/timeout|超时/i.test(msg)) {
+    return { title: '生成超时', detail: '上游响应超时，费用已退回，请重试。' };
+  }
+  // 兜底:原文截断(比之前的 60 字符放宽,减少截断在半句的情况)
+  return { title: '生成失败', detail: msg.slice(0, 120) };
+}
+
 const GLASS_BG = 'rgba(24,24,27,0.55)';
 const GLASS_BORDER = 'rgba(255,255,255,0.12)';
 const SEL_BORDER = 'rgba(192,192,192,0.45)';
@@ -451,7 +487,10 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
       const msg = String(err?.message || err);
       // 照图片卡的做法:审核类失败(已记入待人工审核退款)显示"人工审核中"而不弹刺眼 alert;
       // 限流类("请求过多")也不弹 alert —— 用户稍等重试即可,不是真失败
-      const isReview = /审核|未通过|不合规|无法生成/.test(msg);
+      //
+      // 上游的审核提示有中英两种:方舟会返回英文,如
+      // "input image 'content[2]' may contain real person"
+      const isReview = /审核|未通过|不合规|无法生成|真人|real person|sensitive|policy|moderation|not allowed|violat|prohibited|nsfw/i.test(msg);
       const isBusy = /请求过多|429|rate limit/i.test(msg);
       updateCard(id, { status: 'error', progress: 0, errorMsg: msg, reviewPending: isReview } as any);
       if (!isReview && !isBusy) alert('Seedance 生成失败: ' + msg);
@@ -530,17 +569,25 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               onMouseLeave={(e) => { if (!selected) { const v = e.currentTarget as HTMLVideoElement; v.pause(); v.currentTime = 0; } }}
             />
           ) : (data.status === 'error' && (data as any).reviewPending) ? (
-            /* 审核类失败:已记入待人工审核退款,不弹 alert(照 ImageNode) */
+            /* 内容审核类失败:上游直接拒绝(如检测到真人),费用已退。不弹 alert */
             <div style={{ width: '82%', textAlign: 'center', padding: '12px 14px', borderRadius: 10,
               background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.25)' }}>
-              <div style={{ fontSize: 12.5, fontWeight: 600, color: '#ffffff', marginBottom: 5, letterSpacing: 0.5 }}>人工审核中</div>
-              <div style={{ fontSize: 10.5, color: '#d4d4d8', lineHeight: 1.6 }}>本次未通过审核，费用正在核对，如平台未计费将自动退回</div>
+              <div style={{ fontSize: 12.5, fontWeight: 600, color: '#ffffff', marginBottom: 5, letterSpacing: 0.5 }}>
+                {friendlyError((data as any).errorMsg).title}
+              </div>
+              <div style={{ fontSize: 10.5, color: '#d4d4d8', lineHeight: 1.6 }}>
+                {friendlyError((data as any).errorMsg).detail}
+              </div>
             </div>
           ) : data.status === 'error' ? (
             <div style={{ width: '82%', textAlign: 'center', padding: '12px 14px', borderRadius: 10,
               background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)' }}>
-              <div style={{ fontSize: 12.5, fontWeight: 600, color: '#ffffff', marginBottom: 5 }}>生成失败</div>
-              <div style={{ fontSize: 10.5, color: '#a1a1aa', lineHeight: 1.6 }}>{((data as any).errorMsg || '请重试').slice(0, 60)}</div>
+              <div style={{ fontSize: 12.5, fontWeight: 600, color: '#ffffff', marginBottom: 5 }}>
+                {friendlyError((data as any).errorMsg).title}
+              </div>
+              <div style={{ fontSize: 10.5, color: '#a1a1aa', lineHeight: 1.6 }}>
+                {friendlyError((data as any).errorMsg).detail}
+              </div>
             </div>
           ) : (
             <span style={{ fontSize: 12, color: '#5a5a5f' }}>点击选中 · 下方描述视频</span>
