@@ -6,6 +6,7 @@ import { useCanvasStore, type CardNode } from '../store';
 import {
   SEEDANCE_MODELS, DEFAULT_SEEDANCE_MODEL, SEEDANCE_MODES, SEEDANCE_RATIOS, SEEDANCE_DURATIONS,
   GRID4_PROMPT, GRID9_PROMPT, seedanceFrameNeed, multimodalCount,
+  seedanceLimits, seedanceDurations,
   MULTIMODAL_MAX_IMAGES, MULTIMODAL_MAX_VIDEOS, MULTIMODAL_MAX_TOTAL,
   type SeedanceMode, type SeedanceModel,
 } from '../seedanceConfig';
@@ -238,10 +239,13 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   );
   // 计数含连接进来的素材(照图片卡:连接的也占额度,生成时一起传给模型)
   const connAudioCount = connAudio && !data.config.refAudio ? 1 : 0;
+  // 素材上限按模型区分:2.5 支持 30图/10视频/10音频(共50),2.0 系列仍是 9/3/12
+  const limits = seedanceLimits(model.id);
   const counts = multimodalCount(
     refImages.length + connImages.length,
     refVideos.length + connVideos.length,
     audioCount + connAudioCount,
+    limits,
   );
 
   // 卡片框:矩形,按比例(adaptive 用 16:9)
@@ -270,8 +274,9 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const addRefImages = async (fileList: FileList | null) => {
     if (!fileList) return;
     const cur = data.config.refImages ?? [];
-    // 图片额度 = min(9 - 本地图 - 连接图, 12 - 总占用);连接的也占额度
-    const room = Math.min(MULTIMODAL_MAX_IMAGES - cur.length - connImages.length, MULTIMODAL_MAX_TOTAL - counts.total);
+    // 图片额度 = min(上限 - 本地图 - 连接图, 总上限 - 总占用);连接的也占额度
+    // 上限随模型变化(2.5 是 30 图/共 50,2.0 系列是 9 图/共 12)
+    const room = Math.min(limits.images - cur.length - connImages.length, limits.total - counts.total);
     if (room <= 0) return;
     const files = Array.from(fileList).slice(0, room);
     if (!files.length) return;
@@ -641,7 +646,17 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
             <ParamTag label={<><IconModel size={12} /> {model.label}</>} open={sub === 'model'} onToggle={() => setSub(sub === 'model' ? null : 'model')}>
               {SEEDANCE_MODELS.map((m: SeedanceModel) => (
                 <SubItem key={m.id} active={m.id === data.config.model} onClick={() => {
-                  updateConfig(id, { model: m.id, resolution: m.resolutions.includes(resolution) ? resolution : m.resolutions[m.resolutions.length - 1] });
+                  // 切换模型时校正分辨率和时长:各档支持范围不同
+                  // (2.5 只有 480p/720p 但最长 30s;2.0 有 1080p/4K 但最长 15s)
+                  // 当前值不在新模型的可选范围内时回落到合法值,避免带着无效值提交被上游拒
+                  const nextDurations = seedanceDurations(m.id);
+                  updateConfig(id, {
+                    model: m.id,
+                    resolution: m.resolutions.includes(resolution) ? resolution : m.resolutions[m.resolutions.length - 1],
+                    duration: nextDurations.includes(String(data.config.duration ?? '5'))
+                      ? data.config.duration
+                      : 5,
+                  });
                   setSub(null);
                 }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%' }}>
@@ -672,7 +687,7 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
             </ParamTag>
 
             <ParamTag label={<>时长 {duration === '-1' ? '智能' : duration + 's'}</>} open={sub === 'duration'} onToggle={() => setSub(sub === 'duration' ? null : 'duration')} width={160}>
-              {SEEDANCE_DURATIONS.map((d) => (
+              {seedanceDurations(model.id).map((d) => (
                 <SubItem key={d} active={d === duration} onClick={() => { updateConfig(id, { duration: Number(d) }); setSub(null); }}>
                   <span>{d === '-1' ? '智能' : d + ' 秒'}</span>
                 </SubItem>
@@ -705,7 +720,7 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               const hasRef = mode === 'multimodal'
                 ? (refImages.length > 0 || refVideos.length > 0 || !!data.config.refAudio)
                 : (!!data.config.firstFrame || (mode === 'first-last' && !!data.config.lastFrame));
-              const refLabel = mode === 'multimodal' ? `参考内容 ${counts.total}/${MULTIMODAL_MAX_TOTAL}` : '参考图';
+              const refLabel = mode === 'multimodal' ? `参考内容 ${counts.total}/${limits.total}` : '参考图';
               return (
                 <ParamTag
                   label={<>{refLabel}{hasRef && <span style={greenDot} />}</>}
@@ -721,7 +736,7 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                     </div>
                     <RefPanel
                       images={refImages} videos={refVideos} videoNames={data.config.refVideoNames ?? []}
-                      audioName={data.config.refAudioName} counts={counts} uploading={uploading}
+                      audioName={data.config.refAudioName} counts={counts} limits={limits} uploading={uploading}
                       connImages={connImages} connVideos={connVideos} connAudio={connAudio}
                       onAddImages={addRefImages} onRemoveImage={removeRefImage}
                       onAddVideo={addRefVideo} onRemoveVideo={removeRefVideo}
@@ -846,10 +861,11 @@ function SeedanceNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   }
 }
 
-// ===== 参考内容面板(多模态:图/视频/音频,总12上限) =====
-function RefPanel({ images, videos, videoNames, audioName, counts, uploading, connImages, connVideos, connAudio, onAddImages, onRemoveImage, onAddVideo, onRemoveVideo, onAddAudio, onRemoveAudio }: {
+// ===== 参考内容面板(多模态:图/视频/音频,上限随模型:2.0=9/3/共12,2.5=30/10/10/共50) =====
+function RefPanel({ images, videos, videoNames, audioName, counts, limits, uploading, connImages, connVideos, connAudio, onAddImages, onRemoveImage, onAddVideo, onRemoveVideo, onAddAudio, onRemoveAudio }: {
   images: string[]; videos: string[]; videoNames: string[]; audioName?: string;
   counts: ReturnType<typeof multimodalCount>;
+  limits: { images: number; videos: number; audios: number; total: number };
   uploading?: boolean;
   connImages?: string[];
   connVideos?: string[];
@@ -863,11 +879,11 @@ function RefPanel({ images, videos, videoNames, audioName, counts, uploading, co
       {/* 上传按钮区 */}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
         <label style={{ ...refUploadBtn, opacity: (counts.canAddImage && !uploading) ? 1 : 0.4, pointerEvents: (counts.canAddImage && !uploading) ? 'auto' : 'none' }}>
-          {uploading ? '上传中…' : `+ 图片 (剩${Math.max(0, Math.min(MULTIMODAL_MAX_IMAGES - images.length - (connImages?.length ?? 0), MULTIMODAL_MAX_TOTAL - counts.total))})`}
+          {uploading ? '上传中…' : `+ 图片 (剩${Math.max(0, Math.min(limits.images - images.length - (connImages?.length ?? 0), limits.total - counts.total))})`}
           <input type="file" accept="image/*" multiple disabled={uploading} style={{ display: 'none' }} onChange={(e) => { onAddImages(e.target.files); e.currentTarget.value = ''; }} />
         </label>
         <label style={{ ...refUploadBtn, opacity: (counts.canAddVideo && !uploading) ? 1 : 0.4, pointerEvents: (counts.canAddVideo && !uploading) ? 'auto' : 'none' }}>
-          {uploading ? '上传中…' : `+ 视频 (剩${Math.max(0, Math.min(MULTIMODAL_MAX_VIDEOS - videos.length - (connVideos?.length ?? 0), MULTIMODAL_MAX_TOTAL - counts.total))})`}
+          {uploading ? '上传中…' : `+ 视频 (剩${Math.max(0, Math.min(limits.videos - videos.length - (connVideos?.length ?? 0), limits.total - counts.total))})`}
           <input type="file" accept="video/*" disabled={uploading} style={{ display: 'none' }} onChange={(e) => { onAddVideo(e.target.files); e.currentTarget.value = ''; }} />
         </label>
         <label style={{ ...refUploadBtn, opacity: (counts.canAddAudio && !audioName && !uploading) ? 1 : 0.4, pointerEvents: (counts.canAddAudio && !audioName && !uploading) ? 'auto' : 'none' }}>
@@ -876,7 +892,7 @@ function RefPanel({ images, videos, videoNames, audioName, counts, uploading, co
         </label>
       </div>
       <div style={{ fontSize: 10, color: '#71717a', marginBottom: 6 }}>
-        已用 {counts.total}/{MULTIMODAL_MAX_TOTAL}（图片 {images.length + (connImages?.length ?? 0)}/{MULTIMODAL_MAX_IMAGES} · 视频 {videos.length + (connVideos?.length ?? 0)}/{MULTIMODAL_MAX_VIDEOS}）{((connImages?.length ?? 0) + (connVideos?.length ?? 0)) > 0 ? `· 含${(connImages?.length ?? 0) + (connVideos?.length ?? 0)}连接 ` : ''}{counts.total >= MULTIMODAL_MAX_TOTAL ? '· 已达上限' : `· 还可上传 ${MULTIMODAL_MAX_TOTAL - counts.total} 个`}
+        已用 {counts.total}/{limits.total}（图片 {images.length + (connImages?.length ?? 0)}/{limits.images} · 视频 {videos.length + (connVideos?.length ?? 0)}/{limits.videos}）{((connImages?.length ?? 0) + (connVideos?.length ?? 0)) > 0 ? `· 含${(connImages?.length ?? 0) + (connVideos?.length ?? 0)}连接 ` : ''}{counts.total >= limits.total ? '· 已达上限' : `· 还可上传 ${limits.total - counts.total} 个`}
       </div>
 
       {/* 参考图缩略(引用方式:在提示词输入 @ 选图) */}

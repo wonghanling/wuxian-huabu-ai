@@ -36,6 +36,9 @@ const SEEDANCE_CHANNEL: 'kie' | 'ark' = 'kie';
 //   带视频输入 = (成本单价 + 0.1) × (输入视频总时长 + 输出时长)
 // 带视频输入单价更低，但计费基数含输入时长，所以传长参考视频反而更贵。
 const KIE_PRICE: Record<string, { noVideo: number; withVideo: number }> = {
+  // 2.5 升级版 bytedance/seedance-2-5（暂无 1080p/4K）
+  'seedance-2-5_480p': { noVideo: 1.14, withVideo: 0.76 },
+  'seedance-2-5_720p': { noVideo: 2.22, withVideo: 1.38 },
   // 标准版 bytedance/seedance-2
   'seedance-2_480p':  { noVideo: 0.74, withVideo: 0.49 },
   'seedance-2_720p':  { noVideo: 1.49, withVideo: 0.95 },
@@ -51,6 +54,7 @@ const KIE_PRICE: Record<string, { noVideo: number; withVideo: number }> = {
 
 // 画布模型 ID → Kie 模型 ID
 const KIE_MODEL_MAP: Record<string, string> = {
+  'doubao-seedance-2-5-260128':      'bytedance/seedance-2-5',
   'doubao-seedance-2-0-260128':      'bytedance/seedance-2',
   'doubao-seedance-2-0-fast-260128': 'bytedance/seedance-2-fast',
   'doubao-seedance-2-0-mini-260128': 'bytedance/seedance-2-mini',
@@ -365,7 +369,11 @@ export async function POST(req: NextRequest) {
         prompt: prompt || undefined,
         resolution: (resolution || '720p').toLowerCase(),
         aspect_ratio: ratio || '16:9',
-        duration: duration === -1 ? 5 : (Number(duration) || 5),
+        // -1 = 智能时长：只有 2.5 支持这个特殊值（模型在 4-30s 内自选）。
+        // 2.0 系列文档只允许 4-15 的具体值，传 -1 会被上游拒，所以退回 5。
+        duration: duration === -1
+          ? (kieModel === 'bytedance/seedance-2-5' ? -1 : 5)
+          : (Number(duration) || 5),
         generate_audio: !!generateAudio,
       };
 
