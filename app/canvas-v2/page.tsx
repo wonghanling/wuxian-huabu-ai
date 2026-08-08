@@ -5,6 +5,7 @@ import {
   ReactFlow,
   Background,
   Controls,
+  MiniMap,
   Panel,
   BackgroundVariant,
   type NodeTypes,
@@ -451,6 +452,37 @@ function CanvasV2Inner() {
         proOptions={{ hideAttribution: true }}
       >
         <Background variant={BackgroundVariant.Dots} gap={28} size={1} color="#27272a" />
+
+        {/* 小地图:节点分散时快速定位,点击可跳转。放左下角(右下是缩放控件) */}
+        <MiniMap
+          position="bottom-left"
+          pannable
+          zoomable
+          ariaLabel="画布缩略图"
+          style={{
+            width: 190,
+            height: 130,
+            background: 'rgba(18,18,20,0.88)',
+            border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: 12,
+            backdropFilter: 'blur(8px)',
+            margin: 12,
+          }}
+          maskColor="rgba(0,0,0,0.55)"
+          maskStrokeColor="rgba(255,255,255,0.35)"
+          maskStrokeWidth={2}
+          nodeColor={(n) => {
+            // 按状态区分:生成中/已完成/出错,一眼看出哪张卡有内容
+            const s = (n.data as any)?.status;
+            if (s === 'generating') return 'rgba(160,160,160,0.95)';
+            if (s === 'done') return 'rgba(113,208,131,0.9)';
+            if (s === 'error') return 'rgba(230,120,120,0.9)';
+            return 'rgba(120,120,128,0.75)';
+          }}
+          nodeStrokeColor="rgba(255,255,255,0.25)"
+          nodeStrokeWidth={2}
+          nodeBorderRadius={3}
+        />
 
         <Panel position="top-left" style={{ top: '50%', transform: 'translateY(-50%)', margin: 0, left: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }} onMouseLeave={() => setToolGroup(null)}>
