@@ -58,7 +58,7 @@ type ModelConfig = {
   imageParamName?: string;
   endImageParamName?: string;
   i2vNoAspectRatio?: boolean;
-  provider?: 'fal' | 'dashscope' | 'jimeng';
+  provider?: 'fal' | 'dashscope' | 'jimeng' | 'kie';
   dashscopeModel?: string;
   jimengReqKey?: string;
   // 运镜模式专用
@@ -136,6 +136,52 @@ const VIDEO_MODELS: Record<string, ModelConfig> = {
     endImageParamName: 'last_frame_url',
   },
   // —— Pixverse v6(fal,自带音频不传开关;720p/1080p)——
+  // ── MiniMax H3（走 Kie，与 Seedance 同一套 createTask/recordInfo 接口）──
+  // endpoint 复用为 Kie 的模型 ID；provider 标记 'kie' 走新分支
+  'minimax-h3-t2v': {
+    name: 'MiniMax H3 文生视频',
+    endpoint: 'minimax-h3/text-to-video',
+    mode: 't2v',
+    durations: [4, 6, 10],
+    aspectRatios: ['16:9', '9:16', '1:1', '4:3'],
+    resolutions: ['768p', '2k'],
+    defaultResolution: '768p',
+    supportsAudio: false,
+    audioBuiltIn: true,
+    supportsEndFrame: false,
+    durationFormat: 'number',
+    provider: 'kie',
+  },
+  'minimax-h3-i2v': {
+    name: 'MiniMax H3 首帧生视频',
+    endpoint: 'minimax-h3/image-to-video',
+    mode: 'i2v',
+    durations: [4, 6, 10],
+    aspectRatios: [],
+    resolutions: ['768p', '2k'],
+    defaultResolution: '768p',
+    supportsAudio: false,
+    audioBuiltIn: true,
+    supportsEndFrame: false,
+    durationFormat: 'number',
+    imageParamName: 'image_url',
+    provider: 'kie',
+  },
+  'minimax-h3-r2v': {
+    name: 'MiniMax H3 参考生视频',
+    endpoint: 'minimax-h3/reference-to-video',
+    mode: 'r2v',
+    durations: [4, 6, 10],
+    aspectRatios: ['16:9', '9:16', '1:1', '4:3'],
+    resolutions: ['768p', '2k'],
+    defaultResolution: '768p',
+    supportsAudio: false,
+    audioBuiltIn: true,
+    supportsEndFrame: false,
+    durationFormat: 'number',
+    provider: 'kie',
+  },
+
   'pixverse-t2v': {
     name: 'Pixverse v6 文生视频',
     endpoint: 'fal-ai/pixverse/v6/text-to-video',
@@ -747,7 +793,92 @@ export async function POST(req: NextRequest) {
     let taskEndpoint: string;
     let taskKeyId: string | null = null;   // dashscope 任务必须用创建它的同一 key 查询
 
-    if (cfg.provider === 'jimeng') {
+    // ========================================================================
+    // Kie 通道（MiniMax H3）
+    // ========================================================================
+    // 与 Seedance 走同一套 createTask/recordInfo 接口，但参数名不同：
+    //   分辨率是 768P/2K（大写 P）、时长只能 4/6/10、图生用 image_url 单值、
+    //   参考生视频用 reference_image_urls / reference_video_urls / reference_audio_urls
+    // cfg.endpoint 存的是 Kie 模型 ID（如 minimax-h3/text-to-video）
+    if (cfg.provider === 'kie') {
+      const kieKeyInfo = await pickKey('kie');
+      let kieSuccess = false;
+      let kieErr: any = null;
+      let kieData: any;
+      try {
+        const kieInput: Record<string, unknown> = {
+          prompt: prompt || undefined,
+          duration: Number(duration) || cfg.durations[0],
+          // 768p → 768P，2k → 2K（Kie 要求大写）
+          resolution: (resolution || cfg.defaultResolution).toLowerCase() === '2k' ? '2K' : '768P',
+        };
+        if (aspectRatio && cfg.aspectRatios.length > 0) kieInput.aspect_ratio = aspectRatio;
+
+        if (cfg.mode === 'i2v') {
+          const u = await toPublicUrl(input[cfg.imageParamName || 'image_url'] as string);
+          if (!u) throw new Error('首帧图片处理失败');
+          kieInput.image_url = u;
+        } else if (cfg.mode === 'r2v') {
+          const imgs: string[] = [];
+          for (const raw of (Array.isArray(refImages) ? refImages : [])) {
+            const u = await toPublicUrl(raw);
+            if (u) imgs.push(u);
+          }
+          const vids: string[] = [];
+          for (const raw of (Array.isArray(refVideos) ? refVideos : [])) {
+            const u = await toPublicUrl(raw);
+            if (u) vids.push(u);
+          }
+          const auds: string[] = [];
+          for (const raw of (Array.isArray(refVoices) ? refVoices : [])) {
+            const u = await toPublicUrl(raw);
+            if (u) auds.push(u);
+          }
+          if (imgs.length === 0 && vids.length === 0) {
+            throw new Error('参考生视频需要至少一张参考图或一个参考视频');
+          }
+          if (imgs.length > 0) kieInput.reference_image_urls = imgs;
+          if (vids.length > 0) kieInput.reference_video_urls = vids;
+          // 音频不能单独使用，必须配合参考图或参考视频（上游硬约束）
+          if (auds.length > 0) kieInput.reference_audio_urls = auds;
+        }
+
+        const kRes = await fetch('https://api.kie.ai/api/v1/jobs/createTask', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${kieKeyInfo.keyValue}`,
+          },
+          body: JSON.stringify({ model: cfg.endpoint, input: kieInput }),
+        });
+        kieData = await kRes.json();
+        console.log('Kie(H3) 提交结果:', JSON.stringify(kieData).slice(0, 300));
+
+        // Kie 用 body 里的 code 表达错误，HTTP 状态可能仍是 200
+        if (!kRes.ok || kieData?.code !== 200) {
+          const code = kieData?.code ?? kRes.status;
+          kieErr = new Error(
+            code === 429 ? '当前生成请求过多，请稍等几秒再试'
+              : (kieData?.msg || kieData?.message || '提交失败')
+          );
+          (kieErr as any).status = code;
+          throw kieErr;
+        }
+        kieSuccess = true;
+      } catch (err) {
+        if (!kieErr) kieErr = err;
+        throw err;
+      } finally {
+        await releaseKey(kieKeyInfo, kieSuccess, kieSuccess ? undefined : categorizeError(kieErr), kieErr ? String(kieErr?.message || kieErr) : undefined);
+      }
+
+      taskId = kieData?.data?.taskId;
+      if (!taskId) throw new Error('未返回任务ID');
+      // 用中性代号，不在前端暴露上游供应商
+      taskEndpoint = 'c2';
+      taskKeyId = null;
+
+    } else if (cfg.provider === 'jimeng') {
       // 即梦 火山引擎 API（BYOK 优先，否则平台账号池取一组双 key）
       // 两种情况都是"一组 AK/SK 动态创建 volcService"，只是 key 来源不同
       const jmKeyInfo: KeyInfo = userVolcKey

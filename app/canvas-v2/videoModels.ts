@@ -18,6 +18,17 @@ export interface VideoModel {
   defaultResolution: string;
   supportsAudio: boolean;     // 是否有音频开关
   price: string;              // 价格说明(照搬)
+  /**
+   * r2v 参考素材上限。不设则用默认 { total: 5 }(Wan 2.7 的限制)。
+   * MiniMax H3 支持 9 图 + 3 视频 + 3 音频。
+   */
+  refLimits?: { images: number; videos: number; audios: number; total: number };
+}
+
+/** 取某模型的 r2v 素材上限;未声明的沿用 Wan 2.7 的总数 5 */
+export function videoRefLimits(modelId?: string): { images: number; videos: number; audios: number; total: number } {
+  const m = VIDEO_MODELS.find((x) => x.id === modelId);
+  return m?.refLimits ?? { images: 5, videos: 5, audios: 5, total: 5 };
 }
 
 export const VIDEO_MODELS: VideoModel[] = [
@@ -43,6 +54,13 @@ export const VIDEO_MODELS: VideoModel[] = [
   { id: 'wan2.2-kf2v-flash', label: 'Wan 2.2 首尾帧', mode: 'firstLastFrame', durations: [5], aspectRatios: [], resolutions: ['480P','720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '固定5秒 会员720P¥2.0起' },
 
   // —— Pixverse v6(fal,自带音频,无音频开关;720p/1080p)——
+  // —— MiniMax H3 ——
+  // 三个端点对应三种模式;分辨率 768P/2K(注意大写 P),时长仅 4/6/10 秒。
+  // r2v 素材上限 9图/3视频/3音频(视频卡默认是总数 5,这里显式放开)。
+  { id: 'minimax-h3-t2v', label: 'MiniMax H3 文生', mode: 't2v', durations: [4, 6, 10], aspectRatios: ['16:9','9:16','1:1','4:3'], resolutions: ['768p','2k'], defaultResolution: '768p', supportsAudio: false, price: '768P ¥0.85/2K ¥1.33 每秒' },
+  { id: 'minimax-h3-i2v', label: 'MiniMax H3 首帧', mode: 'i2v', durations: [4, 6, 10], aspectRatios: [], resolutions: ['768p','2k'], defaultResolution: '768p', supportsAudio: false, price: '768P ¥0.85/2K ¥1.33 每秒' },
+  { id: 'minimax-h3-r2v', label: 'MiniMax H3 参考生视频', mode: 'r2v', durations: [4, 6, 10], aspectRatios: ['16:9','9:16','1:1','4:3'], resolutions: ['768p','2k'], defaultResolution: '768p', supportsAudio: false, price: '768P ¥0.85/2K ¥1.33 每秒', refLimits: { images: 9, videos: 3, audios: 3, total: 15 } },
+
   { id: 'pixverse-t2v', label: 'Pixverse v6 文生', mode: 't2v', durations: [5, 8], aspectRatios: ['16:9','9:16','1:1'], resolutions: ['720p','1080p'], defaultResolution: '720p', supportsAudio: false, price: '会员 720P¥0.6/1080P¥0.9 起' },
   { id: 'pixverse-i2v', label: 'Pixverse v6 首帧', mode: 'i2v', durations: [5, 8], aspectRatios: [], resolutions: ['720p','1080p'], defaultResolution: '720p', supportsAudio: false, price: '会员 720P¥0.6/1080P¥0.9 起' },
 

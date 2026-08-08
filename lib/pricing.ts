@@ -316,6 +316,18 @@ export const VIDEO_PRICING: Record<string, VideoModelPrice> = {
     },
   },
 
+  // ── MiniMax H3（走 Kie，会员/普通同价，按秒）──────────────
+  // 768P ¥0.85/秒 · 2K ¥1.33/秒；三种模式同价
+  'minimax-h3-t2v': {
+    resolutions: { '768p': flat(0.85), '2k': flat(1.33) },
+  },
+  'minimax-h3-i2v': {
+    resolutions: { '768p': flat(0.85), '2k': flat(1.33) },
+  },
+  'minimax-h3-r2v': {
+    resolutions: { '768p': flat(0.85), '2k': flat(1.33) },
+  },
+
   // ── Kling 动作控制（按秒，std=720p，pro=1080p）──────────
   'kling-motion-v2.6-std': {
     resolutions: { '720p': tier(0.5) },  // 0.9/秒

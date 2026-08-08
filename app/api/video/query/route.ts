@@ -67,7 +67,66 @@ export async function GET(request: NextRequest) {
     let videoUrl: string | null = null;
     let errorDetail: any = null;
 
-    if (endpoint.startsWith('jimeng:')) {
+    // ========================================================================
+    // Kie 通道（MiniMax H3）—— generate 时 taskEndpoint 存的是中性代号 'c2'
+    // ========================================================================
+    // 返回格式与其他分支一致，前端无需区分。
+    // Kie 的 state: waiting / success / fail；结果在 resultJson（JSON 字符串）
+    if (endpoint === 'c2') {
+      const kieKeyInfo = await pickKey('kie');
+      let kieSuccess = false;
+      let kieErr: any = null;
+      let kieBody: any;
+      try {
+        const kRes = await fetch(
+          `https://api.kie.ai/api/v1/jobs/recordInfo?taskId=${encodeURIComponent(taskId)}`,
+          { headers: { 'Authorization': `Bearer ${kieKeyInfo.keyValue}` } }
+        );
+        kieBody = await kRes.json();
+        kieSuccess = kRes.ok && kieBody?.code === 200;
+        if (!kieSuccess) {
+          kieErr = new Error(kieBody?.msg || `查询失败: HTTP ${kRes.status}`);
+          (kieErr as any).status = kieBody?.code || kRes.status;
+        }
+      } catch (err) {
+        kieErr = err;
+        throw err;
+      } finally {
+        await releaseKey(kieKeyInfo, kieSuccess, kieSuccess ? undefined : categorizeError(kieErr), kieErr ? String(kieErr?.message || kieErr) : undefined);
+      }
+
+      if (!kieSuccess) {
+        status = 'failed';
+        errorDetail = kieBody?.msg || '查询失败';
+      } else {
+        const d = kieBody?.data || {};
+        if (d.state === 'success') {
+          let rawUrl = '';
+          try {
+            rawUrl = JSON.parse(d.resultJson || '{}')?.resultUrls?.[0] || '';
+          } catch { rawUrl = ''; }
+          if (rawUrl) {
+            status = 'completed';
+            progress = 100;
+            // 照原逻辑转存到自己的 Storage 拿永久 URL
+            videoUrl = await uploadVideoToStorage(rawUrl, userId);
+          } else {
+            status = 'failed';
+            errorDetail = '未返回视频URL';
+          }
+        } else if (d.state === 'fail') {
+          status = 'failed';
+          errorDetail = d.failMsg || `生成失败${d.failCode ? ` (${d.failCode})` : ''}`;
+        } else if (d.state === 'waiting') {
+          status = 'processing';
+          progress = 15;
+        } else {
+          status = 'processing';
+          progress = 50;
+        }
+      }
+
+    } else if (endpoint.startsWith('jimeng:')) {
       // 即梦 火山引擎查询（BYOK 优先，否则平台账号池取一组双 key）
       const reqKey = endpoint.replace('jimeng:', '');
 

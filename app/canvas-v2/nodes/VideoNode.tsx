@@ -3,7 +3,7 @@
 import { memo, useState, useRef, useEffect } from 'react';
 import { Handle, Position, NodeToolbar, type NodeProps } from '@xyflow/react';
 import { useCanvasStore, type CardNode } from '../store';
-import { VIDEO_MODELS, DEFAULT_VIDEO_MODEL, frameNeed, videoPrice, type VideoModel } from '../videoModels';
+import { VIDEO_MODELS, DEFAULT_VIDEO_MODEL, frameNeed, videoPrice, videoRefLimits, type VideoModel } from '../videoModels';
 import { ratioToWH } from '../imageModels';
 import { IconVideo, IconModel, IconExpand, IconShrink, IconMinus, IconPlus, IconUpload, IconScissors } from './icons';
 import { SpawnMenu } from './SpawnMenu';
@@ -55,6 +55,9 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const ratio = data.config.ratio ?? (model.aspectRatios[0] ?? '16:9');
   const duration = data.config.duration ?? model.durations[0] ?? 5;
   const resolution = data.config.resolution ?? model.defaultResolution;
+  // r2v 素材上限:未声明 refLimits 的模型(Wan/即梦/快乐马/Pixverse)一律沿用总数 5,
+  // 只有显式声明的模型(如 MiniMax H3 = 9图/3视频/3音频)才不同
+  const refLimits = videoRefLimits(model.id);
   // 连线实时:上游图作首帧/尾帧显示(本地优先,否则用上游)
   const upstreamLive = useUpstream(id);
   const dispFirst = data.config.firstFrame || upstreamLive.images[0];
@@ -119,7 +122,12 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     if (!files.length) return;
     const cur = data.config.refImages ?? [];
     const connCount = upstreamLive.images.length + upstreamLive.videos.length;
-    const room = Math.max(0, 5 - cur.length - (data.config.refVideos?.length ?? 0) - connCount);
+    // 额度受两个上限约束:图片自身上限 + 总数上限(连线进来的也占额度)
+    const usedImages = cur.length + upstreamLive.images.length;
+    const room = Math.min(
+      refLimits.images - usedImages,
+      refLimits.total - cur.length - (data.config.refVideos?.length ?? 0) - connCount,
+    );
     if (room <= 0) return;
     setUploading(true);
     try {
@@ -137,9 +145,14 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     cur.splice(i, 1);
     updateConfig(id, { refImages: cur });
   };
-  // r2v:加参考视频
+  // r2v:加参考视频(受视频自身上限 + 总数上限约束,超量上游会拒)
   const addRefVideo = async (fileList: FileList | null) => {
     const f = fileList?.[0]; if (!f) return;
+    const curV = data.config.refVideos ?? [];
+    const usedVideos = curV.length + upstreamLive.videos.length;
+    const usedTotal = (data.config.refImages?.length ?? 0) + curV.length
+      + upstreamLive.images.length + upstreamLive.videos.length;
+    if (usedVideos >= refLimits.videos || usedTotal >= refLimits.total) return;
     setUploading(true);
     try {
       const url = await uploadFileToStorage(f, 'video');
@@ -507,8 +520,12 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               const voices = data.config.refVoices ?? [];
               const connAudioN = upstreamLive.audios.length;  // 连线音频(语音卡)数,自动当音色
               return (
-                <ParamTag label={<>参考内容 {total}/5{has && <span style={greenDot} />}</>} open={sub === 'refContent'} onToggle={() => setSub(sub === 'refContent' ? null : 'refContent')} width={300}>
-                  <div style={{ fontSize: 11, color: '#a1a1aa', padding: '4px 6px 6px' }}>参考图/视频共 ≤5;prompt 里用"图1/视频1"指代</div>
+                <ParamTag label={<>参考内容 {total}/{refLimits.total}{has && <span style={greenDot} />}</>} open={sub === 'refContent'} onToggle={() => setSub(sub === 'refContent' ? null : 'refContent')} width={300}>
+                  <div style={{ fontSize: 11, color: '#a1a1aa', padding: '4px 6px 6px' }}>
+                    参考图/视频共 ≤{refLimits.total}
+                    {refLimits.images < refLimits.total && `(图 ≤${refLimits.images} · 视频 ≤${refLimits.videos})`}
+                    ;prompt 里用&quot;图1/视频1&quot;指代
+                  </div>
                   {/* 参考图 */}
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '0 6px 6px' }}>
                     {imgs.map((u, i) => (
@@ -522,7 +539,7 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                         <HoverZoomImg url={u} style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 8, opacity: 0.85 }} />
                       </div>
                     ))}
-                    {total < 5 && (
+                    {total < refLimits.total && (imgs.length + connImgs.length) < refLimits.images && (
                       <label style={refAddBtn}>
                         <IconPlus size={14} />
                         <input type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={(e) => addRefImage(e.target.files)} />
@@ -540,7 +557,7 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                     {connVids.map((_, i) => (
                       <div key={`cv${i}`} style={{ ...refVidRow, opacity: 0.85 }}>🎬 连接视频{i + 1}</div>
                     ))}
-                    {total < 5 && (
+                    {total < refLimits.total && (vids.length + connVids.length) < refLimits.videos && (
                       <label style={{ ...refVidRow, cursor: 'pointer', justifyContent: 'center', color: '#a1a1aa' }}>
                         {uploading ? '上传中…' : '+ 上传参考视频'}
                         <input type="file" accept="video/*" style={{ display: 'none' }} onChange={(e) => addRefVideo(e.target.files)} />
