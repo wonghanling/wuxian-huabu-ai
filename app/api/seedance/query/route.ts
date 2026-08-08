@@ -26,22 +26,32 @@ async function getAuthedUserId(req: NextRequest): Promise<string | null> {
   }
 }
 
+// 转存到自己的 Storage 拿永久 URL。
+// 两个目的：上游临时 URL 会过期；同时避免把上游域名暴露给前端。
+// 失败重试一次，仍失败才退回原始 URL（宁可暴露域名也不能让用户丢视频）。
 async function uploadVideoToStorage(sourceUrl: string): Promise<string> {
-  try {
-    const res = await fetch(sourceUrl);
-    if (!res.ok) throw new Error(`下载视频失败: ${res.status}`);
-    const buffer = Buffer.from(await res.arrayBuffer());
-    const filename = `videos/seedance/${Date.now()}-${Math.random().toString(36).slice(2)}.mp4`;
-    const { error } = await supabaseAdmin.storage
-      .from('assets')
-      .upload(filename, buffer, { contentType: 'video/mp4', upsert: false });
-    if (error) throw new Error(`上传视频失败: ${error.message}`);
-    const { data } = supabaseAdmin.storage.from('assets').getPublicUrl(filename);
-    return data.publicUrl;
-  } catch (e) {
-    console.warn('转存 Seedance 视频失败，使用原始URL:', e);
-    return sourceUrl;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch(sourceUrl);
+      if (!res.ok) throw new Error(`下载视频失败: ${res.status}`);
+      const buffer = Buffer.from(await res.arrayBuffer());
+      const filename = `videos/seedance/${Date.now()}-${Math.random().toString(36).slice(2)}.mp4`;
+      const { error } = await supabaseAdmin.storage
+        .from('assets')
+        .upload(filename, buffer, { contentType: 'video/mp4', upsert: false });
+      if (error) throw new Error(`上传视频失败: ${error.message}`);
+      const { data } = supabaseAdmin.storage.from('assets').getPublicUrl(filename);
+      return data.publicUrl;
+    } catch (e) {
+      if (attempt === 0) {
+        console.warn('转存 Seedance 视频失败，重试一次:', e);
+        await new Promise((r) => setTimeout(r, 1500));
+        continue;
+      }
+      console.warn('转存 Seedance 视频两次失败，使用原始URL:', e);
+    }
   }
+  return sourceUrl;
 }
 
 export async function GET(request: NextRequest) {
@@ -49,9 +59,11 @@ export async function GET(request: NextRequest) {
     const taskId = request.nextUrl.searchParams.get('taskId');
     const arkKeyId = request.nextUrl.searchParams.get('arkKeyId');
     const byok = request.nextUrl.searchParams.get('byok') === '1';
-    // generate 回传的通道标记。只有 'kie' 走新分支，其余(含缺失)一律走原方舟逻辑，
-    // 保证老任务和回退方舟时行为不变。
-    const channel = request.nextUrl.searchParams.get('channel');
+    // generate 回传的通道标记（用中性代号，不暴露上游供应商名）。
+    // 只有 'c2' 走新分支；其余（含缺失、含旧任务的 'kie'）一律走原方舟逻辑，
+    // 保证老任务、BYOK 用户和回退方舟时行为都不变。
+    const channelParam = request.nextUrl.searchParams.get('channel');
+    const isC2 = channelParam === 'c2' || channelParam === 'kie';  // 'kie' 兼容已在途的旧任务
     if (!taskId) return NextResponse.json({ error: '缺少 taskId' }, { status: 400 });
 
     // ========================================================================
@@ -59,7 +71,7 @@ export async function GET(request: NextRequest) {
     // ========================================================================
     // 返回格式与方舟分支完全一致：{ status, videoUrl, progress }，前端无需区分。
     // Kie 的 state: waiting / success / fail；结果在 resultJson（JSON 字符串，需二次解析）
-    if (channel === 'kie') {
+    if (isC2) {
       const kieKeyInfo = await pickKey('kie');
       let kieSuccess = false;
       let kieErr: any = null;

@@ -228,12 +228,12 @@ export async function POST(req: NextRequest) {
     //   active  → 用他的 key、不扣平台余额
     //   invalid → 直接报错，绝不回退平台池（否则会悄悄扣他的画布余额）
     //   none    → 走平台池 + 正常扣费（改造前行为）
-    // 注意：BYOK 只对方舟通道有意义（用户填的是方舟 Key）。走 Kie 时一律用平台
-    // 账号池并正常扣费，否则会拿用户的方舟 Key 去调 Kie、或误判为失效而拦住生成。
-    const authedUserId = SEEDANCE_CHANNEL === 'ark' ? await getAuthedUserId(req) : null;
-    const arkLookup = SEEDANCE_CHANNEL === 'ark'
-      ? await lookupUserKey(authedUserId, 'ark')
-      : ({ kind: 'none' } as const);
+    // BYOK 优先于通道设置：用户填了自己的方舟 Key 就走方舟通道用他的 Key，
+    // 只有没填 Key 的用户才走平台的 Kie 通道。
+    // 这样"填了 Key 就不花平台的钱"这条规则在切换上游后依然成立 ——
+    // 否则用户填了 Key 却被扣画布余额，等于悄悄花他的钱。
+    const authedUserId = await getAuthedUserId(req);
+    const arkLookup = await lookupUserKey(authedUserId, 'ark');
 
     if (arkLookup.kind === 'invalid') {
       // 此时还没扣费、没提交上游，直接返回即可
@@ -246,7 +246,8 @@ export async function POST(req: NextRequest) {
     const userArkKey = arkLookup.kind === 'active' ? arkLookup.key : null;
     const useByok = !!userArkKey;
 
-    // 仅方舟通道的平台池路径要求 env 有 ARK_API_KEY 兜底；Kie 和 BYOK 都不依赖它
+    // 只有"走方舟通道且用平台池"这一种组合需要 env 里的 ARK_API_KEY 兜底。
+    // BYOK 用自己的 Key、平台默认走 Kie，两者都不依赖它。
     if (SEEDANCE_CHANNEL === 'ark' && !useByok && !ARK_API_KEY) {
       return NextResponse.json({ error: '未配置 ARK_API_KEY' }, { status: 500 });
     }
@@ -344,11 +345,13 @@ export async function POST(req: NextRequest) {
     console.log('Seedance 请求:', JSON.stringify({ channel: SEEDANCE_CHANNEL, model, mode, ratio, resolution, duration, generate_audio: generateAudio }));
 
     // ========================================================================
-    // Kie AI 通道（当前启用）
+    // Kie AI 通道（平台默认；BYOK 用户不走这里）
     // ========================================================================
     // 与方舟的差异仅在请求格式和响应字段：Kie 用扁平 input 对象、返回 data.taskId。
     // 对前端的契约完全一致：同样返回 { success, taskId }，同样轮询 /api/seedance/query。
-    if (SEEDANCE_CHANNEL === 'kie') {
+    //
+    // !useByok：用户填了自己的方舟 Key 时跳过这里，走下面的方舟分支用他的 Key。
+    if (SEEDANCE_CHANNEL === 'kie' && !useByok) {
       const kieModel = KIE_MODEL_MAP[model];
       if (!kieModel) {
         return NextResponse.json({ error: `不支持的模型: ${model}` }, { status: 400 });
@@ -435,8 +438,9 @@ export async function POST(req: NextRequest) {
       const kieTaskId = kieData?.data?.taskId;
       if (!kieTaskId) throw new Error('未返回任务ID');
 
-      // channel 回传给前端，轮询时带上，query 才知道查哪个上游
-      return NextResponse.json({ success: true, taskId: kieTaskId, channel: 'kie' });
+      // 回传中性代号 'c2'（不用上游真实名称，避免在前端网络面板暴露供应商）
+      // 轮询时带上，query 才知道查哪个上游
+      return NextResponse.json({ success: true, taskId: kieTaskId, channel: 'c2' });
     }
 
     // ========================================================================

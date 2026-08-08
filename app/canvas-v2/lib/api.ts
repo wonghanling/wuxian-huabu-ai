@@ -396,7 +396,7 @@ export async function generateSeedance(
   const taskId = data.taskId;
   const arkKeyId = data.arkKeyId || '';
   const byok = data.byok === true;   // 用了自带 key,轮询必须用同一把
-  const channel = data.channel || '';  // 'kie' = 走 Kie AI;空 = 方舟(老任务兼容)
+  const channel = data.channel || '';  // 后端回传的通道代号,轮询时原样带回
   if (!taskId) throw new Error('未返回 taskId');
 
   let attempts = 0;
