@@ -92,10 +92,10 @@ function Card({ s, active, onActivate }: { s: Slide; active: boolean; onActivate
         style={{ objectFit: 'cover', display: 'block' }}
       />
 
-      {/* 整体压暗 + 底部渐变：大字压在画面中央，需要更均匀的暗底才读得清 */}
+      {/* 底部渐变遮罩：文案在下方，只压底部即可，上方留出画面 */}
       <div
-        className="absolute inset-0 pointer-events-none"
-        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.86) 0%, rgba(0,0,0,0.42) 48%, rgba(0,0,0,0.30) 100%)' }}
+        className="absolute inset-x-0 bottom-0 pointer-events-none"
+        style={{ height: '58%', background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.55) 40%, transparent 100%)' }}
       />
 
       {/* 右上角徽标 */}
@@ -112,13 +112,13 @@ function Card({ s, active, onActivate }: { s: Slide; active: boolean; onActivate
         </span>
       </div>
 
-      {/* 文案：模型名大字居中，广告词与卖点在其下 */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-5">
+      {/* 文案：水平居中、垂直靠下(不占正中,给画面留出主体空间) */}
+      <div className="absolute inset-x-0 bottom-0 flex flex-col items-center text-center px-5 pb-5">
         <div
           className="font-bold tracking-tight"
           style={{
-            fontSize: 'clamp(24px, 3.1vw, 40px)',
-            lineHeight: 1.1,
+            fontSize: 'clamp(18px, 2.1vw, 27px)',
+            lineHeight: 1.15,
             color: '#fff',
             textShadow: '0 3px 22px rgba(0,0,0,0.7)',
             letterSpacing: '-0.02em',
