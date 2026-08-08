@@ -6,7 +6,7 @@ import { createPortal } from 'react-dom';
 // 8 张卡片，4列x2行，结构对齐 flora.ai Featured Techniques
 // 每张卡: image=卡槽封面图；workflow=点击后打开的完整工作流大图(可整体拖动平移查看)
 // 未配图的仍显示占位块，等后续替换
-const CARDS: { key: string; title: string; desc: string; image?: string; video?: string; aspect?: string; workflow?: string | string[]; audios?: { label: string; src: string }[] }[] = [
+const CARDS: { key: string; title: string; desc: string; note?: string; image?: string; video?: string; aspect?: string; workflow?: string | string[]; audios?: { label: string; src: string }[] }[] = [
   {
     key: 'card-1',
     title: '角色设计',
@@ -17,8 +17,9 @@ const CARDS: { key: string; title: string; desc: string; image?: string; video?:
   },
   {
     key: 'card-2',
-    title: 'seedance 真人过审设定图',
+    title: '真人过审设定图',
     desc: '一键生成过审合规人物角色图',
+    note: '用户自带 Key 不含此商业人脸过审工作流；Filmavo 通道快速生成真人视频，无需审核',
     image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783580645778.jpg?quality=80',
     aspect: '16/9',
     workflow: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783651713030-tvdhe5cr0of.jpg?quality=80',
@@ -155,6 +156,15 @@ export function FeatureTabsShowcase() {
                 <p className="text-xs leading-relaxed line-clamp-2" style={{ color: 'rgb(150,150,150)' }}>
                   {f.desc}
                 </p>
+                {/* 附加说明:自带 Key 与 Filmavo 通道的差异 */}
+                {f.note && (
+                  <p
+                    className="text-[10.5px] leading-relaxed mt-2 pt-2"
+                    style={{ color: 'rgb(120,120,120)', borderTop: '1px solid rgba(255,255,255,0.07)' }}
+                  >
+                    {f.note}
+                  </p>
+                )}
               </div>
             </div>
           );
