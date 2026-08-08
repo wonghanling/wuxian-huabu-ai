@@ -443,8 +443,16 @@ export function calcVideoPrice(
   if (!model) return 0;
 
   const seconds = model.fixedSeconds ?? durationSeconds;
-  const resKey = model.audioVariants && hasAudio ? `${resolution}_audio` : resolution;
-  const prices = model.resolutions[resKey] ?? model.resolutions[resolution];
+  // 分辨率 key 大小写兼容：调用方有传 '720P' 的（video/generate 里 toUpperCase），
+  // 也有传 '720p' 的（前端 videoPrice）。旧模型 key 是大写、新模型是小写，
+  // 不兼容就会查不到而静默返回 0 —— 表现为生成成功但扣费 ¥0.00。
+  const candidates = [resolution, resolution.toLowerCase(), resolution.toUpperCase()];
+  let prices: VideoTierPrice | undefined;
+  for (const r of candidates) {
+    const withAudio = model.audioVariants && hasAudio ? model.resolutions[`${r}_audio`] : undefined;
+    prices = withAudio ?? model.resolutions[r];
+    if (prices) break;
+  }
   if (!prices) return 0;
 
   const perSec = isMember ? prices.memberPerSec : prices.normalPerSec;
