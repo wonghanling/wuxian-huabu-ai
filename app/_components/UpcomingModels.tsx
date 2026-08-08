@@ -15,9 +15,11 @@ import { useEffect, useRef, useState } from 'react';
 
 interface Slide {
   id: string;
-  /** 主标题（广告词） */
+  /** 模型名（大字，居中显示） */
+  name: string;
+  /** 广告词 */
   title: string;
-  /** 副标题（卖点） */
+  /** 卖点 */
   subtitle: string;
   /** 右上角徽标文案 */
   badge: string;
@@ -27,22 +29,25 @@ interface Slide {
 const SLIDES: Slide[] = [
   {
     id: 'seedance-2-5',
+    name: 'Seedance 2.5',
     title: '时长更长，运动更稳',
-    subtitle: 'Seedance 2.5 · 多模态参考 + 原生音画同步，最高 4K',
+    subtitle: '多模态参考 + 原生音画同步，最高 4K',
     badge: '已上线',
     video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/seedance2.5.mp4',
   },
   {
     id: 'minimax-h3',
+    name: 'MiniMax H3',
     title: '影视级镜头语言',
-    subtitle: 'MiniMax H3 · 复杂长镜头稳定输出，一次成片',
+    subtitle: '复杂长镜头稳定输出，一次成片',
     badge: '已上线',
     video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/minnmax%20h3.mp4',
   },
   {
     id: 'flux-3',
+    name: 'FLUX 3',
     title: '指令即所得',
-    subtitle: 'FLUX 3 · 文字渲染与细节控制全面升级',
+    subtitle: '文字渲染与细节控制全面升级',
     badge: '已上线',
     video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/flux3.mp4',
   },
@@ -87,10 +92,10 @@ function Card({ s, active, onActivate }: { s: Slide; active: boolean; onActivate
         style={{ objectFit: 'cover', display: 'block' }}
       />
 
-      {/* 底部渐变遮罩：保证压在画面上的文字可读 */}
+      {/* 整体压暗 + 底部渐变：大字压在画面中央，需要更均匀的暗底才读得清 */}
       <div
-        className="absolute inset-x-0 bottom-0 pointer-events-none"
-        style={{ height: '62%', background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 45%, transparent 100%)' }}
+        className="absolute inset-0 pointer-events-none"
+        style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.86) 0%, rgba(0,0,0,0.42) 48%, rgba(0,0,0,0.30) 100%)' }}
       />
 
       {/* 右上角徽标 */}
@@ -107,19 +112,32 @@ function Card({ s, active, onActivate }: { s: Slide; active: boolean; onActivate
         </span>
       </div>
 
-      {/* 文案：直接压在画面上 */}
-      <div className="absolute inset-x-0 bottom-0 px-5 pb-4">
-        <h3
-          className="font-bold tracking-tight mb-1"
-          style={{ fontSize: 19, color: '#fff', textShadow: '0 2px 12px rgba(0,0,0,0.65)' }}
+      {/* 文案：模型名大字居中，广告词与卖点在其下 */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-5">
+        <div
+          className="font-bold tracking-tight"
+          style={{
+            fontSize: 'clamp(24px, 3.1vw, 40px)',
+            lineHeight: 1.1,
+            color: '#fff',
+            textShadow: '0 3px 22px rgba(0,0,0,0.7)',
+            letterSpacing: '-0.02em',
+          }}
+        >
+          {s.name}
+        </div>
+        <div
+          className="font-semibold mt-2"
+          style={{ fontSize: 'clamp(12px, 1.15vw, 15px)', color: 'rgba(255,255,255,0.95)', textShadow: '0 2px 12px rgba(0,0,0,0.7)' }}
         >
           {s.title}
-        </h3>
-        <p
-          style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.8)', textShadow: '0 1px 8px rgba(0,0,0,0.65)' }}
+        </div>
+        <div
+          className="mt-1"
+          style={{ fontSize: 'clamp(10px, 0.85vw, 12px)', color: 'rgba(255,255,255,0.72)', textShadow: '0 1px 8px rgba(0,0,0,0.7)' }}
         >
           {s.subtitle}
-        </p>
+        </div>
       </div>
     </a>
   );
