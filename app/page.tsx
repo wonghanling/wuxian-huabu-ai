@@ -206,6 +206,7 @@ export default function Home() {
             <a href="/boluotv" className="transition-colors hover:text-white" style={{ color: 'rgb(180,180,180)' }}>
               作品广场<span className="text-emerald-500">｜接单</span>
             </a>
+            <a href="/filmavo-tv" className="hover:text-white transition-colors">Filmavo TV</a>
             <a href="#" className="hover:text-white transition-colors">平台</a>
             <a href="#" className="hover:text-white transition-colors">案例展示</a>
             <a href="#" className="hover:text-white transition-colors">企业版</a>
