@@ -23,7 +23,10 @@ interface Slide {
   subtitle: string;
   /** 右上角徽标文案 */
   badge: string;
-  video: string;
+  /** 封面图(优先);留空则用 video */
+  image?: string;
+  /** 背景视频,image 为空时才用 */
+  video?: string;
 }
 
 const SLIDES: Slide[] = [
@@ -33,7 +36,7 @@ const SLIDES: Slide[] = [
     title: '时长更长，运动更稳',
     subtitle: '多模态参考 + 原生音画同步，最高 4K',
     badge: '已上线',
-    video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/seedance2.5.mp4',
+    image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/huodongchuangkouxuanchaun/seedance2.5.jpg',
   },
   {
     id: 'minimax-h3',
@@ -41,7 +44,7 @@ const SLIDES: Slide[] = [
     title: '影视级镜头语言',
     subtitle: '复杂长镜头稳定输出，一次成片',
     badge: '已上线',
-    video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/minnmax%20h3.mp4',
+    image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/huodongchuangkouxuanchaun/minimaxh3.jpg',
   },
   {
     id: 'flux-3',
@@ -49,7 +52,7 @@ const SLIDES: Slide[] = [
     title: '指令即所得',
     subtitle: '文字渲染与细节控制全面升级',
     badge: '已上线',
-    video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/flux3.mp4',
+    image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/huodongchuangkouxuanchaun/flux3.jpg',
   },
 ];
 
@@ -59,6 +62,7 @@ function Card({ s, active, onActivate }: { s: Slide; active: boolean; onActivate
   const videoRef = useRef<HTMLVideoElement>(null);
 
   // 只让激活的那张播放 —— 三个视频同时播会明显吃性能
+  // (用图片时 videoRef 为空,这段自动跳过)
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
@@ -81,16 +85,27 @@ function Card({ s, active, onActivate }: { s: Slide; active: boolean; onActivate
         transition: 'opacity .45s ease, transform .45s ease, border-color .45s ease, box-shadow .45s ease',
       }}
     >
-      <video
-        ref={videoRef}
-        src={s.video}
-        muted
-        loop
-        playsInline
-        preload="metadata"
-        className="absolute inset-0 w-full h-full"
-        style={{ objectFit: 'cover', display: 'block' }}
-      />
+      {/* 有 image 用图片,否则回退到 video —— 卡槽比例(16:9)与裁切方式不变 */}
+      {s.image ? (
+        <img
+          src={s.image}
+          alt={s.name}
+          className="absolute inset-0 w-full h-full"
+          style={{ objectFit: 'cover', display: 'block' }}
+          draggable={false}
+        />
+      ) : s.video ? (
+        <video
+          ref={videoRef}
+          src={s.video}
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          className="absolute inset-0 w-full h-full"
+          style={{ objectFit: 'cover', display: 'block' }}
+        />
+      ) : null}
 
       {/* 底部渐变遮罩：文案在下方，只压底部即可，上方留出画面 */}
       <div
