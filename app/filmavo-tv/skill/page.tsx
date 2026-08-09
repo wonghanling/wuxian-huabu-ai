@@ -1,29 +1,26 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { TvNav } from '../TvNav';
+import { listTvAssets, type TvAsset } from '@/lib/tv-assets';
 
 // ============================================================
 // Filmavo TV · Skill
 // ============================================================
-// 视频 Skill 库。内容手动配置在 SKILLS 数组里，
-// 空数组时显示占位（等素材/教程视频到位后往这里加条目）。
+// 内容从数据库读，在 /admin/tv-assets 后台（Skill 分区）上传管理，
+// 不用改代码发版。空时显示占位。
 // ============================================================
 
-interface SkillItem {
-  id: string;
-  title: string;
-  desc: string;
-  /** 演示视频 */
-  video?: string;
-  /** 封面图（无视频时用） */
-  image?: string;
-  /** 点击去哪，通常是带模板参数的画布链接 */
-  href?: string;
-}
-
-const SKILLS: SkillItem[] = [];
-
 export default function TvSkillPage() {
+  const [skills, setSkills] = useState<TvAsset[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    listTvAssets('skill')
+      .then(setSkills)
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <div className="min-h-screen flex" style={{ background: 'rgb(10,10,10)' }}>
       <TvNav active="skill" />
@@ -48,7 +45,14 @@ export default function TvSkillPage() {
         </div>
 
         <div className="px-6 py-6">
-          {SKILLS.length === 0 ? (
+          {loading ? (
+            <div
+              className="rounded-2xl flex items-center justify-center"
+              style={{ minHeight: 300, background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.1)' }}
+            >
+              <span className="text-sm" style={{ color: 'rgb(120,120,120)' }}>加载中…</span>
+            </div>
+          ) : skills.length === 0 ? (
             <div
               className="rounded-2xl flex flex-col items-center justify-center gap-2"
               style={{ minHeight: 300, background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.14)' }}
@@ -58,13 +62,14 @@ export default function TvSkillPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {SKILLS.map((s) => {
+              {skills.map((s) => {
                 const inner = (
                   <>
                     <div className="relative overflow-hidden" style={{ aspectRatio: '16/9', background: 'rgb(12,12,12)' }}>
-                      {s.video ? (
+                      {s.kind === 'video' ? (
                         <video
-                          src={s.video}
+                          src={s.src}
+                          poster={s.poster || undefined}
                           muted
                           loop
                           playsInline
@@ -78,13 +83,15 @@ export default function TvSkillPage() {
                             v.currentTime = 0;
                           }}
                         />
-                      ) : s.image ? (
-                        <img src={s.image} alt={s.title} className="w-full h-full" style={{ objectFit: 'cover' }} draggable={false} />
-                      ) : null}
+                      ) : (
+                        <img src={s.src} alt={s.title} className="w-full h-full" style={{ objectFit: 'cover' }} draggable={false} />
+                      )}
                     </div>
                     <div className="px-4 py-3.5">
                       <div className="text-[13.5px] font-semibold" style={{ color: 'rgb(232,232,232)' }}>{s.title}</div>
-                      <div className="text-[11.5px] leading-relaxed mt-1" style={{ color: 'rgb(140,140,140)' }}>{s.desc}</div>
+                      {s.description && (
+                        <div className="text-[11.5px] leading-relaxed mt-1" style={{ color: 'rgb(140,140,140)' }}>{s.description}</div>
+                      )}
                     </div>
                   </>
                 );

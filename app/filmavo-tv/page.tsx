@@ -2,6 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { TvNav } from './TvNav';
+import { listTvAssets, type TvAsset } from '@/lib/tv-assets';
+import { createClient } from '@/lib/supabase/client';
+import { isAdmin } from '@/lib/admin';
 
 // ============================================================
 // Filmavo TV 首页
@@ -53,19 +56,6 @@ const BANNERS: Banner[] = [
     href: '/canvas',
   },
 ];
-
-interface ShowcaseItem {
-  id: string;
-  title: string;
-  /** 'video' | 'image' */
-  kind: 'video' | 'image';
-  src: string;
-  /** 用什么模型做的，显示在卡片上 */
-  model?: string;
-}
-
-// 素材区：等素材到位后往这里加条目即可，空数组时页面显示占位
-const SHOWCASE: ShowcaseItem[] = [];
 
 const BANNER_INTERVAL = 5000;
 
@@ -155,6 +145,27 @@ function BannerCard({ b, active, onHover }: { b: Banner; active: boolean; onHove
 export default function FilmavoTvPage() {
   const [idx, setIdx] = useState(0);
   const [paused, setPaused] = useState(false);
+  // 素材从数据库读（后台 /admin/tv-assets 管理），空则显示占位
+  const [showcase, setShowcase] = useState<TvAsset[]>([]);
+  const [loadingAssets, setLoadingAssets] = useState(true);
+  // 管理员才显示"管理素材"入口
+  const [canManage, setCanManage] = useState(false);
+
+  useEffect(() => {
+    listTvAssets('showcase')
+      .then(setShowcase)
+      .finally(() => setLoadingAssets(false));
+
+    (async () => {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        setCanManage(isAdmin(user?.email));
+      } catch {
+        setCanManage(false);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     if (paused || BANNERS.length <= 1) return;
@@ -216,9 +227,22 @@ export default function FilmavoTvPage() {
             <div className="flex items-baseline gap-3 mb-4">
               <h2 className="text-base font-bold tracking-tight" style={{ color: 'rgb(232,232,232)' }}>精选素材</h2>
               <span className="text-[11px]" style={{ color: 'rgb(110,110,110)' }}>可直接参考的视频与图片</span>
+              <div className="flex-1" />
+              {canManage && (
+                <a href="/admin/tv-assets" className="text-[11px] hover:opacity-70" style={{ color: 'rgb(113,208,131)' }}>
+                  管理素材 ↗
+                </a>
+              )}
             </div>
 
-            {SHOWCASE.length === 0 ? (
+            {loadingAssets ? (
+              <div
+                className="rounded-2xl flex items-center justify-center"
+                style={{ minHeight: 220, background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.1)' }}
+              >
+                <span className="text-sm" style={{ color: 'rgb(120,120,120)' }}>加载中…</span>
+              </div>
+            ) : showcase.length === 0 ? (
               <div
                 className="rounded-2xl flex flex-col items-center justify-center gap-2"
                 style={{ minHeight: 220, background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.14)' }}
@@ -228,7 +252,7 @@ export default function FilmavoTvPage() {
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                {SHOWCASE.map((s) => (
+                {showcase.map((s) => (
                   <div
                     key={s.id}
                     className="group rounded-2xl overflow-hidden transition-transform hover:-translate-y-1"
@@ -238,6 +262,7 @@ export default function FilmavoTvPage() {
                       {s.kind === 'video' ? (
                         <video
                           src={s.src}
+                          poster={s.poster || undefined}
                           muted
                           loop
                           playsInline
