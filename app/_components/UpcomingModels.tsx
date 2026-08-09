@@ -36,7 +36,7 @@ const SLIDES: Slide[] = [
     title: '时长更长，运动更稳',
     subtitle: '多模态参考 + 原生音画同步，最高 4K',
     badge: '已上线',
-    image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/huodongchuangkouxuanchaun/seedance2.5.jpg',
+    video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/seedance2.5.mp4',
   },
   {
     id: 'minimax-h3',
@@ -44,7 +44,7 @@ const SLIDES: Slide[] = [
     title: '影视级镜头语言',
     subtitle: '复杂长镜头稳定输出，一次成片',
     badge: '已上线',
-    image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/huodongchuangkouxuanchaun/minimaxh3.jpg',
+    video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/minnmax%20h3.mp4',
   },
   {
     id: 'flux-3',
@@ -52,7 +52,7 @@ const SLIDES: Slide[] = [
     title: '指令即所得',
     subtitle: '文字渲染与细节控制全面升级',
     badge: '已上线',
-    image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/huodongchuangkouxuanchaun/flux3.jpg',
+    video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/flux3.mp4',
   },
 ];
 
@@ -169,8 +169,11 @@ export function UpcomingModels() {
   }, [paused]);
 
   return (
+    /* 不用 max-w-7xl(1280):那样在宽屏上会比 /filmavo-tv 的卡槽小一圈。
+       放宽到 1600px 让卡片等比放大,视觉尺寸与 TV 页对齐。 */
     <div
-      className="max-w-7xl mx-auto px-6"
+      className="mx-auto px-6"
+      style={{ maxWidth: 1600 }}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
