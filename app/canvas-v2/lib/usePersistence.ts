@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useCanvasStore } from '../store';
-import { getOrCreateCanvas, loadSnapshot, saveSnapshot } from '@/lib/canvas-storage';
+import { getOrCreateCanvas, canvasBelongsTo, loadSnapshot, saveSnapshot } from '@/lib/canvas-storage';
 import { createClient } from '@/lib/supabase/client';
 import type { CardNode } from '../store';
 import type { Edge } from '@xyflow/react';
@@ -76,7 +76,16 @@ export function useCanvasPersistence() {
           }
         }
 
-        const canvasId = await getOrCreateCanvas(user.id);
+        // 带 ?canvas=<id>:从项目页点进来,打开指定项目。
+        // 必须先验归属,否则改 URL 就能读别人的画布。
+        // 无参数/不属于本人时回退 getOrCreateCanvas(改动前的行为)。
+        const wantCanvasId = new URLSearchParams(window.location.search).get('canvas');
+        let canvasId: string;
+        if (wantCanvasId && await canvasBelongsTo(wantCanvasId, user.id)) {
+          canvasId = wantCanvasId;
+        } else {
+          canvasId = await getOrCreateCanvas(user.id);
+        }
         if (cancelled) return;
         canvasIdRef.current = canvasId;
 
