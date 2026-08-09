@@ -36,7 +36,7 @@ const SLIDES: Slide[] = [
     title: '时长更长，运动更稳',
     subtitle: '多模态参考 + 原生音画同步，最高 4K',
     badge: '已上线',
-    video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/seedance2.5.mp4',
+    image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/huodongchuangkouxuanchaun/seedance2.5.jpg',
   },
   {
     id: 'minimax-h3',
@@ -44,7 +44,7 @@ const SLIDES: Slide[] = [
     title: '影视级镜头语言',
     subtitle: '复杂长镜头稳定输出，一次成片',
     badge: '已上线',
-    video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/minnmax%20h3.mp4',
+    image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/huodongchuangkouxuanchaun/minimaxh3.jpg',
   },
   {
     id: 'flux-3',
@@ -52,7 +52,7 @@ const SLIDES: Slide[] = [
     title: '指令即所得',
     subtitle: '文字渲染与细节控制全面升级',
     badge: '已上线',
-    video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/flux3.mp4',
+    image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/huodongchuangkouxuanchaun/flux3.jpg',
   },
 ];
 
