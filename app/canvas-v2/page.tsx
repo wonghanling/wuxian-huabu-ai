@@ -453,7 +453,9 @@ function CanvasV2Inner() {
       >
         <Background variant={BackgroundVariant.Dots} gap={28} size={1} color="#27272a" />
 
-        {/* 小地图:节点分散时快速定位,点击可跳转。放左下角(右下是缩放控件) */}
+        {/* 小地图:节点分散时快速定位,点击可跳转。
+            位置在左侧工具栏(垂直居中)下方、缩放器(左下角)上方 ——
+            用 bottom 抬高避开缩放胶囊条 */}
         <MiniMap
           position="bottom-left"
           pannable
@@ -466,20 +468,22 @@ function CanvasV2Inner() {
             border: '1px solid rgba(255,255,255,0.12)',
             borderRadius: 12,
             backdropFilter: 'blur(8px)',
-            margin: 12,
+            margin: 0,
+            left: 12,
+            bottom: 68,
           }}
-          maskColor="rgba(0,0,0,0.55)"
-          maskStrokeColor="rgba(255,255,255,0.35)"
+          maskColor="rgba(0,0,0,0.42)"
+          maskStrokeColor="rgba(255,255,255,0.45)"
           maskStrokeWidth={2}
           nodeColor={(n) => {
-            // 按状态区分:生成中/已完成/出错,一眼看出哪张卡有内容
+            // 按状态区分,一眼看出哪张卡有内容(小地图很小,颜色要够亮才看得清)
             const s = (n.data as any)?.status;
-            if (s === 'generating') return 'rgba(160,160,160,0.95)';
-            if (s === 'done') return 'rgba(113,208,131,0.9)';
-            if (s === 'error') return 'rgba(230,120,120,0.9)';
-            return 'rgba(120,120,128,0.75)';
+            if (s === 'generating') return '#e8e8ea';
+            if (s === 'done') return '#7ee08f';
+            if (s === 'error') return '#ff8a8a';
+            return '#b8b8c2';
           }}
-          nodeStrokeColor="rgba(255,255,255,0.25)"
+          nodeStrokeColor="rgba(255,255,255,0.6)"
           nodeStrokeWidth={2}
           nodeBorderRadius={3}
         />
