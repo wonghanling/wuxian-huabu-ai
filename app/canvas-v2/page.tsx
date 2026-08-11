@@ -527,9 +527,24 @@ function CanvasV2Inner() {
                   {toolGroup === 'gem' && (
                     <div style={toolFlyout}>
                       <button onClick={() => { addGemCard(); addGem3Card(); addGem4Card(); setToolGroup(null); }} style={flyItem}>全部创建</button>
-                      <button onClick={() => { addGemCard(); setToolGroup(null); }} style={flyItem}>单独 Step2(分镜)</button>
-                      <button onClick={() => { addGem3Card(); setToolGroup(null); }} style={flyItem}>单独 Step3(过渡指令)</button>
-                      <button onClick={() => { addGem4Card(); setToolGroup(null); }} style={flyItem}>单独 Step4</button>
+                      <FlyItemWithHint
+                        label="导演引擎 step2"
+                        desc="根据用户上传的图片和需求，给出一段专业的分镜词。"
+                        flow={['图片', '分镜词', '图片 + 分镜词 → 图片模型', '分镜图片']}
+                        onClick={() => { addGemCard(); setToolGroup(null); }}
+                      />
+                      <FlyItemWithHint
+                        label="导演引擎 step3"
+                        desc="根据用户上传的首尾帧，生成过渡指令。"
+                        flow={['首帧 + 尾帧', '过渡指令', '首尾帧 + 指令 → 图片模型', '视频模型']}
+                        onClick={() => { addGem3Card(); setToolGroup(null); }}
+                      />
+                      <FlyItemWithHint
+                        label="导演引擎 step4"
+                        desc="根据用户上传的分镜图片检查修复，生成专业的导演分镜图片。"
+                        flow={['分镜图片', '导演级专业分镜图片']}
+                        onClick={() => { addGem4Card(); setToolGroup(null); }}
+                      />
                     </div>
                   )}
                 </div>
@@ -689,6 +704,56 @@ const flyItem: React.CSSProperties = {
   padding: '8px 12px', borderRadius: 9, border: 'none',
   background: 'transparent', color: '#e4e4e7', fontSize: 12, cursor: 'pointer', textAlign: 'left',
 };
+
+// 带悬浮说明的菜单项:说明气泡浮在右侧,讲清这一步"输入 → 产出"的链路
+const flyHintBubble: React.CSSProperties = {
+  position: 'absolute', left: 'calc(100% + 10px)', top: -6,
+  width: 268, padding: '11px 13px',
+  background: 'rgba(24,24,28,0.98)', backdropFilter: 'blur(24px)',
+  border: '1px solid rgba(255,255,255,0.14)', borderRadius: 12,
+  boxShadow: '0 18px 55px rgba(0,0,0,0.65)', zIndex: 200,
+  pointerEvents: 'none',
+};
+function FlyItemWithHint({ label, desc, flow, onClick }: {
+  label: string;
+  desc: string;
+  /** 链路,如 ['图片','分镜词','分镜图片'] */
+  flow: string[];
+  onClick: () => void;
+}) {
+  const [hover, setHover] = useState(false);
+  return (
+    <div
+      style={{ position: 'relative' }}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+    >
+      <button
+        onClick={onClick}
+        style={{ ...flyItem, width: '100%', background: hover ? 'rgba(255,255,255,0.07)' : 'transparent' }}
+      >
+        {label}
+      </button>
+      {hover && (
+        <div style={flyHintBubble}>
+          <div style={{ fontSize: 11.5, color: '#d4d4d8', lineHeight: 1.7, marginBottom: 9 }}>{desc}</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 5 }}>
+            {flow.map((s, i) => (
+              <span key={i} style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                <span style={{
+                  fontSize: 10.5, padding: '3px 8px', borderRadius: 6,
+                  background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+                  color: '#e4e4e7', whiteSpace: 'nowrap',
+                }}>{s}</span>
+                {i < flow.length - 1 && <span style={{ fontSize: 11, color: '#71717a' }}>→</span>}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 const addBtn: React.CSSProperties = {
   padding: '4px 12px',
   borderRadius: 999,
