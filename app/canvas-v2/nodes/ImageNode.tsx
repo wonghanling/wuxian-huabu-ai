@@ -67,6 +67,21 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
   useEffect(() => { if (editing && editRef.current) editRef.current.focus(); }, [editing]);
 
+  // 兜底探测真实比例:卡片内上传/生成时已各自探过,
+  // 但从外部送进来的图(涂鸦编辑、设计师工作台、3D 导演台等)建卡时只带 outputUrl,
+  // 没走那两条路径 → 缺 aspectW/H 就退回 1:1。这里统一补一次。
+  useEffect(() => {
+    if (!displayImg || (data.aspectW && data.aspectH)) return;
+    let alive = true;
+    const probe = new Image();
+    probe.onload = () => {
+      if (!alive || !probe.naturalWidth || !probe.naturalHeight) return;
+      updateCard(id, { aspectW: probe.naturalWidth, aspectH: probe.naturalHeight });
+    };
+    probe.src = displayImg;
+    return () => { alive = false; };
+  }, [displayImg, data.aspectW, data.aspectH, id, updateCard]);
+
   const toggleCollapse = (e: React.MouseEvent) => { e.stopPropagation(); updateCard(id, { collapsed: !collapsed }); };
 
   // 统一上传处理:真实上传到 Supabase storage,拿到可访问 URL
