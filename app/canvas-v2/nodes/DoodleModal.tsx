@@ -3,6 +3,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { uploadImageToStorage, getUserId } from '../lib/api';
+import { calcImagePrice } from '@/lib/pricing';
+
+// 价格从定价表读,避免前端硬编码与后端实扣不一致(后端用同一个 key 扣费)
+const EDIT_PRICE = calcImagePrice('seedream-5-pro-edit');
 
 // ============================================================
 // 涂鸦工作台(Doodle Studio)
@@ -379,7 +383,7 @@ export function DoodleModal({ imageUrl, onClose, onConfirm, onGenerated }: Props
           {/* 按钮行 */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 12.5, color: '#a1a1aa', flex: 1, minWidth: 0 }}>
-              <span style={{ color: '#34c759', fontWeight: 600 }}>Seedream 5.0 Pro 编辑 ¥0.6/次</span>　·　或免费发送标注图到画布
+              <span style={{ color: '#34c759', fontWeight: 600 }}>Seedream 5.0 Pro 编辑 ¥{EDIT_PRICE.toFixed(2)}/次</span>　·　或免费发送标注图到画布
             </span>
             <button onClick={onClose} style={cancelBtn}>取消</button>
             <button onClick={handleSave} disabled={busy || generating || !imgEl || !srcUrl}
@@ -388,7 +392,7 @@ export function DoodleModal({ imageUrl, onClose, onConfirm, onGenerated }: Props
             </button>
             <button onClick={handleGenerate} disabled={generating || busy || !imgEl || !srcUrl || !prompt.trim()}
               style={{ ...genBtn, opacity: (generating || busy || !imgEl || !srcUrl || !prompt.trim()) ? 0.5 : 1, cursor: generating ? 'wait' : 'pointer', whiteSpace: 'nowrap' }}>
-              {generating ? '生成中…' : '用 Seedream 生成 ¥0.6'}
+              {generating ? '生成中…' : `用 Seedream 生成 ¥${EDIT_PRICE.toFixed(2)}`}
             </button>
           </div>
         </div>

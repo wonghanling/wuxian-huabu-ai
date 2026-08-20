@@ -33,9 +33,11 @@ export function useCanvasPersistence() {
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
-          // 未登录:不跳转(canvas-v2 调试期),仅停在空画布
-          isRestoringRef.current = false;
-          setLoading(false);
+          // 未登录:跳登录注册页。
+          // 原来停在空画布(canvas-v2 调试期遗留),导致未登录也能进画布并生成 ——
+          // 生成接口是 `if (userId) 才扣费`,无身份就变成免费放行、烧平台额度。
+          // 登录页登录成功后本身就会跳回 /canvas,无需额外传回跳参数。
+          if (typeof window !== 'undefined') window.location.replace('/auth');
           return;
         }
 
