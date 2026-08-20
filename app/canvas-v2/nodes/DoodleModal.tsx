@@ -226,7 +226,8 @@ export function DoodleModal({ imageUrl, onClose, onConfirm, onGenerated }: Props
       const res = await fetch('/api/design/seedream-edit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageUrl: uploadedUrl, prompt: prompt.trim(), userId }),
+        // mode 供后端选端点:图层分离走专用端点,其余走通用图生图
+        body: JSON.stringify({ imageUrl: uploadedUrl, prompt: prompt.trim(), mode: editMode, userId }),
       });
       const data = await res.json();
       if (data.failed) { alert(data.reason || '审核未通过'); return; }

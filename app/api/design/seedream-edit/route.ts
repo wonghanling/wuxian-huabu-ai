@@ -6,10 +6,29 @@ import { deductBalance, refundBalance } from '@/lib/billing';
 
 export const maxDuration = 300;
 
+// ============================================================================
+// 通道开关：'kie' = 走 Kie（当前），'ark' = 走火山方舟（旧版，可回退）
+// ============================================================================
+// 两套请求格式不同（方舟同步返回图 URL，Kie 异步需轮询），代码并存。
+// 要回退方舟：把这个常量改回 'ark' 即可，方舟那套逻辑原样保留。
+const SEEDREAM_CHANNEL: 'kie' | 'ark' = 'kie';
+
 // 火山引擎 Seedream 5.0 Pro 图片生成/编辑(同步返回图 URL)
 const ARK_IMAGE_URL = 'https://ark.cn-beijing.volces.com/api/v3/images/generations';
 const SEEDREAM_MODEL = 'doubao-seedream-5-0-pro-260628';
 const PRICE_KEY = 'seedream-5-pro-edit';
+
+// ── Kie ──
+const KIE_CREATE_URL = 'https://api.kie.ai/api/v1/jobs/createTask';
+const KIE_QUERY_URL = 'https://api.kie.ai/api/v1/jobs/recordInfo';
+// 交互编辑的四种模式里，只有"图层分离"有专用端点，其余走通用图生图
+const KIE_MODEL_I2I = 'seedream/5-pro-image-to-image';
+const KIE_MODEL_LAYER = 'seedream/5-pro-layer-decomposition';
+// quality: basic=1K / high=2K；本功能固定出 2K
+const KIE_QUALITY = 'high';
+// 内部轮询：前端仍是一次请求拿结果，轮询在服务端完成（maxDuration 300s 足够）
+const KIE_POLL_INTERVAL_MS = 2500;
+const KIE_POLL_MAX = 80;   // 最长约 200 秒
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -35,7 +54,9 @@ export async function POST(req: NextRequest) {
   let body: any = {};
   try {
     body = await req.json();
-    const { imageUrl, prompt, size, userId } = body;
+    // mode 仅 Kie 通道用于选端点（layer=图层分离走专用端点，其余走图生图）；
+    // 前端不传也能正常工作，默认走图生图 —— 方舟通道完全忽略此字段。
+    const { imageUrl, prompt, size, mode, userId } = body;
 
     if (!imageUrl) return NextResponse.json({ error: '缺少原图' }, { status: 400 });
     if (!prompt) return NextResponse.json({ error: '缺少编辑指令' }, { status: 400 });
@@ -49,6 +70,105 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // ========================================================================
+    // Kie 通道（当前启用）
+    // ========================================================================
+    // 对前端的契约与方舟完全一致：同样返回 { success, imageUrl }，
+    // 审核不过同样返回 { failed, reason }。轮询在服务端内部完成，前端无需改动。
+    if (SEEDREAM_CHANNEL === 'kie') {
+      const kieModel = mode === 'layer' ? KIE_MODEL_LAYER : KIE_MODEL_I2I;
+      const kieKeyInfo = await pickKey('kie');
+      let kieSuccess = false;
+      let kieErr: any = null;
+      let taskId = '';
+
+      // ── 提交任务 ──
+      try {
+        const kieInput: Record<string, unknown> = {
+          prompt,
+          image_urls: [imageUrl],
+          aspect_ratio: 'auto',
+          quality: KIE_QUALITY,
+          output_format: 'jpeg',
+        };
+        const res = await fetch(KIE_CREATE_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${kieKeyInfo.keyValue}`,
+          },
+          body: JSON.stringify({ model: kieModel, input: kieInput }),
+        });
+        const submitted = await res.json();
+        console.log('[seedream-edit] Kie 提交:', JSON.stringify(submitted).slice(0, 260));
+
+        // Kie 用 body 里的 code 表达错误，HTTP 状态可能仍是 200
+        if (!res.ok || submitted?.code !== 200) {
+          const code = submitted?.code ?? res.status;
+          kieErr = new Error(submitted?.msg || submitted?.message || `提交失败(${code})`);
+          (kieErr as any).status = code;
+          throw kieErr;
+        }
+        taskId = submitted?.data?.taskId || '';
+        if (!taskId) throw new Error('未返回任务ID');
+        kieSuccess = true;
+      } catch (err) {
+        if (!kieErr) kieErr = err;
+        throw err;
+      } finally {
+        await releaseKey(kieKeyInfo, kieSuccess, kieSuccess ? undefined : categorizeError(kieErr), kieErr ? String(kieErr?.message || kieErr) : undefined);
+      }
+
+      // ── 服务端轮询到出图 ──
+      let outUrl = '';
+      let failReason = '';
+      for (let i = 0; i < KIE_POLL_MAX; i++) {
+        await new Promise((r) => setTimeout(r, KIE_POLL_INTERVAL_MS));
+        const qRes = await fetch(`${KIE_QUERY_URL}?taskId=${encodeURIComponent(taskId)}`, {
+          headers: { 'Authorization': `Bearer ${kieKeyInfo.keyValue}` },
+        });
+        const qBody = await qRes.json();
+        if (!qRes.ok || qBody?.code !== 200) continue;   // 单次查询失败不中断，继续重试
+
+        const d = qBody?.data || {};
+        if (d.state === 'success') {
+          try {
+            outUrl = JSON.parse(d.resultJson || '{}')?.resultUrls?.[0] || '';
+          } catch { outUrl = ''; }
+          break;
+        }
+        if (d.state === 'fail') {
+          failReason = d.failMsg || `生成失败${d.failCode ? `(${d.failCode})` : ''}`;
+          break;
+        }
+      }
+
+      // ── 失败：退款，用与方舟分支一致的返回结构 ──
+      if (!outUrl) {
+        if (userId) await refundBalance(userId, price, 'Seedream 编辑失败退款', { model: kieModel });
+        const isModeration = /sensitive|safety|policy|审核|违规|unsafe|risk|blocked|nsfw/i.test(failReason);
+        if (isModeration) {
+          return NextResponse.json({ failed: true, reason: '审核未通过：本次编辑被平台判定为不合规，请调整描述后重试' }, { status: 200 });
+        }
+        return NextResponse.json({
+          failed: true,
+          reason: failReason || '生成超时或未返回图片，请重试',
+        }, { status: 200 });
+      }
+
+      // ── 成功：照原逻辑转存 Supabase 拿永久 URL ──
+      let kieFinalUrl = outUrl;
+      try {
+        kieFinalUrl = await transferToStorage(outUrl);
+      } catch (e) {
+        console.error('[design/seedream-edit] Kie 图转存失败，降级用原 URL:', e);
+      }
+      return NextResponse.json({ success: true, imageUrl: kieFinalUrl });
+    }
+
+    // ========================================================================
+    // 火山方舟通道（旧版，SEEDREAM_CHANNEL='ark' 时启用）
+    // ========================================================================
     // 账号池取火山 key
     const keyInfo = await pickKey('ark');
     let arkSuccess = false;
