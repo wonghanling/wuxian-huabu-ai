@@ -84,13 +84,24 @@ export async function POST(req: NextRequest) {
 
       // ── 提交任务 ──
       try {
-        const kieInput: Record<string, unknown> = {
-          prompt,
-          image_urls: [imageUrl],
-          aspect_ratio: 'auto',
-          quality: KIE_QUALITY,
-          output_format: 'jpeg',
-        };
+        // 两个端点的参数不同,不能共用:
+        //   layer-decomposition: image_url(单值) + size(auto/1K/1.5K/2K)
+        //                        输出 1 张底图 + N 张分离图层(图层固定 PNG)
+        //   image-to-image     : image_urls(数组) + aspect_ratio + quality(basic/high)
+        const kieInput: Record<string, unknown> = mode === 'layer'
+          ? {
+              prompt,
+              image_url: imageUrl,
+              size: '2K',
+              output_format: 'png',
+            }
+          : {
+              prompt,
+              image_urls: [imageUrl],
+              aspect_ratio: 'auto',
+              quality: KIE_QUALITY,
+              output_format: 'jpeg',
+            };
         const res = await fetch(KIE_CREATE_URL, {
           method: 'POST',
           headers: {
@@ -120,7 +131,9 @@ export async function POST(req: NextRequest) {
       }
 
       // ── 服务端轮询到出图 ──
-      let outUrl = '';
+      // 图层分离会返回多张(1 张底图 + N 张分离图层),所以收全部 URL；
+      // 图生图只有 1 张。outUrl 取第一张,供现有前端沿用。
+      let outUrls: string[] = [];
       let failReason = '';
       for (let i = 0; i < KIE_POLL_MAX; i++) {
         await new Promise((r) => setTimeout(r, KIE_POLL_INTERVAL_MS));
@@ -133,8 +146,9 @@ export async function POST(req: NextRequest) {
         const d = qBody?.data || {};
         if (d.state === 'success') {
           try {
-            outUrl = JSON.parse(d.resultJson || '{}')?.resultUrls?.[0] || '';
-          } catch { outUrl = ''; }
+            const arr = JSON.parse(d.resultJson || '{}')?.resultUrls;
+            outUrls = Array.isArray(arr) ? arr.filter((u: unknown) => typeof u === 'string' && u) : [];
+          } catch { outUrls = []; }
           break;
         }
         if (d.state === 'fail') {
@@ -142,6 +156,7 @@ export async function POST(req: NextRequest) {
           break;
         }
       }
+      const outUrl = outUrls[0] || '';
 
       // ── 失败：退款，用与方舟分支一致的返回结构 ──
       if (!outUrl) {
@@ -156,14 +171,24 @@ export async function POST(req: NextRequest) {
         }, { status: 200 });
       }
 
-      // ── 成功：照原逻辑转存 Supabase 拿永久 URL ──
-      let kieFinalUrl = outUrl;
-      try {
-        kieFinalUrl = await transferToStorage(outUrl);
-      } catch (e) {
-        console.error('[design/seedream-edit] Kie 图转存失败，降级用原 URL:', e);
-      }
-      return NextResponse.json({ success: true, imageUrl: kieFinalUrl });
+      // ── 成功：全部图转存 Supabase 拿永久 URL ──
+      // 图层分离有多张,逐张转存;单张失败降级用原 URL,不影响其余。
+      const kieFinalUrls = await Promise.all(
+        outUrls.map(async (u) => {
+          try {
+            return await transferToStorage(u);
+          } catch (e) {
+            console.error('[design/seedream-edit] Kie 图转存失败，降级用原 URL:', e);
+            return u;
+          }
+        })
+      );
+      // imageUrl 保持单值供现有前端沿用；imageUrls 是全部结果,供图层分离的多图 UI 用
+      return NextResponse.json({
+        success: true,
+        imageUrl: kieFinalUrls[0] || outUrl,
+        imageUrls: kieFinalUrls,
+      });
     }
 
     // ========================================================================
