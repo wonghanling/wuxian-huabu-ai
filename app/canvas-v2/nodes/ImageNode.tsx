@@ -70,8 +70,16 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   // 兜底探测真实比例:卡片内上传/生成时已各自探过,
   // 但从外部送进来的图(涂鸦编辑、设计师工作台、3D 导演台等)建卡时只带 outputUrl,
   // 没走那两条路径 → 缺 aspectW/H 就退回 1:1。这里统一补一次。
+  //
+  // 用 ref 记住已探过的 URL:每个 URL 只探一次。
+  // 否则用户手选比例(会清空 aspectW/H)时 effect 会重新触发,
+  // 把手选的比例又覆盖回图片原始比例。
+  const probedUrlRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!displayImg || (data.aspectW && data.aspectH)) return;
+    if (!displayImg) return;
+    if (data.aspectW && data.aspectH) return;          // 已有比例,不动
+    if (probedUrlRef.current === displayImg) return;    // 这张图探过了,尊重用户后续的手选
+    probedUrlRef.current = displayImg;
     let alive = true;
     const probe = new Image();
     probe.onload = () => {
