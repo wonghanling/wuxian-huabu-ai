@@ -53,7 +53,10 @@ export function DoodleModal({ imageUrl, onClose, onConfirm, onGenerated }: Props
   const [editMode, setEditMode] = useState('free');       // Seedream 交互编辑模式
   const [prompt, setPrompt] = useState('');                // 编辑指令
   const [generating, setGenerating] = useState(false);     // Seedream 生成中
-  const [resultUrl, setResultUrl] = useState<string | null>(null); // 生成结果(弹窗内预览,不直接关窗)
+  const [resultUrl, setResultUrl] = useState<string | null>(null); // 当前预览的结果图
+  // 图层分离会返回多张(1 张底图 + N 张分离图层);其余模式只有 1 张。
+  // resultUrl 始终指向当前选中的那张,发送/继续编辑都以它为准。
+  const [resultUrls, setResultUrls] = useState<string[]>([]);
   // 文字输入态:点击位置出现输入框
   const [textInput, setTextInput] = useState<{ x: number; y: number; cx: number; cy: number; value: string } | null>(null);
   const drawing = useRef(false);
@@ -238,7 +241,12 @@ export function DoodleModal({ imageUrl, onClose, onConfirm, onGenerated }: Props
       if (!res.ok || !data.imageUrl) throw new Error(data.error || '生成失败');
 
       // 生成成功:弹窗内直接预览结果，不立即关窗(用户看效果后再决定发送到画布)
-      setResultUrl(data.imageUrl);
+      // imageUrls 是全部结果(图层分离多张);后端未返回时退回单张,兼容旧行为
+      const all: string[] = Array.isArray(data.imageUrls) && data.imageUrls.length > 0
+        ? data.imageUrls
+        : [data.imageUrl];
+      setResultUrls(all);
+      setResultUrl(all[0]);
     } catch (e: any) {
       alert('生成失败: ' + (e?.message || e));
     } finally {
@@ -294,16 +302,53 @@ export function DoodleModal({ imageUrl, onClose, onConfirm, onGenerated }: Props
             position: 'absolute', inset: 0, zIndex: 10, background: 'rgba(10,12,11,0.94)',
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24,
           }}>
-            <div style={{ fontSize: 13, color: '#34c759', fontWeight: 600 }}>✓ 生成成功</div>
+            <div style={{ fontSize: 13, color: '#34c759', fontWeight: 600 }}>
+              ✓ 生成成功
+              {resultUrls.length > 1 && (
+                <span style={{ color: '#8b8b92', fontWeight: 400 }}>　·　共 {resultUrls.length} 张，点缩略图切换</span>
+              )}
+            </div>
+
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={resultUrl} alt="生成结果" style={{ maxWidth: '80%', maxHeight: '62vh', borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)' }} />
-            <div style={{ display: 'flex', gap: 12 }}>
+            <img src={resultUrl} alt="生成结果" style={{ maxWidth: '80%', maxHeight: resultUrls.length > 1 ? '48vh' : '62vh', borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', objectFit: 'contain' }} />
+
+            {/* 多张时显示缩略图条(图层分离):点击切换大图 */}
+            {resultUrls.length > 1 && (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center', maxWidth: '86%' }}>
+                {resultUrls.map((u, i) => (
+                  <button
+                    key={u}
+                    onClick={() => setResultUrl(u)}
+                    title={i === 0 ? '底图' : `图层 ${i}`}
+                    style={{
+                      position: 'relative', padding: 0, lineHeight: 0, cursor: 'pointer',
+                      background: 'rgba(255,255,255,0.04)',
+                      border: `1.5px solid ${u === resultUrl ? '#34c759' : 'rgba(255,255,255,0.16)'}`,
+                      borderRadius: 8, overflow: 'hidden',
+                    }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={u} alt={i === 0 ? '底图' : `图层 ${i}`} style={{ width: 76, height: 76, objectFit: 'contain', display: 'block', background: 'rgba(255,255,255,0.03)' }} />
+                    <span style={{
+                      position: 'absolute', left: 0, right: 0, bottom: 0,
+                      fontSize: 9.5, textAlign: 'center', padding: '2px 0',
+                      background: 'rgba(0,0,0,0.65)', color: u === resultUrl ? '#34c759' : '#a1a1aa',
+                    }}>
+                      {i === 0 ? '底图' : `图层 ${i}`}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
               <button
                 onClick={() => {
-                  // 把刚生成的图作为新底图，可继续涂鸦/编辑(迭代);清空指令与预览
+                  // 把当前选中的图作为新底图，可继续涂鸦/编辑(迭代);清空指令与预览
                   setSrcUrl(resultUrl);
                   setPrompt('');
                   setResultUrl(null);
+                  setResultUrls([]);
                 }}
                 style={cancelBtn}>
                 在此图上继续编辑
@@ -311,8 +356,19 @@ export function DoodleModal({ imageUrl, onClose, onConfirm, onGenerated }: Props
               <button
                 onClick={() => { onGenerated?.({ imageUrl: resultUrl, prompt: prompt.trim() }); onClose(); }}
                 style={genBtn}>
-                发送到画布
+                {resultUrls.length > 1 ? '发送这张到画布' : '发送到画布'}
               </button>
+              {resultUrls.length > 1 && (
+                <button
+                  onClick={() => {
+                    // 每张各建一张图片卡
+                    resultUrls.forEach((u) => onGenerated?.({ imageUrl: u, prompt: prompt.trim() }));
+                    onClose();
+                  }}
+                  style={genBtn}>
+                  全部发送 ({resultUrls.length})
+                </button>
+              )}
             </div>
           </div>
         )}
