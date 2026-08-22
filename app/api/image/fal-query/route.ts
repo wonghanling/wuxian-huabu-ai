@@ -17,15 +17,66 @@ export async function GET(req: NextRequest) {
   const quality = searchParams.get('quality') || undefined;
 
   // 计算这次的扣费金额(与生成路由一致)
+  // key 的推导必须与 generate 路由的 pricingKey 保持一致，否则查不到价而退 0
   const refundAmount = model ? (() => {
     const key = model === 'nano-banana-pro' ? (quality === '4k' ? 'nano-banana-pro-4k' : 'nano-banana-pro-2k')
       : model === 'nano-banana-pro-multi' ? (quality === '4k' ? 'nano-banana-pro-multi-4k' : 'nano-banana-pro-multi-2k')
+      : ['gpt-image-2', 'gpt-image-2-all'].includes(model) ? (quality === '4k' ? 'gpt-image-2-4k' : 'gpt-image-2-2k')
+      : ['flux-2-pro', 'flux-2-pro-edit', 'flux-2-flex', 'flux-2-flex-edit'].includes(model) ? `${model}-2k`
+      : model === 'topaz-upscale' ? (quality === '8k' ? 'topaz-upscale-8k' : 'topaz-upscale-4k')
       : model;
     return calcImagePrice(key);
   })() : 0;
 
   if (!requestId || !endpoint) {
     return NextResponse.json({ error: '缺少 requestId 或 endpoint' }, { status: 400 });
+  }
+
+  // ── Kie 通道（endpoint='c2' 中性代号）────────────────────────
+  // 走在取 fal key 之前，否则查 Kie 任务会白占一个 fal 池的 key。
+  // 返回格式与 fal 分支一致：{ success, imageUrl } / { error } / {}（未完成）
+  if (endpoint === 'c2') {
+    const kKey = await pickKey('kie');
+    let kOk = false;
+    let kErr: any = null;
+    try {
+      const res = await fetch(
+        `https://api.kie.ai/api/v1/jobs/recordInfo?taskId=${encodeURIComponent(requestId)}`,
+        { headers: { 'Authorization': `Bearer ${kKey.keyValue}` } }
+      );
+      const body = await res.json();
+      kOk = res.ok && body?.code === 200;
+      if (!kOk) {
+        kErr = new Error(body?.msg || `查询失败: HTTP ${res.status}`);
+        return NextResponse.json({ error: body?.msg || '查询失败' });
+      }
+
+      const d = body?.data || {};
+      if (d.state === 'success') {
+        // resultJson 是 JSON 字符串，需要二次解析
+        let url = '';
+        try {
+          url = JSON.parse(d.resultJson || '{}')?.resultUrls?.[0] || '';
+        } catch { url = ''; }
+        if (url) return NextResponse.json({ success: true, imageUrl: url });
+        return NextResponse.json({ error: '未返回图片地址' });
+      }
+      if (d.state === 'fail') {
+        // 失败按既有约定记待审核退款（与 fal 分支同款处理）
+        if (userId && refundAmount > 0) {
+          await recordRefundReview({ userId, amount: refundAmount, model, failType: 'content_policy',
+            failReason: d.failMsg || '生成失败', meta: { requestId, endpoint } });
+        }
+        return NextResponse.json({ failed: true, reason: d.failMsg || '生成失败' });
+      }
+      return NextResponse.json({});   // waiting：前端继续轮询
+    } catch (err) {
+      kErr = err;
+      return NextResponse.json({ error: String((err as any)?.message || err) });
+    } finally {
+      await releaseKey(kKey, kOk, kOk ? undefined : categorizeError(kErr),
+        kErr ? String(kErr?.message || kErr) : undefined);
+    }
   }
 
   // 账号池：取一个 fal key 查询

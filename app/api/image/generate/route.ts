@@ -43,9 +43,24 @@ const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
 
 // 图片模型配置
 const IMAGE_MODELS: Record<string, {
-  provider: 'n1n' | 'fal';
+  provider: 'n1n' | 'fal' | 'kie';
   yunwuModel?: string;
   falEndpoint?: string;
+  /** Kie 模型 ID（provider='kie' 时用） */
+  kieModel?: string;
+  /**
+   * Kie 各模型的参数形态差异：
+   *   imgKey  输入图字段名：'image_urls'(Nano Banana) | 'input_urls'(GPT Image 2 / Flux 2)
+   *           | 'image_url'(Topaz，单图)
+   *   resKey  清晰度字段名：'resolution'(默认) | 'output_format' 等
+   *   noPrompt  该模型不接受提示词（Topaz 放大）
+   *   maxImages 输入图上限（用于校验）
+   */
+  kieParams?: {
+    imgKey?: 'image_urls' | 'input_urls' | 'image_url';
+    noPrompt?: boolean;
+    maxImages?: number;
+  };
   apiType?: 'chat' | 'midjourney' | 'replicate' | 'image-generation' | 'gemini-native' | 'gpt-image';
   requiresImage?: boolean;
   supportsImage?: boolean;
@@ -58,8 +73,9 @@ const IMAGE_MODELS: Record<string, {
     supportsImage: true,
   },
   'nano-banana-pro': {
-    provider: 'fal',
-    falEndpoint: 'fal-ai/nano-banana-2/edit',
+    provider: 'kie',
+    kieModel: 'nano-banana-2',
+    kieParams: { imgKey: 'image_urls', maxImages: 14 },
     supportsImage: true,
   },
   'mj_imagine': {
@@ -88,13 +104,15 @@ const IMAGE_MODELS: Record<string, {
     supportsImage: true,
   },
   'gpt-image-2': {
-    provider: 'fal',
-    falEndpoint: 'openai/gpt-image-2/edit',
+    provider: 'kie',
+    kieModel: 'gpt-image-2-text-to-image',
     supportsImage: true,
   },
   'gpt-image-2-all': {
-    provider: 'fal',
-    falEndpoint: 'openai/gpt-image-2/edit',
+    provider: 'kie',
+    kieModel: 'gpt-image-2-image-to-image',
+    kieParams: { imgKey: 'input_urls', maxImages: 16 },
+    requiresImage: true,
     supportsImage: true,
   },
   // --- fal.ai 模型 ---
@@ -109,19 +127,38 @@ const IMAGE_MODELS: Record<string, {
     // 纯文生图，不需要图片
   },
   'nano-banana-pro-multi': {
-    provider: 'fal',
-    falEndpoint: 'fal-ai/nano-banana-pro/edit',
+    provider: 'kie',
+    kieModel: 'nano-banana-pro',
+    kieParams: { imgKey: 'image_urls', maxImages: 8 },
     requiresImage: true,
     supportsImage: true,
   },
   'flux-2-pro': {
-    provider: 'fal',
-    falEndpoint: 'fal-ai/flux-2-pro',
-    // 纯文生图
+    provider: 'kie',
+    kieModel: 'flux-2/pro-text-to-image',
   },
   'flux-2-pro-edit': {
-    provider: 'fal',
-    falEndpoint: 'fal-ai/flux-2-pro/edit',
+    provider: 'kie',
+    kieModel: 'flux-2/pro-image-to-image',
+    kieParams: { imgKey: 'input_urls', maxImages: 8 },
+    requiresImage: true,
+    supportsImage: true,
+  },
+  'flux-2-flex': {
+    provider: 'kie',
+    kieModel: 'flux-2/flex-text-to-image',
+  },
+  'flux-2-flex-edit': {
+    provider: 'kie',
+    kieModel: 'flux-2/flex-image-to-image',
+    kieParams: { imgKey: 'input_urls', maxImages: 8 },
+    requiresImage: true,
+    supportsImage: true,
+  },
+  'topaz-upscale': {
+    provider: 'kie',
+    kieModel: 'topaz/image-upscale',
+    kieParams: { imgKey: 'image_url', noPrompt: true, maxImages: 1 },
     requiresImage: true,
     supportsImage: true,
   },
@@ -133,13 +170,19 @@ export async function POST(req: NextRequest) {
     body = await req.json();
     const { model, prompt, aspectRatio = '1:1', imageBase64, imageBase64Array, imageUrlArray, userId, imageQuality } = body;
 
-    if (!model || !prompt) {
+    if (!model) {
       return NextResponse.json({ error: '缺少必要参数' }, { status: 400 });
     }
 
     const modelConfig = IMAGE_MODELS[model];
     if (!modelConfig) {
       return NextResponse.json({ error: '无效的模型' }, { status: 400 });
+    }
+
+    // 提示词必填 —— 但 Topaz 放大这类模型不接受提示词，只吃一张输入图。
+    // 校验拆到 modelConfig 之后，才能按模型放行。
+    if (!prompt && !modelConfig.kieParams?.noPrompt) {
+      return NextResponse.json({ error: '缺少必要参数' }, { status: 400 });
     }
 
     if (model === 'nano-banana-pro-multi' && (!imageUrlArray || imageUrlArray.length === 0)) {
@@ -149,21 +192,18 @@ export async function POST(req: NextRequest) {
     }
 
     // ── 扣费 ──────────────────────────────────────────────────
-    // Flux 2 Pro 复合价 key:flux-2-pro[-edit]-{档位}-{wide|square}
-    const fluxKey = (m: string, q?: string, ar?: string) => {
-      const tier = q === '4k' ? '4k' : q === '2k' ? '2k' : '1080';
-      const shape = ar === '1:1' ? 'square' : 'wide';   // 16:9/9:16=wide,1:1=square
-      const editSeg = m === 'flux-2-pro-edit' ? 'edit-' : '';
-      return `flux-2-pro-${editSeg}${tier}-${shape}`;
-    };
+    // 走 Kie 后价格结构简化:Flux 2 不再随比例变化(Pro 全档 ¥0.3 / Flex 全档 ¥0.9),
+    // GPT Image 2 只有 2K/4K 两档、不再分 medium/high。
     const pricingKey = model === 'nano-banana-pro'
       ? (imageQuality === '4k' ? 'nano-banana-pro-4k' : 'nano-banana-pro-2k')
       : model === 'nano-banana-pro-multi'
       ? (imageQuality === '4k' ? 'nano-banana-pro-multi-4k' : 'nano-banana-pro-multi-2k')
       : ['gpt-image-2', 'gpt-image-2-all'].includes(model)
-      ? `gpt-image-2-${imageQuality || 'medium'}-${aspectRatio || '2048x1152'}`
-      : ['flux-2-pro', 'flux-2-pro-edit'].includes(model)
-      ? fluxKey(model, imageQuality, aspectRatio)
+      ? (imageQuality === '4k' ? 'gpt-image-2-4k' : 'gpt-image-2-2k')
+      : ['flux-2-pro', 'flux-2-pro-edit', 'flux-2-flex', 'flux-2-flex-edit'].includes(model)
+      ? `${model}-2k`                                   // Pro/Flex 1K 与 2K 同价
+      : model === 'topaz-upscale'
+      ? (imageQuality === '8k' ? 'topaz-upscale-8k' : 'topaz-upscale-4k')
       : model;
     const price = calcImagePrice(pricingKey);
     if (userId) {
@@ -178,6 +218,75 @@ export async function POST(req: NextRequest) {
     }
 
     let imageUrl = '';
+
+    // ── Kie 路径 ────────────────────────────────────────────────
+    // 与 fal 的差异：Kie 是异步任务制(提交 → 轮询)，且只吃 http URL 不吃 base64。
+    // 对前端的契约不变：同样返回 { success, imageUrl }。
+    if (modelConfig.provider === 'kie') {
+      const kp = modelConfig.kieParams ?? {};
+      const kieInput: Record<string, unknown> = {};
+      if (!kp.noPrompt) kieInput.prompt = prompt;
+
+      // 比例：Kie 各模型都收 aspect_ratio 枚举（Topaz 不需要）
+      if (!kp.noPrompt) kieInput.aspect_ratio = aspectRatio || '1:1';
+
+      // 清晰度：Nano Banana / GPT Image 2 用 2K/4K，Flux 2 只有 1K/2K，
+      // Topaz 用 4K/8K。统一取 imageQuality 转大写。
+      const q = String(imageQuality || '2k').toUpperCase();
+      kieInput.resolution = q;
+
+      // 输入图：画布里的图一律是 http URL（不存 base64，这是画布能挂几百张卡
+      // 而不卡的前提），Kie 也只吃 URL —— 直接透传，无需转码或转存。
+      if (kp.imgKey) {
+        const urls = (Array.isArray(imageUrlArray) ? imageUrlArray : [])
+          .filter((u: any) => typeof u === 'string' && u.startsWith('http'));
+        if (urls.length === 0 && modelConfig.requiresImage) {
+          throw new Error('该模型需要至少一张输入图');
+        }
+        if (urls.length > 0) {
+          const capped = kp.maxImages ? urls.slice(0, kp.maxImages) : urls;
+          // Topaz 收单张，字段是 image_url（非数组）
+          kieInput[kp.imgKey] = kp.imgKey === 'image_url' ? capped[0] : capped;
+        }
+      }
+
+      const keyInfo = await pickKey('kie');
+      let ok = false;
+      let kErr: any = null;
+      let taskId = '';
+      try {
+        const createRes = await fetch('https://api.kie.ai/api/v1/jobs/createTask', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${keyInfo.keyValue}`,
+          },
+          body: JSON.stringify({ model: modelConfig.kieModel, input: kieInput }),
+        });
+        const createData = await createRes.json();
+        // Kie 用 body 的 code 表达错误，HTTP 状态可能仍是 200
+        if (!createRes.ok || createData?.code !== 200) {
+          throw new Error(createData?.msg || createData?.message || '提交失败');
+        }
+        taskId = createData?.data?.taskId;
+        if (!taskId) throw new Error('未返回任务ID');
+        ok = true;
+      } catch (err) {
+        kErr = err;
+        throw err;
+      } finally {
+        await releaseKey(keyInfo, ok, ok ? undefined : categorizeError(kErr),
+          kErr ? String(kErr?.message || kErr) : undefined);
+      }
+
+      // 提交完立刻返回，让前端轮询 —— 不在服务端阻塞等待出图，
+      // 否则一张图会占住一个函数实例数十秒。
+      //
+      // 复用既有的 pending + requestId + endpoint 契约（原本给 fal 异步用的），
+      // 前端 api.ts 的轮询逻辑一行都不用改，fal-query 里加一个 c2 分支即可。
+      // endpoint 用中性代号，不在前端暴露上游名称。
+      return NextResponse.json({ success: true, pending: true, requestId: taskId, endpoint: 'c2' });
+    }
 
     // ── fal.ai 路径 ──────────────────────────────────────────────
     if (modelConfig.provider === 'fal') {

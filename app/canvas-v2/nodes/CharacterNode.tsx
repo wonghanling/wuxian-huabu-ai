@@ -29,9 +29,10 @@ const OUTPUT_PORT = 'rgba(156,163,175,0.9)';
 const CHARACTER_PROMPT = `use the uploaded image as the ONLY character reference, character turnaround sheet, TOP SECTION: full body views front view, side view, back view, full body, head to toe visible, BOTTOM SECTION: head detail views reuse the SAME head from the original image, do not generate a new face, close-up crops of the same character head, front face, side profile, 3/4 view, same character, identical face, preserve facial features exactly, preserve hairstyle exactly, same hair shape, same hair volume, no variation, reuse the same identity across all views, no redesign, no reinterpretation, keep original outfit exactly, do not redesign, match the original image style exactly, same rendering, same lighting, same material, no duplicate character generation, no alternate versions, neutral pose, clean studio background, arranged in one frame, structured grid layout, clear separation`;
 
 const CHAR_MODELS = [
-  { id: 'nano-banana-pro', label: 'Nano Banana 2', price: '2K ¥1.0 / 4K ¥1.2', useSizeNotRatio: false, qualityOptions: [{ value: '2k', label: '2K — ¥1.0/次' }, { value: '4k', label: '4K — ¥1.2/次' }] },
+  { id: 'nano-banana-pro', label: 'Nano Banana 2', price: '2K ¥0.5 / 4K ¥0.7', useSizeNotRatio: false, qualityOptions: [{ value: '2k', label: '2K — ¥0.5/次' }, { value: '4k', label: '4K — ¥0.7/次' }] },
   { id: 'nano-banana', label: 'Nano Banana', price: '¥0.5/次', useSizeNotRatio: false, qualityOptions: null },
-  { id: 'gpt-image-2', label: 'GPT Image 2', price: '¥0.5~0.8/次', useSizeNotRatio: true, qualityOptions: null },
+  // GPT Image 2 走 Kie 后改用比例 + 2K/4K,不再用尺寸值和 medium/high
+  { id: 'gpt-image-2', label: 'GPT Image 2', price: '2K ¥0.43 / 4K ¥0.63', useSizeNotRatio: false, qualityOptions: [{ value: '2k', label: '2K — ¥0.43/次' }, { value: '4k', label: '4K — ¥0.63/次' }] },
   { id: 'doubao-seedream-4-5-251128', label: '豆包 Seedream 5.0', price: '¥0.7/次', useSizeNotRatio: false, qualityOptions: null },
 ];
 

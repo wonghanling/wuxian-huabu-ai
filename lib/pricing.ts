@@ -12,8 +12,9 @@ export const MEMBERSHIP_PRICE = 39; // 元/月
 export const IMAGE_PRICING: Record<string, number> = {
   'nano-banana':          0.5,
   'virtual-try-on':       0.3,   // 虚拟试衣(fal image-apps-v2)
-  'nano-banana-pro-2k':   1.0,
-  'nano-banana-pro-4k':   1.2,
+  // Nano Banana 2（走 Kie nano-banana-2）
+  'nano-banana-pro-2k':   0.5,
+  'nano-banana-pro-4k':   0.7,
   'flux-kontext':         0.6,
   'flux-kontext-max':     1.0,
   'midjourney':           0.6,
@@ -24,39 +25,23 @@ export const IMAGE_PRICING: Record<string, number> = {
   'doubao-seedream-4-5-251128': 0.7,
   // Seedream 5 Pro 图片交互编辑（走 Kie，quality=high 出 2K）
   'seedream-5-pro-edit': 0.5,
-  'nano-banana-pro-multi-2k': 1.1,
-  'nano-banana-pro-multi-4k': 2.2,
-  // GPT Image 2 medium
-  'gpt-image-2-medium-1920x1080': 0.5,
-  'gpt-image-2-medium-1080x1920': 0.5,
-  'gpt-image-2-medium-1080x1080': 0.5,
-  'gpt-image-2-medium-2048x1152': 0.4,
-  'gpt-image-2-medium-3840x2160': 0.9,
-  'gpt-image-2-medium-2160x3840': 0.9,
-  'gpt-image-2-medium-2048x2048': 0.5,
-  // GPT Image 2 high
-  'gpt-image-2-high-1920x1080': 1.2,
-  'gpt-image-2-high-1080x1920': 1.2,
-  'gpt-image-2-high-1080x1080': 1.2,
-  'gpt-image-2-high-2048x1152': 1.2,
-  'gpt-image-2-high-3840x2160': 3.1,
-  'gpt-image-2-high-2160x3840': 3.1,
-  'gpt-image-2-high-2048x2048': 1.7,
+  // Nano Banana Pro 多图融合（走 Kie nano-banana-pro）
+  'nano-banana-pro-multi-2k': 0.7,
+  'nano-banana-pro-multi-4k': 0.9,
 
-  // Flux 2 Pro 文生图(售卖价,会员普通同价;wide=16:9/9:16, square=1:1)
-  'flux-2-pro-1080-wide':   0.53,
-  'flux-2-pro-1080-square': 0.42,
-  'flux-2-pro-2k-wide':     0.53,
-  'flux-2-pro-2k-square':   0.75,
-  'flux-2-pro-4k-wide':     1.29,
-  'flux-2-pro-4k-square':   2.04,
-  // Flux 2 Pro 图生图(edit)
-  'flux-2-pro-edit-1080-wide':   0.75,
-  'flux-2-pro-edit-1080-square': 0.53,
-  'flux-2-pro-edit-2k-wide':     0.75,
-  'flux-2-pro-edit-2k-square':   1.18,
-  'flux-2-pro-edit-4k-wide':     2.26,
-  'flux-2-pro-edit-4k-square':   3.88,
+  // GPT Image 2（走 Kie，只保留 2K/4K，不再分 medium/high）
+  'gpt-image-2-2k': 0.43,
+  'gpt-image-2-4k': 0.63,
+
+  // Flux 2（走 Kie，只有 1K/2K，无 4K；Pro 与 Flex 是两个模型，Flex 更贵）
+  'flux-2-pro-2k':      0.3,   // Pro 文生图
+  'flux-2-pro-edit-2k': 0.3,   // Pro 图生图（8 张 input_urls）
+  'flux-2-flex-2k':      0.9,  // Flex 文生图
+  'flux-2-flex-edit-2k': 0.9,  // Flex 图生图（8 张 input_urls）
+
+  // Topaz 图片放大（走 Kie topaz/image-upscale）
+  'topaz-upscale-4k': 0.7,
+  'topaz-upscale-8k': 1.4,
 
   // Design Workflow（设计编辑能力）
   'ideogram-v3-turbo':    0.3,   // 局部重绘 快速

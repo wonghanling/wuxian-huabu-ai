@@ -18,45 +18,55 @@ export interface ImageModel {
   ratios?: { value: string; label: string }[];
 }
 
-// Flux 2 Pro 价格查询(档位×比例,售卖价);供 UI 标价 + 说明
+// Flux 2 价格查询。走 Kie 后只有 1K/2K(无 4K),且价格不随比例变化 ——
+// Pro ¥0.3、Flex ¥0.9,所以只按模型 ID 查;quality/ratio 保留形参兼容既有调用方。
 export function fluxImagePrice(modelId: string, quality?: string, ratio?: string): number {
-  const tier = quality === '4k' ? '4k' : quality === '2k' ? '2k' : '1080';
-  const shape = ratio === '1:1' ? 'square' : 'wide';
+  void quality; void ratio;
   const map: Record<string, number> = {
-    'flux-2-pro-1080-wide': 0.53, 'flux-2-pro-1080-square': 0.42,
-    'flux-2-pro-2k-wide': 0.53, 'flux-2-pro-2k-square': 0.75,
-    'flux-2-pro-4k-wide': 1.29, 'flux-2-pro-4k-square': 2.04,
-    'flux-2-pro-edit-1080-wide': 0.75, 'flux-2-pro-edit-1080-square': 0.53,
-    'flux-2-pro-edit-2k-wide': 0.75, 'flux-2-pro-edit-2k-square': 1.18,
-    'flux-2-pro-edit-4k-wide': 2.26, 'flux-2-pro-edit-4k-square': 3.88,
+    'flux-2-pro': 0.3, 'flux-2-pro-edit': 0.3,
+    'flux-2-flex': 0.9, 'flux-2-flex-edit': 0.9,
   };
-  const editSeg = modelId === 'flux-2-pro-edit' ? 'edit-' : '';
-  return map[`flux-2-pro-${editSeg}${tier}-${shape}`] ?? 0;
+  return map[modelId] ?? 0;
 }
 
+// Kie 的 Flux 2 支持 8 种比例(比原 fal 的 3 种多)
 const FLUX_RATIOS = [
   { value: '16:9', label: '16:9 宽屏' },
   { value: '9:16', label: '9:16 竖屏' },
   { value: '1:1', label: '1:1 正方形' },
+  { value: '4:3', label: '4:3 横图' },
+  { value: '3:4', label: '3:4 竖图' },
+  { value: '3:2', label: '3:2 横图' },
+  { value: '2:3', label: '2:3 竖图' },
 ];
 
 export const IMAGE_MODELS: ImageModel[] = [
-  { id: 'nano-banana-pro', label: 'Nano Banana 2', price: '2K ¥1.0 / 4K ¥1.2', supportsImage: true,
-    qualityOptions: [{ value: '2k', label: '2K — ¥1.0/次' }, { value: '4k', label: '4K — ¥1.2/次' }] },
+  { id: 'nano-banana-pro', label: 'Nano Banana 2', price: '2K ¥0.5 / 4K ¥0.7', supportsImage: true,
+    qualityOptions: [{ value: '2k', label: '2K — ¥0.5/次' }, { value: '4k', label: '4K — ¥0.7/次' }] },
   { id: 'nano-banana', label: 'Nano Banana', price: '¥0.5/次', supportsImage: true },
-  { id: 'nano-banana-pro-multi', label: '多图融合 Nano Banana Pro', price: '2K ¥1.1 / 4K ¥2.2', supportsImage: true,
-    qualityOptions: [{ value: '2k', label: '2K — ¥1.1/次' }, { value: '4k', label: '4K — ¥2.2/次' }] },
-  { id: 'gpt-image-2', label: 'GPT Image 2', price: '¥0.5~0.8/次', useSizeNotRatio: true, supportsImage: true },
-  { id: 'gpt-image-2-all', label: 'GPT Image 2 多图融合', price: '¥0.5~0.8/次', useSizeNotRatio: true, supportsImage: true },
+  { id: 'nano-banana-pro-multi', label: '多图融合 Nano Banana Pro', price: '2K ¥0.7 / 4K ¥0.9', supportsImage: true,
+    qualityOptions: [{ value: '2k', label: '2K — ¥0.7/次' }, { value: '4k', label: '4K — ¥0.9/次' }] },
+  // GPT Image 2 走 Kie 后改用比例 + 2K/4K 两档,不再用尺寸和 medium/high 双画质
+  { id: 'gpt-image-2', label: 'GPT Image 2', price: '2K ¥0.43 / 4K ¥0.63', supportsImage: true,
+    qualityOptions: [{ value: '2k', label: '2K — ¥0.43/次' }, { value: '4k', label: '4K — ¥0.63/次' }] },
+  { id: 'gpt-image-2-all', label: 'GPT Image 2 多图融合', price: '2K ¥0.43 / 4K ¥0.63', supportsImage: true,
+    qualityOptions: [{ value: '2k', label: '2K — ¥0.43/次' }, { value: '4k', label: '4K — ¥0.63/次' }] },
   { id: 'mj_imagine', label: 'Midjourney', price: '¥0.6/次', supportsImage: true },
   { id: 'mj_imagine_v7', label: 'Midjourney V7', price: '¥0.6/次', supportsImage: true },
   { id: 'mj_niji_7', label: 'Niji 7 动漫', price: '¥0.6/次', supportsImage: true },
   { id: 'doubao-seedream-4-5-251128', label: '豆包 Seedream 5.0', price: '¥0.7/次', supportsImage: true },
-  // Flux 2 Pro(fal,1080/2K/4K;16:9/9:16/1:1)
-  { id: 'flux-2-pro', label: 'Flux 2 Pro 文生图', price: '¥0.42~2.04/次', ratios: FLUX_RATIOS,
-    qualityOptions: [{ value: '1080', label: '1080' }, { value: '2k', label: '2K' }, { value: '4k', label: '4K' }] },
-  { id: 'flux-2-pro-edit', label: 'Flux 2 Pro 图生图', price: '¥0.53~3.88/次', supportsImage: true, ratios: FLUX_RATIOS,
-    qualityOptions: [{ value: '1080', label: '1080' }, { value: '2k', label: '2K' }, { value: '4k', label: '4K' }] },
+  // Flux 2(走 Kie;只 1K/2K,无 4K)。Pro 与 Flex 是两个模型,Flex 贵三倍。
+  { id: 'flux-2-pro', label: 'Flux 2 Pro 文生图', price: '¥0.3/次', ratios: FLUX_RATIOS,
+    qualityOptions: [{ value: '1k', label: '1K — ¥0.3/次' }, { value: '2k', label: '2K — ¥0.3/次' }] },
+  { id: 'flux-2-pro-edit', label: 'Flux 2 Pro 图生图', price: '¥0.3/次', supportsImage: true, ratios: FLUX_RATIOS,
+    qualityOptions: [{ value: '1k', label: '1K — ¥0.3/次' }, { value: '2k', label: '2K — ¥0.3/次' }] },
+  { id: 'flux-2-flex', label: 'Flux 2 Flex 文生图', price: '¥0.9/次', ratios: FLUX_RATIOS,
+    qualityOptions: [{ value: '1k', label: '1K — ¥0.9/次' }, { value: '2k', label: '2K — ¥0.9/次' }] },
+  { id: 'flux-2-flex-edit', label: 'Flux 2 Flex 图生图', price: '¥0.9/次', supportsImage: true, ratios: FLUX_RATIOS,
+    qualityOptions: [{ value: '1k', label: '1K — ¥0.9/次' }, { value: '2k', label: '2K — ¥0.9/次' }] },
+  // Topaz 图片放大(走 Kie;只需一张输入图,无提示词)
+  { id: 'topaz-upscale', label: 'Topaz 图片放大', price: '4K ¥0.7 / 8K ¥1.4', supportsImage: true,
+    qualityOptions: [{ value: '4k', label: '4K — ¥0.7/次' }, { value: '8k', label: '8K — ¥1.4/次' }] },
 ];
 
 export const DEFAULT_IMAGE_MODEL = 'nano-banana-pro';
