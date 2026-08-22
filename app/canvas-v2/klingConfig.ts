@@ -6,7 +6,7 @@
 
 export const KLING_LIPSYNC_PRICE = {
   member: 1.085,   // 会员 ¥1.085/次
-  normal: 1.285,   // 普通 ¥1.285/次
+  normal: 1.285,   // 保留原价,当前不参与结算(统一按会员价)
 } as const;
 
 // 输入要求(照搬原网提示文案)

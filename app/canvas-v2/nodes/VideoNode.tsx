@@ -486,11 +486,11 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                     <span style={priceCol}>
                       {withAudio ? (
                         <>
-                          <span style={priceLine}>无声 会员¥{noAudio.member.toFixed(2)}/普通¥{noAudio.normal.toFixed(2)}</span>
-                          <span style={priceLine}>有声 会员¥{withAudio.member.toFixed(2)}/普通¥{withAudio.normal.toFixed(2)}</span>
+                          <span style={priceLine}>无声 ¥{noAudio.member.toFixed(2)}</span>
+                          <span style={priceLine}>有声 ¥{withAudio.member.toFixed(2)}</span>
                         </>
                       ) : (
-                        <span style={priceLine}>会员¥{noAudio.member.toFixed(2)}/普通¥{noAudio.normal.toFixed(2)}/秒</span>
+                        <span style={priceLine}>¥{noAudio.member.toFixed(2)}/秒</span>
                       )}
                     </span>
                   </SubItem>
@@ -682,8 +682,7 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           {/* 底行:实时价格(会员/普通) + Generate */}
           <div style={{ display: 'flex', alignItems: 'center', padding: '2px 6px 4px', gap: 10 }}>
             <span style={{ fontSize: 11.5, color: '#e4e4e7' }}>
-              会员 <b style={{ color: '#fff' }}>¥{price.member.toFixed(2)}</b>
-              <span style={{ color: '#71717a' }}> / 普通 ¥{price.normal.toFixed(2)}</span>
+              <b style={{ color: '#fff' }}>¥{price.member.toFixed(2)}</b>
             </span>
             <span style={{ fontSize: 10, color: '#52525b' }}>{duration}s · {resolution}{data.config.audio ? ' · 有声' : ''}</span>
             <button onClick={handleGenerate} disabled={data.status === 'generating'} style={{ ...generateBtn, opacity: data.status === 'generating' ? 0.4 : 1, cursor: data.status === 'generating' ? 'default' : 'pointer' }}>{data.status === 'generating' ? '生成中…' : 'Generate'}</button>

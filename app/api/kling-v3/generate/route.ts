@@ -29,7 +29,8 @@ function getCharge(tier: string, generateAudio: boolean, duration: number, isMem
   const p = KLING_PRICE[tier];
   if (!p) return 0;
   let perSec = generateAudio ? p.audio : p.noAudio;
-  if (!isMember) perSec += 0.2;
+  // 统一按会员价结算,不再区分会员/普通
+  void isMember;
   const secs = Math.max(1, duration);
   return Math.round(perSec * secs * 100) / 100;
 }

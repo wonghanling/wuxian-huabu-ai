@@ -100,7 +100,9 @@ function getSeedanceCharge(model: string, resolution: string, generateAudio: boo
   const key = `${model}_${resolution}`;
   const price = SEEDANCE_PRICE[key];
   if (!price) return 0;
-  const perSec = isMember ? price.member : price.normal;
+  // 统一按会员价结算,不再区分会员/普通
+  void isMember;
+  const perSec = price.member;
   const secs = duration === -1 ? 5 : Math.max(1, duration);
   return Math.round(perSec * secs * 100) / 100;
 }

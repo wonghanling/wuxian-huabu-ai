@@ -48,8 +48,6 @@ export const IMAGE_MODELS: ImageModel[] = [
     qualityOptions: [{ value: '2k', label: '2K — ¥1.1/次' }, { value: '4k', label: '4K — ¥2.2/次' }] },
   { id: 'gpt-image-2', label: 'GPT Image 2', price: '¥0.5~0.8/次', useSizeNotRatio: true, supportsImage: true },
   { id: 'gpt-image-2-all', label: 'GPT Image 2 多图融合', price: '¥0.5~0.8/次', useSizeNotRatio: true, supportsImage: true },
-  { id: 'flux-kontext', label: 'Flux Kontext', price: '¥0.6/次', supportsImage: true },
-  { id: 'flux-kontext-max', label: 'Flux Kontext Max', price: '¥1.0/次' },
   { id: 'mj_imagine', label: 'Midjourney', price: '¥0.6/次', supportsImage: true },
   { id: 'mj_imagine_v7', label: 'Midjourney V7', price: '¥0.6/次', supportsImage: true },
   { id: 'mj_niji_7', label: 'Niji 7 动漫', price: '¥0.6/次', supportsImage: true },

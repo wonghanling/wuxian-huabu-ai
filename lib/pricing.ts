@@ -100,10 +100,11 @@ export interface VideoModelPrice {
   audioVariants?: boolean; // true = 有声/无声分开定价，key 用 "720P_audio" / "720P"
 }
 
-// 统一加价规则：会员 = 成本 + 0.2/秒，普通 = 成本 + 0.4/秒
-// （即梦 / Wan / Veo / Seedance 全部统一，方便计算）
+// 加价规则：统一按会员价结算，不再区分会员/普通。
+// 两个常量保持相同值，tier() 生成的 memberPerSec 与 normalPerSec 因此相等 ——
+// 82 处 tier() 调用一次性生效，无需逐个改动，也保留了以后恢复差价的可能。
 const MEMBER_MARKUP = 0.2;
-const NORMAL_MARKUP = 0.4;
+const NORMAL_MARKUP = 0.2;
 
 function tier(costPerSec: number): VideoTierPrice {
   return {
@@ -282,10 +283,11 @@ export const VIDEO_PRICING: Record<string, VideoModelPrice> = {
   // 2.5 升级版：最长 30s、素材上限更高，暂无 1080p/4K
   'doubao-seedance-2-5-260128': {
     resolutions: {
-      '480p':       flat(1.14),
-      '720p':       flat(2.22),
-      '480p_video': flat(0.76),
-      '720p_video': flat(1.38),
+      '480p':        flat(1.14),
+      '720p':        flat(2.22),
+      '1080p':       flat(3.90),
+      '480p_video':  flat(0.76),
+      '720p_video':  flat(1.38),
     },
   },
   'doubao-seedance-2-0-260128': {
@@ -335,13 +337,13 @@ export const VIDEO_PRICING: Record<string, VideoModelPrice> = {
   // ── MiniMax H3（走 Kie，会员/普通同价，按秒）──────────────
   // 768P ¥0.85/秒 · 2K ¥1.33/秒；三种模式同价
   'minimax-h3-t2v': {
-    resolutions: { '768p': flat(0.85), '2k': flat(1.33) },
+    resolutions: { '768p': flat(0.63), '2k': flat(0.98) },
   },
   'minimax-h3-i2v': {
-    resolutions: { '768p': flat(0.85), '2k': flat(1.33) },
+    resolutions: { '768p': flat(0.63), '2k': flat(0.98) },
   },
   'minimax-h3-r2v': {
-    resolutions: { '768p': flat(0.85), '2k': flat(1.33) },
+    resolutions: { '768p': flat(0.63), '2k': flat(0.98) },
   },
 
   // ── Kling 动作控制（按秒，std=720p，pro=1080p）──────────

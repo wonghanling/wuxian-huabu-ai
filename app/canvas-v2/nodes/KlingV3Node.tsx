@@ -446,10 +446,10 @@ function KlingV3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 3, width: '100%' }}>
                     <span style={{ fontWeight: 600 }}>{m.label}</span>
                     <span style={priceLine}>
-                      无音频 会员¥{m.priceMemberNoAudio.toFixed(1)}/普通¥{(m.priceMemberNoAudio + 0.2).toFixed(1)} 每秒
+                      无音频 ¥{m.priceMemberNoAudio.toFixed(1)} 每秒
                     </span>
                     <span style={priceLine}>
-                      有音频 会员¥{m.priceMemberAudio.toFixed(1)}/普通¥{(m.priceMemberAudio + 0.2).toFixed(1)} 每秒
+                      有音频 ¥{m.priceMemberAudio.toFixed(1)} 每秒
                     </span>
                   </div>
                 </SubItem>
@@ -468,7 +468,7 @@ function KlingV3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               {[{ v: false, label: '无音频' }, { v: true, label: '生成音频' }].map((o) => (
                 <SubItem key={String(o.v)} active={genAudio === o.v} onClick={() => { updateConfig(id, { audio: o.v }); setSub(null); }}>
                   <span>{o.label}</span>
-                  <span style={subHint}>会员¥{(o.v ? model.priceMemberAudio : model.priceMemberNoAudio).toFixed(1)}/秒</span>
+                  <span style={subHint}>¥{(o.v ? model.priceMemberAudio : model.priceMemberNoAudio).toFixed(1)}/秒</span>
                 </SubItem>
               ))}
             </ParamTag>
@@ -515,8 +515,7 @@ function KlingV3NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           {/* 底行:实时价格(会员/普通) + Generate */}
           <div style={{ display: 'flex', alignItems: 'center', padding: '2px 6px 4px', gap: 8 }}>
             <span style={{ fontSize: 11.5, color: '#e4e4e7' }}>
-              会员 <b style={{ color: '#fff' }}>¥{klingV3Price(model.id, genAudio, priceSeconds, true).toFixed(2)}</b>
-              <span style={{ color: '#71717a' }}> / 普通 ¥{klingV3Price(model.id, genAudio, priceSeconds, false).toFixed(2)}</span>
+              <b style={{ color: '#fff' }}>¥{klingV3Price(model.id, genAudio, priceSeconds, true).toFixed(2)}</b>
             </span>
             <span style={{ fontSize: 10, color: '#52525b' }}>{duration}s · {genAudio ? '有音频' : '无音频'}</span>
             <button onClick={handleGenerate} disabled={data.status === 'generating'} style={{ ...generateBtn, opacity: data.status === 'generating' ? 0.4 : 1, cursor: data.status === 'generating' ? 'default' : 'pointer' }}>{data.status === 'generating' ? '生成中…' : 'Generate'}</button>

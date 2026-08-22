@@ -237,7 +237,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     const newId = `${menu.kind[0]}${Date.now()}`;
     const modelMap: Record<SpawnAction, string> = {
       image: 'nano-banana-pro',
-      video: 'jimeng-i2v',
+      video: 'wan2.7-i2v',
       seedance: 'doubao-seedance-2-0-260128',
       seedanceMM: 'doubao-seedance-2-0-260128',
       kling: '',

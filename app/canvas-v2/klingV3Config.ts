@@ -71,7 +71,8 @@ export function klingV3Price(modelId: string, generateAudio: boolean, seconds: n
   const m = KLING_V3_MODELS.find((x) => x.id === modelId);
   if (!m) return 0;
   let perSec = generateAudio ? m.priceMemberAudio : m.priceMemberNoAudio;
-  if (!isMember) perSec += 0.2; // 普通用户每秒 +0.2
+  // 统一按会员价结算,不再区分会员/普通(isMember 参数保留以兼容调用方)
+  void isMember;
   const secs = Math.max(1, seconds);
   return Math.round(perSec * secs * 100) / 100;
 }

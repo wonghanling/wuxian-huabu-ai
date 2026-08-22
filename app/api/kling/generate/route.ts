@@ -77,7 +77,8 @@ function getKlingCharge(params: {
   const { mode, isMember } = params;
 
   if (mode === 'advanced-lip-sync') {
-    const amount = isMember ? KLING_LIP_SYNC_PRICE.member : KLING_LIP_SYNC_PRICE.normal;
+    // 统一按会员价结算,不再区分会员/普通(价格表保留 normal 字段,便于以后恢复差价)
+    const amount = KLING_LIP_SYNC_PRICE.member;
     return {
       amount,
       description: 'Kling 对口型',
@@ -104,7 +105,8 @@ function getKlingCharge(params: {
   const videoMode = normalizeVideoMode(params.videoMode);
   const duration = Math.max(1, Number(params.duration) || 5);
   const tier = KLING_MOTION_PRICE[motionVersion][videoMode];
-  const perSecond = isMember ? tier.member : tier.normal;
+  // 统一按会员价结算,不再区分会员/普通
+  const perSecond = tier.member;
 
   return {
     amount: Math.round(perSecond * duration * 100) / 100,

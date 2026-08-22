@@ -236,8 +236,7 @@ function KlingNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           {/* 底行:固定价格(按次) + Generate */}
           <div style={{ display: 'flex', alignItems: 'center', padding: '2px 6px 4px', gap: 8 }}>
             <span style={{ fontSize: 11.5, color: '#e4e4e7' }}>
-              会员 <b style={{ color: '#fff' }}>¥{KLING_LIPSYNC_PRICE.member.toFixed(3)}</b>
-              <span style={{ color: '#71717a' }}> / 普通 ¥{KLING_LIPSYNC_PRICE.normal.toFixed(3)}</span>
+              <b style={{ color: '#fff' }}>¥{KLING_LIPSYNC_PRICE.member.toFixed(3)}</b>
             </span>
             <span style={{ fontSize: 10, color: '#52525b' }}>按次</span>
             <button onClick={handleGenerate} disabled={data.status === 'generating'} style={{ ...generateBtn, opacity: data.status === 'generating' ? 0.4 : 1, cursor: data.status === 'generating' ? 'default' : 'pointer' }}>{data.status === 'generating' ? '生成中…' : 'Generate'}</button>
