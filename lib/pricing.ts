@@ -215,55 +215,57 @@ export const VIDEO_PRICING: Record<string, VideoModelPrice> = {
     },
   },
 
-  // ── Wan 2.7（新协议,成本¥0.73/s 720P / ¥1.10/s 1080P）──
+  // ── Wan 2.7（走 Kie，统一价 720P ¥0.63/s · 1080P ¥0.90/s）──
+  // 五种模式同价。含自动音频，不区分有声/无声，故不设 audioVariants。
   'wan2.7-t2v': {
     resolutions: {
-      '720P':  tier(0.73),
-      '1080P': tier(1.10),
+      '720P':  flat(0.63),
+      '1080P': flat(0.90),
     },
   },
   'wan2.7-i2v': {
     resolutions: {
-      '720P':  tier(0.73),  // 会员¥0.93 / 普通¥1.13
-      '1080P': tier(1.10),  // 会员¥1.30 / 普通¥1.50
+      '720P':  flat(0.63),
+      '1080P': flat(0.90),
     },
   },
   'wan2.7-kf2v': {
     resolutions: {
-      '720P':  tier(0.73),
-      '1080P': tier(1.10),
+      '720P':  flat(0.63),
+      '1080P': flat(0.90),
     },
   },
   'wan2.7-r2v': {
     resolutions: {
-      '720P':  tier(0.73),
-      '1080P': tier(1.10),
+      '720P':  flat(0.63),
+      '1080P': flat(0.90),
     },
   },
   'wan2.7-videoedit': {
     resolutions: {
-      '720P':  tier(0.73),
-      '1080P': tier(1.10),
+      '720P':  flat(0.63),
+      '1080P': flat(0.90),
     },
   },
 
-  // ── HappyHorse（成本¥1.05/s 720P / ¥1.80/s 1080P）──────
+  // ── 快乐马 1.1（走 Kie，统一价 720P ¥0.86/s · 1080P ¥1.07/s）──
+  // 模型 key 沿用 1.0 命名，避免动前端已存卡片的 config.model（改名会让老卡查不到价）
   'happyhorse-1.0-t2v': {
     resolutions: {
-      '720P':  tier(1.05),  // 会员¥1.25 / 普通¥1.45
-      '1080P': tier(1.80),  // 会员¥2.00 / 普通¥2.20
+      '720P':  flat(0.86),
+      '1080P': flat(1.07),
     },
   },
   'happyhorse-1.0-i2v': {
     resolutions: {
-      '720P':  tier(1.05),
-      '1080P': tier(1.80),
+      '720P':  flat(0.86),
+      '1080P': flat(1.07),
     },
   },
   'happyhorse-1.0-r2v': {
     resolutions: {
-      '720P':  tier(1.05),
-      '1080P': tier(1.80),
+      '720P':  flat(0.86),
+      '1080P': flat(1.07),
     },
   },
   'happyhorse-1.0-video-edit': {
@@ -420,12 +422,13 @@ export const VIDEO_PRICING: Record<string, VideoModelPrice> = {
     },
   },
 
-  // ── Pixverse v6(fal,统一带音频,无音频开关;只 720p/1080p)──
+  // ── Pixverse v6（走 Kie，统一价 720P ¥0.43/s · 1080P ¥0.73/s）──
+  // 自带音频，文生/图生同价。Kie 侧还支持 360p/540p，但画布只开 720p/1080p。
   'pixverse-t2v': {
-    resolutions: { '720P': tier(0.4), '1080P': tier(0.7) },
+    resolutions: { '720P': flat(0.43), '1080P': flat(0.73) },
   },
   'pixverse-i2v': {
-    resolutions: { '720P': tier(0.4), '1080P': tier(0.7) },
+    resolutions: { '720P': flat(0.43), '1080P': flat(0.73) },
   },
 };
 

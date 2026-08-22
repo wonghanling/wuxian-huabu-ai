@@ -475,8 +475,13 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           <div style={tagsRow}>
             <ParamTag label={<><IconModel size={12} /> {model.label}</>} open={sub === 'model'} onToggle={() => setSub(sub === 'model' ? null : 'model')} width={300}>
               {VIDEO_MODELS.map((m: VideoModel) => {
-                const noAudio = videoPrice(m.id, m.defaultResolution, 1, false);
-                const withAudio = m.supportsAudio ? videoPrice(m.id, m.defaultResolution, 1, true) : null;
+                // 逐个清晰度列价:原来只按 defaultResolution 算,导致 1080P 等档位的价格
+                // 在下拉里根本看不到(价格是有的,只是没显示)
+                const rows = m.resolutions.map((r) => ({
+                  res: r,
+                  noAudio: videoPrice(m.id, r, 1, false),
+                  withAudio: m.supportsAudio ? videoPrice(m.id, r, 1, true) : null,
+                })).filter((x) => x.noAudio.member > 0 || (x.withAudio?.member ?? 0) > 0);
                 return (
                   <SubItem key={m.id} active={m.id === data.config.model} onClick={() => {
                     updateConfig(id, { model: m.id, ratio: m.aspectRatios[0] ?? '', duration: m.durations[0] ?? 5, resolution: m.defaultResolution });
@@ -484,14 +489,15 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                   }}>
                     <span style={{ flex: 1 }}>{m.label}</span>
                     <span style={priceCol}>
-                      {withAudio ? (
-                        <>
-                          <span style={priceLine}>无声 ¥{noAudio.member.toFixed(2)}</span>
-                          <span style={priceLine}>有声 ¥{withAudio.member.toFixed(2)}</span>
-                        </>
-                      ) : (
-                        <span style={priceLine}>¥{noAudio.member.toFixed(2)}/秒</span>
-                      )}
+                      {rows.map((x) => (
+                        <span key={x.res} style={priceLine}>
+                          {x.res.toUpperCase()}{' '}
+                          {x.withAudio
+                            ? `无声¥${x.noAudio.member.toFixed(2)}/有声¥${x.withAudio.member.toFixed(2)}`
+                            : `¥${x.noAudio.member.toFixed(2)}`}
+                          {' 每秒'}
+                        </span>
+                      ))}
                     </span>
                   </SubItem>
                 );

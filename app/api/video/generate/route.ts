@@ -59,6 +59,22 @@ type ModelConfig = {
   endImageParamName?: string;
   i2vNoAspectRatio?: boolean;
   provider?: 'fal' | 'dashscope' | 'jimeng' | 'kie';
+  /**
+   * Kie 各模型的参数形态差异（provider='kie' 时生效）。不设则用 H3 的默认形态。
+   *   resKey    清晰度字段名：'resolution'(Wan/快乐马/H3) | 'quality'(Pixverse)
+   *   resCase   清晰度大小写：'upper'=768P/2K(H3) | 'lower'=720p/1080p(其余)
+   *   imgStyle  图片传法：'frame'=first_frame_url/last_frame_url(Wan)
+   *             | 'urls'=image_urls 数组(快乐马/Pixverse) | 'single'=image_url(H3)
+   *   refStyle  参考素材字段：'wan'=reference_image/reference_video/reference_voice
+   *             | 'h3'=reference_image_urls/..._video_urls/..._audio_urls
+   *             | 'single'=reference_image(快乐马,仅图)
+   */
+  kieParams?: {
+    resKey?: 'resolution' | 'quality';
+    resCase?: 'upper' | 'lower';
+    imgStyle?: 'frame' | 'urls' | 'single';
+    refStyle?: 'wan' | 'h3' | 'single';
+  };
   dashscopeModel?: string;
   jimengReqKey?: string;
   // 运镜模式专用
@@ -245,7 +261,8 @@ const VIDEO_MODELS: Record<string, ModelConfig> = {
 
   'pixverse-t2v': {
     name: 'Pixverse v6 文生视频',
-    endpoint: 'fal-ai/pixverse/v6/text-to-video',
+    endpoint: 'pixverse-v6/text-to-video',
+    provider: 'kie',
     mode: 't2v',
     durations: [5, 8],
     aspectRatios: ['16:9', '9:16', '1:1'],
@@ -255,10 +272,12 @@ const VIDEO_MODELS: Record<string, ModelConfig> = {
     audioBuiltIn: true,
     supportsEndFrame: false,
     durationFormat: 'number',
+    kieParams: { resKey: 'quality', resCase: 'lower' },
   },
   'pixverse-i2v': {
     name: 'Pixverse v6 图生视频',
-    endpoint: 'fal-ai/pixverse/v6/image-to-video',
+    endpoint: 'pixverse-v6/image-to-video',
+    provider: 'kie',
     mode: 'i2v',
     durations: [5, 8],
     aspectRatios: [],
@@ -270,13 +289,13 @@ const VIDEO_MODELS: Record<string, ModelConfig> = {
     durationFormat: 'number',
     imageParamName: 'image_url',
     i2vNoAspectRatio: true,
+    kieParams: { resKey: 'quality', resCase: 'lower', imgStyle: 'urls' },
   },
   // wan2.7 新协议(input.media 数组格式,endpoint=dashscope27)
   'wan2.7-t2v': {
     name: 'Wan 2.7 文生视频',
-    endpoint: 'dashscope',
-    dashscopeModel: 'wan2.7-t2v',
-    provider: 'dashscope',
+    endpoint: 'wan/2-7-text-to-video',
+    provider: 'kie',
     mode: 't2v',
     durations: [5, 10],
     aspectRatios: ['16:9', '9:16', '1:1'],
@@ -286,12 +305,12 @@ const VIDEO_MODELS: Record<string, ModelConfig> = {
     audioBuiltIn: false,
     supportsEndFrame: false,
     durationFormat: 'number',
+    kieParams: { resCase: 'lower' },
   },
   'wan2.7-i2v': {
     name: 'Wan 2.7 图生视频',
-    endpoint: 'dashscope27',
-    dashscopeModel: 'wan2.7-i2v-2026-04-25',
-    provider: 'dashscope',
+    endpoint: 'wan/2-7-image-to-video',
+    provider: 'kie',
     mode: 'i2v',
     durations: [5, 10],
     aspectRatios: [],
@@ -303,12 +322,12 @@ const VIDEO_MODELS: Record<string, ModelConfig> = {
     durationFormat: 'number',
     imageParamName: 'image_url',
     i2vNoAspectRatio: true,
+    kieParams: { resCase: 'lower', imgStyle: 'frame' },
   },
   'wan2.7-kf2v': {
     name: 'Wan 2.7 首尾帧',
-    endpoint: 'dashscope27',
-    dashscopeModel: 'wan2.7-i2v-2026-04-25',
-    provider: 'dashscope',
+    endpoint: 'wan/2-7-image-to-video',
+    provider: 'kie',
     mode: 'firstLastFrame',
     durations: [5, 10],
     aspectRatios: [],
@@ -321,13 +340,13 @@ const VIDEO_MODELS: Record<string, ModelConfig> = {
     imageParamName: 'image_url',
     endImageParamName: 'end_image_url',
     i2vNoAspectRatio: true,
+    kieParams: { resCase: 'lower', imgStyle: 'frame' },
   },
   // wan2.7 参考内容(r2v):media reference_image/reference_video
   'wan2.7-r2v': {
     name: 'Wan 2.7 参考内容',
-    endpoint: 'dashscope27',
-    dashscopeModel: 'wan2.7-r2v',
-    provider: 'dashscope',
+    endpoint: 'wan/2-7-r2v',
+    provider: 'kie',
     mode: 'r2v',
     durations: [5, 10],
     aspectRatios: ['16:9', '9:16', '1:1', '4:3'],
@@ -337,13 +356,13 @@ const VIDEO_MODELS: Record<string, ModelConfig> = {
     audioBuiltIn: false,
     supportsEndFrame: false,
     durationFormat: 'number',
+    kieParams: { resCase: 'lower', refStyle: 'wan' },
   },
   // wan2.7 视频编辑:media type=video
   'wan2.7-videoedit': {
     name: 'Wan 2.7 视频编辑',
-    endpoint: 'dashscope27',
-    dashscopeModel: 'wan2.7-videoedit',
-    provider: 'dashscope',
+    endpoint: 'wan/2-7-videoedit',
+    provider: 'kie',
     mode: 'videoedit',
     durations: [5, 10],
     aspectRatios: [],
@@ -353,13 +372,13 @@ const VIDEO_MODELS: Record<string, ModelConfig> = {
     audioBuiltIn: false,
     supportsEndFrame: false,
     durationFormat: 'number',
+    kieParams: { resCase: 'lower' },
   },
   // HappyHorse 首帧(i2v):media first_frame
   'happyhorse-1.0-i2v': {
     name: 'HappyHorse 图生视频',
-    endpoint: 'dashscope27',
-    dashscopeModel: 'happyhorse-1.0-i2v',
-    provider: 'dashscope',
+    endpoint: 'happyhorse-1-1/image-to-video',
+    provider: 'kie',
     mode: 'i2v',
     durations: [5, 10],
     aspectRatios: [],
@@ -371,13 +390,13 @@ const VIDEO_MODELS: Record<string, ModelConfig> = {
     durationFormat: 'number',
     imageParamName: 'image_url',
     i2vNoAspectRatio: true,
+    kieParams: { resCase: 'lower', imgStyle: 'urls' },
   },
   // HappyHorse 参考内容(r2v)
   'happyhorse-1.0-r2v': {
     name: 'HappyHorse 参考内容',
-    endpoint: 'dashscope27',
-    dashscopeModel: 'happyhorse-1.0-r2v',
-    provider: 'dashscope',
+    endpoint: 'happyhorse-1-1/reference-to-video',
+    provider: 'kie',
     mode: 'r2v',
     durations: [5, 10],
     aspectRatios: ['16:9', '9:16', '1:1', '4:3'],
@@ -387,6 +406,7 @@ const VIDEO_MODELS: Record<string, ModelConfig> = {
     audioBuiltIn: false,
     supportsEndFrame: false,
     durationFormat: 'number',
+    kieParams: { resCase: 'lower', refStyle: 'single' },
   },
   // HappyHorse 视频编辑
   'happyhorse-1.0-video-edit': {
@@ -407,9 +427,8 @@ const VIDEO_MODELS: Record<string, ModelConfig> = {
   // HappyHorse 文生视频(阿里云 dashscope-intl,同 wan 账号池)
   'happyhorse-1.0-t2v': {
     name: 'HappyHorse 文生视频',
-    endpoint: 'dashscope',
-    dashscopeModel: 'happyhorse-1.0-t2v',
-    provider: 'dashscope',
+    endpoint: 'happyhorse-1-1/text-to-video',
+    provider: 'kie',
     mode: 't2v',
     durations: [5, 10],
     aspectRatios: ['16:9', '9:16', '1:1', '4:3'],
@@ -419,6 +438,7 @@ const VIDEO_MODELS: Record<string, ModelConfig> = {
     audioBuiltIn: false,
     supportsEndFrame: false,
     durationFormat: 'number',
+    kieParams: { resCase: 'lower' },
   },
   'wan2.6-t2v': {
     name: 'Wan 2.6 文生视频',
@@ -882,18 +902,42 @@ export async function POST(req: NextRequest) {
       let kieErr: any = null;
       let kieData: any;
       try {
+        // 各模型参数形态不同，用 cfg.kieParams 描述；不设则沿用 H3 的形态
+        const kp = cfg.kieParams ?? {};
+        const resKey = kp.resKey ?? 'resolution';
+        const resCase = kp.resCase ?? 'upper';
+        const imgStyle = kp.imgStyle ?? 'single';
+        const refStyle = kp.refStyle ?? 'h3';
+
+        const rawRes = (resolution || cfg.defaultResolution).toLowerCase();
+        // H3 要大写(768P / 2K)，Wan / 快乐马 / Pixverse 用小写(720p / 1080p)
+        const resValue = resCase === 'upper'
+          ? (rawRes === '2k' ? '2K' : '768P')
+          : rawRes;
+
         const kieInput: Record<string, unknown> = {
           prompt: prompt || undefined,
           duration: Number(duration) || cfg.durations[0],
-          // 768p → 768P，2k → 2K（Kie 要求大写）
-          resolution: (resolution || cfg.defaultResolution).toLowerCase() === '2k' ? '2K' : '768P',
+          [resKey]: resValue,
         };
         if (aspectRatio && cfg.aspectRatios.length > 0) kieInput.aspect_ratio = aspectRatio;
 
-        if (cfg.mode === 'i2v') {
-          const u = await toPublicUrl(input[cfg.imageParamName || 'image_url'] as string);
-          if (!u) throw new Error('首帧图片处理失败');
-          kieInput.image_url = u;
+        if (cfg.mode === 'i2v' || cfg.mode === 'firstLastFrame') {
+          const first = await toPublicUrl(input[cfg.imageParamName || 'image_url'] as string);
+          if (!first) throw new Error('首帧图片处理失败');
+          if (imgStyle === 'frame') {
+            // Wan：首帧与尾帧分开传，同一端点既做首帧也做首尾帧
+            kieInput.first_frame_url = first;
+            if (cfg.mode === 'firstLastFrame' && cfg.endImageParamName) {
+              const last = await toPublicUrl(input[cfg.endImageParamName] as string);
+              if (!last) throw new Error('尾帧图片处理失败');
+              kieInput.last_frame_url = last;
+            }
+          } else if (imgStyle === 'urls') {
+            kieInput.image_urls = [first];   // 快乐马 / Pixverse
+          } else {
+            kieInput.image_url = first;      // H3
+          }
         } else if (cfg.mode === 'r2v') {
           const imgs: string[] = [];
           for (const raw of (Array.isArray(refImages) ? refImages : [])) {
@@ -913,10 +957,25 @@ export async function POST(req: NextRequest) {
           if (imgs.length === 0 && vids.length === 0) {
             throw new Error('参考生视频需要至少一张参考图或一个参考视频');
           }
-          if (imgs.length > 0) kieInput.reference_image_urls = imgs;
-          if (vids.length > 0) kieInput.reference_video_urls = vids;
-          // 音频不能单独使用，必须配合参考图或参考视频（上游硬约束）
-          if (auds.length > 0) kieInput.reference_audio_urls = auds;
+          if (refStyle === 'wan') {
+            // Wan 2.7：字段无 _urls 后缀，音频是单值"音色"(reference_voice)
+            if (imgs.length > 0) kieInput.reference_image = imgs;
+            if (vids.length > 0) kieInput.reference_video = vids;
+            if (auds.length > 0) kieInput.reference_voice = auds[0];
+          } else if (refStyle === 'single') {
+            // 快乐马：只支持参考图
+            if (imgs.length > 0) kieInput.reference_image = imgs;
+          } else {
+            // H3：三类各自数组；音频不能单独使用，必须配合图或视频(上游硬约束)
+            if (imgs.length > 0) kieInput.reference_image_urls = imgs;
+            if (vids.length > 0) kieInput.reference_video_urls = vids;
+            if (auds.length > 0) kieInput.reference_audio_urls = auds;
+          }
+        } else if (cfg.mode === 'videoedit') {
+          // Wan 2.7 视频编辑：传待编辑的视频 URL
+          if (!editVideo) throw new Error('视频编辑需要先上传一个视频');
+          const u = await toPublicUrl(editVideo);
+          kieInput.video_url = u || editVideo;
         }
 
         const kRes = await fetch('https://api.kie.ai/api/v1/jobs/createTask', {

@@ -43,9 +43,9 @@ export const VIDEO_MODELS: VideoModel[] = [
   // —— 即梦 3.0 ——
 
   // —— Wan ——
-  { id: 'wan2.7-t2v', label: 'Wan 2.7 文生', mode: 't2v', durations: [5, 10], aspectRatios: ['16:9','9:16','1:1'], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '会员 720P¥4.65/1080P¥6.5 起 · 含自动音频' },
-  { id: 'wan2.7-i2v', label: 'Wan 2.7 首帧', mode: 'i2v', durations: [5, 10], aspectRatios: [], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '会员 720P¥4.65/1080P¥6.5 起 · 含自动音频' },
-  { id: 'wan2.7-kf2v', label: 'Wan 2.7 首尾帧', mode: 'firstLastFrame', durations: [5, 10], aspectRatios: [], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '会员 720P¥4.65/1080P¥6.5 起 · 含自动音频' },
+  { id: 'wan2.7-t2v', label: 'Wan 2.7 文生', mode: 't2v', durations: [5, 10], aspectRatios: ['16:9','9:16','1:1'], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '720P ¥0.63/1080P ¥0.90 每秒 · 含自动音频' },
+  { id: 'wan2.7-i2v', label: 'Wan 2.7 首帧', mode: 'i2v', durations: [5, 10], aspectRatios: [], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '720P ¥0.63/1080P ¥0.90 每秒 · 含自动音频' },
+  { id: 'wan2.7-kf2v', label: 'Wan 2.7 首尾帧', mode: 'firstLastFrame', durations: [5, 10], aspectRatios: [], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '720P ¥0.63/1080P ¥0.90 每秒 · 含自动音频' },
 
   // —— Pixverse v6(fal,自带音频,无音频开关;720p/1080p)——
   // —— MiniMax H3 ——
@@ -63,18 +63,17 @@ export const VIDEO_MODELS: VideoModel[] = [
   { id: 'flux-3-first-last', label: 'FLUX 3 首尾帧', mode: 'firstLastFrame', durations: [5, 6, 8, 10, 12, 15, 20], aspectRatios: [], resolutions: ['720p','1080p'], defaultResolution: '720p', supportsAudio: false, price: '720P ¥1.24/1080P ¥2.05 每秒' },
   { id: 'flux-3-extend', label: 'FLUX 3 扩展视频', mode: 'videoedit', durations: [5, 6, 8, 10, 12, 15, 20], aspectRatios: ['16:9','9:16','1:1','4:3','3:4','21:9','2:1'], resolutions: ['720p','1080p'], defaultResolution: '720p', supportsAudio: false, price: '720P ¥1.24/1080P ¥2.05 每秒' },
 
-  { id: 'pixverse-t2v', label: 'Pixverse v6 文生', mode: 't2v', durations: [5, 8], aspectRatios: ['16:9','9:16','1:1'], resolutions: ['720p','1080p'], defaultResolution: '720p', supportsAudio: false, price: '会员 720P¥0.6/1080P¥0.9 起' },
-  { id: 'pixverse-i2v', label: 'Pixverse v6 首帧', mode: 'i2v', durations: [5, 8], aspectRatios: [], resolutions: ['720p','1080p'], defaultResolution: '720p', supportsAudio: false, price: '会员 720P¥0.6/1080P¥0.9 起' },
+  { id: 'pixverse-t2v', label: 'Pixverse v6 文生', mode: 't2v', durations: [5, 8], aspectRatios: ['16:9','9:16','1:1'], resolutions: ['720p','1080p'], defaultResolution: '720p', supportsAudio: false, price: '720P ¥0.43/1080P ¥0.73 每秒 · 含自动音频' },
+  { id: 'pixverse-i2v', label: 'Pixverse v6 首帧', mode: 'i2v', durations: [5, 8], aspectRatios: [], resolutions: ['720p','1080p'], defaultResolution: '720p', supportsAudio: false, price: '720P ¥0.43/1080P ¥0.73 每秒 · 含自动音频' },
 
   // —— HappyHorse(阿里云 dashscope-intl,文生视频)——
-  { id: 'happyhorse-1.0-t2v', label: '快乐马 文生', mode: 't2v', durations: [5, 10], aspectRatios: ['16:9','9:16','1:1','4:3'], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '会员 720P¥6.25/1080P¥10.0 起 · 含自动音频' },
-  { id: 'happyhorse-1.0-i2v', label: '快乐马 首帧', mode: 'i2v', durations: [5, 10], aspectRatios: [], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '会员 720P¥6.25/1080P¥10.0 起 · 含自动音频' },
-  { id: 'happyhorse-1.0-r2v', label: '快乐马 参考内容', mode: 'r2v', durations: [5, 10], aspectRatios: ['16:9','9:16','1:1','4:3'], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '会员 720P¥6.25/1080P¥10.0 起 · 含自动音频' },
-  { id: 'happyhorse-1.0-video-edit', label: '快乐马 视频编辑', mode: 'videoedit', durations: [5, 10], aspectRatios: [], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '会员 720P¥6.25/1080P¥10.0 起 · 含自动音频' },
+  { id: 'happyhorse-1.0-t2v', label: '快乐马 1.1 文生', mode: 't2v', durations: [5, 10], aspectRatios: ['16:9','9:16','1:1','4:3'], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '720P ¥0.86/1080P ¥1.07 每秒 · 含自动音频' },
+  { id: 'happyhorse-1.0-i2v', label: '快乐马 1.1 首帧', mode: 'i2v', durations: [5, 10], aspectRatios: [], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '720P ¥0.86/1080P ¥1.07 每秒 · 含自动音频' },
+  { id: 'happyhorse-1.0-r2v', label: '快乐马 1.1 参考内容', mode: 'r2v', durations: [5, 10], aspectRatios: ['16:9','9:16','1:1','4:3'], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '720P ¥0.86/1080P ¥1.07 每秒 · 含自动音频' },
 
   // —— Wan 2.7 参考内容 / 视频编辑 ——
-  { id: 'wan2.7-r2v', label: 'Wan 2.7 参考内容', mode: 'r2v', durations: [5, 10], aspectRatios: ['16:9','9:16','1:1','4:3'], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '会员 720P¥4.65/1080P¥6.5 起 · 含自动音频', refAudioKind: 'voice' },
-  { id: 'wan2.7-videoedit', label: 'Wan 2.7 视频编辑', mode: 'videoedit', durations: [5, 10], aspectRatios: [], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '会员 720P¥4.65/1080P¥6.5 起 · 含自动音频' },
+  { id: 'wan2.7-r2v', label: 'Wan 2.7 参考内容', mode: 'r2v', durations: [5, 10], aspectRatios: ['16:9','9:16','1:1','4:3'], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '720P ¥0.63/1080P ¥0.90 每秒 · 含自动音频', refAudioKind: 'voice' },
+  { id: 'wan2.7-videoedit', label: 'Wan 2.7 视频编辑', mode: 'videoedit', durations: [5, 10], aspectRatios: [], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '720P ¥0.63/1080P ¥0.90 每秒 · 含自动音频' },
 ];
 
 export const DEFAULT_VIDEO_MODEL = 'wan2.7-i2v';
