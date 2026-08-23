@@ -53,31 +53,14 @@ const PROVIDERS: ProviderMeta[] = [
     consoleName: '方舟控制台 · API Key 管理',
     hint: '需先在方舟开通 Seedance 2.0 模型，否则调用会报无权限。',
   },
-  {
-    provider: 'dashscope',
-    title: '阿里云百炼',
-    models: 'Wan 2.2 / 2.5 / 2.6 / 2.7、快乐马',
-    needsSecret: false,
-    needsRegion: true,
-    keyLabel: 'API Key',
-    keyPlaceholder: 'sk-...',
-    consoleUrl: 'https://bailian.console.aliyun.com/?apiKey=1',
-    consoleName: '百炼控制台 · API-KEY',
-    hint: '国内站和国际站账号互不通用，Key 也不通用，务必选对站点。',
-  },
-  {
-    provider: 'volc',
-    title: '火山引擎即梦',
-    models: '即梦 3.0 全系',
-    needsSecret: true,
-    needsRegion: false,
-    keyLabel: 'Access Key ID',
-    keyPlaceholder: 'AKLT...',
-    secretLabel: 'Secret Access Key',
-    consoleUrl: 'https://console.volcengine.com/iam/keymanage/',
-    consoleName: '火山引擎 · 访问密钥管理',
-    hint: '需先在视觉智能服务开通即梦对应模型，Pro 版需单独申请。',
-  },
+  // 阿里云百炼(dashscope)与火山引擎即梦(volc)已下架 ——
+  // 即梦全系模型已删除，Wan 2.7 与快乐马已切到别的上游，
+  // 两者都不再有任何在售模型会读用户的 Key。留着入口会误导用户：
+  // 填了 Key 却一次都不会被调用，还以为绕开了并发限制。
+  //
+  // 只从这里移除入口，其余全部保留（ByokProvider 类型、后端分支、
+  // user_api_keys 表、加解密逻辑），要恢复只需把定义加回本数组。
+  // 已填过这两个 Key 的用户，数据仍在表里，不受影响。
 ];
 
 interface Props {
@@ -403,8 +386,8 @@ export function ApiKeyModal({ onClose }: Props) {
         {/* 底部说明 */}
         <div className="px-5 py-3 border-t border-white/5 text-[11px] text-gray-500 leading-relaxed">
           Key 加密存储，页面只显示掩码。按每次选中的模型自动判断用谁的账号 ——
-          同一张视频卡片里选即梦或 Wan 走你的 Key，选 Pixverse 仍走平台账号（照常扣余额）。
-          Midjourney、Nano Banana、Flux、Kling 等也暂不支持自带 Key。
+          同一张视频卡片里选 Seedance 走你的 Key，选其他模型仍走平台账号（照常扣余额）。
+          其余模型暂不支持自带 Key。
         </div>
       </div>
     </div>

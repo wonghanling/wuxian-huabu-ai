@@ -36,9 +36,10 @@ const SEEDANCE_CHANNEL: 'kie' | 'ark' = 'kie';
 //   带视频输入 = (成本单价 + 0.1) × (输入视频总时长 + 输出时长)
 // 带视频输入单价更低，但计费基数含输入时长，所以传长参考视频反而更贵。
 const KIE_PRICE: Record<string, { noVideo: number; withVideo: number }> = {
-  // 2.5 升级版 bytedance/seedance-2-5（暂无 1080p/4K）
-  'seedance-2-5_480p': { noVideo: 1.14, withVideo: 0.76 },
-  'seedance-2-5_720p': { noVideo: 2.22, withVideo: 1.38 },
+  // 2.5 升级版 bytedance/seedance-2-5（有 1080p，仍无 4K）
+  'seedance-2-5_480p':  { noVideo: 1.14, withVideo: 0.76 },
+  'seedance-2-5_720p':  { noVideo: 2.22, withVideo: 1.38 },
+  'seedance-2-5_1080p': { noVideo: 3.90, withVideo: 2.40 },
   // 标准版 bytedance/seedance-2
   'seedance-2_480p':  { noVideo: 0.74, withVideo: 0.49 },
   'seedance-2_720p':  { noVideo: 1.49, withVideo: 0.95 },

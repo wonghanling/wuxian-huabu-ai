@@ -267,7 +267,7 @@ export const VIDEO_PRICING: Record<string, VideoModelPrice> = {
   // 单价更低但基数含输入时长，实际扣费由后端 getKieCharge 计算。
   // _video 后缀 = 多模态传了参考视频时的单价（更低），
   // 但计费基数变成 (参考视频时长 + 输出时长)，实际总价通常更高。
-  // 2.5 升级版：最长 30s、素材上限更高，暂无 1080p/4K
+  // 2.5 升级版：最长 30s、素材上限更高，有 1080p，仍无 4K
   'doubao-seedance-2-5-260128': {
     resolutions: {
       '480p':        flat(1.14),
@@ -275,6 +275,7 @@ export const VIDEO_PRICING: Record<string, VideoModelPrice> = {
       '1080p':       flat(3.90),
       '480p_video':  flat(0.76),
       '720p_video':  flat(1.38),
+      '1080p_video': flat(2.40),
     },
   },
   'doubao-seedance-2-0-260128': {

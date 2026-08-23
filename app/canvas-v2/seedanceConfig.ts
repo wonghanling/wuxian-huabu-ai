@@ -19,12 +19,12 @@ export interface SeedanceModel {
 //
 // 各档差异(上限按模型区分,2.0 传超量会被上游拒):
 //   2.0 系列 — 最长 15s,素材 9图/3视频/共12
-//   2.5      — 最长 30s,素材 30图/10视频/10音频/共50;暂无 1080p 与 4K
+//   2.5      — 最长 30s,素材 30图/10视频/10音频/共50;有 1080p，仍无 4K
 export const SEEDANCE_MODELS: SeedanceModel[] = [
   {
     id: 'doubao-seedance-2-5-260128',
     label: 'Seedance 2.5',
-    resolutions: ['480p', '720p'],
+    resolutions: ['480p', '720p', '1080p'],
     durations: ['4', '5', '6', '8', '10', '12', '15', '20', '25', '30', '-1'],
     limits: { images: 30, videos: 10, audios: 10, total: 50 },
   },
