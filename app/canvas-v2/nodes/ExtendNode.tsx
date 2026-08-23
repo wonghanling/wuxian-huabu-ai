@@ -10,6 +10,7 @@ import { PromptTools } from './PromptTools';
 import { generateImage, mirrorOutput, getUserId, softCompressImage, uploadImageToStorage } from '../lib/api';
 import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 import { useDebouncedField } from '../lib/useDebouncedField';
+import { HoverZoomImg } from './RefThumb';
 import { Lightbox, downloadFile } from './Lightbox';
 import { ImageStudio } from './ImageStudio';
 
@@ -384,17 +385,16 @@ function ExtendNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
             </div>
           ) : hasOutput ? (
             <img src={data.outputUrl!} alt="" onDoubleClick={(e) => { e.stopPropagation(); setEditOpen(true); }} title="双击进入 Image Studio 编辑" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', cursor: 'pointer' }} />
-          ) : dispSource ? (
-            // 连接源图实时显示在卡片框(照原网:无上传按钮,纯连线喂源图)
-            <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-              <img src={dispSource} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-              <span style={{ position: 'absolute', top: 8, left: 8, fontSize: 10, color: '#fff', background: 'rgba(82,82,91,0.9)', padding: '2px 8px', borderRadius: 99 }}>来自连接 · 源图</span>
-            </div>
           ) : (
+            // 结果框只放生成结果(与角色设计卡一致)。源图不再占这里 ——
+            // 它有了自己的参考图面板,画在这里会让同一张图显示两遍,
+            // 还会让人以为源图就是结果。
             <div style={{ textAlign: 'center' }}>
               <span style={{ fontSize: 11, color: '#71717a', display: 'block', marginBottom: 4 }}>• 后退 -5s：前5秒场景</span>
               <span style={{ fontSize: 11, color: '#71717a', display: 'block', marginBottom: 8 }}>• 前进 +5s：后5秒场景</span>
-              <span style={{ fontSize: 12, color: '#5a5a5f' }}>连接源图 → 调整摄像机角度 → Generate</span>
+              <span style={{ fontSize: 12, color: '#5a5a5f' }}>
+                {dispSource ? '调整摄像机角度 → Generate' : '连接或上传参考图 → 调整摄像机角度 → Generate'}
+              </span>
             </div>
           )}
         </div>
@@ -488,7 +488,7 @@ function ExtendNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               </label>
               {dispSource && (
                 <div style={{ position: 'relative', width: '100%', aspectRatio: '1', borderRadius: 8, overflow: 'hidden', marginTop: 6 }}>
-                  <img src={dispSource} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <HoverZoomImg url={dispSource} />
                   {data.config.refImages?.[0] ? (
                     <button style={refDel} onClick={() => updateConfig(id, { refImages: [] })}>×</button>
                   ) : (
