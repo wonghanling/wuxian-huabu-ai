@@ -49,17 +49,37 @@ const IMAGE_MODELS: Record<string, {
   /** Kie 模型 ID（provider='kie' 时用） */
   kieModel?: string;
   /**
+   * 带参考图时改用的 Kie 模型 ID。
+   *
+   * GPT Image 2 与 Flux 2 在 Kie 侧把"文生图"和"图转图"拆成两个端点，
+   * 文生图端点根本没有输入图字段 —— 传了会被忽略。
+   * 而画布里同一张卡既能纯文生成、也能连上游图做图转图
+   * （角色设计卡、时空镜头延展卡更是以图转图为主），
+   * 所以这里按"本次有没有图"自动切端点，卡片无需拆成两个模型。
+   */
+  kieModelWithImage?: string;
+  /** 带图时的输入图字段名（文生图端点没有图字段，故与 kieModelWithImage 配对） */
+  kieImgKeyWithImage?: 'image_input' | 'input_urls' | 'image_url';
+  /**
    * Kie 各模型的参数形态差异：
-   *   imgKey  输入图字段名：'image_urls'(Nano Banana) | 'input_urls'(GPT Image 2 / Flux 2)
-   *           | 'image_url'(Topaz，单图)
-   *   resKey  清晰度字段名：'resolution'(默认) | 'output_format' 等
+   *   imgKey  输入图字段名（各家不同，写错会被上游静默忽略 → 表现为"没读参考图"）：
+   *           'image_input'(Nano Banana 2/Pro) | 'input_urls'(GPT Image 2 / Flux 2)
+   *           | 'image_url'(Topaz，单图非数组)
    *   noPrompt  该模型不接受提示词（Topaz 放大）
-   *   maxImages 输入图上限（用于校验）
+   *   maxImages 输入图上限
    */
   kieParams?: {
-    imgKey?: 'image_urls' | 'input_urls' | 'image_url';
+    imgKey?: 'image_input' | 'input_urls' | 'image_url';
     noPrompt?: boolean;
     maxImages?: number;
+    /**
+     * 清晰度的表达方式（各家不一样，传错上游直接拒）：
+     *   'resolution'  默认。Nano Banana / GPT Image 2 收 1K/2K/4K
+     *   'resCapped2K' 同 resolution，但上游只到 2K（Flux 2）—— 4k 会被压到 2K
+     *   'upscale'     Topaz：字段是 upscale_factor，值是倍数 2/4 而非分辨率
+     *   'none'        不传清晰度
+     */
+    resMode?: 'resolution' | 'resCapped2K' | 'upscale' | 'none';
   };
   apiType?: 'chat' | 'midjourney' | 'replicate' | 'image-generation' | 'gemini-native' | 'gpt-image';
   requiresImage?: boolean;
@@ -75,7 +95,7 @@ const IMAGE_MODELS: Record<string, {
   'nano-banana-pro': {
     provider: 'kie',
     kieModel: 'nano-banana-2',
-    kieParams: { imgKey: 'image_urls', maxImages: 14 },
+    kieParams: { imgKey: 'image_input', maxImages: 14 },
     supportsImage: true,
   },
   'mj_imagine': {
@@ -106,6 +126,8 @@ const IMAGE_MODELS: Record<string, {
   'gpt-image-2': {
     provider: 'kie',
     kieModel: 'gpt-image-2-text-to-image',
+    kieModelWithImage: 'gpt-image-2-image-to-image',
+    kieImgKeyWithImage: 'input_urls',
     supportsImage: true,
   },
   'gpt-image-2-all': {
@@ -129,36 +151,44 @@ const IMAGE_MODELS: Record<string, {
   'nano-banana-pro-multi': {
     provider: 'kie',
     kieModel: 'nano-banana-pro',
-    kieParams: { imgKey: 'image_urls', maxImages: 8 },
+    kieParams: { imgKey: 'image_input', maxImages: 8 },
     requiresImage: true,
     supportsImage: true,
   },
   'flux-2-pro': {
     provider: 'kie',
     kieModel: 'flux-2/pro-text-to-image',
+    kieModelWithImage: 'flux-2/pro-image-to-image',
+    kieImgKeyWithImage: 'input_urls',
+    kieParams: { resMode: 'resCapped2K' },
+    supportsImage: true,
   },
   'flux-2-pro-edit': {
     provider: 'kie',
     kieModel: 'flux-2/pro-image-to-image',
-    kieParams: { imgKey: 'input_urls', maxImages: 8 },
+    kieParams: { imgKey: 'input_urls', maxImages: 8, resMode: 'resCapped2K' },
     requiresImage: true,
     supportsImage: true,
   },
   'flux-2-flex': {
     provider: 'kie',
     kieModel: 'flux-2/flex-text-to-image',
+    kieModelWithImage: 'flux-2/flex-image-to-image',
+    kieImgKeyWithImage: 'input_urls',
+    kieParams: { resMode: 'resCapped2K' },
+    supportsImage: true,
   },
   'flux-2-flex-edit': {
     provider: 'kie',
     kieModel: 'flux-2/flex-image-to-image',
-    kieParams: { imgKey: 'input_urls', maxImages: 8 },
+    kieParams: { imgKey: 'input_urls', maxImages: 8, resMode: 'resCapped2K' },
     requiresImage: true,
     supportsImage: true,
   },
   'topaz-upscale': {
     provider: 'kie',
     kieModel: 'topaz/image-upscale',
-    kieParams: { imgKey: 'image_url', noPrompt: true, maxImages: 1 },
+    kieParams: { imgKey: 'image_url', noPrompt: true, maxImages: 1, resMode: 'upscale' },
     requiresImage: true,
     supportsImage: true,
   },
@@ -224,29 +254,48 @@ export async function POST(req: NextRequest) {
     // 对前端的契约不变：同样返回 { success, imageUrl }。
     if (modelConfig.provider === 'kie') {
       const kp = modelConfig.kieParams ?? {};
+
+      // 输入图先收齐 —— 画布里的图一律是 http URL（不存 base64，这是画布能挂
+      // 几百张卡而不卡的前提），Kie 也只吃 URL，直接透传无需转码或转存。
+      // 顺序沿用前端给的：连线上游的在前，本地上传的在后。
+      const urls = (Array.isArray(imageUrlArray) ? imageUrlArray : [])
+        .filter((u: any) => typeof u === 'string' && u.startsWith('http'));
+
+      // 端点按"本次有没有图"决定：GPT Image 2 / Flux 2 的文生图端点没有输入图
+      // 字段，带图却发去文生图端点，图会被上游静默忽略（表现为"没读参考图"）。
+      // 角色设计卡、时空镜头延展卡就是这条路径 —— 它们以图转图为主。
+      const useImgEndpoint = urls.length > 0 && !!modelConfig.kieModelWithImage;
+      const kieModelId = useImgEndpoint ? modelConfig.kieModelWithImage! : modelConfig.kieModel;
+      const imgKey = useImgEndpoint ? modelConfig.kieImgKeyWithImage : kp.imgKey;
+
       const kieInput: Record<string, unknown> = {};
-      if (!kp.noPrompt) kieInput.prompt = prompt;
+      if (!kp.noPrompt) {
+        kieInput.prompt = prompt;
+        // 比例：Kie 各模型都收 aspect_ratio 枚举（Topaz 不需要）
+        kieInput.aspect_ratio = aspectRatio || '1:1';
+      }
 
-      // 比例：Kie 各模型都收 aspect_ratio 枚举（Topaz 不需要）
-      if (!kp.noPrompt) kieInput.aspect_ratio = aspectRatio || '1:1';
+      // 清晰度：各家表达方式不同，传错上游直接拒。
+      //   Flux 2 上游只到 2K（画布若选了 4k 就压到 2K，不然提交失败）
+      //   Topaz 用 upscale_factor 倍数（4K→2 倍、8K→4 倍），不是分辨率字符串
+      const qRaw = String(imageQuality || '2k').toLowerCase();
+      const resMode = kp.resMode ?? 'resolution';
+      if (resMode === 'upscale') {
+        kieInput.upscale_factor = qRaw === '8k' ? '4' : '2';
+      } else if (resMode === 'resCapped2K') {
+        kieInput.resolution = qRaw === '1k' ? '1K' : '2K';
+      } else if (resMode !== 'none') {
+        kieInput.resolution = qRaw.toUpperCase();
+      }
 
-      // 清晰度：Nano Banana / GPT Image 2 用 2K/4K，Flux 2 只有 1K/2K，
-      // Topaz 用 4K/8K。统一取 imageQuality 转大写。
-      const q = String(imageQuality || '2k').toUpperCase();
-      kieInput.resolution = q;
-
-      // 输入图：画布里的图一律是 http URL（不存 base64，这是画布能挂几百张卡
-      // 而不卡的前提），Kie 也只吃 URL —— 直接透传，无需转码或转存。
-      if (kp.imgKey) {
-        const urls = (Array.isArray(imageUrlArray) ? imageUrlArray : [])
-          .filter((u: any) => typeof u === 'string' && u.startsWith('http'));
+      if (imgKey) {
         if (urls.length === 0 && modelConfig.requiresImage) {
           throw new Error('该模型需要至少一张输入图');
         }
         if (urls.length > 0) {
           const capped = kp.maxImages ? urls.slice(0, kp.maxImages) : urls;
           // Topaz 收单张，字段是 image_url（非数组）
-          kieInput[kp.imgKey] = kp.imgKey === 'image_url' ? capped[0] : capped;
+          kieInput[imgKey] = imgKey === 'image_url' ? capped[0] : capped;
         }
       }
 
@@ -261,7 +310,7 @@ export async function POST(req: NextRequest) {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${keyInfo.keyValue}`,
           },
-          body: JSON.stringify({ model: modelConfig.kieModel, input: kieInput }),
+          body: JSON.stringify({ model: kieModelId, input: kieInput }),
         });
         const createData = await createRes.json();
         // Kie 用 body 的 code 表达错误，HTTP 状态可能仍是 200
