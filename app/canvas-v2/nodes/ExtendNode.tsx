@@ -7,7 +7,7 @@ import { ratioToWH, SIZE_OPTIONS, QUALITY_OPTIONS } from '../imageModels';
 import { IconExpand, IconShrink, IconMinus, IconPlus } from './icons';
 import { SpawnMenu } from './SpawnMenu';
 import { PromptTools } from './PromptTools';
-import { generateImage, mirrorOutput, getUserId, softCompressImage } from '../lib/api';
+import { generateImage, mirrorOutput, getUserId, softCompressImage, uploadImageToStorage } from '../lib/api';
 import { getUpstreamOutputs, useUpstream } from '../lib/connections';
 import { useDebouncedField } from '../lib/useDebouncedField';
 import { Lightbox, downloadFile } from './Lightbox';
@@ -37,7 +37,7 @@ const EXTEND_MODELS = [
 
 const EXTEND_RATIOS = ['1:1', '16:9', '9:16', '4:3', '3:4', '3:2', '2:3'];
 
-type SubPanel = 'model' | 'ratio' | 'quality' | 'camera' | null;
+type SubPanel = 'model' | 'ratio' | 'quality' | 'camera' | 'ref' | null;
 
 // ============================================================
 // Camera Translator:Yaw/Pitch → 纯摄影语言
@@ -257,6 +257,7 @@ function ExtendNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [spawnOpen, setSpawnOpen] = useState(false);
   const [lightbox, setLightbox] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);   // 参考图上传中指示
   const promptField = useDebouncedField(data.config.prompt ?? '', (v) => updateConfig(id, { prompt: v }));
 
   const modelId = data.config.model || 'nano-banana-pro';
@@ -281,11 +282,24 @@ function ExtendNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     updateCard(id, { collapsed: !collapsed });
   };
 
+  // 上传参考图(1张)—— 与角色设计卡同款:存 Storage URL,不存 base64
+  const uploadRef = async (fileList: FileList | null) => {
+    const f = fileList?.[0];
+    if (!f) return;
+    setUploading(true);
+    try {
+      const url = await uploadImageToStorage(f);
+      if (url) updateConfig(id, { refImages: [url] });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleGenerate = async () => {
-    // 源图:优先上游连接的图片(连线传参),其次本地 refImages[0]
+    // 源图一张:优先上游连接的图片(连线传参),其次本地上传的参考图
     const upstream = getUpstreamOutputs(id);
     const sourceImg = upstream.images[0] || data.config.refImages?.[0];
-    if (!sourceImg) { alert('请连接图片卡片作为源图'); return; }
+    if (!sourceImg) { alert('请连接图片卡片或上传参考图作为源图'); return; }
     updateCard(id, { status: 'generating', progress: 10 });
     let p = 10;
     const timer = setInterval(() => { p = Math.min(90, p + 6); updateCard(id, { progress: p }); }, 800);
@@ -462,6 +476,27 @@ function ExtendNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                 ))}
               </ParamTag>
             )}
+
+            {/* 参考图(1张,可来自连接或本地上传)—— 与角色设计卡同款 */}
+            <ParamTag
+              label={<>参考图{dispSource ? <span style={greenDot} /> : ' (必填)'}{!data.config.refImages?.[0] && upstreamLive.images[0] && <span style={{ marginLeft: 4, color: '#a1a1aa' }}>来自连接</span>}{uploading && <span style={{ marginLeft: 4, color: '#fbbf24' }}>· 上传中…</span>}</>}
+              open={sub === 'ref'} onToggle={() => setSub(sub === 'ref' ? null : 'ref')} width={220}
+            >
+              <label style={{ ...uploadBtn, ...(uploading ? { opacity: 0.6, pointerEvents: 'none' } : {}) }}>
+                <IconPlus size={13} /> <span>{uploading ? '上传中…' : '上传参考图（1张）'}</span>
+                <input type="file" accept="image/*" disabled={uploading} style={{ display: 'none' }} onChange={(e) => { uploadRef(e.target.files); setSub(null); e.currentTarget.value = ''; }} />
+              </label>
+              {dispSource && (
+                <div style={{ position: 'relative', width: '100%', aspectRatio: '1', borderRadius: 8, overflow: 'hidden', marginTop: 6 }}>
+                  <img src={dispSource} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  {data.config.refImages?.[0] ? (
+                    <button style={refDel} onClick={() => updateConfig(id, { refImages: [] })}>×</button>
+                  ) : (
+                    <span style={{ position: 'absolute', top: 4, left: 4, fontSize: 9, color: '#fff', background: 'rgba(82,82,91,0.9)', padding: '1px 6px', borderRadius: 99 }}>来自连接</span>
+                  )}
+                </div>
+              )}
+            </ParamTag>
           </div>
 
           {/* 底行 */}
@@ -623,6 +658,18 @@ const subItem: React.CSSProperties = {
   color: '#d4d4d8', fontSize: 13, cursor: 'pointer', textAlign: 'left', whiteSpace: 'nowrap',
 };
 const subPrice: React.CSSProperties = { fontSize: 11, color: '#71717a', flexShrink: 0 };
+// 参考图面板样式(与角色设计卡一致)
+const greenDot: React.CSSProperties = { width: 6, height: 6, borderRadius: '50%', background: '#e4e4e7', display: 'inline-block', marginLeft: 4 };
+const uploadBtn: React.CSSProperties = {
+  display: 'flex', alignItems: 'center', gap: 6, width: '100%', padding: '8px 10px', marginBottom: 4,
+  borderRadius: 8, border: '1px dashed rgba(255,255,255,0.18)', background: 'rgba(255,255,255,0.04)',
+  color: '#d4d4d8', fontSize: 12, cursor: 'pointer',
+};
+const refDel: React.CSSProperties = {
+  position: 'absolute', top: 4, right: 4, width: 18, height: 18, borderRadius: '50%',
+  border: 'none', background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 12, cursor: 'pointer',
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+};
 const generateBtn: React.CSSProperties = {
   marginLeft: 'auto', padding: '11px 26px', border: 'none', borderRadius: 12,
   background: 'linear-gradient(135deg, #f4f4f5, #c0c0c0)', color: '#18181b', fontWeight: 700,
