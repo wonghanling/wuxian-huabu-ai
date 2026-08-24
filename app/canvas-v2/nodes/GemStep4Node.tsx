@@ -33,9 +33,9 @@ type SubPanel = 'duration' | 'ratio' | 'ref' | 'mode' | 'script' | null;
 
 const DURATIONS = ['4', '5', '6', '8', '10', '12', '15'];
 const RATIOS = [
-  { value: '16:9', label: '16:9', res: '2K 2048×1152', price: '¥1.2' },
-  { value: '9:16', label: '9:16', res: '4K 2160×3840', price: '¥3.1' },
-  { value: '1:1', label: '1:1', res: '2K 2048×2048', price: '¥1.7' },
+  { value: '16:9', label: '16:9', res: '2K 2048×1152', price: '¥0.43' },
+  { value: '9:16', label: '9:16', res: '4K 2160×3840', price: '¥0.63' },
+  { value: '1:1', label: '1:1', res: '2K 2048×2048', price: '¥0.43' },
 ];
 
 function GemStep4NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
@@ -337,7 +337,7 @@ function GemStep4NodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           {/* 底行:当前价格 + Generate */}
           <div style={{ display: 'flex', alignItems: 'center', padding: '4px 8px 8px' }}>
             <span style={{ fontSize: 12, color: '#71717a' }}>
-              {RATIOS.find((r) => r.value === ratio)?.price ?? '¥1.2'} · {RATIOS.find((r) => r.value === ratio)?.res}
+              {RATIOS.find((r) => r.value === ratio)?.price ?? '¥0.43'} · {RATIOS.find((r) => r.value === ratio)?.res}
             </span>
             <button onClick={handleGenerate} disabled={!canGenerate || data.status === 'generating'}
               style={{ ...generateBtn, opacity: (canGenerate && data.status !== 'generating') ? 1 : 0.4 }}>
