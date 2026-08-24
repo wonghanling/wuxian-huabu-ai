@@ -38,7 +38,7 @@ async function fetchWithN1nPool(url: string, init: RequestInit & { headers?: Rec
   }
 }
 
-const YUNWU_BASE_URL = 'https://api.n1n.ai';
+const YUNWU_BASE_URL = process.env.YUNWU_BASE_URL || 'https://llm-api.net';
 const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
 
 // 图片模型配置

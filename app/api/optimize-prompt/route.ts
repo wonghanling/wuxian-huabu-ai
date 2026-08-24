@@ -3,7 +3,7 @@ import { UNIVERSAL_VIDEO_SKILL } from './skill-content';
 import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 import { requireMemberWithDailyQuota } from '@/lib/billing';
 
-const YUNWU_BASE_URL = 'https://api.n1n.ai';
+const YUNWU_BASE_URL = process.env.YUNWU_BASE_URL || 'https://llm-api.net';
 const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
 
 export async function POST(request: NextRequest) {

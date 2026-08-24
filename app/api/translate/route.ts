@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 
-const YUNWU_BASE_URL = 'https://api.n1n.ai';
+const YUNWU_BASE_URL = process.env.YUNWU_BASE_URL || 'https://llm-api.net';
 
 // 提示词翻译:中→英(或任意语言→英),走 n1n 账号池
 // 通用工具,不挂会员/额度(免费用户也要能在图片卡用)

@@ -9,10 +9,12 @@ export const maxDuration = 300;
 // 回退保险
 falSingleton.config({ credentials: process.env.FAL_KEY! });
 
-const STEP4_PRICE: Record<string, number> = {
-  '2048x1152': 1.2, // high 16:9 2K 成本¥1.09
-  '2048x2048': 1.7, // high 1:1 2K 成本¥1.58
-  '2160x3840': 3.1, // high 9:16 4K 成本¥2.97
+// 走 Kie 后与图片卡的 GPT Image 2 同价：2K ¥0.43 / 4K ¥0.63
+// 前端仍传尺寸值(GEM4_SIZE)，这里映射到 Kie 的比例 + 清晰度两档。
+const STEP4_SPEC: Record<string, { ratio: string; res: '2K' | '4K'; price: number }> = {
+  '2048x1152': { ratio: '16:9', res: '2K', price: 0.43 },
+  '2048x2048': { ratio: '1:1',  res: '2K', price: 0.43 },
+  '2160x3840': { ratio: '9:16', res: '4K', price: 0.63 },
 };
 
 export async function POST(req: NextRequest) {
@@ -22,70 +24,84 @@ export async function POST(req: NextRequest) {
     if (!prompt) return NextResponse.json({ error: '缺少 prompt' }, { status: 400 });
     if (!imageBase64Array || imageBase64Array.length === 0) return NextResponse.json({ error: '缺少图片' }, { status: 400 });
 
+    const spec = STEP4_SPEC[aspectRatio] ?? STEP4_SPEC['2048x1152'];
+
     // 守卫：会员检查
     if (userId) {
       const isMember = await checkMembership(userId);
       if (!isMember) return NextResponse.json({ error: '需要开通会员才能使用导演引擎' }, { status: 402 });
 
-      const price = STEP4_PRICE[aspectRatio] ?? 1.2;
       // 扣费
-      const deduct = await deductBalance(userId, price, 'image_deduct', 'GEM Step4 分镜图生成（GPT Image 2）', { model: 'gpt-image-2', aspectRatio });
+      const deduct = await deductBalance(userId, spec.price, 'image_deduct', 'GEM Step4 分镜图生成（GPT Image 2）', { model: 'gpt-image-2', aspectRatio });
       if (!deduct.success) {
         return NextResponse.json({ error: deduct.error || '余额不足，请充值' }, { status: 402 });
       }
     }
 
-    const sizeMap: Record<string, { width: number; height: number }> = {
-      '2048x1152': { width: 2048, height: 1152 },
-      '2160x3840': { width: 2160, height: 3840 },
-      '2048x2048': { width: 2048, height: 2048 },
-    };
-
-    // 账号池：取一个可用 fal key
-    const keyInfo = await pickKey('fal');
-    const fal = createFalClient({ credentials: keyInfo.keyValue });
-    let success = false;
-    let caughtErr: any = null;
-
-    try {
-      // 上传图片到 fal storage 拿 URL（base64 需上传，URL 直接用）
-      const allImages: string[] = [];
-      for (const img of imageBase64Array) {
-        if (img.startsWith('http')) {
-          allImages.push(img);
-          console.log('[StoryboardImage] direct url:', img.slice(0, 80));
-        } else {
+    // 图片先转成 URL —— Kie 只吃 URL 不吃 base64。
+    // 画布传来的多是 Storage URL，可直传;剩下的 data: 老数据借 fal storage 转存。
+    const allImages: string[] = [];
+    const needUpload = imageBase64Array.some((img: string) => !img.startsWith('http'));
+    if (needUpload) {
+      const falKeyInfo = await pickKey('fal');
+      let upOk = false;
+      try {
+        const fal = createFalClient({ credentials: falKeyInfo.keyValue });
+        for (const img of imageBase64Array) {
+          if (img.startsWith('http')) { allImages.push(img); continue; }
           const base64Data = img.replace(/^data:image\/\w+;base64,/, '');
           const buffer = Buffer.from(base64Data, 'base64');
           const blob = new Blob([buffer], { type: 'image/jpeg' });
           const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
-          const url = await fal.storage.upload(file);
-          console.log('[StoryboardImage] fal url:', url);
-          allImages.push(url);
+          allImages.push(await fal.storage.upload(file));
         }
+        upOk = true;
+      } finally {
+        await releaseKey(falKeyInfo.keyId, upOk);
       }
+    } else {
+      allImages.push(...imageBase64Array);
+    }
 
-      const submitted = await fal.queue.submit('openai/gpt-image-2/edit', {
-        input: {
-          prompt,
-          image_urls: allImages,
-          image_size: sizeMap[aspectRatio] || { width: 2048, height: 1152 },
-          quality: 'high',
-          num_images: 1,
-          output_format: 'jpeg',
+    // 提交到 Kie 的 GPT Image 2 图转图（Step4 一定带图，故固定用 i2i 端点）
+    const keyInfo = await pickKey('kie');
+    let success = false;
+    let caughtErr: any = null;
+
+    try {
+      const createRes = await fetch('https://api.kie.ai/api/v1/jobs/createTask', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${keyInfo.keyValue}`,
         },
+        body: JSON.stringify({
+          model: 'gpt-image-2-image-to-image',
+          input: {
+            prompt,
+            input_urls: allImages.slice(0, 16),   // 上游上限 16 张
+            aspect_ratio: spec.ratio,
+            resolution: spec.res,
+          },
+        }),
       });
-      const requestId = submitted.request_id;
-      if (!requestId) throw new Error('fal.ai 未返回 requestId');
+      const createData = await createRes.json();
+      // Kie 用 body 的 code 表达错误，HTTP 状态可能仍是 200
+      if (!createRes.ok || createData?.code !== 200) {
+        throw new Error(createData?.msg || createData?.message || '提交失败');
+      }
+      const requestId = createData?.data?.taskId;
+      if (!requestId) throw new Error('未返回任务ID');
 
       success = true;
-      return NextResponse.json({ success: true, requestId, endpoint: 'openai/gpt-image-2/edit', pending: true });
+      // 复用既有的 pending + requestId + endpoint 契约:endpoint='c2' 会走
+      // fal-query 的 Kie 分支，前端轮询逻辑一行不用改。
+      return NextResponse.json({ success: true, requestId, endpoint: 'c2', pending: true });
     } catch (err) {
       caughtErr = err;
       // 失败退款
       if (userId) {
-        const price = STEP4_PRICE[aspectRatio] ?? 1.2;
-        await refundBalance(userId, price, 'GEM Step4 分镜图生成失败退款', { model: 'gpt-image-2', aspectRatio });
+        await refundBalance(userId, spec.price, 'GEM Step4 分镜图生成失败退款', { model: 'gpt-image-2', aspectRatio });
       }
       throw err;
     } finally {

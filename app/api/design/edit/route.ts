@@ -8,7 +8,7 @@ export const maxDuration = 300;
 
 falSingleton.config({ credentials: process.env.FAL_KEY! });
 
-const YUNWU_BASE_URL = 'https://api.n1n.ai';
+const YUNWU_BASE_URL = process.env.YUNWU_BASE_URL || 'https://llm-api.net';
 const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
 
 // 检测中文并自动翻译成英文（走 n1n gpt-4o-mini，速度快成本低）

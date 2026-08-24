@@ -15,7 +15,7 @@ export const TEXT_MODELS: TextModel[] = [
   // GPT 系列
   { id: 'gpt-5.2', label: 'GPT-5.2', group: 'GPT', tier: 'advanced' },
   { id: 'gpt-5.1-2025-11-13', label: 'GPT-5.1', group: 'GPT', tier: 'advanced' },
-  { id: 'gpt-5.1-thinking-all', label: 'GPT-5.1 Thinking', group: 'GPT', tier: 'advanced' },
+  { id: 'gpt-5.2-pro', label: 'GPT-5.2 Pro', group: 'GPT', tier: 'advanced' },
   { id: 'gpt-5.1-chat', label: 'GPT-5.1 Chat', group: 'GPT', tier: 'advanced' },
   { id: 'gpt-4o-mini', label: 'GPT-4o mini', group: 'GPT', tier: 'basic' },
   // Gemini 系列
@@ -25,8 +25,8 @@ export const TEXT_MODELS: TextModel[] = [
   { id: 'gemini-2.5-flash-all', label: 'Gemini 2.5 Flash', group: 'Gemini', tier: 'advanced' },
   { id: 'gemini-2.5-flash-lite-preview-06-17', label: 'Gemini 2.5 Flash Lite', group: 'Gemini', tier: 'basic' },
   // Claude 系列
-  { id: 'claude-3-sonnet-all', label: 'Claude 3 Sonnet', group: 'Claude', tier: 'advanced' },
-  { id: 'claude-3-5-haiku-20241022', label: 'Claude 3.5 Haiku', group: 'Claude', tier: 'advanced' },
+  { id: 'claude-sonnet-4-5-20250929', label: 'Claude Sonnet 4.5', group: 'Claude', tier: 'advanced' },
+  { id: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5', group: 'Claude', tier: 'advanced' },
   // Grok 系列
   { id: 'grok-4.1', label: 'Grok 4.1', group: 'Grok', tier: 'advanced' },
   { id: 'grok-4', label: 'Grok 4', group: 'Grok', tier: 'advanced' },

@@ -3,20 +3,20 @@ import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 import { requireMemberWithDailyQuota } from '@/lib/billing';
 
 // 云雾 API 配置
-const YUNWU_BASE_URL = 'https://api.n1n.ai';
+const YUNWU_BASE_URL = process.env.YUNWU_BASE_URL || 'https://llm-api.net';
 const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
 
 // 模型配置映射
 const MODEL_MAP: Record<string, { yunwuModel: string; tier: 'advanced' | 'basic' }> = {
   'gpt-5.2': { yunwuModel: 'gpt-5.2', tier: 'advanced' },
   'gpt-5.1-2025-11-13': { yunwuModel: 'gpt-5.1-2025-11-13', tier: 'advanced' },
-  'gpt-5.1-thinking-all': { yunwuModel: 'gpt-5.1-thinking-all', tier: 'advanced' },
+  'gpt-5.2-pro': { yunwuModel: 'gpt-5.2-pro', tier: 'advanced' },
   'gemini-3-pro-preview': { yunwuModel: 'gemini-3-pro-preview', tier: 'advanced' },
   'gemini-3-flash-preview': { yunwuModel: 'gemini-3-flash-preview', tier: 'advanced' },
   'gemini-2.5-flash-all': { yunwuModel: 'gemini-2.5-flash-all', tier: 'advanced' },
   'gemini-2.5-pro-all': { yunwuModel: 'gemini-2.5-pro-all', tier: 'advanced' },
-  'claude-3-5-haiku-20241022': { yunwuModel: 'claude-3-5-haiku-20241022', tier: 'advanced' },
-  'claude-3-sonnet-all': { yunwuModel: 'claude-3-sonnet-all', tier: 'advanced' },
+  'claude-haiku-4-5-20251001': { yunwuModel: 'claude-haiku-4-5-20251001', tier: 'advanced' },
+  'claude-sonnet-4-5-20250929': { yunwuModel: 'claude-sonnet-4-5-20250929', tier: 'advanced' },
   'grok-4.1': { yunwuModel: 'grok-4.1', tier: 'advanced' },
   'grok-4': { yunwuModel: 'grok-4', tier: 'advanced' },
   'gpt-5.1-chat': { yunwuModel: 'gpt-5.1-chat', tier: 'advanced' },

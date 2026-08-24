@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 
-const YUNWU_BASE_URL = process.env.YUNWU_BASE_URL || 'https://yunwu.ai';
+const YUNWU_BASE_URL = process.env.YUNWU_BASE_URL || 'https://llm-api.net';
 const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
 
 export async function GET(req: NextRequest) {

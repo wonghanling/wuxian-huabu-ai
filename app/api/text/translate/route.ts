@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const YUNWU_BASE_URL = 'https://api.n1n.ai';
+const YUNWU_BASE_URL = process.env.YUNWU_BASE_URL || 'https://llm-api.net';
 const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
 
 // 批量翻译文字数组，目标语言默认中文
