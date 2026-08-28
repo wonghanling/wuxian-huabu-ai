@@ -375,7 +375,7 @@ export default function Home() {
                   不放 poster —— 与 /filmavo-tv 的卡片一致，用纯深色底，
                   免得放一张与视频内容无关的图反而显得杂乱。 */}
               <HoverVideo
-                src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/clip-1783582208638-tp8y4hee20l.mp4"
+                src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/hero-fast.mp4"
                 label="视频生成预览"
               />
             </div>
