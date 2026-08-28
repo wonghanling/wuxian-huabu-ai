@@ -17,14 +17,10 @@ import { UpcomingModels } from './_components/UpcomingModels';
  * 移开后保留 src(已下载完不必丢弃)，只暂停并回到首帧。
  */
 function HoverVideo({ src, label }: { src: string; label: string }) {
-  // armed 一旦为 true 就不再回退 —— 已经下载过的视频没必要丢掉重来
-  const [armed, setArmed] = useState(false);
   const ref = useRef<HTMLVideoElement>(null);
 
-  const enter = () => {
-    setArmed(true);
-    ref.current?.play().catch(() => {});
-  };
+  // play() 会自行开始下载 —— preload="none" 只是不预载，不妨碍播放
+  const enter = () => { ref.current?.play().catch(() => {}); };
   const leave = () => {
     const v = ref.current;
     if (!v) return;
@@ -40,16 +36,17 @@ function HoverVideo({ src, label }: { src: string; label: string }) {
       // 与 /filmavo-tv 的卡片一致:纯深色底，不放不相关的封面图
       style={{ background: 'rgb(26,26,26)' }}
     >
+      {/* src 常挂，靠 preload="none" 让浏览器在播放前不下载内容。
+          之前用"悬停才挂 src"的写法，配合 preload="none" 会出现挂上 src 后
+          浏览器不重新发起加载、画面一直空白的情况 —— 与 /filmavo-tv 的卡片
+          保持一致的写法更稳。 */}
       <video
         ref={ref}
-        // 悬停前不给 src —— 浏览器不会为它发起任何请求
-        {...(armed ? { src } : {})}
+        src={src}
         aria-label={label}
         className="w-full h-full object-cover"
         muted loop playsInline
         preload="none"
-        // src 是挂上之后才有的，首次要等元素就绪再播
-        onLoadedData={(e) => { void (e.currentTarget as HTMLVideoElement).play().catch(() => {}); }}
       />
     </div>
   );

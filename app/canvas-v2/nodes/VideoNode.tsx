@@ -196,6 +196,50 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     } finally { setUploading(false); }
   };
 
+  // 升分辨率专用上传:除 URL 外还要读出真实时长与高度。
+  //   时长 —— 这个模式没有时长选项(durations 为空)，不读真实值的话
+  //           duration 会落到兜底 5 秒，18 秒的视频也只按 5 秒扣费。
+  //   高度 —— 上游只有浮点 upscale_factor，后端按目标高度/输入高度换算。
+  const uploadUpscaleVideo = async (fileList: FileList | null) => {
+    const f = fileList?.[0];
+    if (!f) return;
+    setUploading(true);
+    try {
+      // 先在本地读元数据，超限就不必白传一遍
+      const meta = await new Promise<{ dur: number; h: number } | null>((resolve) => {
+        const v = document.createElement('video');
+        const objUrl = URL.createObjectURL(f);
+        v.preload = 'metadata';
+        v.onloadedmetadata = () => {
+          const out = { dur: v.duration || 0, h: v.videoHeight || 0 };
+          URL.revokeObjectURL(objUrl);
+          resolve(out);
+        };
+        v.onerror = () => { URL.revokeObjectURL(objUrl); resolve(null); };
+        v.src = objUrl;
+      });
+
+      // 上游硬限制:最长 20 秒、最大 50MB
+      if (meta && meta.dur > 20.5) {
+        alert(`视频 ${meta.dur.toFixed(1)} 秒，超过 20 秒上限，请先剪短`);
+        return;
+      }
+      if (f.size > 50 * 1024 * 1024) {
+        alert(`文件 ${(f.size / 1024 / 1024).toFixed(1)}MB，超过 50MB 上限`);
+        return;
+      }
+
+      const url = await uploadFileToStorage(f, 'video');
+      if (!url) return;
+      updateConfig(id, {
+        editVideo: url,
+        // 按真实时长计费，向上取整到秒(与其他按秒计费的模型口径一致)
+        ...(meta?.dur ? { duration: Math.max(1, Math.ceil(meta.dur)) } : {}),
+        ...(meta?.h ? { sourceHeight: meta.h } : {}),
+      } as any);
+    } finally { setUploading(false); }
+  };
+
   // 剪辑:开启剪辑条(初始化区间为整段)
   const openTrim = () => {
     const v = videoEl.current;
@@ -367,6 +411,8 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               : undefined),
           refVideos: effRefVideos,
           editVideo: effEditVideo,
+          // 升分辨率:源视频高度，后端据此换算 upscale_factor(上游没有分辨率参数)
+          sourceHeight: model.mode === 'upscale' ? (data.config as any).sourceHeight : undefined,
           userId,
         },
         (progress) => updateCard(id, { progress }),
@@ -663,7 +709,7 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                     ) : (
                       <label style={{ ...refVidRow, cursor: 'pointer', justifyContent: 'center', color: '#a1a1aa' }}>
                         {uploading ? '上传中…' : '+ 上传源视频'}
-                        <input type="file" accept="video/mp4" style={{ display: 'none' }} onChange={(e) => uploadEditVideo(e.target.files)} />
+                        <input type="file" accept="video/mp4" style={{ display: 'none' }} onChange={(e) => uploadUpscaleVideo(e.target.files)} />
                       </label>
                     )}
                     <div style={{ fontSize: 10, color: '#71717a', padding: '4px 2px 0', lineHeight: 1.5 }}>

@@ -264,7 +264,8 @@ export interface VideoGenParams {
   refImages?: string[];       // r2v 参考图(URL)
   refVoices?: string[];       // wan2.7-r2v 音色:按参考素材顺序(图先视频后)依次分配
   refVideos?: string[];       // r2v 参考视频(URL)
-  editVideo?: string;         // 视频编辑 待编辑视频(URL)
+  editVideo?: string;         // 视频编辑 待编辑视频(URL);升分辨率的源视频也用它
+  sourceHeight?: number;      // 升分辨率:源视频高度,后端用它换算 upscale_factor
   cameraTemplate?: string;    // jimeng-camera 专用
   cameraStrength?: string;
   userId?: string;
@@ -300,6 +301,7 @@ export async function generateVideo(
       refVoices: params.refVoices,
       refVideos: params.refVideos,
       editVideo: params.editVideo,
+      sourceHeight: params.sourceHeight,
       cameraTemplate: params.cameraTemplate,
       cameraStrength: params.cameraStrength,
       userId: params.userId || undefined,
