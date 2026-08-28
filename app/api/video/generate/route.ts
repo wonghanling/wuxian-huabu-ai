@@ -62,18 +62,21 @@ type ModelConfig = {
   /**
    * Kie 各模型的参数形态差异（provider='kie' 时生效）。不设则用 H3 的默认形态。
    *   resKey    清晰度字段名：'resolution'(Wan/快乐马/H3) | 'quality'(Pixverse)
-   *   resCase   清晰度大小写：'upper'=768P/2K(H3) | 'lower'=720p/1080p(其余)
+   *   resCase   清晰度大小写：'upper'=768P/2K(H3) | 'lower'=720p/1080p(2.7 等)
+   *             | 'keep'=原样传 480P/720P/1080P(Wan 3.0)
    *   imgStyle  图片传法：'frame'=first_frame_url/last_frame_url(Wan)
    *             | 'urls'=image_urls 数组(快乐马/Pixverse) | 'single'=image_url(H3)
    *   refStyle  参考素材字段：'wan'=reference_image/reference_video/reference_voice
    *             | 'h3'=reference_image_urls/..._video_urls/..._audio_urls
    *             | 'single'=reference_image(快乐马,仅图)
+   *   audioBool 音频用布尔字段 audio(Wan 3.0)，而非 2.7 的 reference_voice 音色
    */
   kieParams?: {
     resKey?: 'resolution' | 'quality';
-    resCase?: 'upper' | 'lower';
+    resCase?: 'upper' | 'lower' | 'keep';
     imgStyle?: 'frame' | 'urls' | 'single';
     refStyle?: 'wan' | 'h3' | 'single';
+    audioBool?: boolean;
   };
   dashscopeModel?: string;
   jimengReqKey?: string;
@@ -292,6 +295,139 @@ const VIDEO_MODELS: Record<string, ModelConfig> = {
     kieParams: { resKey: 'quality', resCase: 'lower', imgStyle: 'urls' },
   },
   // wan2.7 新协议(input.media 数组格式,endpoint=dashscope27)
+  // ── Wan 3.0（走 Kie）──────────────────────────────────────
+  // 两个端点参数完全一致，仅速度与价格不同:
+  //   wan/3-0-video        标准版
+  //   wan/3-0-video-prime  高速版
+  // 与 2.7 的差异:多 480P 档、默认 1080P、时长 2~30s、比例多 adaptive、
+  // 音频是布尔开关 audio(2.7 是 reference_voice 音色)、
+  // 参考素材字段带 _urls 后缀且三类各自独立(图 10/视频 5/音频 5)。
+  'wan3.0-t2v': {
+    name: 'Wan 3.0 文生视频',
+    endpoint: 'wan/3-0-video',
+    provider: 'kie',
+    mode: 't2v',
+    durations: [2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30],
+    aspectRatios: [],
+    resolutions: ['480P', '720P', '1080P'],
+    defaultResolution: '1080P',
+    supportsAudio: true,
+    audioBuiltIn: false,
+    supportsEndFrame: false,
+    durationFormat: 'number',
+    kieParams: { resCase: 'keep', audioBool: true },
+  },
+  'wan3.0-i2v': {
+    name: 'Wan 3.0 图生视频',
+    endpoint: 'wan/3-0-video',
+    provider: 'kie',
+    mode: 'i2v',
+    durations: [2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30],
+    aspectRatios: ['adaptive', '16:9', '9:16', '1:1', '4:3', '3:4'],
+    resolutions: ['480P', '720P', '1080P'],
+    defaultResolution: '1080P',
+    supportsAudio: true,
+    audioBuiltIn: false,
+    supportsEndFrame: false,
+    imageParamName: 'image_url',
+    durationFormat: 'number',
+    kieParams: { resCase: 'keep', audioBool: true, imgStyle: 'frame' },
+  },
+  'wan3.0-kf2v': {
+    name: 'Wan 3.0 首尾帧',
+    endpoint: 'wan/3-0-video',
+    provider: 'kie',
+    mode: 'firstLastFrame',
+    durations: [2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30],
+    aspectRatios: ['adaptive', '16:9', '9:16', '1:1', '4:3', '3:4'],
+    resolutions: ['480P', '720P', '1080P'],
+    defaultResolution: '1080P',
+    supportsAudio: true,
+    audioBuiltIn: false,
+    supportsEndFrame: true,
+    imageParamName: 'image_url',
+    endImageParamName: 'end_image_url',
+    durationFormat: 'number',
+    kieParams: { resCase: 'keep', audioBool: true, imgStyle: 'frame' },
+  },
+  'wan3.0-r2v': {
+    name: 'Wan 3.0 参考内容',
+    endpoint: 'wan/3-0-video',
+    provider: 'kie',
+    mode: 'r2v',
+    durations: [2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30],
+    aspectRatios: ['adaptive', '16:9', '9:16', '1:1', '4:3', '3:4'],
+    resolutions: ['480P', '720P', '1080P'],
+    defaultResolution: '1080P',
+    supportsAudio: true,
+    audioBuiltIn: false,
+    supportsEndFrame: false,
+    durationFormat: 'number',
+    kieParams: { resCase: 'keep', audioBool: true, refStyle: 'h3' },
+  },
+  'wan3.0-prime-t2v': {
+    name: 'Wan 3.0 文生视频 高速',
+    endpoint: 'wan/3-0-video-prime',
+    provider: 'kie',
+    mode: 't2v',
+    durations: [2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30],
+    aspectRatios: [],
+    resolutions: ['480P', '720P', '1080P'],
+    defaultResolution: '1080P',
+    supportsAudio: true,
+    audioBuiltIn: false,
+    supportsEndFrame: false,
+    durationFormat: 'number',
+    kieParams: { resCase: 'keep', audioBool: true },
+  },
+  'wan3.0-prime-i2v': {
+    name: 'Wan 3.0 图生视频 高速',
+    endpoint: 'wan/3-0-video-prime',
+    provider: 'kie',
+    mode: 'i2v',
+    durations: [2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30],
+    aspectRatios: ['adaptive', '16:9', '9:16', '1:1', '4:3', '3:4'],
+    resolutions: ['480P', '720P', '1080P'],
+    defaultResolution: '1080P',
+    supportsAudio: true,
+    audioBuiltIn: false,
+    supportsEndFrame: false,
+    imageParamName: 'image_url',
+    durationFormat: 'number',
+    kieParams: { resCase: 'keep', audioBool: true, imgStyle: 'frame' },
+  },
+  'wan3.0-prime-kf2v': {
+    name: 'Wan 3.0 首尾帧 高速',
+    endpoint: 'wan/3-0-video-prime',
+    provider: 'kie',
+    mode: 'firstLastFrame',
+    durations: [2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30],
+    aspectRatios: ['adaptive', '16:9', '9:16', '1:1', '4:3', '3:4'],
+    resolutions: ['480P', '720P', '1080P'],
+    defaultResolution: '1080P',
+    supportsAudio: true,
+    audioBuiltIn: false,
+    supportsEndFrame: true,
+    imageParamName: 'image_url',
+    endImageParamName: 'end_image_url',
+    durationFormat: 'number',
+    kieParams: { resCase: 'keep', audioBool: true, imgStyle: 'frame' },
+  },
+  'wan3.0-prime-r2v': {
+    name: 'Wan 3.0 参考内容 高速',
+    endpoint: 'wan/3-0-video-prime',
+    provider: 'kie',
+    mode: 'r2v',
+    durations: [2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30],
+    aspectRatios: ['adaptive', '16:9', '9:16', '1:1', '4:3', '3:4'],
+    resolutions: ['480P', '720P', '1080P'],
+    defaultResolution: '1080P',
+    supportsAudio: true,
+    audioBuiltIn: false,
+    supportsEndFrame: false,
+    durationFormat: 'number',
+    kieParams: { resCase: 'keep', audioBool: true, refStyle: 'h3' },
+  },
   'wan2.7-t2v': {
     name: 'Wan 2.7 文生视频',
     endpoint: 'wan/2-7-text-to-video',
@@ -910,8 +1046,11 @@ export async function POST(req: NextRequest) {
         const refStyle = kp.refStyle ?? 'h3';
 
         const rawRes = (resolution || cfg.defaultResolution).toLowerCase();
-        // H3 要大写(768P / 2K)，Wan / 快乐马 / Pixverse 用小写(720p / 1080p)
-        const resValue = resCase === 'upper'
+        // H3 要大写(768P / 2K)，Wan 2.7 / 快乐马 / Pixverse 用小写(720p / 1080p)，
+        // Wan 3.0 用大写档位名(480P / 720P / 1080P)，原样传即可
+        const resValue = resCase === 'keep'
+          ? (resolution || cfg.defaultResolution).toUpperCase()
+          : resCase === 'upper'
           ? (rawRes === '2k' ? '2K' : '768P')
           : rawRes;
 
@@ -921,6 +1060,8 @@ export async function POST(req: NextRequest) {
           [resKey]: resValue,
         };
         if (aspectRatio && cfg.aspectRatios.length > 0) kieInput.aspect_ratio = aspectRatio;
+        // Wan 3.0：音频是布尔开关(上游默认 true)，按前端开关显式传
+        if (kp.audioBool) kieInput.audio = !!generateAudio;
 
         if (cfg.mode === 'i2v' || cfg.mode === 'firstLastFrame') {
           const first = await toPublicUrl(input[cfg.imageParamName || 'image_url'] as string);

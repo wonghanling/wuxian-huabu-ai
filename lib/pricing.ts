@@ -200,6 +200,68 @@ export const VIDEO_PRICING: Record<string, VideoModelPrice> = {
     },
   },
 
+
+  // ── Wan 3.0（走 Kie，两个端点参数完全一致，仅速度与价格不同）──
+  //   标准版 wan/3-0-video        480P 0.30 / 720P 0.63 / 1080P 1.17
+  //   高速版 wan/3-0-video-prime  480P 0.50 / 720P 0.95 / 1080P 1.80
+  // 四种模式同价，含自动音频。默认 1080P（2.7 默认 720P）。
+  'wan3.0-t2v': {
+    resolutions: {
+      '480P':  flat(0.30),
+      '720P':  flat(0.63),
+      '1080P': flat(1.17),
+    },
+  },
+  'wan3.0-i2v': {
+    resolutions: {
+      '480P':  flat(0.30),
+      '720P':  flat(0.63),
+      '1080P': flat(1.17),
+    },
+  },
+  'wan3.0-kf2v': {
+    resolutions: {
+      '480P':  flat(0.30),
+      '720P':  flat(0.63),
+      '1080P': flat(1.17),
+    },
+  },
+  'wan3.0-r2v': {
+    resolutions: {
+      '480P':  flat(0.30),
+      '720P':  flat(0.63),
+      '1080P': flat(1.17),
+    },
+  },
+  'wan3.0-prime-t2v': {
+    resolutions: {
+      '480P':  flat(0.50),
+      '720P':  flat(0.95),
+      '1080P': flat(1.80),
+    },
+  },
+  'wan3.0-prime-i2v': {
+    resolutions: {
+      '480P':  flat(0.50),
+      '720P':  flat(0.95),
+      '1080P': flat(1.80),
+    },
+  },
+  'wan3.0-prime-kf2v': {
+    resolutions: {
+      '480P':  flat(0.50),
+      '720P':  flat(0.95),
+      '1080P': flat(1.80),
+    },
+  },
+  'wan3.0-prime-r2v': {
+    resolutions: {
+      '480P':  flat(0.50),
+      '720P':  flat(0.95),
+      '1080P': flat(1.80),
+    },
+  },
+
   // ── Wan 2.7（走 Kie，统一价 720P ¥0.63/s · 1080P ¥0.90/s）──
   // 五种模式同价。含自动音频，不区分有声/无声，故不设 audioVariants。
   'wan2.7-t2v': {

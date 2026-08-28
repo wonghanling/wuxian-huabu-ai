@@ -42,6 +42,18 @@ export function videoRefLimits(modelId?: string): { images: number; videos: numb
 export const VIDEO_MODELS: VideoModel[] = [
   // —— 即梦 3.0 ——
 
+  // —— Wan 3.0（多 480P 档、时长 2~30s、比例含 adaptive）——
+  // 参考内容的素材上限比 2.7 宽松得多:2.7 是三类共享总数 5，
+  // 3.0 是图 10 / 视频 5 / 音频 5 各自独立，故必须显式写 refLimits。
+  { id: 'wan3.0-t2v', label: 'Wan 3.0 文生', mode: 't2v', durations: [2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30], aspectRatios: [], resolutions: ['480P','720P','1080P'], defaultResolution: '1080P', supportsAudio: true, price: '480P ¥0.30/720P ¥0.63/1080P ¥1.17 每秒' },
+  { id: 'wan3.0-i2v', label: 'Wan 3.0 首帧', mode: 'i2v', durations: [2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30], aspectRatios: ['adaptive','16:9','9:16','1:1','4:3','3:4'], resolutions: ['480P','720P','1080P'], defaultResolution: '1080P', supportsAudio: true, price: '480P ¥0.30/720P ¥0.63/1080P ¥1.17 每秒' },
+  { id: 'wan3.0-kf2v', label: 'Wan 3.0 首尾帧', mode: 'firstLastFrame', durations: [2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30], aspectRatios: ['adaptive','16:9','9:16','1:1','4:3','3:4'], resolutions: ['480P','720P','1080P'], defaultResolution: '1080P', supportsAudio: true, price: '480P ¥0.30/720P ¥0.63/1080P ¥1.17 每秒' },
+  { id: 'wan3.0-r2v', label: 'Wan 3.0 参考内容', mode: 'r2v', durations: [2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30], aspectRatios: ['adaptive','16:9','9:16','1:1','4:3','3:4'], resolutions: ['480P','720P','1080P'], defaultResolution: '1080P', supportsAudio: true, price: '480P ¥0.30/720P ¥0.63/1080P ¥1.17 每秒', refLimits: { images: 10, videos: 5, audios: 5, total: 20 }, refAudioKind: 'reference' },
+  { id: 'wan3.0-prime-t2v', label: 'Wan 3.0 高速 文生', mode: 't2v', durations: [2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30], aspectRatios: [], resolutions: ['480P','720P','1080P'], defaultResolution: '1080P', supportsAudio: true, price: '480P ¥0.50/720P ¥0.95/1080P ¥1.80 每秒' },
+  { id: 'wan3.0-prime-i2v', label: 'Wan 3.0 高速 首帧', mode: 'i2v', durations: [2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30], aspectRatios: ['adaptive','16:9','9:16','1:1','4:3','3:4'], resolutions: ['480P','720P','1080P'], defaultResolution: '1080P', supportsAudio: true, price: '480P ¥0.50/720P ¥0.95/1080P ¥1.80 每秒' },
+  { id: 'wan3.0-prime-kf2v', label: 'Wan 3.0 高速 首尾帧', mode: 'firstLastFrame', durations: [2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30], aspectRatios: ['adaptive','16:9','9:16','1:1','4:3','3:4'], resolutions: ['480P','720P','1080P'], defaultResolution: '1080P', supportsAudio: true, price: '480P ¥0.50/720P ¥0.95/1080P ¥1.80 每秒' },
+  { id: 'wan3.0-prime-r2v', label: 'Wan 3.0 高速 参考内容', mode: 'r2v', durations: [2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30], aspectRatios: ['adaptive','16:9','9:16','1:1','4:3','3:4'], resolutions: ['480P','720P','1080P'], defaultResolution: '1080P', supportsAudio: true, price: '480P ¥0.50/720P ¥0.95/1080P ¥1.80 每秒', refLimits: { images: 10, videos: 5, audios: 5, total: 20 }, refAudioKind: 'reference' },
+
   // —— Wan ——
   { id: 'wan2.7-t2v', label: 'Wan 2.7 文生', mode: 't2v', durations: [5, 10], aspectRatios: ['16:9','9:16','1:1'], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '720P ¥0.63/1080P ¥0.90 每秒 · 含自动音频' },
   { id: 'wan2.7-i2v', label: 'Wan 2.7 首帧', mode: 'i2v', durations: [5, 10], aspectRatios: [], resolutions: ['720P','1080P'], defaultResolution: '720P', supportsAudio: false, price: '720P ¥0.63/1080P ¥0.90 每秒 · 含自动音频' },
