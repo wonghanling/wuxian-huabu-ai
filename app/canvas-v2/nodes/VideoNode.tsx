@@ -703,7 +703,7 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                   <div style={{ padding: 6 }}>
                     {srcV ? (
                       <div style={refVidRow}>
-                        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>🎬 {data.config.editVideo ? '已上传源视频' : '来自连接的视频'}</span>
+                        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{data.config.editVideo ? '已上传源视频' : '来自连接的视频'}</span>
                         {data.config.editVideo && <button onClick={() => updateConfig(id, { editVideo: undefined })} style={{ ...refRm, position: 'static' }}>✕</button>}
                       </div>
                     ) : (

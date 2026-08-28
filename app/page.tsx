@@ -36,17 +36,17 @@ function HoverVideo({ src, label }: { src: string; label: string }) {
       // 与 /filmavo-tv 的卡片一致:纯深色底，不放不相关的封面图
       style={{ background: 'rgb(26,26,26)' }}
     >
-      {/* src 常挂，靠 preload="none" 让浏览器在播放前不下载内容。
-          之前用"悬停才挂 src"的写法，配合 preload="none" 会出现挂上 src 后
-          浏览器不重新发起加载、画面一直空白的情况 —— 与 /filmavo-tv 的卡片
-          保持一致的写法更稳。 */}
+      {/* preload="metadata" 而不是 "none" —— none 是一个字节都不下载，
+          于是没有第一帧可显示，只能黑屏;metadata 只取文件开头(几十 KB)
+          就能解出首帧当静止画面，与页面其它视频、/filmavo-tv 的卡片一致。
+          真正的内容下载仍要等 play()，所以页面加载依然不拉那 4.85MB。 */}
       <video
         ref={ref}
         src={src}
         aria-label={label}
         className="w-full h-full object-cover"
         muted loop playsInline
-        preload="none"
+        preload="metadata"
       />
     </div>
   );
