@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { AlibabaCloud, Microsoft, Gemini, BAAI, ByteDance, Adobe, TencentCloud, Fal, Midjourney, Minimax, Aws, LongCat, Jimeng, NanoBanana } from '@lobehub/icons';
 import { ScrollZoomShowcase } from './_components/ScrollZoomShowcase';
@@ -10,6 +10,45 @@ import { FeatureTabsShowcase } from './_components/FeatureTabsShowcase';
 import { WorkflowScrollShowcase } from './_components/WorkflowScrollShowcase';
 import { ScriptStudioDemo } from './_components/ScriptStudioDemo';
 import { UpcomingModels } from './_components/UpcomingModels';
+
+/**
+ * 悬停才加载的视频。平时只显示封面图，鼠标移上去才挂 src 开始下载并播放。
+ * 用于首屏那种"装饰性预览"——不悬停就不该为它付流量。
+ * 移开后保留 src(已下载完不必丢弃)，只暂停并回到首帧。
+ */
+function HoverVideo({ src, poster, label }: { src: string; poster: string; label: string }) {
+  // armed 一旦为 true 就不再回退 —— 已经下载过的视频没必要丢掉重来
+  const [armed, setArmed] = useState(false);
+  const ref = useRef<HTMLVideoElement>(null);
+
+  const enter = () => {
+    setArmed(true);
+    ref.current?.play().catch(() => {});   // 自动播放被拦时静默失败，封面图仍在
+  };
+  const leave = () => {
+    const v = ref.current;
+    if (!v) return;
+    v.pause();
+    v.currentTime = 0;   // 回到首帧，下次悬停从头播
+  };
+
+  return (
+    <div className="w-full h-full" onMouseEnter={enter} onMouseLeave={leave}>
+      <video
+        ref={ref}
+        // 悬停前不给 src —— 浏览器不会为它发起任何请求
+        {...(armed ? { src } : {})}
+        poster={poster}
+        aria-label={label}
+        className="w-full h-full object-cover"
+        muted loop playsInline
+        preload="none"
+        // src 是挂上之后才有的，首次要等元素就绪再播
+        onLoadedData={(e) => { void (e.currentTarget as HTMLVideoElement).play().catch(() => {}); }}
+      />
+    </div>
+  );
+}
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);
@@ -327,11 +366,15 @@ export default function Home() {
           >
             <span className="block mb-1.5 text-[12px] font-medium" style={{ color: 'rgb(160,160,160)' }}>视频生成</span>
             <div className="rounded-2xl overflow-hidden" style={{ aspectRatio: '16/9', background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}>
-              <video
+              {/* 悬停才加载播放 —— 这个视频 4.85MB，且 Supabase 返回
+                  Cache-Control: no-cache(上传时没设 cacheControl)，浏览器缓存
+                  不生效，每次进首页都要重下一遍，所以是"每次都慢"而非首次慢。
+                  改成 hover 才挂 src:不悬停时一个字节都不下载，页面加载零成本;
+                  平时显示封面图，它走 /render/image CDN(有缓存)且已压到 520px。 */}
+              <HoverVideo
                 src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/clip-1783582208638-tp8y4hee20l.mp4"
-                className="w-full h-full object-cover"
-                autoPlay muted loop playsInline
-                preload="metadata"
+                poster="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783580645778.jpg?quality=60&width=520"
+                label="视频生成预览"
               />
             </div>
           </div>
