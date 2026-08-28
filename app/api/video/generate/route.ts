@@ -46,7 +46,9 @@ async function getAuthedUserId(req: NextRequest): Promise<string | null> {
 type ModelConfig = {
   name: string;
   endpoint: string;
-  mode: 't2v' | 'i2v' | 'firstLastFrame' | 'r2v' | 'videoedit';
+  // upscale=视频升分辨率(后处理):吃一个已有视频，把它提到更高分辨率。
+  // 无提示词/比例/时长/音频等生成参数
+  mode: 't2v' | 'i2v' | 'firstLastFrame' | 'r2v' | 'videoedit' | 'upscale';
   durations: number[];
   aspectRatios: string[];
   resolutions: string[];
@@ -248,6 +250,27 @@ const VIDEO_MODELS: Record<string, ModelConfig> = {
     endImageParamName: 'end_image_url',
     i2vNoAspectRatio: true,
   },
+  // FLUX 视频升分辨率(后处理,走 fal)。上游 schema:
+  //   video_url       必填,MP4,最长 20s / 最大 50MB
+  //   upscale_factor  浮点倍率(默认 2) —— 上游没有分辨率枚举,
+  //                   故 resolutions 的 1080P/2K/4K 只是给用户的说法,
+  //                   后端按"目标高度 / 输入高度"换算成倍率
+  //   creativity      0=精确 1=创意增强(默认 1) —— 固定 0,不做创意模式
+  //   prompt / safety_tolerance  创意模式才用,精确模式不传
+  'flux-video-upscale': {
+    name: 'FLUX 视频升分辨率',
+    endpoint: 'blackforestlabs/flux-video-upscale',
+    mode: 'upscale',
+    durations: [],
+    aspectRatios: [],
+    resolutions: ['1080P', '2K', '4K'],
+    defaultResolution: '1080P',
+    supportsAudio: false,
+    audioBuiltIn: false,
+    supportsEndFrame: false,
+    durationFormat: 'none',
+  },
+
   'flux-3-extend': {
     name: 'FLUX 3 扩展视频',
     endpoint: 'blackforestlabs/flux-3/extend-video',
@@ -860,13 +883,19 @@ export async function POST(req: NextRequest) {
       cameraStrength,
     } = body;
 
-    if (!prompt || !model) {
+    if (!model) {
       return NextResponse.json({ error: '缺少必要参数' }, { status: 400 });
     }
 
     const cfg = VIDEO_MODELS[model];
     if (!cfg) {
       return NextResponse.json({ error: `不支持的视频模型: ${model}` }, { status: 400 });
+    }
+
+    // 提示词必填 —— 但视频升分辨率是后处理，只吃一个视频、没有提示词，
+    // 故校验下移到 cfg 之后，按模式放行。
+    if (!prompt && cfg.mode !== 'upscale') {
+      return NextResponse.json({ error: '缺少必要参数' }, { status: 400 });
     }
 
     // i2v 模型必须有图片
@@ -961,7 +990,9 @@ export async function POST(req: NextRequest) {
     }
 
     // 分辨率
-    if (cfg.resolutions.length > 0 && resolution) {
+    // 升分辨率模型除外:它的 resolutions(1080P/2K/4K)只是给用户看的说法，
+    // 上游没有 resolution 参数，只有浮点 upscale_factor(下方单独处理)。
+    if (cfg.resolutions.length > 0 && resolution && cfg.mode !== 'upscale') {
       input.resolution = resolution;
     }
 
@@ -1014,6 +1045,29 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: '扩展视频需要先上传一个视频' }, { status: 400 });
       }
       input.video_url = editVideo;
+    }
+
+    // FLUX 视频升分辨率：只吃视频 + 倍率，其余生成参数一概不传
+    if (cfg.mode === 'upscale') {
+      if (!editVideo) {
+        return NextResponse.json({ error: '升分辨率需要先上传一个视频' }, { status: 400 });
+      }
+      const vUrl = await toPublicUrl(editVideo);
+      input.video_url = vUrl || editVideo;
+
+      // 上游只有浮点倍率，没有分辨率枚举 —— 用目标高度 / 输入高度换算。
+      // 输入高度由前端随请求带上(取不到时按 720p 估，2 倍是上游默认值)。
+      const targetH = resolution === '4K' ? 2160 : resolution === '2K' ? 1440 : 1080;
+      const srcH = Number((body as any).sourceHeight) || 720;
+      // 倍率夹在 [1, 4]:低于 1 是缩小(无意义)，高于 4 上游会拒
+      const factor = Math.min(4, Math.max(1, targetH / srcH));
+      input.upscale_factor = Number(factor.toFixed(2));
+
+      input.creativity = 0;   // 固定精确模式(不做创意增强，故不传 prompt)
+      delete input.prompt;
+      delete input.generate_audio;
+      delete input.aspect_ratio;
+      delete input.duration;
     }
 
     // FLUX 3：自带音频生成（默认 true），安全等级用较宽松的 3

@@ -371,6 +371,18 @@ export const VIDEO_PRICING: Record<string, VideoModelPrice> = {
 
   // ── FLUX 3（走 fal，会员/普通同价，按秒）──────────────────
   // 720p ¥1.24/秒 · 1080p ¥2.05/秒；四种模式同价
+  // ── FLUX 视频升分辨率（走 fal blackforestlabs/flux-video-upscale）──
+  // 后处理:把已有视频提到更高分辨率，按目标分辨率 x 视频时长计费。
+  // 注意上游只有浮点倍率 upscale_factor，没有分辨率枚举 —— 这里的
+  // 1080P/2K/4K 是我们对用户的表达，后端按输入尺寸换算成倍率。
+  'flux-video-upscale': {
+    resolutions: {
+      '1080P': flat(1.00),
+      '2K':    flat(1.70),
+      '4K':    flat(3.80),
+    },
+  },
+
   'flux-3-t2v': {
     resolutions: { '720p': flat(1.24), '1080p': flat(2.05) },
   },

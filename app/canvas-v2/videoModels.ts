@@ -6,7 +6,9 @@
 
 import { calcVideoPrice } from '@/lib/pricing';
 
-export type VideoMode = 't2v' | 'i2v' | 'firstLastFrame' | 'r2v' | 'videoedit';
+// upscale=升分辨率(后处理):吃一个已有视频，把它提到更高分辨率。
+// 与 videoedit 一样需要上传视频，但没有提示词/比例/时长/音频这些生成参数。
+export type VideoMode = 't2v' | 'i2v' | 'firstLastFrame' | 'r2v' | 'videoedit' | 'upscale';
 
 export interface VideoModel {
   id: string;
@@ -74,6 +76,9 @@ export const VIDEO_MODELS: VideoModel[] = [
   { id: 'flux-3-i2v', label: 'FLUX 3 首帧', mode: 'i2v', durations: [5, 6, 8, 10, 12, 15, 20], aspectRatios: [], resolutions: ['720p','1080p'], defaultResolution: '720p', supportsAudio: false, price: '720P ¥1.24/1080P ¥2.05 每秒' },
   { id: 'flux-3-first-last', label: 'FLUX 3 首尾帧', mode: 'firstLastFrame', durations: [5, 6, 8, 10, 12, 15, 20], aspectRatios: [], resolutions: ['720p','1080p'], defaultResolution: '720p', supportsAudio: false, price: '720P ¥1.24/1080P ¥2.05 每秒' },
   { id: 'flux-3-extend', label: 'FLUX 3 扩展视频', mode: 'videoedit', durations: [5, 6, 8, 10, 12, 15, 20], aspectRatios: ['16:9','9:16','1:1','4:3','3:4','21:9','2:1'], resolutions: ['720p','1080p'], defaultResolution: '720p', supportsAudio: false, price: '720P ¥1.24/1080P ¥2.05 每秒' },
+  // 升分辨率:后处理，把已有视频提到更高分辨率。无提示词/比例/时长/音频。
+  // 上游限制:MP4、最长 20 秒、最大 50MB。
+  { id: 'flux-video-upscale', label: 'FLUX 视频升分辨率', mode: 'upscale', durations: [], aspectRatios: [], resolutions: ['1080P','2K','4K'], defaultResolution: '1080P', supportsAudio: false, price: '1080P ¥1.00/2K ¥1.70/4K ¥3.80 每秒' },
 
   { id: 'pixverse-t2v', label: 'Pixverse v6 文生', mode: 't2v', durations: [5, 8], aspectRatios: ['16:9','9:16','1:1'], resolutions: ['720p','1080p'], defaultResolution: '720p', supportsAudio: false, price: '720P ¥0.43/1080P ¥0.73 每秒 · 含自动音频' },
   { id: 'pixverse-i2v', label: 'Pixverse v6 首帧', mode: 'i2v', durations: [5, 8], aspectRatios: [], resolutions: ['720p','1080p'], defaultResolution: '720p', supportsAudio: false, price: '720P ¥0.43/1080P ¥0.73 每秒 · 含自动音频' },

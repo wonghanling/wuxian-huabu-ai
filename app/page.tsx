@@ -16,14 +16,14 @@ import { UpcomingModels } from './_components/UpcomingModels';
  * 用于首屏那种"装饰性预览"——不悬停就不该为它付流量。
  * 移开后保留 src(已下载完不必丢弃)，只暂停并回到首帧。
  */
-function HoverVideo({ src, poster, label }: { src: string; poster: string; label: string }) {
+function HoverVideo({ src, label }: { src: string; label: string }) {
   // armed 一旦为 true 就不再回退 —— 已经下载过的视频没必要丢掉重来
   const [armed, setArmed] = useState(false);
   const ref = useRef<HTMLVideoElement>(null);
 
   const enter = () => {
     setArmed(true);
-    ref.current?.play().catch(() => {});   // 自动播放被拦时静默失败，封面图仍在
+    ref.current?.play().catch(() => {});
   };
   const leave = () => {
     const v = ref.current;
@@ -33,12 +33,17 @@ function HoverVideo({ src, poster, label }: { src: string; poster: string; label
   };
 
   return (
-    <div className="w-full h-full" onMouseEnter={enter} onMouseLeave={leave}>
+    <div
+      className="w-full h-full"
+      onMouseEnter={enter}
+      onMouseLeave={leave}
+      // 与 /filmavo-tv 的卡片一致:纯深色底，不放不相关的封面图
+      style={{ background: 'rgb(26,26,26)' }}
+    >
       <video
         ref={ref}
         // 悬停前不给 src —— 浏览器不会为它发起任何请求
         {...(armed ? { src } : {})}
-        poster={poster}
         aria-label={label}
         className="w-full h-full object-cover"
         muted loop playsInline
@@ -369,11 +374,11 @@ export default function Home() {
               {/* 悬停才加载播放 —— 这个视频 4.85MB，且 Supabase 返回
                   Cache-Control: no-cache(上传时没设 cacheControl)，浏览器缓存
                   不生效，每次进首页都要重下一遍，所以是"每次都慢"而非首次慢。
-                  改成 hover 才挂 src:不悬停时一个字节都不下载，页面加载零成本;
-                  平时显示封面图，它走 /render/image CDN(有缓存)且已压到 520px。 */}
+                  改成 hover 才挂 src:不悬停时一个字节都不下载，页面加载零成本。
+                  不放 poster —— 与 /filmavo-tv 的卡片一致，用纯深色底，
+                  免得放一张与视频内容无关的图反而显得杂乱。 */}
               <HoverVideo
                 src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/clip-1783582208638-tp8y4hee20l.mp4"
-                poster="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783580645778.jpg?quality=60&width=520"
                 label="视频生成预览"
               />
             </div>

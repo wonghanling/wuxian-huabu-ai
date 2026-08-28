@@ -336,6 +336,10 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
     } else if (model.mode === 'videoedit') {
       effEditVideo = data.config.editVideo || upstream.videos[0];
       if (!effEditVideo) return;
+    } else if (model.mode === 'upscale') {
+      // 升分辨率:只需源视频，没有提示词可校验
+      effEditVideo = data.config.editVideo || upstream.videos[0];
+      if (!effEditVideo) return;
     } else {
       if (!effPrompt.trim() && need.first && !effFirst) return;
     }
@@ -639,6 +643,32 @@ function VideoNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                         <input type="file" accept="video/*" style={{ display: 'none' }} onChange={(e) => uploadEditVideo(e.target.files)} />
                       </label>
                     )}
+                  </div>
+                </ParamTag>
+              );
+            })()}
+
+            {/* upscale 源视频:上传 + 连线。独立一块，不与上面的 videoedit 合并 —— */}
+            {/* 两者语义不同(一个是编辑内容，一个是把已有视频提到更高分辨率)。 */}
+            {model.mode === 'upscale' && (() => {
+              const srcV = data.config.editVideo || upstreamLive.videos[0];
+              return (
+                <ParamTag label={<>源视频{srcV && <span style={greenDot} />}</>} open={sub === 'editVid'} onToggle={() => setSub(sub === 'editVid' ? null : 'editVid')} width={240}>
+                  <div style={{ padding: 6 }}>
+                    {srcV ? (
+                      <div style={refVidRow}>
+                        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>🎬 {data.config.editVideo ? '已上传源视频' : '来自连接的视频'}</span>
+                        {data.config.editVideo && <button onClick={() => updateConfig(id, { editVideo: undefined })} style={{ ...refRm, position: 'static' }}>✕</button>}
+                      </div>
+                    ) : (
+                      <label style={{ ...refVidRow, cursor: 'pointer', justifyContent: 'center', color: '#a1a1aa' }}>
+                        {uploading ? '上传中…' : '+ 上传源视频'}
+                        <input type="file" accept="video/mp4" style={{ display: 'none' }} onChange={(e) => uploadEditVideo(e.target.files)} />
+                      </label>
+                    )}
+                    <div style={{ fontSize: 10, color: '#71717a', padding: '4px 2px 0', lineHeight: 1.5 }}>
+                      MP4 · 最长 20 秒 · 最大 50MB
+                    </div>
                   </div>
                 </ParamTag>
               );
