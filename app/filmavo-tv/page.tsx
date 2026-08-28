@@ -55,6 +55,14 @@ const BANNERS: Banner[] = [
     video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/flux3.mp4',
     href: '/canvas',
   },
+  {
+    id: 'wan-3-0',
+    title: 'Wan 3.0 已上线',
+    subtitle: '标准与高速双版本 · 最长 30 秒 · 多素材参考，音画一次成片',
+    badge: '已上线',
+    video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/wan3.010ss.mp4',
+    href: '/canvas',
+  },
 ];
 
 const BANNER_INTERVAL = 5000;
@@ -196,10 +204,32 @@ export default function FilmavoTvPage() {
         <div className="px-6 py-6">
           {/* 活动轮播 */}
           <div onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {BANNERS.map((b, i) => (
-                <BannerCard key={b.id} b={b} active={i === idx} onHover={() => setIdx(i)} />
-              ))}
+            {/* 卡片多于卡槽数时滑动，而不是挤成更多列 —— 仍是 3 个卡槽，
+                靠整条轨道左移把后面的卡片滑进来。--visible 由媒体查询决定，
+                与原本 grid-cols-1 md:grid-cols-3 的响应式行为一致。 */}
+            <style>{`
+              .tv-track { --gap: 16px; --visible: 1; }
+              @media (min-width: 768px) { .tv-track { --visible: 3; } }
+            `}</style>
+            <div style={{ overflow: 'hidden' }}>
+              <div
+                className="tv-track flex"
+                style={{
+                  // 一张卡 = 一个卡槽:容器宽扣掉间距后按卡槽数均分
+                  ['--slot' as string]: 'calc((100% - (var(--visible) - 1) * var(--gap)) / var(--visible))',
+                  // clamp 到最后一屏，右侧不露空
+                  ['--shift' as string]: `min(${idx}, calc(${BANNERS.length} - var(--visible)))`,
+                  gap: 'var(--gap)',
+                  transform: 'translateX(calc(-1 * var(--shift) * (var(--slot) + var(--gap))))',
+                  transition: 'transform .55s cubic-bezier(.22,.61,.36,1)',
+                }}
+              >
+                {BANNERS.map((b, i) => (
+                  <div key={b.id} style={{ width: 'var(--slot)', flexShrink: 0 }}>
+                    <BannerCard b={b} active={i === idx} onHover={() => setIdx(i)} />
+                  </div>
+                ))}
+              </div>
             </div>
             {BANNERS.length > 1 && (
               <div className="flex items-center justify-center gap-2 mt-5">

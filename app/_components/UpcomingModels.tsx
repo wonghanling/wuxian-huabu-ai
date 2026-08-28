@@ -54,7 +54,18 @@ const SLIDES: Slide[] = [
     badge: '已上线',
     image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/huodongchuangkouxuanchaun/flux3.jpg',
   },
+  {
+    id: 'wan-3-0',
+    name: 'Wan 3.0',
+    title: '标准与高速双版本',
+    subtitle: '最长 30 秒，多素材参考，音画一次成片',
+    badge: '已上线',
+    image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/images/wan3.00jpeg.jpeg',
+  },
 ];
+
+/** 一屏显示的卡槽数 —— 卡片多于此数时轮播滑动，而不是挤成更多列 */
+const VISIBLE = 3;
 
 const INTERVAL_MS = 5000;
 
@@ -177,10 +188,37 @@ export function UpcomingModels() {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <div className="grid md:grid-cols-3 gap-4">
-        {SLIDES.map((s, i) => (
-          <Card key={s.id} s={s} active={i === idx} onActivate={() => setIdx(i)} />
-        ))}
+      {/* 卡片多于卡槽数时滑动，而不是挤成更多列 ——
+          仍是 3 个卡槽，靠整条轨道左移把后面的卡片滑进来。
+          轨道宽度 = 卡片数 / 卡槽数，每张卡各占 1/卡片数，于是一张卡
+          正好等于一个卡槽宽;加第 5、6 张也不用再改这里。 */}
+      {/* --visible 由媒体查询决定:窄屏 1 个卡槽、中屏 2 个、宽屏 3 个。
+          原本是 grid md:grid-cols-3(窄屏单列堆叠)，改成滑动后用它还原同样的响应式。 */}
+      <style>{`
+        .um-track { --gap: 16px; --visible: 1; }
+        @media (min-width: 640px) { .um-track { --visible: 2; } }
+        @media (min-width: 768px) { .um-track { --visible: ${VISIBLE}; } }
+      `}</style>
+      <div style={{ overflow: 'hidden' }}>
+        <div
+          className="um-track flex"
+          style={{
+            // 一张卡 = 一个卡槽:容器宽扣掉间距后按卡槽数均分
+            ['--slot' as string]: 'calc((100% - (var(--visible) - 1) * var(--gap)) / var(--visible))',
+            // 滑到第 n 张:左移 n 个"卡槽 + 间距"。
+            // clamp 到最后一屏，右侧不露空(窄屏 visible=1 时能一直滑到最后一张)。
+            ['--shift' as string]: `min(${idx}, calc(${SLIDES.length} - var(--visible)))`,
+            gap: 'var(--gap)',
+            transform: 'translateX(calc(-1 * var(--shift) * (var(--slot) + var(--gap))))',
+            transition: 'transform .55s cubic-bezier(.22,.61,.36,1)',
+          }}
+        >
+          {SLIDES.map((s, i) => (
+            <div key={s.id} style={{ width: 'var(--slot)', flexShrink: 0 }}>
+              <Card s={s} active={i === idx} onActivate={() => setIdx(i)} />
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* 底部指示器 */}
