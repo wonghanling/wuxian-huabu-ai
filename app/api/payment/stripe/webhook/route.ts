@@ -107,8 +107,62 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
-    // 原子入账 + 按 order_no 幂等。重复投递时 RPC 直接返回 already_done，
-    // 不会二次加钱。
+    const MEMBERSHIP_MONTHS: Record<string, number> = {
+      membership: 1,
+      membership_yearly: 12,
+      membership_2yearly: 24,
+    };
+
+    if (MEMBERSHIP_MONTHS[order.order_type]) {
+      // ── 会员:延长有效期，不加余额 ──
+      // 幂等靠订单状态:已是 paid 说明处理过，直接返回。
+      // (会员没有像 credit_balance 那样的原子 RPC，用状态判断兜住重复投递)
+      if (order.status === 'paid') {
+        console.log(`[stripe-webhook] 会员订单重复投递已忽略: ${orderNo}`);
+        return NextResponse.json({ received: true });
+      }
+
+      const addMonths = MEMBERSHIP_MONTHS[order.order_type];
+
+      // 仍在有效期内则叠加，否则从现在算起 —— 与支付宝回调同一套规则
+      const { data: userData } = await supabaseAdmin
+        .from('users')
+        .select('member_expires_at')
+        .eq('id', order.user_id)
+        .single();
+
+      const now = new Date();
+      const currentExpires = userData?.member_expires_at
+        ? new Date(userData.member_expires_at)
+        : null;
+      const base = currentExpires && currentExpires > now ? currentExpires : now;
+      const expiresAt = new Date(base);
+      expiresAt.setMonth(expiresAt.getMonth() + addMonths);
+
+      const { error: memErr } = await supabaseAdmin
+        .from('users')
+        .update({ is_member: true, member_expires_at: expiresAt.toISOString() })
+        .eq('id', order.user_id);
+
+      if (memErr) {
+        console.error('[stripe-webhook] 会员开通失败:', memErr.message);
+        return new NextResponse('membership failed', { status: 500 });
+      }
+
+      await supabaseAdmin
+        .from('payment_orders')
+        .update({ status: 'paid', trade_no: session.id, paid_at: now.toISOString() })
+        .eq('order_no', orderNo);
+
+      console.log(
+        `[stripe-webhook] 会员开通: +${addMonths}个月 (${expectedUsd} USD) ` +
+        `user=${order.user_id} 到期=${expiresAt.toISOString()}`
+      );
+      return NextResponse.json({ received: true });
+    }
+
+    // ── 余额充值 ──
+    // 原子入账 + 按 order_no 幂等。重复投递时 RPC 返回 already_done，不二次加钱。
     const { data: credited, error: creditErr } = await supabaseAdmin.rpc('credit_balance', {
       p_user_id: order.user_id,
       p_order_id: order.order_no,

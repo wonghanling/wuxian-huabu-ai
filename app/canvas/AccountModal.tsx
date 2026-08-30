@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { MEMBERSHIP_PRICE } from '@/lib/pricing';
-import { USD_TIERS } from '@/lib/usd-recharge';
+import { USD_TIERS, USD_MEMBERSHIP_TIERS } from '@/lib/usd-recharge';
 
 interface AccountModalProps {
   onClose: () => void;
@@ -60,6 +60,8 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
   // 美元充值(Stripe):与人民币档位各自独立选择，互不影响
   const [selectedUsd, setSelectedUsd] = useState<number | null>(null);
   const [usdLoading, setUsdLoading] = useState(false);
+  // 会员美元支付:记住正在跳转的是哪个套餐，只禁用那一个按钮
+  const [memberUsdLoading, setMemberUsdLoading] = useState<string | null>(null);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -193,6 +195,36 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
       alert('发起支付失败，请稍后重试');
     } finally {
       setUsdLoading(false);
+    }
+  };
+
+  // 会员美元支付:与充值走同一个 Stripe 路由，靠 plan 区分订单类型。
+  // 服务端按 plan 查表定价，不接受前端传金额。
+  const payMembershipWithStripe = async (plan: string) => {
+    setMemberUsdLoading(plan);
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { alert('请先登录'); return; }
+
+      const res = await fetch('/api/payment/stripe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ plan }),
+      });
+      const data = await res.json();
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      } else {
+        alert(data.error || '发起支付失败');
+      }
+    } catch {
+      alert('发起支付失败，请稍后重试');
+    } finally {
+      setMemberUsdLoading(null);
     }
   };
 
@@ -366,6 +398,34 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
                 </div>
 
                 <p className="text-center text-xs text-white/25 mt-3">支付宝付款 · 手动续费 · 随时停止</p>
+
+                {/* 海外信用卡开通会员(Stripe)。独立一块，上面三个支付宝卡片未改。
+                    海外用户原先买不了会员 —— 点支付宝按钮会跳到支付宝页面无法完成。 */}
+                <div className="mt-7 pt-5" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div className="flex items-baseline justify-between mb-3">
+                    <h3 className="text-white font-semibold text-sm">海外信用卡开通</h3>
+                    <span className="text-white/30 text-xs">Visa · Mastercard · Amex</span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    {USD_MEMBERSHIP_TIERS.map(({ plan, usd, label, months }) => (
+                      <button
+                        key={plan}
+                        disabled={memberUsdLoading !== null}
+                        onClick={() => payMembershipWithStripe(plan)}
+                        onPointerDown={e => e.stopPropagation()}
+                        className="py-2.5 rounded-lg border border-white/15 bg-white/5 hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex flex-col items-center gap-0.5"
+                      >
+                        <span className="text-white font-semibold text-sm">
+                          {memberUsdLoading === plan ? '跳转中…' : `$${usd}`}
+                        </span>
+                        <span className="text-[11px] text-white/45">{label} · {months}个月</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <p className="text-center text-xs text-white/25 mt-3">由 Stripe 处理付款 · 支付后立即生效</p>
+                </div>
               </div>
             )}
 
@@ -410,23 +470,32 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
                     <h3 className="text-white font-semibold text-base">海外信用卡</h3>
                     <span className="text-white/30 text-xs">Visa · Mastercard · Amex</span>
                   </div>
-                  <p className="text-white/40 text-sm mb-4">按 1 USD = ¥6 折算，到账为人民币余额</p>
+                  <p className="text-white/40 text-sm mb-4">到账为人民币余额，充得多送得多</p>
 
                   {/* 5 档用 5 列排一行 —— 4 列会让第 5 档单独换行落单 */}
                   <div className="grid grid-cols-5 gap-2 mb-5">
-                    {USD_TIERS.map(({ usd, cny }) => (
+                    {USD_TIERS.map(({ usd, cny, bonus }) => (
                       <button
                         key={usd}
                         onClick={() => setSelectedUsd(usd)}
                         onPointerDown={e => e.stopPropagation()}
-                        className={`py-3 rounded-xl border transition-all flex flex-col items-center gap-0.5 ${
+                        className={`relative py-3 rounded-xl border transition-all flex flex-col items-center gap-0.5 ${
                           selectedUsd === usd
                             ? 'bg-violet-500/20 border-violet-400/60 text-white'
                             : 'bg-white/5 border-white/10 hover:bg-white/8 hover:border-white/20 text-white/80'
                         }`}
                       >
+                        {/* 赠送角标:大额档才有，让"充得多送得多"一眼可见 */}
+                        {bonus > 0 && (
+                          <span
+                            className="absolute -top-1.5 -right-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold text-white"
+                            style={{ background: '#10b981' }}
+                          >
+                            +{bonus}
+                          </span>
+                        )}
                         <span className="font-bold text-base">${usd}</span>
-                        <span className="text-[11px] text-white/45">到账 ¥{cny}</span>
+                        <span className="text-[11px] text-white/45">¥{cny}</span>
                       </button>
                     ))}
                   </div>
@@ -440,7 +509,7 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
                     {usdLoading
                       ? '正在跳转…'
                       : selectedUsd
-                        ? `信用卡支付 $${selectedUsd}`
+                        ? `信用卡支付 $${selectedUsd} · 到账 ¥${USD_TIERS.find(t => t.usd === selectedUsd)?.cny ?? ''}`
                         : '请选择金额'}
                   </button>
 

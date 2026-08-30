@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { USD_TIERS, USD_MEMBERSHIP_TIERS } from '@/lib/usd-recharge';
 
 // ============================================================
 // 独立定价页 · 参照 flora.ai 定价页视觉（4列卡片，专业版绿色高亮）
@@ -101,6 +102,8 @@ const PLANS: Plan[] = [
 
 export default function PricingPage() {
   const [user, setUser] = useState<{ email?: string } | null>(null);
+  // 美元支付(Stripe):记住正在跳转的项，只禁用那一个按钮
+  const [usdLoading, setUsdLoading] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
@@ -110,6 +113,35 @@ export default function PricingPage() {
       setUser(res.data.session?.user ?? null);
     });
   }, [supabase]);
+
+  // 美元支付(Stripe):会员传 plan、充值传 usd，金额一律由服务端按表决定。
+  // 与下方 handlePay(支付宝)各自独立，互不影响。
+  const payWithStripe = async (payload: { plan?: string; usd?: number }, key: string) => {
+    setUsdLoading(key);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { router.push('/auth/login'); return; }
+
+      const res = await fetch('/api/payment/stripe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      } else {
+        alert(data.error || '发起支付失败');
+      }
+    } catch {
+      alert('发起支付失败，请稍后重试');
+    } finally {
+      setUsdLoading(null);
+    }
+  };
 
   // 支付逻辑与原首页定价区完全一致，未改动
   const handlePay = async (plan: 'membership' | 'membership_yearly' | 'membership_2yearly' | 'recharge', amount: number) => {
@@ -266,6 +298,84 @@ export default function PricingPage() {
             </div>
             );
           })}
+        </div>
+
+        {/* 海外信用卡支付(Stripe)。纯新增区块，上方套餐卡片与 handlePay 未改。
+            海外用户原先无法付款 —— 点开通会跳到支付宝页面无法完成。
+            余额仍只有人民币一种，美元只是收款单位。 */}
+        <div className="max-w-4xl mx-auto mt-20">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-semibold mb-2" style={{ color: 'rgb(238,238,238)' }}>
+              海外用户支付
+            </h2>
+            <p className="text-sm" style={{ color: 'rgb(150,150,150)' }}>
+              支持 Visa · Mastercard · American Express，由 Stripe 处理
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-5">
+            {/* 会员 */}
+            <div className="rounded-2xl p-6" style={{ background: 'rgb(20,20,20)', border: '1px solid #ffffff14' }}>
+              <h3 className="text-base font-semibold mb-1" style={{ color: 'rgb(228,228,228)' }}>
+                开通会员
+              </h3>
+              <p className="text-xs mb-5" style={{ color: 'rgb(140,140,140)' }}>
+                解锁剧本工作室、分镜脚本、导演引擎
+              </p>
+              <div className="space-y-2.5">
+                {USD_MEMBERSHIP_TIERS.map(({ plan, usd, label, months }) => (
+                  <button
+                    key={plan}
+                    disabled={usdLoading !== null}
+                    onClick={() => payWithStripe({ plan }, plan)}
+                    className="w-full py-3 px-4 rounded-xl text-sm font-medium transition-all hover:opacity-85 disabled:opacity-40 flex items-center justify-between"
+                    style={{ background: '#ffffff14', color: 'rgb(238,238,238)', border: '1px solid #ffffff2e' }}
+                  >
+                    <span>{label} · {months} 个月</span>
+                    <span className="font-semibold">
+                      {usdLoading === plan ? '跳转中…' : `$${usd}`}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 余额充值 */}
+            <div className="rounded-2xl p-6" style={{ background: 'rgb(20,20,20)', border: '1px solid #ffffff14' }}>
+              <h3 className="text-base font-semibold mb-1" style={{ color: 'rgb(228,228,228)' }}>
+                充值余额
+              </h3>
+              <p className="text-xs mb-5" style={{ color: 'rgb(140,140,140)' }}>
+                余额用于图片与视频生成，充得多送得多
+              </p>
+              <div className="space-y-2.5">
+                {USD_TIERS.map(({ usd, cny, bonus }) => (
+                  <button
+                    key={usd}
+                    disabled={usdLoading !== null}
+                    onClick={() => payWithStripe({ usd }, `usd-${usd}`)}
+                    className="w-full py-3 px-4 rounded-xl text-sm font-medium transition-all hover:opacity-85 disabled:opacity-40 flex items-center justify-between"
+                    style={{ background: '#ffffff14', color: 'rgb(238,238,238)', border: '1px solid #ffffff2e' }}
+                  >
+                    <span className="flex items-center gap-2">
+                      到账 ¥{cny}
+                      {bonus > 0 && (
+                        <span
+                          className="px-1.5 py-0.5 rounded-full text-[10px] font-bold"
+                          style={{ background: 'rgba(16,185,129,0.18)', color: 'rgb(52,211,153)' }}
+                        >
+                          含赠送 ¥{bonus}
+                        </span>
+                      )}
+                    </span>
+                    <span className="font-semibold">
+                      {usdLoading === `usd-${usd}` ? '跳转中…' : `$${usd}`}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* 自带 API Key 说明：套餐与自带 Key 是两件事 */}
