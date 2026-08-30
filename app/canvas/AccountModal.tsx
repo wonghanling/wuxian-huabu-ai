@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { MEMBERSHIP_PRICE } from '@/lib/pricing';
+import { USD_TIERS } from '@/lib/usd-recharge';
 
 interface AccountModalProps {
   onClose: () => void;
@@ -56,6 +57,9 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
   const [orders, setOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
+  // 美元充值(Stripe):与人民币档位各自独立选择，互不影响
+  const [selectedUsd, setSelectedUsd] = useState<number | null>(null);
+  const [usdLoading, setUsdLoading] = useState(false);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -158,6 +162,37 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
       setPromoMsg({ ok: false, text: '网络错误，请重试' });
     } finally {
       setPromoLoading(false);
+    }
+  };
+
+  // 美元充值:跳 Stripe 托管收银台。人民币走支付宝那条路，两者互不影响。
+  const payWithStripe = async () => {
+    if (!selectedUsd) return;
+    setUsdLoading(true);
+    try {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { alert('请先登录'); return; }
+
+      const res = await fetch('/api/payment/stripe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        // 只传档位金额，实际入账额由服务端按档位表决定
+        body: JSON.stringify({ usd: selectedUsd }),
+      });
+      const data = await res.json();
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      } else {
+        alert(data.error || '发起支付失败');
+      }
+    } catch {
+      alert('发起支付失败，请稍后重试');
+    } finally {
+      setUsdLoading(false);
     }
   };
 
@@ -367,6 +402,51 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
                 </button>
 
                 <p className="text-center text-xs text-white/25 mt-3">支付宝付款 · 到账后可立即使用</p>
+
+                {/* 海外信用卡充值(Stripe)。独立一块，与上面的支付宝档位互不影响。
+                    余额仍只有人民币一种 —— 美元只是收款单位，按固定汇率折算入账。 */}
+                <div className="mt-8 pt-6" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div className="flex items-baseline justify-between mb-1">
+                    <h3 className="text-white font-semibold text-base">海外信用卡</h3>
+                    <span className="text-white/30 text-xs">Visa · Mastercard · Amex</span>
+                  </div>
+                  <p className="text-white/40 text-sm mb-4">按 1 USD = ¥6 折算，到账为人民币余额</p>
+
+                  <div className="grid grid-cols-4 gap-3 mb-5">
+                    {USD_TIERS.map(({ usd, cny }) => (
+                      <button
+                        key={usd}
+                        onClick={() => setSelectedUsd(usd)}
+                        onPointerDown={e => e.stopPropagation()}
+                        className={`py-3 rounded-xl border transition-all flex flex-col items-center gap-0.5 ${
+                          selectedUsd === usd
+                            ? 'bg-violet-500/20 border-violet-400/60 text-white'
+                            : 'bg-white/5 border-white/10 hover:bg-white/8 hover:border-white/20 text-white/80'
+                        }`}
+                      >
+                        <span className="font-bold text-base">${usd}</span>
+                        <span className="text-[11px] text-white/45">到账 ¥{cny}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    disabled={!selectedUsd || usdLoading}
+                    className="w-full py-3 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold transition-all"
+                    onClick={payWithStripe}
+                    onPointerDown={e => e.stopPropagation()}
+                  >
+                    {usdLoading
+                      ? '正在跳转…'
+                      : selectedUsd
+                        ? `信用卡支付 $${selectedUsd}`
+                        : '请选择金额'}
+                  </button>
+
+                  <p className="text-center text-xs text-white/25 mt-3">
+                    由 Stripe 处理付款 · 支付完成后自动到账
+                  </p>
+                </div>
               </div>
             )}
 
