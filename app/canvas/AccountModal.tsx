@@ -412,7 +412,8 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
                   </div>
                   <p className="text-white/40 text-sm mb-4">按 1 USD = ¥6 折算，到账为人民币余额</p>
 
-                  <div className="grid grid-cols-4 gap-3 mb-5">
+                  {/* 5 档用 5 列排一行 —— 4 列会让第 5 档单独换行落单 */}
+                  <div className="grid grid-cols-5 gap-2 mb-5">
                     {USD_TIERS.map(({ usd, cny }) => (
                       <button
                         key={usd}
