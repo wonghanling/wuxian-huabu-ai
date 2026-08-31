@@ -170,7 +170,7 @@ export async function uploadAsset(
 
   const { error } = await supabase.storage
     .from('assets')
-    .upload(filename, blob, { contentType: ext === 'mp4' ? 'video/mp4' : 'image/jpeg', upsert: false });
+    .upload(filename, blob, { contentType: ext === 'mp4' ? 'video/mp4' : 'image/jpeg', cacheControl: '31536000', upsert: false });
 
   if (error) throw new Error(`上传失败: ${error.message}`);
 

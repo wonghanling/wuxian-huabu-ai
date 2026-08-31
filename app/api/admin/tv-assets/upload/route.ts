@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(await file.arrayBuffer());
     const { error } = await supabaseAdmin.storage
       .from('assets')
-      .upload(filename, buffer, { contentType: mime, upsert: false });
+      .upload(filename, buffer, { contentType: mime, cacheControl: '31536000', upsert: false });
     if (error) return NextResponse.json({ error: `上传失败: ${error.message}` }, { status: 500 });
 
     const { data } = supabaseAdmin.storage.from('assets').getPublicUrl(filename);

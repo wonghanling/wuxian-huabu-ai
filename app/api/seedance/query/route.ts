@@ -38,7 +38,7 @@ async function uploadVideoToStorage(sourceUrl: string): Promise<string> {
       const filename = `videos/seedance/${Date.now()}-${Math.random().toString(36).slice(2)}.mp4`;
       const { error } = await supabaseAdmin.storage
         .from('assets')
-        .upload(filename, buffer, { contentType: 'video/mp4', upsert: false });
+        .upload(filename, buffer, { contentType: 'video/mp4', cacheControl: '31536000', upsert: false });
       if (error) throw new Error(`上传视频失败: ${error.message}`);
       const { data } = supabaseAdmin.storage.from('assets').getPublicUrl(filename);
       return data.publicUrl;

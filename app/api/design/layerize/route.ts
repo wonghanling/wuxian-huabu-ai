@@ -23,7 +23,7 @@ async function mirrorBackground(sourceUrl: string, userId: string): Promise<stri
   const filename = `design/${userId}/${Date.now()}-bg.png`;
   const { error } = await supabaseAdmin.storage
     .from('assets')
-    .upload(filename, buffer, { contentType: 'image/png', upsert: false });
+    .upload(filename, buffer, { contentType: 'image/png', cacheControl: '31536000', upsert: false });
   if (error) throw new Error(`转存失败: ${error.message}`);
   const { data } = supabaseAdmin.storage.from('assets').getPublicUrl(filename);
   return data.publicUrl;

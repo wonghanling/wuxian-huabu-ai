@@ -46,7 +46,7 @@ export async function uploadImageToStorage(file: File): Promise<string | null> {
     });
 
     const filename = `images/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
-    const { error } = await supabase.storage.from('assets').upload(filename, jpegBlob, { contentType: 'image/jpeg', upsert: false });
+    const { error } = await supabase.storage.from('assets').upload(filename, jpegBlob, { contentType: 'image/jpeg', cacheControl: '31536000', upsert: false });
     if (error) throw new Error(`上传失败: ${error.message}`);
     const { data: urlData } = supabase.storage.from('assets').getPublicUrl(filename);
     return urlData.publicUrl;
@@ -67,7 +67,7 @@ export async function uploadFileToStorage(file: File, type: 'video' | 'audio'): 
     const prefix = type === 'video' ? 'videos' : 'audio';
     const filename = `${prefix}/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}${dotExt}`;
     const contentType = file.type || (type === 'video' ? 'video/mp4' : 'audio/mpeg');
-    const { error } = await supabase.storage.from('assets').upload(filename, file, { contentType, upsert: false });
+    const { error } = await supabase.storage.from('assets').upload(filename, file, { contentType, cacheControl: '31536000', upsert: false });
     if (error) throw new Error(`上传失败: ${error.message}`);
     const { data: urlData } = supabase.storage.from('assets').getPublicUrl(filename);
     return urlData.publicUrl;
@@ -752,7 +752,7 @@ export async function uploadMaskToStorage(blob: Blob): Promise<string | null> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { alert('请先登录'); return null; }
     const filename = `masks/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.png`;
-    const { error } = await supabase.storage.from('assets').upload(filename, blob, { contentType: 'image/png', upsert: false });
+    const { error } = await supabase.storage.from('assets').upload(filename, blob, { contentType: 'image/png', cacheControl: '31536000', upsert: false });
     if (error) throw new Error(`mask 上传失败: ${error.message}`);
     const { data } = supabase.storage.from('assets').getPublicUrl(filename);
     return data.publicUrl;

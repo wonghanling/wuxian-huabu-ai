@@ -93,7 +93,7 @@ export function SaveTemplateModal({ onClose }: { onClose: () => void }) {
       const videoPath = `templates/videos/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.mp4`;
       const { error: videoErr } = await supabase.storage
         .from('assets')
-        .upload(videoPath, videoFile, { contentType: 'video/mp4' });
+        .upload(videoPath, videoFile, { contentType: 'video/mp4', cacheControl: '31536000' });
       if (videoErr) throw new Error('视频上传失败: ' + videoErr.message);
       const { data: { publicUrl: videoUrl } } = supabase.storage.from('assets').getPublicUrl(videoPath);
 
@@ -102,7 +102,7 @@ export function SaveTemplateModal({ onClose }: { onClose: () => void }) {
       const coverPath = `templates/covers/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
       const { error: coverErr } = await supabase.storage
         .from('assets')
-        .upload(coverPath, coverBlob, { contentType: 'image/jpeg' });
+        .upload(coverPath, coverBlob, { contentType: 'image/jpeg', cacheControl: '31536000' });
       if (coverErr) throw new Error('封面上传失败: ' + coverErr.message);
       const { data: { publicUrl: coverUrl } } = supabase.storage.from('assets').getPublicUrl(coverPath);
 

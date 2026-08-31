@@ -27,7 +27,7 @@ async function mirrorAudio(sourceUrl: string, userId: string): Promise<string> {
     if (!res.ok) throw new Error(`下载音频失败: ${res.status}`);
     const buffer = Buffer.from(await res.arrayBuffer());
     const filename = `audio/${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.mp3`;
-    const { error } = await supabaseAdmin.storage.from('assets').upload(filename, buffer, { contentType: 'audio/mpeg', upsert: false });
+    const { error } = await supabaseAdmin.storage.from('assets').upload(filename, buffer, { contentType: 'audio/mpeg', cacheControl: '31536000', upsert: false });
     if (error) throw new Error(error.message);
     const { data } = supabaseAdmin.storage.from('assets').getPublicUrl(filename);
     return data.publicUrl;

@@ -36,7 +36,7 @@ export function PublishCommissionModal({ onClose, onPublished }: { onClose: () =
       if (!user) { window.location.href = '/auth'; return null; }
       const dotExt = file.name.includes('.') ? file.name.slice(file.name.lastIndexOf('.')) : '.jpg';
       const filename = `commissions/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}${dotExt}`;
-      const { error: upErr } = await sb!.storage.from('assets').upload(filename, file, { contentType: file.type || 'image/jpeg', upsert: false });
+      const { error: upErr } = await sb!.storage.from('assets').upload(filename, file, { contentType: file.type || 'image/jpeg', cacheControl: '31536000', upsert: false });
       if (upErr) throw new Error(upErr.message);
       const { data: urlData } = sb!.storage.from('assets').getPublicUrl(filename);
       return urlData.publicUrl;

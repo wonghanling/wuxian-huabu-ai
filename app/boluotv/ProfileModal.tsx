@@ -61,7 +61,7 @@ export function ProfileModal({ onClose, onSaved }: { onClose: () => void; onSave
       for (const f of files.slice(0, 12 - portfolio.length)) {
         const dotExt = f.name.includes('.') ? f.name.slice(f.name.lastIndexOf('.')) : '.jpg';
         const filename = `commissions/${user.id}/portfolio/${Date.now()}-${Math.random().toString(36).slice(2)}${dotExt}`;
-        const { error: upErr } = await sb!.storage.from('assets').upload(filename, f, { contentType: f.type || 'image/jpeg', upsert: false });
+        const { error: upErr } = await sb!.storage.from('assets').upload(filename, f, { contentType: f.type || 'image/jpeg', cacheControl: '31536000', upsert: false });
         if (upErr) { setError('上传失败: ' + upErr.message); continue; }
         const { data: urlData } = sb!.storage.from('assets').getPublicUrl(filename);
         const isVideo = (f.type || '').startsWith('video');

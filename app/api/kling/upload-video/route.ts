@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
 
     const { error } = await supabaseAdmin.storage
       .from('assets')
-      .upload(filename, buffer, { contentType, upsert: false });
+      .upload(filename, buffer, { contentType, cacheControl: '31536000', upsert: false });
 
     if (error) {
       throw new Error(`视频上传失败: ${error.message}`);

@@ -43,7 +43,7 @@ async function transferToStorage(sourceUrl: string): Promise<string> {
   const filename = `images/seedream-edit/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
   const { error } = await supabaseAdmin.storage
     .from('assets')
-    .upload(filename, buffer, { contentType: 'image/jpeg', upsert: false });
+    .upload(filename, buffer, { contentType: 'image/jpeg', cacheControl: '31536000', upsert: false });
   if (error) throw new Error(`转存失败: ${error.message}`);
   const { data } = supabaseAdmin.storage.from('assets').getPublicUrl(filename);
   return data.publicUrl;

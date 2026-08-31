@@ -1021,7 +1021,7 @@ export async function POST(req: NextRequest) {
       const ext = mimeType.split('/')[1] || 'jpg';
       const buffer = Buffer.from(match[2], 'base64');
       const filename = `frames/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const { error } = await supabaseAdmin.storage.from('assets').upload(filename, buffer, { contentType: mimeType, upsert: false });
+      const { error } = await supabaseAdmin.storage.from('assets').upload(filename, buffer, { contentType: mimeType, cacheControl: '31536000', upsert: false });
       if (error) throw new Error(`上传帧图片失败: ${error.message}`);
       const { data } = supabaseAdmin.storage.from('assets').getPublicUrl(filename);
       return data.publicUrl;

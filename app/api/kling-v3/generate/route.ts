@@ -47,7 +47,7 @@ async function toPublicUrl(input: string, prefix: string): Promise<string> {
   const filename = `${prefix}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
   const { error } = await supabaseAdmin.storage
     .from('assets')
-    .upload(filename, buffer, { contentType: match[1], upsert: false });
+    .upload(filename, buffer, { contentType: match[1], cacheControl: '31536000', upsert: false });
   if (error) throw new Error(`上传图片失败: ${error.message}`);
   const { data } = supabaseAdmin.storage.from('assets').getPublicUrl(filename);
   return data.publicUrl;
