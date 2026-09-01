@@ -36,7 +36,7 @@ const SLIDES: Slide[] = [
     title: '时长更长，运动更稳',
     subtitle: '多模态参考 + 原生音画同步，最高 4K',
     badge: '已上线',
-    image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/huodongchuangkouxuanchaun/seedance2.5.jpg',
+    image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/huodongchuangkouxuanchaun/seedance2.5.jpg?quality=80',
   },
   {
     id: 'minimax-h3',
@@ -44,7 +44,7 @@ const SLIDES: Slide[] = [
     title: '影视级镜头语言',
     subtitle: '复杂长镜头稳定输出，一次成片',
     badge: '已上线',
-    image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/huodongchuangkouxuanchaun/minimaxh3.jpg',
+    image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/huodongchuangkouxuanchaun/minimaxh3.jpg?quality=80',
   },
   {
     id: 'flux-3',
@@ -52,7 +52,7 @@ const SLIDES: Slide[] = [
     title: '指令即所得',
     subtitle: '文字渲染与细节控制全面升级',
     badge: '已上线',
-    image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/huodongchuangkouxuanchaun/flux3.jpg',
+    image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/huodongchuangkouxuanchaun/flux3.jpg?quality=80',
   },
   {
     id: 'wan-3-0',
@@ -60,7 +60,7 @@ const SLIDES: Slide[] = [
     title: '标准与高速双版本',
     subtitle: '最长 30 秒，多素材参考，音画一次成片',
     badge: '已上线',
-    image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/images/wan3.00jpeg.jpeg',
+    image: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/wan3.00jpeg.jpeg?quality=80',
   },
 ];
 
