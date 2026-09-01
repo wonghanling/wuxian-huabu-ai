@@ -4,24 +4,24 @@ import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 
 const VIDEOS = [
-  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1781754350731-o1odfopyfe.mp4',
-  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1781745994405-htsdggzqdqn.mp4',
-  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1781745570668-azl0o8b4m25.mp4',
-  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1781697001294-5whdlofpr88.mp4',
-  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1781696645272-tkp79buqtmb.mp4',
-  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/20ce33c8-6a71-41a1-804e-4997b4d95476/1777359234943-boa7rpvca39.mp4',
-  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/20ce33c8-6a71-41a1-804e-4997b4d95476/1781061618463-5o5zmecrr7x.mp4',
-  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/20ce33c8-6a71-41a1-804e-4997b4d95476/1781698964217-wmzgsxkp1ki.mp4',
-  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/1773218894859-q2m2x3mfhfc.mp4',
+  'https://filmavo.blob.core.windows.net/assets/videos/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1781754350731-o1odfopyfe.mp4',
+  'https://filmavo.blob.core.windows.net/assets/videos/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1781745994405-htsdggzqdqn.mp4',
+  'https://filmavo.blob.core.windows.net/assets/videos/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1781745570668-azl0o8b4m25.mp4',
+  'https://filmavo.blob.core.windows.net/assets/videos/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1781697001294-5whdlofpr88.mp4',
+  'https://filmavo.blob.core.windows.net/assets/videos/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1781696645272-tkp79buqtmb.mp4',
+  'https://filmavo.blob.core.windows.net/assets/videos/20ce33c8-6a71-41a1-804e-4997b4d95476/1777359234943-boa7rpvca39.mp4',
+  'https://filmavo.blob.core.windows.net/assets/videos/20ce33c8-6a71-41a1-804e-4997b4d95476/1781061618463-5o5zmecrr7x.mp4',
+  'https://filmavo.blob.core.windows.net/assets/videos/20ce33c8-6a71-41a1-804e-4997b4d95476/1781698964217-wmzgsxkp1ki.mp4',
+  'https://filmavo.blob.core.windows.net/assets/videos/1773218894859-q2m2x3mfhfc.mp4',
   // Seedance
-  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/seedance/1775944856863-qs8oz4jd72.mp4',
-  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/seedance/1775985214215-s1v2mstoaks.mp4',
-  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/seedance/1777614109362-gzq4dlfmrk6.mp4',
-  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/seedance/1776672667524-epths4fwdv.mp4',
-  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/seedance/1776390740271-2yivvu3r09.mp4',
-  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/seedance/1776390143680-695vp6vfoxw.mp4',
-  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/20ce33c8-6a71-41a1-804e-4997b4d95476/1781695664266-5k6kcgp4zbt.mp4',
-  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/seedance/1781176221581-r7enzj89qc.mp4',
+  'https://filmavo.blob.core.windows.net/assets/videos/seedance/1775944856863-qs8oz4jd72.mp4',
+  'https://filmavo.blob.core.windows.net/assets/videos/seedance/1775985214215-s1v2mstoaks.mp4',
+  'https://filmavo.blob.core.windows.net/assets/videos/seedance/1777614109362-gzq4dlfmrk6.mp4',
+  'https://filmavo.blob.core.windows.net/assets/videos/seedance/1776672667524-epths4fwdv.mp4',
+  'https://filmavo.blob.core.windows.net/assets/videos/seedance/1776390740271-2yivvu3r09.mp4',
+  'https://filmavo.blob.core.windows.net/assets/videos/seedance/1776390143680-695vp6vfoxw.mp4',
+  'https://filmavo.blob.core.windows.net/assets/videos/20ce33c8-6a71-41a1-804e-4997b4d95476/1781695664266-5k6kcgp4zbt.mp4',
+  'https://filmavo.blob.core.windows.net/assets/videos/seedance/1781176221581-r7enzj89qc.mp4',
 ];
 
 const MODELS = [

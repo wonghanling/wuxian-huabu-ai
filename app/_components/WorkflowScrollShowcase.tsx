@@ -626,7 +626,7 @@ function DesignerPreview({ isActive }: { isActive: boolean }) {
     <div className="absolute inset-0 flex items-center justify-center p-4">
       <video
         ref={videoRef}
-        src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/export1-1783929812565.mp4"
+        src="https://filmavo.blob.core.windows.net/assets/videos/uploads/export1-1783929812565.mp4"
         className="max-w-full max-h-full rounded-xl object-contain"
         muted
         loop

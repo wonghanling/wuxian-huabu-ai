@@ -15,7 +15,7 @@ const GROUP_1 = [
 const GROUP_2 = [
   {
     key: 'wan', name: 'Wan 2.7', col: '1 / 2', row: '1 / 3',
-    video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/Landing.mp4',   // 674x696，约0.97:1(近1:1)
+    video: 'https://filmavo.blob.core.windows.net/assets/videos/uploads/Landing.mp4',   // 674x696，约0.97:1(近1:1)
     heading: 'Unleash Your Creativity',
     cta: 'Try Wan2.7 Now',
     features: [
@@ -25,10 +25,10 @@ const GROUP_2 = [
       { t: 'Video Reference', d: 'Reference to Cinematic' },
     ],
   },
-  { key: 'jimeng', name: 'Jimeng 3.0', col: '2 / 4', row: '1 / 2', video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/jimeng1.mp4' },     // 906x338，约2.68:1
+  { key: 'jimeng', name: 'Jimeng 3.0', col: '2 / 4', row: '1 / 2', video: 'https://filmavo.blob.core.windows.net/assets/videos/uploads/jimeng1.mp4' },     // 906x338，约2.68:1
   {
     key: 'seedance', name: 'Seedance 2.0', col: '2 / 3', row: '2 / 3',   // 443x338，约1.31:1
-    video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/seedance.mp4',
+    video: 'https://filmavo.blob.core.windows.net/assets/videos/uploads/seedance.mp4',
     cta: 'Try for free',
     features: [
       { t: 'Creators & Social content' },
@@ -39,7 +39,7 @@ const GROUP_2 = [
   },
   {
     key: 'pixverse', name: 'Pixverse v6', col: '3 / 4', row: '2 / 3',   // 443x338，约1.31:1
-    video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/pixvers1.mp4',
+    video: 'https://filmavo.blob.core.windows.net/assets/videos/uploads/pixvers1.mp4',
     features: [
       { t: 'PixVerse Launches V6' },
       { t: 'Advancing AI Video Generation' },
@@ -52,7 +52,7 @@ const GROUP_2 = [
 const GROUP_3_ROW1 = [
   {
     key: 'happyhorse', name: 'HappyHorse 1.0', w: 443,   // 约1.31:1
-    video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/kuailema.mp4',
+    video: 'https://filmavo.blob.core.windows.net/assets/videos/uploads/kuailema.mp4',
     features: [{ t: 'Happy Horse 1.0 is live — explore the open-source AI video model now' }],
   },
   {
@@ -69,11 +69,11 @@ const GROUP_3_ROW1 = [
 const GROUP_3_ROW2 = [
   {
     key: 'marey', name: 'marey', w: 674,   // 约1.99:1
-    video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/marey.mp4',
+    video: 'https://filmavo.blob.core.windows.net/assets/videos/uploads/marey.mp4',
   },
   {
     key: 'pika', name: 'Kling', w: 906,    // 约2.68:1
-    video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/King3-2.mp4',
+    video: 'https://filmavo.blob.core.windows.net/assets/videos/uploads/King3-2.mp4',
     features: [{ t: 'Kling AI: Next-Generation AI Creative Studio' }],
   },
 ];

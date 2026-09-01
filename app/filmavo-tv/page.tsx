@@ -36,7 +36,7 @@ const BANNERS: Banner[] = [
     title: 'Seedance 2.5 已上线',
     subtitle: '最长 30 秒 · 50 个参考素材 · 运动连贯性大幅提升',
     badge: '已上线',
-    video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/seedance2.5.mp4',
+    video: 'https://filmavo.blob.core.windows.net/assets/videos/uploads/seedance2.5.mp4',
     href: '/canvas',
   },
   {
@@ -44,7 +44,7 @@ const BANNERS: Banner[] = [
     title: 'MiniMax H3 已上线',
     subtitle: '影视级镜头语言 · 复杂长镜头稳定输出',
     badge: '已上线',
-    video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/minnmax%20h3.mp4',
+    video: 'https://filmavo.blob.core.windows.net/assets/videos/uploads/minnmax%20h3.mp4',
     href: '/canvas',
   },
   {
@@ -52,7 +52,7 @@ const BANNERS: Banner[] = [
     title: 'FLUX 3 已上线',
     subtitle: '文生 / 首帧 / 首尾帧 / 扩展视频，四种模式全支持',
     badge: '已上线',
-    video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/flux3.mp4',
+    video: 'https://filmavo.blob.core.windows.net/assets/videos/uploads/flux3.mp4',
     href: '/canvas',
   },
   {
@@ -60,7 +60,7 @@ const BANNERS: Banner[] = [
     title: 'Wan 3.0 已上线',
     subtitle: '标准与高速双版本 · 最长 30 秒 · 多素材参考，音画一次成片',
     badge: '已上线',
-    video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/wan3.010ss.mp4',
+    video: 'https://filmavo.blob.core.windows.net/assets/videos/wan3.010ss.mp4',
     href: '/canvas',
   },
 ];

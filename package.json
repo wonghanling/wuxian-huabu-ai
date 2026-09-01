@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@azure/storage-blob": "^12.33.0",
     "@fal-ai/client": "^1.9.4",
     "@lobehub/icons": "^5.13.0",
     "@lobehub/ui": "^5.20.3",

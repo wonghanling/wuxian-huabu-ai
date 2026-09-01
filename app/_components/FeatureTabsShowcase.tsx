@@ -47,7 +47,7 @@ const CARDS: { key: string; title: string; desc: string; note?: string; image?: 
     key: 'card-5',
     title: 'step3 首尾帧过渡生成词',
     desc: '上传两张图片首帧和尾帧生成专业的过渡视频生成词',
-    video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783662982357.mp4',
+    video: 'https://filmavo.blob.core.windows.net/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783662982357.mp4',
     aspect: '16/9',
     workflow: [
       'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/shouwei1.png?quality=80',
@@ -60,7 +60,7 @@ const CARDS: { key: string; title: string; desc: string; note?: string; image?: 
     key: 'card-6',
     title: '导演分镜表 step4',
     desc: '专业的导演拍摄语言用于完整的传输生成可控画面',
-    video: 'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1781873531149.mp4',
+    video: 'https://filmavo.blob.core.windows.net/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1781873531149.mp4',
     aspect: '16/9',
     workflow: [
       'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1781869076179.jpg?quality=80',

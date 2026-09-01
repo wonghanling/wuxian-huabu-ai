@@ -251,7 +251,7 @@ export default function CommissionHall() {
           {/* 中:视频背景卡槽 + 文案 + 双按钮 + 4数据 */}
           <div className="relative rounded-3xl overflow-hidden border border-white/10 min-h-[380px]">
             <video
-              src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/uploads/chuangzaoweituo.mp4"
+              src="https://filmavo.blob.core.windows.net/assets/videos/uploads/chuangzaoweituo.mp4"
               autoPlay muted loop playsInline preload="metadata"
               className="absolute inset-0 w-full h-full object-cover"
             />

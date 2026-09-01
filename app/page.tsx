@@ -375,7 +375,7 @@ export default function Home() {
                   不放 poster —— 与 /filmavo-tv 的卡片一致，用纯深色底，
                   免得放一张与视频内容无关的图反而显得杂乱。 */}
               <HoverVideo
-                src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/hero-fast.mp4"
+                src="https://filmavo.blob.core.windows.net/assets/videos/hero-fast.mp4"
                 label="视频生成预览"
               />
             </div>
@@ -513,7 +513,7 @@ export default function Home() {
                 playsInline
                 preload="metadata"
                 className="absolute inset-0 w-full h-full object-cover opacity-60"
-                src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/boluolab.com/hero.mp4"
+                src="https://filmavo.blob.core.windows.net/assets/boluolab.com/hero.mp4"
               />
               {/* 内容叠在视频上 */}
               <div className="relative z-10">

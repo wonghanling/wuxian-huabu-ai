@@ -116,10 +116,10 @@ export function ScrollZoomShowcase() {
         <div className="relative flex items-center justify-center gap-4 md:gap-6 px-4">
           {/* 左侧组：外侧竖版卡片 + 内侧堆叠卡片，作为一个刚性整体移动 */}
           <div ref={leftWrapRef} className="flex items-center gap-4 md:gap-6" style={{ willChange: 'transform, opacity' }}>
-            <PlaceholderCard label="案例 01" aspect="3/4" width={200} color="#262626" src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783587166265-hwreoms3ab.mp4" />
+            <PlaceholderCard label="案例 01" aspect="3/4" width={200} color="#262626" src="https://filmavo.blob.core.windows.net/assets/videos/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783587166265-hwreoms3ab.mp4" />
             <div className="flex flex-col gap-4">
-              <PlaceholderCard label="案例 02" aspect="4/3" width={250} color="#2a2a2a" src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783594190154-lciema2wqb.mp4" />
-              <PlaceholderCard label="案例 03" aspect="4/3" width={250} color="#242424" src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783594576078-ijy2oxzyjap.mp4" />
+              <PlaceholderCard label="案例 02" aspect="4/3" width={250} color="#2a2a2a" src="https://filmavo.blob.core.windows.net/assets/videos/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783594190154-lciema2wqb.mp4" />
+              <PlaceholderCard label="案例 03" aspect="4/3" width={250} color="#242424" src="https://filmavo.blob.core.windows.net/assets/videos/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783594576078-ijy2oxzyjap.mp4" />
             </div>
           </div>
 
@@ -137,7 +137,7 @@ export function ScrollZoomShowcase() {
             }}
           >
             <video
-              src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783586390706-zikbt8pm8l8.mp4"
+              src="https://filmavo.blob.core.windows.net/assets/videos/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783586390706-zikbt8pm8l8.mp4"
               className="absolute inset-0 w-full h-full object-cover"
               autoPlay muted loop playsInline
               preload="metadata"
@@ -148,10 +148,10 @@ export function ScrollZoomShowcase() {
           {/* 右侧组：内侧堆叠卡片 + 外侧竖版卡片，作为一个刚性整体移动 */}
           <div ref={rightWrapRef} className="flex items-center gap-4 md:gap-6" style={{ willChange: 'transform, opacity' }}>
             <div className="flex flex-col gap-4">
-              <PlaceholderCard label="案例 05" aspect="4/3" width={250} color="#2a2a2a" src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783603262247.mp4" />
-              <PlaceholderCard label="案例 06" aspect="4/3" width={250} color="#242424" src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/videos/shamo1.mp4" />
+              <PlaceholderCard label="案例 05" aspect="4/3" width={250} color="#2a2a2a" src="https://filmavo.blob.core.windows.net/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783603262247.mp4" />
+              <PlaceholderCard label="案例 06" aspect="4/3" width={250} color="#242424" src="https://filmavo.blob.core.windows.net/assets/videos/shamo1.mp4" />
             </div>
-            <PlaceholderCard label="案例 07" aspect="3/4" width={200} color="#262626" src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/object/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783602031467.mp4" />
+            <PlaceholderCard label="案例 07" aspect="3/4" width={200} color="#262626" src="https://filmavo.blob.core.windows.net/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783602031467.mp4" />
           </div>
         </div>
       </div>
