@@ -1,26 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createFalClient } from '@fal-ai/client';
-import { createClient } from '@supabase/supabase-js';
 import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
+import { mirrorAsset } from '@/lib/asset-upload';
 
 export const maxDuration = 120;
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// 存储客户端不再在这里建 —— 统一由 mirrorAsset 决定写 Azure 还是 Supabase
 
-// 下载 fal 裁切后的视频并转存 Supabase Storage(永久URL),失败兜底原始URL
+// 下载 fal 裁切后的视频并转存到自有存储(永久URL),失败兜底原始URL
+//
+// 走 mirrorAsset 统一入口:配了 Azure 就写 Azure(缓存头可控)，没配回退 Supabase。
+// 路径规则一字未改，仍是 videos/{userId}/clip-{ts}-{rand}.mp4 ——
+// 换的只是存储后端，历史文件的 URL 继续有效。
 async function mirrorVideo(sourceUrl: string, userId: string): Promise<string> {
   try {
-    const res = await fetch(sourceUrl);
-    if (!res.ok) throw new Error(`下载视频失败: ${res.status}`);
-    const buffer = Buffer.from(await res.arrayBuffer());
-    const filename = `videos/${userId}/clip-${Date.now()}-${Math.random().toString(36).slice(2)}.mp4`;
-    const { error } = await supabaseAdmin.storage.from('assets').upload(filename, buffer, { contentType: 'video/mp4', cacheControl: '31536000', upsert: false });
-    if (error) throw new Error(error.message);
-    const { data } = supabaseAdmin.storage.from('assets').getPublicUrl(filename);
-    return data.publicUrl;
+    const path = `videos/${userId}/clip-${Date.now()}-${Math.random().toString(36).slice(2)}.mp4`;
+    return await mirrorAsset(sourceUrl, path, 'video/mp4');
   } catch (e) {
     console.warn('转存裁切视频失败,使用原始URL:', e);
     return sourceUrl;
