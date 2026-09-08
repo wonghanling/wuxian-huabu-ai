@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { putAsset } from '@/lib/asset-upload';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -60,15 +61,9 @@ export async function POST(req: NextRequest) {
 
     const filename = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
-    const { error } = await supabaseAdmin.storage
-      .from('assets')
-      .upload(filename, buffer, { contentType: mimeType, cacheControl: '31536000', upsert: false });
-
-    if (error) {
-      throw new Error(`上传失败: ${error.message}`);
-    }
-
-    const { data } = supabaseAdmin.storage.from('assets').getPublicUrl(filename);
+    // 走 putAsset:配了 Azure 写 Azure(缓存头可控)，没配回退 Supabase。
+    // 路径与 MIME 原样沿用，只换存储后端。
+    const data = { publicUrl: await putAsset(filename, buffer, mimeType) };
 
     return NextResponse.json({ success: true, url: data.publicUrl });
 

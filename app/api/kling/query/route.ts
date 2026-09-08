@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
+import { putAsset } from '@/lib/asset-upload';
 
 export const runtime = 'nodejs';
 
@@ -27,14 +28,7 @@ async function uploadVideoToStorage(sourceUrl: string, userId: string): Promise<
   const buffer = Buffer.from(await res.arrayBuffer());
   const filename = `videos/${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.mp4`;
 
-  const { error } = await supabaseAdmin.storage
-    .from('assets')
-    .upload(filename, buffer, { contentType: 'video/mp4', cacheControl: '31536000', upsert: false });
-
-  if (error) throw new Error(`上传视频失败: ${error.message}`);
-
-  const { data } = supabaseAdmin.storage.from('assets').getPublicUrl(filename);
-  return data.publicUrl;
+  return await putAsset(filename, buffer, 'video/mp4');
 }
 
 export async function GET(request: NextRequest) {

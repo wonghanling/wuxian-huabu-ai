@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createFalClient } from '@fal-ai/client';
 import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
+import { putAsset } from '@/lib/asset-upload';
 import { recordRefundReview } from '@/lib/billing';
 
 export const maxDuration = 60;
@@ -31,12 +32,7 @@ async function transferVideoToStorage(sourceUrl: string): Promise<string> {
   if (!res.ok) throw new Error(`下载视频失败: ${res.status}`);
   const buffer = Buffer.from(await res.arrayBuffer());
   const filename = `videos/kling-v3/${Date.now()}-${Math.random().toString(36).slice(2)}.mp4`;
-  const { error } = await supabaseAdmin.storage
-    .from('assets')
-    .upload(filename, buffer, { contentType: 'video/mp4', cacheControl: '31536000', upsert: false });
-  if (error) throw new Error(`转存视频失败: ${error.message}`);
-  const { data } = supabaseAdmin.storage.from('assets').getPublicUrl(filename);
-  return data.publicUrl;
+  return await putAsset(filename, buffer, 'video/mp4');
 }
 
 // 轮询 Kling v3 生成结果(独立于图片 fal-query，返回视频 URL)

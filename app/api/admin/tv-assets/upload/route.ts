@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { isAdmin } from '@/lib/admin';
+import { putAsset } from '@/lib/asset-upload';
 
 // ============================================================================
 // Filmavo TV 素材上传（仅管理员）
@@ -73,12 +74,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const buffer = Buffer.from(await file.arrayBuffer());
-    const { error } = await supabaseAdmin.storage
-      .from('assets')
-      .upload(filename, buffer, { contentType: mime, cacheControl: '31536000', upsert: false });
-    if (error) return NextResponse.json({ error: `上传失败: ${error.message}` }, { status: 500 });
-
-    const { data } = supabaseAdmin.storage.from('assets').getPublicUrl(filename);
+    const data = { publicUrl: await putAsset(filename, buffer, mime) };
     return NextResponse.json({
       success: true,
       url: data.publicUrl,

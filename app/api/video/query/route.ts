@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Service } from '@volcengine/openapi';
 import { createClient } from '@supabase/supabase-js';
 import { pickKey, pickKeyById, userKeyToKeyInfo, releaseKey, releaseUserAwareKey, categorizeError, type KeyInfo } from '@/lib/api-key-pool';
+import { putAsset } from '@/lib/asset-upload';
 import { lookupUserKey, userKeyInvalidMessage, dashscopeHost } from '@/lib/user-api-keys';
 
 const FAL_KEY = process.env.FAL_KEY!;
@@ -18,12 +19,7 @@ async function uploadVideoToStorage(sourceUrl: string, userId: string): Promise<
   if (!res.ok) throw new Error(`下载视频失败: ${res.status}`);
   const buffer = Buffer.from(await res.arrayBuffer());
   const filename = `videos/${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.mp4`;
-  const { error } = await supabase.storage
-    .from('assets')
-    .upload(filename, buffer, { contentType: 'video/mp4', cacheControl: '31536000', upsert: false });
-  if (error) throw new Error(`上传视频失败: ${error.message}`);
-  const { data } = supabase.storage.from('assets').getPublicUrl(filename);
-  return data.publicUrl;
+  return await putAsset(filename, buffer, 'video/mp4');
 }
 
 const volcService = new Service({

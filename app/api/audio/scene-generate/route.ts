@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createFalClient } from '@fal-ai/client';
 import { createClient } from '@supabase/supabase-js';
 import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
+import { putAsset } from '@/lib/asset-upload';
 import { checkMembership, deductBalance, refundBalance } from '@/lib/billing';
 
 export const maxDuration = 120;
@@ -27,10 +28,7 @@ async function mirrorAudio(sourceUrl: string, userId: string): Promise<string> {
     if (!res.ok) throw new Error(`下载音频失败: ${res.status}`);
     const buffer = Buffer.from(await res.arrayBuffer());
     const filename = `audio/${userId}/${Date.now()}-${Math.random().toString(36).slice(2)}.mp3`;
-    const { error } = await supabaseAdmin.storage.from('assets').upload(filename, buffer, { contentType: 'audio/mpeg', cacheControl: '31536000', upsert: false });
-    if (error) throw new Error(error.message);
-    const { data } = supabaseAdmin.storage.from('assets').getPublicUrl(filename);
-    return data.publicUrl;
+    return await putAsset(filename, buffer, 'audio/mpeg');
   } catch (e) {
     console.warn('转存场景声失败,使用原始URL:', e);
     return sourceUrl;

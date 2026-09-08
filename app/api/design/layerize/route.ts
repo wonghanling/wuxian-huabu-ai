@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fal as falSingleton, createFalClient } from '@fal-ai/client';
 import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
+import { putAsset } from '@/lib/asset-upload';
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { deductBalance, refundBalance } from '@/lib/billing';
 
@@ -21,12 +22,7 @@ async function mirrorBackground(sourceUrl: string, userId: string): Promise<stri
   if (!res.ok) throw new Error(`下载背景图失败: ${res.status}`);
   const buffer = Buffer.from(await res.arrayBuffer());
   const filename = `design/${userId}/${Date.now()}-bg.png`;
-  const { error } = await supabaseAdmin.storage
-    .from('assets')
-    .upload(filename, buffer, { contentType: 'image/png', cacheControl: '31536000', upsert: false });
-  if (error) throw new Error(`转存失败: ${error.message}`);
-  const { data } = supabaseAdmin.storage.from('assets').getPublicUrl(filename);
-  return data.publicUrl;
+  return await putAsset(filename, buffer, 'image/png');
 }
 
 export async function POST(req: NextRequest) {

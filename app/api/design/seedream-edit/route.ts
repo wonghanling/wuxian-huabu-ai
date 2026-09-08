@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
+import { putAsset } from '@/lib/asset-upload';
 import { calcImagePrice } from '@/lib/pricing';
 import { deductBalance, refundBalance } from '@/lib/billing';
 
@@ -41,12 +42,7 @@ async function transferToStorage(sourceUrl: string): Promise<string> {
   if (!res.ok) throw new Error(`下载生成图失败: ${res.status}`);
   const buffer = Buffer.from(await res.arrayBuffer());
   const filename = `images/seedream-edit/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
-  const { error } = await supabaseAdmin.storage
-    .from('assets')
-    .upload(filename, buffer, { contentType: 'image/jpeg', cacheControl: '31536000', upsert: false });
-  if (error) throw new Error(`转存失败: ${error.message}`);
-  const { data } = supabaseAdmin.storage.from('assets').getPublicUrl(filename);
-  return data.publicUrl;
+  return await putAsset(filename, buffer, 'image/jpeg');
 }
 
 // 交互编辑三种模式(图层分离/精准坐标/任意标记)在 API 层无差别，均为 image + prompt → 单图

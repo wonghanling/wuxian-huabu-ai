@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { checkMembership, deductBalance, refundBalance } from '@/lib/billing';
 import { pickKey, releaseKey, userKeyToKeyInfo, releaseUserAwareKey, categorizeError, type KeyInfo } from '@/lib/api-key-pool';
+import { putAsset } from '@/lib/asset-upload';
 import { lookupUserKey, userKeyInvalidMessage } from '@/lib/user-api-keys';
 
 export const maxDuration = 60;
@@ -187,10 +188,7 @@ async function uploadBase64ToStorage(base64: string, prefix: string): Promise<st
   const ext = mimeType.split('/')[1] || 'jpg';
   const buffer = Buffer.from(match[2], 'base64');
   const filename = `${prefix}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-  const { error } = await supabaseAdmin.storage.from('assets').upload(filename, buffer, { contentType: mimeType, cacheControl: '31536000', upsert: false });
-  if (error) throw new Error(`上传图片失败: ${error.message}`);
-  const { data } = supabaseAdmin.storage.from('assets').getPublicUrl(filename);
-  return data.publicUrl;
+  return await putAsset(filename, buffer, mimeType);
 }
 
 // 从 Authorization Bearer token 解出 userId（BYOK 取 key 用）

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { pickKey, pickKeyById, releaseKey, userKeyToKeyInfo, releaseUserAwareKey, categorizeError, type KeyInfo } from '@/lib/api-key-pool';
+import { putAsset } from '@/lib/asset-upload';
 import { lookupUserKey, userKeyInvalidMessage } from '@/lib/user-api-keys';
 
 const ARK_API_KEY = process.env.ARK_API_KEY!;
@@ -36,12 +37,7 @@ async function uploadVideoToStorage(sourceUrl: string): Promise<string> {
       if (!res.ok) throw new Error(`下载视频失败: ${res.status}`);
       const buffer = Buffer.from(await res.arrayBuffer());
       const filename = `videos/seedance/${Date.now()}-${Math.random().toString(36).slice(2)}.mp4`;
-      const { error } = await supabaseAdmin.storage
-        .from('assets')
-        .upload(filename, buffer, { contentType: 'video/mp4', cacheControl: '31536000', upsert: false });
-      if (error) throw new Error(`上传视频失败: ${error.message}`);
-      const { data } = supabaseAdmin.storage.from('assets').getPublicUrl(filename);
-      return data.publicUrl;
+      return await putAsset(filename, buffer, 'video/mp4');
     } catch (e) {
       if (attempt === 0) {
         console.warn('转存 Seedance 视频失败，重试一次:', e);
