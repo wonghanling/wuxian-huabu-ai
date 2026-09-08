@@ -159,6 +159,23 @@ export async function saveSnapshot(canvasId: string, snapshot: any): Promise<voi
   await supabase.from('canvases').update({ updated_at: new Date().toISOString() }).eq('id', canvasId);
 }
 
+/** 重试包装:网络抖动、上游限流都是瞬时的，重试一次往往就过了 */
+async function withRetry<T>(fn: () => Promise<T>, label: string, tries = 3): Promise<T> {
+  let lastErr: any;
+  for (let i = 1; i <= tries; i++) {
+    try {
+      return await fn();
+    } catch (e) {
+      lastErr = e;
+      if (i < tries) {
+        // 退避:0.5s、1.5s —— 上游限流时立刻重试只会再撞一次
+        await new Promise((r) => setTimeout(r, i * 500 + 500));
+      }
+    }
+  }
+  throw new Error(`${label}（已重试 ${tries} 次）: ${lastErr?.message || lastErr}`);
+}
+
 // 上传资产到 Supabase Storage，返回永久 URL
 export async function uploadAsset(
   userId: string,
@@ -166,36 +183,53 @@ export async function uploadAsset(
   ext: 'jpg' | 'mp4' | 'webp' = 'jpg'
 ): Promise<string> {
   const supabase = createClient();
-  const filename = `${userId}/${Date.now()}.${ext}`;
+  // 文件名加随机串 —— 原先只有 Date.now()，同一毫秒内两次转存会撞名，
+  // 而 upsert:false 遇到重名直接报错，那次转存就丢了。
+  const rand = Math.random().toString(36).slice(2, 10);
+  const filename = `${userId}/${Date.now()}-${rand}.${ext}`;
 
-  const { error } = await supabase.storage
-    .from('assets')
-    .upload(filename, blob, { contentType: ext === 'mp4' ? 'video/mp4' : 'image/jpeg', cacheControl: '31536000', upsert: false });
-
-  if (error) throw new Error(`上传失败: ${error.message}`);
+  await withRetry(async () => {
+    const { error } = await supabase.storage
+      .from('assets')
+      .upload(filename, blob, {
+        contentType: ext === 'mp4' ? 'video/mp4' : 'image/jpeg',
+        cacheControl: '31536000',
+        upsert: false,
+      });
+    if (error) throw new Error(error.message);
+  }, '上传失败');
 
   const { data } = supabase.storage.from('assets').getPublicUrl(filename);
   return data.publicUrl;
 }
 
 // 把外部 URL 的图片/视频下载后上传到 Storage，返回永久 URL
+//
+// 为什么必须成功:上游(火山引擎等)给的是带签名的临时地址，7 天后失效。
+// 这一步失败而调用方又静默保留原 URL 的话，用户当时看图正常，
+// 一周后打开画布就是 "Request has expired" —— 作品实际没保存下来。
 export async function mirrorUrlToStorage(
   userId: string,
   url: string,
   type: 'image' | 'video'
 ): Promise<string> {
-  // base64 data URL 直接转 blob
+  const ext = type === 'video' ? 'mp4' : 'jpg';
+
+  // base64 data URL 直接转 blob（本地数据，不会失败，无需重试）
   if (url.startsWith('data:')) {
     const res = await fetch(url);
     const blob = await res.blob();
-    const ext = type === 'video' ? 'mp4' : 'jpg';
     return uploadAsset(userId, blob, ext);
   }
 
-  // 外部 URL 下载
-  const res = await fetch(url);
-  if (!res.ok) throw new Error('下载资产失败');
-  const blob = await res.blob();
-  const ext = type === 'video' ? 'mp4' : 'jpg';
+  // 外部 URL:下载这一步最容易断（文件可能几 MB，上游也可能限流）
+  const blob = await withRetry(async () => {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const b = await res.blob();
+    if (b.size === 0) throw new Error('下载到空文件');
+    return b;
+  }, '下载资产失败');
+
   return uploadAsset(userId, blob, ext);
 }

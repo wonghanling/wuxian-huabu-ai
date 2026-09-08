@@ -23,6 +23,7 @@ import { ImageSplitModal } from './nodes/ImageSplitModal';
 import { CanvasLoader } from './nodes/CanvasLoader';
 import { ZoomControls } from './nodes/ZoomControls';
 import { TopBar } from './nodes/TopBar';
+import { MirrorFailToast } from './nodes/MirrorFailToast';
 import { TbText, TbImage, TbVideo, TbCharacter, TbTimeline, TbController, TbGem, TbDirector, TbAudio, TbExtend, TbScissors, TbChevron } from './nodes/ToolIcons';
 import { useCanvasPersistence } from './lib/usePersistence';
 import { DEFAULT_TEXT_MODEL } from './models';
@@ -415,6 +416,9 @@ function CanvasV2Inner() {
   return (
     <div style={{ width: '100vw', height: '100vh', background: '#000' }} onContextMenu={(e) => e.preventDefault()}>
       <CanvasLoader loading={canvasLoading} />
+      {/* 转存失败提示:生成结果未能存进自己的 Storage 时当场告知，
+          否则那些临时地址数天后失效，用户才发现作品没了 */}
+      <MirrorFailToast />
       <ReactFlow
         nodes={nodes}
         edges={edges}

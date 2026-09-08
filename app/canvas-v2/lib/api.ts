@@ -236,8 +236,18 @@ export async function generateTryOn(params: TryOnParams): Promise<string> {
 }
 
 // ============ 输出 mirror 转存 ============
-// 第三方生成 URL 会过期,转存到自己 Supabase 拿永久 URL(照原网 mirrorUrlToStorage)
-// 失败保留原 URL 兜底,不阻塞
+// 第三方生成的 URL 是带签名的临时地址(火山引擎等给 7 天)，必须转存到自己的
+// Storage 拿永久 URL，否则一周后画布里就是 "Request has expired"。
+//
+// 签名保持不变(仍返回 string、失败仍回退原 URL) —— 12 处调用方多为
+// .then() 无 .catch()，改成抛异常会造成未捕获拒绝。
+//
+// 真正的修复在两处:
+//   1. mirrorUrlToStorage 内部加了重试与文件名去重，失败率大幅下降
+//      (原先只有 Date.now() 做文件名，同毫秒两次转存必撞名而丢一张)
+//   2. 失败时不再只 console.warn 静默带过 —— 记 error 级日志并派发
+//      mirror-failed 事件，让界面能提示"未能永久保存"，而不是让用户
+//      以为存好了、7 天后才发现作品消失
 export async function mirrorOutput(url: string, type: 'image' | 'video'): Promise<string> {
   try {
     const supabase = createClient();
@@ -245,7 +255,10 @@ export async function mirrorOutput(url: string, type: 'image' | 'video'): Promis
     if (!user || !url) return url;
     return await mirrorUrlToStorage(user.id, url, type);
   } catch (err) {
-    console.warn('mirror 转存失败,保留原 URL:', err);
+    console.error('[mirror] 转存失败，作品未能永久保存(URL 会在数天后失效):', url, err);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('mirror-failed', { detail: { url, type } }));
+    }
     return url;
   }
 }
