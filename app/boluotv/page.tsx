@@ -42,12 +42,12 @@ const CATEGORIES = [
 
 // 中间轮播图(render/image quality=80 压缩)
 const HERO_IMAGES = [
-  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/chuangzuoweituo.png?quality=80',
-  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/chuangzuoweituo1.png?quality=80',
-  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/chuangzuoweituo2.png?quality=80',
-  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/chuangzuoweituo3.png?quality=80',
-  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/chuangzuoweituo4.png?quality=80',
-  'https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/chuangzuoweituo5.png?quality=80',
+  'https://filmavo.blob.core.windows.net/assets/images/chuangzuoweituo.jpg',
+  'https://filmavo.blob.core.windows.net/assets/images/chuangzuoweituo1.jpg',
+  'https://filmavo.blob.core.windows.net/assets/images/chuangzuoweituo2.jpg',
+  'https://filmavo.blob.core.windows.net/assets/images/chuangzuoweituo3.jpg',
+  'https://filmavo.blob.core.windows.net/assets/images/chuangzuoweituo4.jpg',
+  'https://filmavo.blob.core.windows.net/assets/images/chuangzuoweituo5.jpg',
 ];
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {

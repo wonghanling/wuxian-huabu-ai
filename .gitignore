@@ -43,3 +43,5 @@ next-env.d.ts
 .vercel
 .migrate-tmp/
 .migrate-result.json
+.img-tmp/
+.img-failed.json

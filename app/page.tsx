@@ -178,7 +178,7 @@ export default function Home() {
             {/* 宣传图片区域 */}
             <div className="relative overflow-hidden" style={{ aspectRatio: '16/9' }}>
               <img
-                src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/images/seedancexuanchuantanchuang.png?quality=80"
+                src="https://filmavo.blob.core.windows.net/assets/images/seedancexuanchuantanchuang.png"
                 alt="Seedance 2.0"
                 className="w-full h-full object-cover"
               />
@@ -350,7 +350,7 @@ export default function Home() {
           >
             <span className="block mb-1.5 text-[12px] font-medium" style={{ color: 'rgb(160,160,160)' }}>产品设计</span>
             <div className="rounded-2xl overflow-hidden" style={{ aspectRatio: '1/1', background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}>
-              <img src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783578531053.jpg?quality=80" alt="产品设计" className="w-full h-full object-cover" draggable={false} />
+              <img src="https://filmavo.blob.core.windows.net/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783578531053.jpg" alt="产品设计" className="w-full h-full object-cover" draggable={false} />
             </div>
           </div>
           <div
@@ -359,7 +359,7 @@ export default function Home() {
           >
             <span className="block mb-1.5 text-[12px] font-medium" style={{ color: 'rgb(160,160,160)' }}>角色设计</span>
             <div className="rounded-2xl overflow-hidden" style={{ aspectRatio: '4/3', background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}>
-              <img src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783579669557.jpg?quality=80" alt="角色设计" className="w-full h-full object-cover" draggable={false} />
+              <img src="https://filmavo.blob.core.windows.net/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783579669557.jpg" alt="角色设计" className="w-full h-full object-cover" draggable={false} />
             </div>
           </div>
           <div
@@ -386,7 +386,7 @@ export default function Home() {
           >
             <span className="block mb-1.5 text-[12px] font-medium" style={{ color: 'rgb(160,160,160)' }}>分镜设计</span>
             <div className="rounded-2xl overflow-hidden" style={{ aspectRatio: '16/9', background: 'rgb(26,26,26)', border: '1px solid #ffffff1c' }}>
-              <img src="https://qvcantdhbsulcucufwtp.supabase.co/storage/v1/render/image/public/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783580645778.jpg?quality=80" alt="分镜设计" className="w-full h-full object-cover" draggable={false} />
+              <img src="https://filmavo.blob.core.windows.net/assets/59bde757-0c1f-49ef-b078-6b3ea6a5ac91/1783580645778.jpg" alt="分镜设计" className="w-full h-full object-cover" draggable={false} />
             </div>
           </div>
         </div>
