@@ -89,22 +89,28 @@ export function SaveTemplateModal({ onClose }: { onClose: () => void }) {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { alert('请先登录'); setLoading(false); setStep('form'); return; }
 
-      // 1. 前端直接上传视频到 Supabase Storage（绕过 Vercel 4.5MB 限制）
-      const videoPath = `templates/videos/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.mp4`;
-      const { error: videoErr } = await supabase.storage
-        .from('assets')
-        .upload(videoPath, videoFile, { contentType: 'video/mp4', cacheControl: '31536000' });
-      if (videoErr) throw new Error('视频上传失败: ' + videoErr.message);
-      const { data: { publicUrl: videoUrl } } = supabase.storage.from('assets').getPublicUrl(videoPath);
+      // 走后端 /api/storage/put —— 前端不再直连存储。
+      // 仍分两次单独请求(而非塞进 templates/save)，保持"大文件不经业务接口"的
+      // 原意:videoFile 可能几十 MB，走业务接口会撞请求体上限。
+      const put = async (file: File, kind: 'template' | 'cover', label: string) => {
+        const form = new FormData();
+        form.append('file', file);
+        form.append('kind', kind);
+        const r = await fetch('/api/storage/put', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${session.access_token}` },
+          body: form,
+        });
+        const d = await r.json();
+        if (!r.ok || !d.url) throw new Error(`${label}上传失败: ${d.error || r.status}`);
+        return d.url as string;
+      };
 
-      // 2. 前端直接上传封面图到 Supabase Storage
+      const videoUrl = await put(videoFile, 'template', '视频');
+
       const coverBlob = await (await fetch(coverBase64)).blob();
-      const coverPath = `templates/covers/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
-      const { error: coverErr } = await supabase.storage
-        .from('assets')
-        .upload(coverPath, coverBlob, { contentType: 'image/jpeg', cacheControl: '31536000' });
-      if (coverErr) throw new Error('封面上传失败: ' + coverErr.message);
-      const { data: { publicUrl: coverUrl } } = supabase.storage.from('assets').getPublicUrl(coverPath);
+      const coverUrl = await put(
+        new File([coverBlob], 'cover.jpg', { type: 'image/jpeg' }), 'cover', '封面');
 
       // 3. 调 API 写数据库（只传 URL 和 JSON，不走文件）
       const res = await fetch('/api/templates/save', {

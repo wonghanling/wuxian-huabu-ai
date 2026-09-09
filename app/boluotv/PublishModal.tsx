@@ -28,18 +28,26 @@ export function PublishCommissionModal({ onClose, onPublished }: { onClose: () =
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  // 上传到 Supabase assets bucket, 独立 commissions/ 路径(与画布隔离)
+  // 走后端 /api/storage/put —— 前端不再直连存储。
+  // 仍落在独立的 commissions/ 路径下(与画布资源隔离)，由后端按 kind 决定前缀。
   const uploadToStorage = async (file: File): Promise<string | null> => {
     try {
       const sb = createClient();
-      const { data: { user } } = await sb!.auth.getUser();
-      if (!user) { window.location.href = '/auth'; return null; }
-      const dotExt = file.name.includes('.') ? file.name.slice(file.name.lastIndexOf('.')) : '.jpg';
-      const filename = `commissions/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}${dotExt}`;
-      const { error: upErr } = await sb!.storage.from('assets').upload(filename, file, { contentType: file.type || 'image/jpeg', cacheControl: '31536000', upsert: false });
-      if (upErr) throw new Error(upErr.message);
-      const { data: urlData } = sb!.storage.from('assets').getPublicUrl(filename);
-      return urlData.publicUrl;
+      const { data: { session } } = await sb!.auth.getSession();
+      if (!session) { window.location.href = '/auth'; return null; }
+
+      const form = new FormData();
+      form.append('file', file);
+      form.append('kind', 'portfolio');
+
+      const res = await fetch('/api/storage/put', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: form,
+      });
+      const data = await res.json();
+      if (!res.ok || !data.url) throw new Error(data.error || `HTTP ${res.status}`);
+      return data.url;
     } catch (e: any) {
       setError('上传失败: ' + (e.message || ''));
       return null;

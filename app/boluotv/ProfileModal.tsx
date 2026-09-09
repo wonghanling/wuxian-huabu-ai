@@ -59,19 +59,27 @@ export function ProfileModal({ onClose, onSaved }: { onClose: () => void; onSave
       const { data: { user } } = await sb!.auth.getUser();
       if (!session || !user) { window.location.href = '/auth'; return; }
       for (const f of files.slice(0, 12 - portfolio.length)) {
-        const dotExt = f.name.includes('.') ? f.name.slice(f.name.lastIndexOf('.')) : '.jpg';
-        const filename = `commissions/${user.id}/portfolio/${Date.now()}-${Math.random().toString(36).slice(2)}${dotExt}`;
-        const { error: upErr } = await sb!.storage.from('assets').upload(filename, f, { contentType: f.type || 'image/jpeg', cacheControl: '31536000', upsert: false });
-        if (upErr) { setError('上传失败: ' + upErr.message); continue; }
-        const { data: urlData } = sb!.storage.from('assets').getPublicUrl(filename);
+        // 走后端 /api/storage/put —— 前端不再直连存储
+        const form = new FormData();
+        form.append('file', f);
+        form.append('kind', 'portfolio');
+        const upRes = await fetch('/api/storage/put', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${session.access_token}` },
+          body: form,
+        });
+        const upData = await upRes.json();
+        if (!upRes.ok || !upData.url) { setError('上传失败: ' + (upData.error || upRes.status)); continue; }
+        const publicUrl: string = upData.url;
+
         const isVideo = (f.type || '').startsWith('video');
         const res = await fetch('/api/commissions/portfolio', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-          body: JSON.stringify({ mediaType: isVideo ? 'video' : 'image', mediaUrl: urlData.publicUrl }),
+          body: JSON.stringify({ mediaType: isVideo ? 'video' : 'image', mediaUrl: publicUrl }),
         });
         const d = await res.json();
-        if (res.ok) setPortfolio((prev) => [...prev, { id: d.id, media_url: urlData.publicUrl, title: null }]);
+        if (res.ok) setPortfolio((prev) => [...prev, { id: d.id, media_url: publicUrl, title: null }]);
       }
     } catch (e: any) { setError(e.message || '上传失败'); }
     setUploading(false);

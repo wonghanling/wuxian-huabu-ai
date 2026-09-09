@@ -182,25 +182,31 @@ export async function uploadAsset(
   blob: Blob,
   ext: 'jpg' | 'mp4' | 'webp' = 'jpg'
 ): Promise<string> {
+  // 走后端 /api/storage/put —— 前端不再直连存储。
+  // 顺带修掉一个老问题:原先路径是 `${userId}/...`，文件落在 assets 根目录下的
+  // 用户 UUID 目录，与后端的 assets/videos/{userId}/、assets/images/{userId}/
+  // 不一致，日后难以区分归属。现在由后端按 kind 统一决定前缀。
   const supabase = createClient();
-  // 文件名加随机串 —— 原先只有 Date.now()，同一毫秒内两次转存会撞名，
-  // 而 upsert:false 遇到重名直接报错，那次转存就丢了。
-  const rand = Math.random().toString(36).slice(2, 10);
-  const filename = `${userId}/${Date.now()}-${rand}.${ext}`;
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error('未登录，无法保存');
 
-  await withRetry(async () => {
-    const { error } = await supabase.storage
-      .from('assets')
-      .upload(filename, blob, {
-        contentType: ext === 'mp4' ? 'video/mp4' : 'image/jpeg',
-        cacheControl: '31536000',
-        upsert: false,
-      });
-    if (error) throw new Error(error.message);
+  const kind = ext === 'mp4' ? 'video' : 'image';
+  const mime = ext === 'mp4' ? 'video/mp4' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+
+  return withRetry(async () => {
+    const form = new FormData();
+    form.append('file', new File([blob], `asset.${ext}`, { type: mime }));
+    form.append('kind', kind);
+
+    const res = await fetch('/api/storage/put', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+      body: form,
+    });
+    const data = await res.json();
+    if (!res.ok || !data.url) throw new Error(data.error || `HTTP ${res.status}`);
+    return data.url as string;
   }, '上传失败');
-
-  const { data } = supabase.storage.from('assets').getPublicUrl(filename);
-  return data.publicUrl;
 }
 
 // 把外部 URL 的图片/视频下载后上传到 Storage，返回永久 URL

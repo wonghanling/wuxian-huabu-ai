@@ -45,32 +45,50 @@ export async function uploadImageToStorage(file: File): Promise<string | null> {
       img.src = URL.createObjectURL(file);
     });
 
-    const filename = `images/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
-    const { error } = await supabase.storage.from('assets').upload(filename, jpegBlob, { contentType: 'image/jpeg', cacheControl: '31536000', upsert: false });
-    if (error) throw new Error(`上传失败: ${error.message}`);
-    const { data: urlData } = supabase.storage.from('assets').getPublicUrl(filename);
-    return urlData.publicUrl;
+    // 改走后端 /api/storage/put:浏览器直连 Azure 需要密钥或 SAS 令牌，
+    // 由后端代传更简单，也统一了路径规范(原先前端写 assets/{userId}/ 根目录，
+    // 与后端的 assets/images/{userId}/ 不一致)。
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { alert('请先登录'); return null; }
+
+    const form = new FormData();
+    form.append('file', new File([jpegBlob], 'image.jpg', { type: 'image/jpeg' }));
+    form.append('kind', 'image');
+
+    const res = await fetch('/api/storage/put', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+      body: form,
+    });
+    const data = await res.json();
+    if (!res.ok || !data.url) throw new Error(data.error || '上传失败');
+    return data.url;
   } catch (err: any) {
     alert('图片上传失败: ' + err.message);
     return null;
   }
 }
 
-// 上传任意文件(视频/音频)到 Supabase storage,原始文件不转码(照原网)
-// type 决定路径前缀:video→videos/ audio→audio/
+// 上传任意文件(视频/音频)到自有存储,原始文件不转码(照原网)
+// 走后端 /api/storage/put —— 前端不再直连存储，路径与 MIME 由后端按 kind 决定
 export async function uploadFileToStorage(file: File, type: 'video' | 'audio'): Promise<string | null> {
   try {
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { alert('请先登录'); return null; }
-    const dotExt = file.name.includes('.') ? file.name.slice(file.name.lastIndexOf('.')) : (type === 'video' ? '.mp4' : '.mp3');
-    const prefix = type === 'video' ? 'videos' : 'audio';
-    const filename = `${prefix}/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}${dotExt}`;
-    const contentType = file.type || (type === 'video' ? 'video/mp4' : 'audio/mpeg');
-    const { error } = await supabase.storage.from('assets').upload(filename, file, { contentType, cacheControl: '31536000', upsert: false });
-    if (error) throw new Error(`上传失败: ${error.message}`);
-    const { data: urlData } = supabase.storage.from('assets').getPublicUrl(filename);
-    return urlData.publicUrl;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { alert('请先登录'); return null; }
+
+    const form = new FormData();
+    form.append('file', file);
+    form.append('kind', type);   // video → videos/  audio → audio/
+
+    const res = await fetch('/api/storage/put', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+      body: form,
+    });
+    const data = await res.json();
+    if (!res.ok || !data.url) throw new Error(data.error || '上传失败');
+    return data.url;
   } catch (err: any) {
     alert((type === 'video' ? '视频' : '音频') + '上传失败: ' + err.message);
     return null;
@@ -758,17 +776,26 @@ export async function optimizePrompt(params: {
 // 接口长期不变：mode + provider + model，新能力只加值不改签名
 // ============================================================
 
-// 上传 mask PNG 到 Supabase storage（masks/{userId}/），返回公开 URL
+// 上传 mask PNG（masks/{userId}/），返回公开 URL
+// 走后端 /api/storage/put —— 前端不再直连存储
 export async function uploadMaskToStorage(blob: Blob): Promise<string | null> {
   try {
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { alert('请先登录'); return null; }
-    const filename = `masks/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.png`;
-    const { error } = await supabase.storage.from('assets').upload(filename, blob, { contentType: 'image/png', cacheControl: '31536000', upsert: false });
-    if (error) throw new Error(`mask 上传失败: ${error.message}`);
-    const { data } = supabase.storage.from('assets').getPublicUrl(filename);
-    return data.publicUrl;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { alert('请先登录'); return null; }
+
+    const form = new FormData();
+    form.append('file', new File([blob], 'mask.png', { type: 'image/png' }));
+    form.append('kind', 'mask');
+
+    const res = await fetch('/api/storage/put', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+      body: form,
+    });
+    const data = await res.json();
+    if (!res.ok || !data.url) throw new Error(data.error || `HTTP ${res.status}`);
+    return data.url;
   } catch (err: any) {
     alert('mask 上传失败: ' + err.message);
     return null;

@@ -6,6 +6,7 @@ export const maxDuration = 300;
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { calcImagePrice } from '@/lib/pricing';
 import { deductBalance, refundBalance } from '@/lib/billing';
+import { mirrorAsset } from '@/lib/asset-upload';
 
 const supabaseAdmin = createSupabaseClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -689,6 +690,25 @@ export async function POST(req: NextRequest) {
         imageUrl = extractGptImageUrl(data);
       }
       if (!imageUrl) throw new Error('无法解析图片');
+    }
+
+    // 后端转存:上游给的都是临时地址(kie 的 tempfile、fal 的 v3b 等)，几天后失效。
+    //
+    // 原先这里直接把临时地址返回给前端，靠前端 mirrorOutput 转存 —— 那条路天生
+    // 脆弱:依赖浏览器网络、依赖上游给 CORS、用户关页面就中断，失败了还只能静默
+    // 保留临时地址(用户几天后才发现作品打不开)。
+    //
+    // 改在后端转存:无跨域限制、不受用户操作影响，且直接落 Azure。
+    // 转存失败仍回退临时地址 —— 至少当下能看，前端 mirrorOutput 还会再试一次。
+    if (imageUrl && !imageUrl.startsWith('data:')) {
+      try {
+        const uid = userId || 'anon';
+        const ext = imageUrl.match(/\.(jpe?g|png|webp)(\?|$)/i)?.[1]?.toLowerCase() || 'jpg';
+        const path = `images/${uid}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
+        imageUrl = await mirrorAsset(imageUrl, path);
+      } catch (e) {
+        console.error('[image/generate] 后端转存失败，回退临时地址:', e);
+      }
     }
 
     return NextResponse.json({ success: true, imageUrl, model, prompt });
