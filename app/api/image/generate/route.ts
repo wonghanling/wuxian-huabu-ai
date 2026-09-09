@@ -138,6 +138,38 @@ const IMAGE_MODELS: Record<string, {
     requiresImage: true,
     supportsImage: true,
   },
+
+  // GPT Image 2.5 Sunburst / Flare（Kie）。两者 schema 完全一致:
+  //   input_urls 最多 16 张、resolution 1K/2K/4K、aspect_ratio 13 个值默认 auto
+  // 与 gpt-image-2 同款做法:带图时自动切图转图端点，不必拆成两个模型。
+  'gpt-image-2-5-sunburst': {
+    provider: 'kie',
+    kieModel: 'gpt-image-2-5-sunburst-text-to-image',
+    kieModelWithImage: 'gpt-image-2-5-sunburst-image-to-image',
+    kieImgKeyWithImage: 'input_urls',
+    supportsImage: true,
+  },
+  'gpt-image-2-5-sunburst-all': {
+    provider: 'kie',
+    kieModel: 'gpt-image-2-5-sunburst-image-to-image',
+    kieParams: { imgKey: 'input_urls', maxImages: 16 },
+    requiresImage: true,
+    supportsImage: true,
+  },
+  'gpt-image-2-5-flare': {
+    provider: 'kie',
+    kieModel: 'gpt-image-2-5-flare-text-to-image',
+    kieModelWithImage: 'gpt-image-2-5-flare-image-to-image',
+    kieImgKeyWithImage: 'input_urls',
+    supportsImage: true,
+  },
+  'gpt-image-2-5-flare-all': {
+    provider: 'kie',
+    kieModel: 'gpt-image-2-5-flare-image-to-image',
+    kieParams: { imgKey: 'input_urls', maxImages: 16 },
+    requiresImage: true,
+    supportsImage: true,
+  },
   // --- fal.ai 模型 ---
   'flux-kontext': {
     provider: 'fal',
@@ -231,6 +263,10 @@ export async function POST(req: NextRequest) {
       ? (imageQuality === '4k' ? 'nano-banana-pro-multi-4k' : 'nano-banana-pro-multi-2k')
       : ['gpt-image-2', 'gpt-image-2-all'].includes(model)
       ? (imageQuality === '4k' ? 'gpt-image-2-4k' : 'gpt-image-2-2k')
+      // 2.5 Sunburst / Flare:三档同价体系，文生图与图生图不分价。
+      // -all(多图)与主模型共用同一套价，故先剥掉后缀再拼档位。
+      : /^gpt-image-2-5-(sunburst|flare)(-all)?$/.test(model)
+      ? `${model.replace(/-all$/, '')}-${imageQuality === '4k' ? '4k' : imageQuality === '1k' ? '1k' : '2k'}`
       : ['flux-2-pro', 'flux-2-pro-edit', 'flux-2-flex', 'flux-2-flex-edit'].includes(model)
       ? `${model}-2k`                                   // Pro/Flex 1K 与 2K 同价
       : model === 'topaz-upscale'

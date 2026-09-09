@@ -33,6 +33,15 @@ export const IMAGE_PRICING: Record<string, number> = {
   'gpt-image-2-2k': 0.43,
   'gpt-image-2-4k': 0.63,
 
+  // GPT Image 2.5 Sunburst / Flare（走 Kie）。两者 schema 与价格完全一致，
+  // 文生图与图生图同价，按分辨率三档计费。图生图支持最多 16 张参考图。
+  'gpt-image-2-5-sunburst-1k': 0.302,
+  'gpt-image-2-5-sunburst-2k': 0.437,
+  'gpt-image-2-5-sunburst-4k': 0.63,
+  'gpt-image-2-5-flare-1k': 0.302,
+  'gpt-image-2-5-flare-2k': 0.437,
+  'gpt-image-2-5-flare-4k': 0.63,
+
   // Flux 2（走 Kie，只有 1K/2K，无 4K；Pro 与 Flex 是两个模型，Flex 更贵）
   'flux-2-pro-2k':      0.3,   // Pro 文生图
   'flux-2-pro-edit-2k': 0.3,   // Pro 图生图（8 张 input_urls）

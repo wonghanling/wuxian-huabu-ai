@@ -23,6 +23,9 @@ export async function GET(req: NextRequest) {
     const key = model === 'nano-banana-pro' ? (quality === '4k' ? 'nano-banana-pro-4k' : 'nano-banana-pro-2k')
       : model === 'nano-banana-pro-multi' ? (quality === '4k' ? 'nano-banana-pro-multi-4k' : 'nano-banana-pro-multi-2k')
       : ['gpt-image-2', 'gpt-image-2-all'].includes(model) ? (quality === '4k' ? 'gpt-image-2-4k' : 'gpt-image-2-2k')
+      // 2.5 Sunburst / Flare 三档同价，-all(多图)与主模型共用价表
+      : /^gpt-image-2-5-(sunburst|flare)(-all)?$/.test(model)
+        ? `${model.replace(/-all$/, '')}-${quality === '4k' ? '4k' : quality === '1k' ? '1k' : '2k'}`
       : ['flux-2-pro', 'flux-2-pro-edit', 'flux-2-flex', 'flux-2-flex-edit'].includes(model) ? `${model}-2k`
       : model === 'topaz-upscale' ? (quality === '8k' ? 'topaz-upscale-8k' : 'topaz-upscale-4k')
       : model;
