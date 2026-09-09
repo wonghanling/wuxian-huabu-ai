@@ -73,8 +73,10 @@ export const IMAGE_MODELS: ImageModel[] = [
   { id: 'flux-2-flex-edit', label: 'Flux 2 Flex 图生图', price: '¥0.9/次', supportsImage: true, ratios: FLUX_RATIOS,
     qualityOptions: [{ value: '1k', label: '1K — ¥0.9/次' }, { value: '2k', label: '2K — ¥0.9/次' }] },
   // Topaz 图片放大(走 Kie;只需一张输入图,无提示词)
-  { id: 'topaz-upscale', label: 'Topaz 图片放大', price: '4K ¥0.7 / 8K ¥1.4', supportsImage: true,
-    qualityOptions: [{ value: '4k', label: '4K — ¥0.7/次' }, { value: '8k', label: '8K — ¥1.4/次' }] },
+  // 去掉 8K —— 上游 upscale_factor 只有 1/2/4 三个倍率，没有 8 倍。
+  // 2K 对应 2 倍、4K 对应 4 倍。
+  { id: 'topaz-upscale', label: 'Topaz 图片放大', price: '2K ¥0.4 / 4K ¥0.7', supportsImage: true,
+    qualityOptions: [{ value: '2k', label: '2K — ¥0.4/次' }, { value: '4k', label: '4K — ¥0.7/次' }] },
 ];
 
 export const DEFAULT_IMAGE_MODEL = 'nano-banana-pro';

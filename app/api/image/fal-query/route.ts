@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
       : /^gpt-image-2-5-(sunburst|flare)(-all)?$/.test(model)
         ? `${model.replace(/-all$/, '')}-${quality === '4k' ? '4k' : quality === '1k' ? '1k' : '2k'}`
       : ['flux-2-pro', 'flux-2-pro-edit', 'flux-2-flex', 'flux-2-flex-edit'].includes(model) ? `${model}-2k`
-      : model === 'topaz-upscale' ? (quality === '8k' ? 'topaz-upscale-8k' : 'topaz-upscale-4k')
+      : model === 'topaz-upscale' ? (quality === '4k' ? 'topaz-upscale-4k' : 'topaz-upscale-2k')
       : model;
     return calcImagePrice(key);
   })() : 0;

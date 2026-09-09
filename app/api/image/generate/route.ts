@@ -258,7 +258,7 @@ export async function POST(req: NextRequest) {
       : ['flux-2-pro', 'flux-2-pro-edit', 'flux-2-flex', 'flux-2-flex-edit'].includes(model)
       ? `${model}-2k`                                   // Pro/Flex 1K 与 2K 同价
       : model === 'topaz-upscale'
-      ? (imageQuality === '8k' ? 'topaz-upscale-8k' : 'topaz-upscale-4k')
+      ? (imageQuality === '4k' ? 'topaz-upscale-4k' : 'topaz-upscale-2k')
       : model;
     const price = calcImagePrice(pricingKey);
     if (userId) {
@@ -302,11 +302,12 @@ export async function POST(req: NextRequest) {
 
       // 清晰度：各家表达方式不同，传错上游直接拒。
       //   Flux 2 上游只到 2K（画布若选了 4k 就压到 2K，不然提交失败）
-      //   Topaz 用 upscale_factor 倍数（4K→2 倍、8K→4 倍），不是分辨率字符串
+      //   Topaz 用 upscale_factor 倍数，不是分辨率字符串。上游只有 1/2/4，
+      //   没有 8 倍 —— 故档位只到 4K:2K→2 倍、4K→4 倍
       const qRaw = String(imageQuality || '2k').toLowerCase();
       const resMode = kp.resMode ?? 'resolution';
       if (resMode === 'upscale') {
-        kieInput.upscale_factor = qRaw === '8k' ? '4' : '2';
+        kieInput.upscale_factor = qRaw === '4k' ? '4' : '2';
       } else if (resMode === 'resCapped2K') {
         kieInput.resolution = qRaw === '1k' ? '1K' : '2K';
       } else if (resMode !== 'none') {

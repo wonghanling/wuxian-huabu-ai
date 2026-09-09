@@ -49,8 +49,9 @@ export const IMAGE_PRICING: Record<string, number> = {
   'flux-2-flex-edit-2k': 0.9,  // Flex 图生图（8 张 input_urls）
 
   // Topaz 图片放大（走 Kie topaz/image-upscale）
+  // 上游 upscale_factor 只有 1/2/4，没有 8 倍 —— 故只有 2K 与 4K 两档
+  'topaz-upscale-2k': 0.4,
   'topaz-upscale-4k': 0.7,
-  'topaz-upscale-8k': 1.4,
 
   // Design Workflow（设计编辑能力）
   'ideogram-v3-turbo':    0.3,   // 局部重绘 快速
