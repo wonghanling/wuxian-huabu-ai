@@ -51,15 +51,13 @@ export const IMAGE_MODELS: ImageModel[] = [
     qualityOptions: [{ value: '2k', label: '2K — ¥0.43/次' }, { value: '4k', label: '4K — ¥0.63/次' }] },
   { id: 'gpt-image-2-all', label: 'GPT Image 2 多图融合', price: '2K ¥0.43 / 4K ¥0.63', supportsImage: true,
     qualityOptions: [{ value: '2k', label: '2K — ¥0.43/次' }, { value: '4k', label: '4K — ¥0.63/次' }] },
-  // GPT Image 2.5 Sunburst / Flare（Kie）。三档 1K/2K/4K，文生图与图生图同价。
-  // 多图融合走图转图端点，input_urls 最多 16 张。
-  { id: 'gpt-image-2-5-sunburst', label: 'GPT Image 2.5 Sunburst', price: '1K ¥0.30 / 2K ¥0.44 / 4K ¥0.63', supportsImage: true,
+  // GPT Image 2.5 Sunburst / Flare（Kie）。上游文生图与图生图是两个端点但同价，
+  // 后端按"有没有传图"自动切 —— 所以这里各只需一项，不必再拆多图融合:
+  // 用户传图就是图生图(input_urls 最多 16 张)，不传就是文生图。
+  // price 只标两端，与其它模型的长度保持一致(完整三档在 qualityOptions 里)。
+  { id: 'gpt-image-2-5-sunburst', label: 'GPT Image 2.5 Sunburst', price: '¥0.30~0.63/次', supportsImage: true,
     qualityOptions: [{ value: '1k', label: '1K — ¥0.30/次' }, { value: '2k', label: '2K — ¥0.44/次' }, { value: '4k', label: '4K — ¥0.63/次' }] },
-  { id: 'gpt-image-2-5-sunburst-all', label: 'GPT Image 2.5 Sunburst 多图融合', price: '1K ¥0.30 / 2K ¥0.44 / 4K ¥0.63', supportsImage: true,
-    qualityOptions: [{ value: '1k', label: '1K — ¥0.30/次' }, { value: '2k', label: '2K — ¥0.44/次' }, { value: '4k', label: '4K — ¥0.63/次' }] },
-  { id: 'gpt-image-2-5-flare', label: 'GPT Image 2.5 Flare', price: '1K ¥0.30 / 2K ¥0.44 / 4K ¥0.63', supportsImage: true,
-    qualityOptions: [{ value: '1k', label: '1K — ¥0.30/次' }, { value: '2k', label: '2K — ¥0.44/次' }, { value: '4k', label: '4K — ¥0.63/次' }] },
-  { id: 'gpt-image-2-5-flare-all', label: 'GPT Image 2.5 Flare 多图融合', price: '1K ¥0.30 / 2K ¥0.44 / 4K ¥0.63', supportsImage: true,
+  { id: 'gpt-image-2-5-flare', label: 'GPT Image 2.5 Flare', price: '¥0.30~0.63/次', supportsImage: true,
     qualityOptions: [{ value: '1k', label: '1K — ¥0.30/次' }, { value: '2k', label: '2K — ¥0.44/次' }, { value: '4k', label: '4K — ¥0.63/次' }] },
   { id: 'mj_imagine', label: 'Midjourney', price: '¥0.6/次', supportsImage: true },
   { id: 'mj_imagine_v7', label: 'Midjourney V7', price: '¥0.6/次', supportsImage: true },

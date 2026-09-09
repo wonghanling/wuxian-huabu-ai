@@ -147,13 +147,7 @@ const IMAGE_MODELS: Record<string, {
     kieModel: 'gpt-image-2-5-sunburst-text-to-image',
     kieModelWithImage: 'gpt-image-2-5-sunburst-image-to-image',
     kieImgKeyWithImage: 'input_urls',
-    supportsImage: true,
-  },
-  'gpt-image-2-5-sunburst-all': {
-    provider: 'kie',
-    kieModel: 'gpt-image-2-5-sunburst-image-to-image',
-    kieParams: { imgKey: 'input_urls', maxImages: 16 },
-    requiresImage: true,
+    kieParams: { maxImages: 16 },
     supportsImage: true,
   },
   'gpt-image-2-5-flare': {
@@ -161,13 +155,7 @@ const IMAGE_MODELS: Record<string, {
     kieModel: 'gpt-image-2-5-flare-text-to-image',
     kieModelWithImage: 'gpt-image-2-5-flare-image-to-image',
     kieImgKeyWithImage: 'input_urls',
-    supportsImage: true,
-  },
-  'gpt-image-2-5-flare-all': {
-    provider: 'kie',
-    kieModel: 'gpt-image-2-5-flare-image-to-image',
-    kieParams: { imgKey: 'input_urls', maxImages: 16 },
-    requiresImage: true,
+    kieParams: { maxImages: 16 },
     supportsImage: true,
   },
   // --- fal.ai 模型 ---
