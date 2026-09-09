@@ -7,17 +7,17 @@ import { recordRefundReview } from '@/lib/billing';
 
 export const maxDuration = 60;
 
-// Kling v3 每秒价格(会员),普通用户+0.2/秒(与 generate 路由一致)
+// 每秒价格，必须与 generate 路由一致 —— 否则退款金额与实扣不符
 const KLING_PRICE: Record<string, { noAudio: number; audio: number }> = {
-  '4k': { noAudio: 2.9, audio: 2.9 },
-  'pro': { noAudio: 0.8, audio: 1.2 },
-  'standard': { noAudio: 0.6, audio: 0.9 },
+  '4k': { noAudio: 2.36, audio: 2.36 },   // 4K 有无音频同价
+  'pro': { noAudio: 0.707, audio: 1.010 },
+  'standard': { noAudio: 0.572, audio: 0.774 },
 };
-// 退款金额按普通用户价估(会员价更低,估高一点对用户有利,人工核对时可调)
 function klingCharge(tier: string, audio: boolean, duration: number): number {
   const p = KLING_PRICE[tier];
   if (!p) return 0;
-  const perSec = (audio ? p.audio : p.noAudio) + 0.2;
+  // 统一价，不再 +0.2(那是旧的会员/普通差价，现已取消)
+  const perSec = audio ? p.audio : p.noAudio;
   return Math.round(perSec * Math.max(1, duration) * 100) / 100;
 }
 
@@ -57,6 +57,62 @@ export async function GET(req: NextRequest) {
   let caught: any = null;
 
   try {
+    // ── Kie 通道(endpoint='c2')────────────────────────────────
+    // 已迁 Kie，新任务都走这里。下方 fal 分支保留 —— 迁移前提交、
+    // 仍在生成中的任务还带着 fal 的 endpoint，前端会拿它继续轮询。
+    if (endpoint === 'c2') {
+      const r = await fetch(
+        `https://api.kie.ai/api/v1/jobs/recordInfo?taskId=${encodeURIComponent(requestId)}`,
+        { headers: { Authorization: `Bearer ${keyInfo.keyValue}` } }
+      );
+      const body = await r.json();
+      if (!r.ok || body?.code !== 200) {
+        success = true;
+        return NextResponse.json({ error: body?.msg || `查询失败 HTTP ${r.status}` });
+      }
+
+      const d = body?.data || {};
+      if (d.state === 'success') {
+        let rawUrl = '';
+        try {
+          rawUrl = JSON.parse(d.resultJson || '{}')?.resultUrls?.[0] || '';
+        } catch { rawUrl = ''; }
+
+        if (!rawUrl) {
+          success = true;
+          if (userId && refundAmount > 0) {
+            await recordRefundReview({ userId, amount: refundAmount, model: `kling-v3-${tier}`,
+              failType: 'no_media', failReason: '生成完成但无视频产出', meta: { requestId } });
+          }
+          return NextResponse.json({
+            failed: true, reason: '审核未通过',
+            error: '审核未通过：本次生成未产出视频，请调整描述后重试',
+          }, { status: 200 });
+        }
+
+        let videoUrl = rawUrl;
+        try {
+          videoUrl = await transferVideoToStorage(rawUrl);
+        } catch (e) {
+          console.error('[kling-v3/query] 转存失败，降级用上游临时链接:', e);
+        }
+        success = true;
+        return NextResponse.json({ success: true, videoUrl });
+      }
+
+      if (d.state === 'fail') {
+        success = true;
+        if (userId && refundAmount > 0) {
+          await recordRefundReview({ userId, amount: refundAmount, model: `kling-v3-${tier}`,
+            failType: 'content_policy', failReason: d.failMsg || '生成失败', meta: { requestId } });
+        }
+        return NextResponse.json({ failed: true, reason: d.failMsg || '生成失败' }, { status: 200 });
+      }
+
+      success = true;
+      return NextResponse.json({ pending: true, status: d.state || 'waiting' });
+    }
+
     const status = await fal.queue.status(endpoint, { requestId, logs: false });
 
     if (status.status === 'COMPLETED') {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { createFalClient } from '@fal-ai/client';
+// 已迁 Kie，不再需要 fal 客户端
 import { checkMembership, deductBalance, refundBalance } from '@/lib/billing';
 import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 import { putAsset } from '@/lib/asset-upload';
@@ -12,18 +12,24 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// tier → fal endpoint 前缀
-const TIER_ENDPOINT: Record<string, string> = {
-  '4k': 'fal-ai/kling-video/v3/4k',
-  'pro': 'fal-ai/kling-video/v3/pro',
-  'standard': 'fal-ai/kling-video/v3/standard',
+// Kie 的 Kling 3.0 只有一个端点，档位靠 input.mode 区分
+const KIE_MODEL = 'kling/kling-3-0';
+
+// 前端传来的 tier → Kie 的 mode。mode 即清晰度:std=720P、pro=1080P、4K=4K
+const TIER_MODE: Record<string, string> = {
+  '4k': '4K',
+  'pro': 'pro',
+  'standard': 'std',
+  // 兼容前端直接传 Kie 值的情况
+  '4K': '4K',
+  'std': 'std',
 };
 
-// 每秒价格(会员)。普通用户 +0.2/秒。4K 有无音频同价。
+// 每秒价格(统一价，不分会员)。迁 Kie 后全面下降。
 const KLING_PRICE: Record<string, { noAudio: number; audio: number }> = {
-  '4k': { noAudio: 2.9, audio: 2.9 },
-  'pro': { noAudio: 0.8, audio: 1.2 },
-  'standard': { noAudio: 0.6, audio: 0.9 },
+  '4k': { noAudio: 2.36, audio: 2.36 },   // 4K 有无音频同价
+  'pro': { noAudio: 0.707, audio: 1.010 },
+  'standard': { noAudio: 0.572, audio: 0.774 },
 };
 
 function getCharge(tier: string, generateAudio: boolean, duration: number, isMember: boolean): number {
@@ -69,12 +75,17 @@ export async function POST(req: NextRequest) {
     } = body;
     userId = body.userId;
 
-    const endpointBase = TIER_ENDPOINT[tier];
-    if (!endpointBase) return NextResponse.json({ error: '未知的 Kling 规格' }, { status: 400 });
+    const kieMode = TIER_MODE[tier];
+    if (!kieMode) return NextResponse.json({ error: '未知的 Kling 规格' }, { status: 400 });
 
-    // 图生走 image-to-video，文生走 text-to-video
-    const isImageMode = mode === 'i2v' || mode === 'first-last' || mode === 'multimodal';
-    const endpoint = `${endpointBase}/${isImageMode ? 'image-to-video' : 'text-to-video'}`;
+    // 多模态已下架:Kie Kling 3.0 只有 image_urls 一个图片字段，没有
+    // elements(角色元素 + @引用)那套结构，无法等价迁移。
+    if (mode === 'multimodal') {
+      return NextResponse.json(
+        { error: '多模态模式暂不可用，请改用文生 / 图生 / 首尾帧' },
+        { status: 400 }
+      );
+    }
 
     // 扣费(按秒 × 会员/普通 × 有无音频)
     if (userId) {
@@ -90,70 +101,63 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 组装 fal input(不传 voice_ids/lip-sync 等语言控制参数)
+    // 组装 Kie input。与 fal 时期的差别:
+    //   图片字段    fal 是 start_image_url / end_image_url 两个
+    //               Kie 是 image_urls 一个数组，靠顺序区分首帧与尾帧
+    //   音频开关    fal 是 generate_audio，Kie 是 sound(默认 false)
+    //   清晰度      fal 在端点路径里，Kie 用 input.mode(std/pro/4K)
     const input: Record<string, unknown> = {
       duration: String(Number(duration) || 5),
-      generate_audio: !!generateAudio,
+      sound: !!generateAudio,
+      mode: kieMode,
     };
     if (prompt) input.prompt = prompt;
 
     if (mode === 'i2v') {
       if (!firstFrameImage) throw new Error('图生视频需要首帧图片');
-      input.start_image_url = await toPublicUrl(firstFrameImage, 'kling-v3/frames');
+      input.image_urls = [await toPublicUrl(firstFrameImage, 'kling-v3/frames')];
     } else if (mode === 'first-last') {
       if (!firstFrameImage || !lastFrameImage) throw new Error('首尾帧模式需要首帧和尾帧');
-      input.start_image_url = await toPublicUrl(firstFrameImage, 'kling-v3/frames');
-      input.end_image_url = await toPublicUrl(lastFrameImage, 'kling-v3/frames');
-    } else if (mode === 'multimodal') {
-      // 多模态 = 场景帧(start/end) + 角色元素(elements,最多3个,每个 1正面图+最多3参考图)
-      // 场景起始帧(必填,视频第一帧/主场景)
-      if (!firstFrameImage) throw new Error('多模态需要一张起始场景图');
-      input.start_image_url = await toPublicUrl(firstFrameImage, 'kling-v3/frames');
-      // 场景结束帧(可选)
-      if (lastFrameImage) {
-        input.end_image_url = await toPublicUrl(lastFrameImage, 'kling-v3/frames');
-      }
-      // 角色元素:elementsInput = [{ frontal, references:[...] }, ...]
-      const elementsInput = Array.isArray(body.elements) ? body.elements : [];
-      const elements: any[] = [];
-      for (const el of elementsInput.slice(0, 3)) {  // 最多 3 个角色
-        if (!el?.frontal) continue;
-        const frontal = await toPublicUrl(el.frontal, 'kling-v3/elements');
-        const refs: string[] = [];
-        if (Array.isArray(el.references)) {
-          for (const r of el.references.slice(0, 3)) {  // 每角色最多 3 参考图
-            const u = await toPublicUrl(r, 'kling-v3/elements');
-            if (u) refs.push(u);
-          }
-        }
-        const one: any = { frontal_image_url: frontal };
-        if (refs.length > 0) one.reference_image_urls = refs;
-        elements.push(one);
-      }
-      // 参考视频元素(可选)
-      if (refVideoUrl) elements.push({ video_url: refVideoUrl });
-      if (elements.length > 0) input.elements = elements;
+      input.image_urls = [
+        await toPublicUrl(firstFrameImage, 'kling-v3/frames'),
+        await toPublicUrl(lastFrameImage, 'kling-v3/frames'),
+      ];
     } else {
-      // t2v
+      // t2v:不传 image_urls。此时 aspect_ratio 才有意义 —— 有图时上游会
+      // 按图片自动适配比例。前端目前不传这个参数，不传则用上游默认 16:9。
       if (!prompt) throw new Error('文生视频需要提示词');
+      const ar = body?.aspectRatio || body?.ratio;
+      if (ar) input.aspect_ratio = ar;
     }
 
-    // 提交 fal 队列
-    const keyInfo = await pickKey('fal');
-    const fal = createFalClient({ credentials: keyInfo.keyValue });
-    let falSuccess = false;
-    let falErr: any = null;
+    // 提交 Kie 任务
+    const keyInfo = await pickKey('kie');
+    let kieSuccess = false;
+    let kieErr: any = null;
     try {
-      const submitted = await fal.queue.submit(endpoint, { input });
-      const requestId = submitted.request_id;
-      if (!requestId) throw new Error('fal 未返回 requestId');
-      falSuccess = true;
-      return NextResponse.json({ success: true, requestId, endpoint, pending: true });
+      const res = await fetch('https://api.kie.ai/api/v1/jobs/createTask', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${keyInfo.keyValue}`,
+        },
+        body: JSON.stringify({ model: KIE_MODEL, input }),
+      });
+      const data = await res.json();
+      // Kie 用 body 的 code 表达错误，HTTP 状态可能仍是 200
+      if (!res.ok || data?.code !== 200) {
+        throw new Error(data?.msg || data?.message || `提交失败 HTTP ${res.status}`);
+      }
+      const requestId = data?.data?.taskId;
+      if (!requestId) throw new Error('Kie 未返回 taskId');
+      kieSuccess = true;
+      // endpoint 用中性代号 c2 —— 与其它 Kie 通道一致，查询侧据此走 Kie 分支
+      return NextResponse.json({ success: true, requestId, endpoint: 'c2', pending: true });
     } catch (e) {
-      falErr = e;
+      kieErr = e;
       throw e;
     } finally {
-      await releaseKey(keyInfo.keyId, falSuccess, falSuccess ? undefined : categorizeError(falErr));
+      await releaseKey(keyInfo.keyId, kieSuccess, kieSuccess ? undefined : categorizeError(kieErr));
     }
   } catch (error: any) {
     console.error('[kling-v3/generate] error:', error?.message);

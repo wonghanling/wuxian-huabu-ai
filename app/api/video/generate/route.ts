@@ -188,6 +188,15 @@ const VIDEO_MODELS: Record<string, ModelConfig> = {
     durationFormat: 'number',
     imageParamName: 'image_url',
     provider: 'kie',
+    // 上游字段是 first_frame_url，不是 image_url —— 见官方文档
+    // minimax-h3/image-to-video:必填仅 prompt + duration，可选
+    // first_frame_url / last_frame_url / resolution，压根没有 image_url，
+    // 也没有 aspect_ratio。
+    // 传错字段名的后果:上游收不到首帧图 → 按文生视频校验 → 报
+    // "aspect_ratio is required for text-to-video"(报错里的 text-to-video
+    // 就是证据:明明选了首帧模式)。
+    // imgStyle:'frame' 那一支正好传 first_frame_url。
+    kieParams: { imgStyle: 'frame' },
   },
   'minimax-h3-r2v': {
     name: 'MiniMax H3 参考生视频',
@@ -332,7 +341,7 @@ const VIDEO_MODELS: Record<string, ModelConfig> = {
     provider: 'kie',
     mode: 't2v',
     durations: [2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30],
-    aspectRatios: [],
+    aspectRatios: ['adaptive', '16:9', '9:16', '1:1', '4:3', '3:4'],
     resolutions: ['480P', '720P', '1080P'],
     defaultResolution: '1080P',
     supportsAudio: true,
@@ -395,7 +404,7 @@ const VIDEO_MODELS: Record<string, ModelConfig> = {
     provider: 'kie',
     mode: 't2v',
     durations: [2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30],
-    aspectRatios: [],
+    aspectRatios: ['adaptive', '16:9', '9:16', '1:1', '4:3', '3:4'],
     resolutions: ['480P', '720P', '1080P'],
     defaultResolution: '1080P',
     supportsAudio: true,
