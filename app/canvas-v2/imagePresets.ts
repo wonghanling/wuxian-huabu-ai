@@ -62,13 +62,24 @@ Maintain strong visual consistency in every panel.`,
   },
 ];
 
-// —— 每模型参考图上限(真实规则,来自 CustomCard) ——
+// —— 每模型参考图上限 ——
+//
+// 这些数字必须与后端 IMAGE_MODELS 的 kieParams.maxImages 一致 —— 后端用
+// urls.slice(0, maxImages) 截断:前端给多了用户传的图会被静默丢弃，
+// 前端给少了则白白浪费上游能力。下面每条都注明了上游的真实上限。
 export function refImageMax(model: string): number {
-  if (model === 'nano-banana-pro-multi') return 10;
-  if (model === 'gpt-image-2-all') return 10;
+  // Nano Banana 2(内部 id 是 nano-banana-pro):上游 image_input 上限 14
+  if (model === 'nano-banana-pro') return 14;
+  // Nano Banana Pro 多图融合:上游 image_input 上限 8
+  if (model === 'nano-banana-pro-multi') return 8;
+  // GPT Image 2 多图融合、2.5 Sunburst / Flare:上游 input_urls 上限 16
+  if (['gpt-image-2-all', 'gpt-image-2-5-sunburst', 'gpt-image-2-5-flare'].includes(model)) return 16;
+  // Flux 2 图生图:上游 input_urls 上限 8
+  if (['flux-2-pro-edit', 'flux-2-flex-edit'].includes(model)) return 8;
+  // Topaz 放大:只吃单张
+  if (model === 'topaz-upscale') return 1;
   // 单图模型:flux-kontext / doubao / mj / gpt-image-2
   if (['flux-kontext', 'flux-kontext-max', 'doubao-seedream-4-5-251128', 'mj_imagine', 'gpt-image-2'].includes(model)) return 1;
-  // nano-banana / nano-banana-pro 等
   return 2;
 }
 
