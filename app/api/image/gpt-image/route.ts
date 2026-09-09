@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { calcImagePrice } from '@/lib/pricing';
 import { deductBalance, refundBalance } from '@/lib/billing';
 import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
+import { mirrorToOwn } from '@/lib/asset-upload';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;
@@ -110,7 +111,7 @@ export async function POST(req: NextRequest) {
       imageUrl = extractImageUrl(data);
     }
 
-    return NextResponse.json({ imageUrl });
+    return NextResponse.json({ imageUrl: await mirrorToOwn(imageUrl, userId) });
   } catch (err: any) {
     console.error('gpt-image error:', err);
     return NextResponse.json({ error: err.message || '生成失败' }, { status: 500 });

@@ -3,6 +3,7 @@ import { fal as falSingleton, createFalClient } from '@fal-ai/client';
 import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 import { recordRefundReview } from '@/lib/billing';
 import { calcImagePrice } from '@/lib/pricing';
+import { mirrorToOwn } from '@/lib/asset-upload';
 
 // 保留单例作为最终回退
 falSingleton.config({ credentials: process.env.FAL_KEY! });
@@ -58,7 +59,7 @@ export async function GET(req: NextRequest) {
         try {
           url = JSON.parse(d.resultJson || '{}')?.resultUrls?.[0] || '';
         } catch { url = ''; }
-        if (url) return NextResponse.json({ success: true, imageUrl: url });
+        if (url) return NextResponse.json({ success: true, imageUrl: await mirrorToOwn(url, userId) });
         return NextResponse.json({ error: '未返回图片地址' });
       }
       if (d.state === 'fail') {
@@ -118,7 +119,7 @@ export async function GET(req: NextRequest) {
         }, { status: 200 });
       }
       success = true;
-      return NextResponse.json({ success: true, imageUrl, raw: d });
+      return NextResponse.json({ success: true, imageUrl: await mirrorToOwn(imageUrl, userId), raw: d });
     }
 
     // IN_QUEUE 或 IN_PROGRESS

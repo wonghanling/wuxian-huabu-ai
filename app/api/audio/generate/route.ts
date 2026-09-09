@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
+import { mirrorToOwn } from '@/lib/asset-upload';
 
 export const maxDuration = 60;
 
@@ -78,7 +79,7 @@ export async function POST(req: NextRequest) {
 
       if (!audioUrl) throw new Error(`未获取到音频 URL: ${JSON.stringify(data).slice(0, 200)}`);
 
-      return NextResponse.json({ success: true, audioUrl });
+      return NextResponse.json({ success: true, audioUrl: await mirrorToOwn(audioUrl, undefined, 'audio') });
 
     } else if (mode === 'design') {
       // 音色设计

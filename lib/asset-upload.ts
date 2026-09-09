@@ -24,6 +24,37 @@ function sbAdmin() {
   );
 }
 
+/**
+ * 把上游产出的地址转存到自有存储，失败则原样返回。
+ *
+ * 用在各个"轮询/查询"接口的出口 —— 那里才拿到真正的资源地址。
+ * 异步模型(Nano Banana、MJ、Kling、Seedance 等)的生成接口只提交任务，
+ * 图片视频是轮询接口返回的，所以转存必须放在这一层，放生成接口里根本走不到。
+ *
+ * 不抛异常:转存失败也要让用户看到作品(临时地址当下仍可用)，
+ * 前端的 mirrorOutput 还会再试一次。
+ */
+export async function mirrorToOwn(
+  url: string,
+  userId?: string,
+  kind: 'image' | 'video' | 'audio' = 'image'
+): Promise<string> {
+  if (!url || url.startsWith('data:')) return url;
+  // 已经是自有地址就不必再转
+  if (url.includes('blob.core.windows.net') || url.includes('supabase.co/storage')) return url;
+
+  try {
+    const folder = kind === 'video' ? 'videos' : kind === 'audio' ? 'audio' : 'images';
+    const fallbackExt = kind === 'video' ? 'mp4' : kind === 'audio' ? 'mp3' : 'jpg';
+    const ext = url.match(/\.(jpe?g|png|webp|mp4|mov|webm|mp3|wav)(\?|$)/i)?.[1]?.toLowerCase() || fallbackExt;
+    const path = `${folder}/${userId || 'anon'}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
+    return await mirrorAsset(url, path);
+  } catch (e) {
+    console.error('[mirrorToOwn] 转存失败，回退上游地址:', (e as any)?.message || e);
+    return url;
+  }
+}
+
 /** 上传并返回公开 URL。path 沿用原 Supabase 路径规则 */
 export async function putAsset(
   path: string,

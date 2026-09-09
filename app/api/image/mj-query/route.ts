@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
+import { mirrorToOwn } from '@/lib/asset-upload';
 
 const YUNWU_BASE_URL = process.env.YUNWU_BASE_URL || 'https://llm-api.net';
 const YUNWU_API_KEY = process.env.YUNWU_API_KEY!;
@@ -29,7 +30,7 @@ export async function GET(req: NextRequest) {
   const data = await res.json();
 
   if (data.status === 'SUCCESS' && data.imageUrl) {
-    return NextResponse.json({ status: 'completed', imageUrl: data.imageUrl });
+    return NextResponse.json({ status: 'completed', imageUrl: await mirrorToOwn(data.imageUrl) });
   } else if (data.status === 'FAILURE') {
     return NextResponse.json({ status: 'failed', error: data.failReason || '生成失败' });
   } else {
