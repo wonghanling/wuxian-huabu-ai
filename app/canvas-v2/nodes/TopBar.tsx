@@ -132,7 +132,7 @@ export function TopBar({ saveStatus, switchCanvas, getCurrentCanvasId }: Props) 
             <span className="text-zinc-200 font-semibold cursor-pointer hover:text-white transition-colors" onClick={() => setShowAccountModal(true)}>会员</span>
           ) : (
             <button
-              className="text-yellow-400 hover:text-yellow-300 transition-colors"
+              className="text-white hover:text-white/80 transition-colors"
               onClick={() => setShowAccountModal(true)}
             >
               开通会员
