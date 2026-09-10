@@ -34,45 +34,64 @@ export function GroupQrRibbon({
 
   return (
     <>
-      {/* 顶部垂下的丝带。深底 + 细描边，与首页玻璃卡片同一套语言 ——
-          不用高饱和渐变，那在这个深色首页上会显得廉价。
-          底部尖角靠 clip-path 切出，像一枚真实书签。 */}
+      {/* 顶部垂下的白色书签。
+          动画分三层，都刻意做得很轻 —— 首页整体克制，书签抢戏反而廉价:
+            落下   进场从上方滑入，只播一次
+            呼吸   礼物图标缓慢明暗，暗示"可点"
+            悬停   整体下探 6px、阴影加深，尖角随之下移
+          底部尖角用 clip-path 切出，像一枚真实书签。 */}
+      <style>{`
+        @keyframes qr-drop {
+          from { transform: translateY(-100%); opacity: 0; }
+          to   { transform: translateY(0);     opacity: 1; }
+        }
+        @keyframes qr-breathe {
+          0%,100% { opacity: .45; transform: scale(1); }
+          50%     { opacity: 1;   transform: scale(1.12); }
+        }
+        .qr-ribbon {
+          animation: qr-drop .55s cubic-bezier(.22,.9,.3,1) .35s both;
+          transition: transform .26s cubic-bezier(.22,.9,.3,1), box-shadow .26s ease;
+        }
+        .qr-ribbon:hover  { transform: translateY(6px); box-shadow: 0 14px 30px -10px rgba(0,0,0,.45); }
+        .qr-ribbon:active { transform: translateY(3px); }
+        .qr-ribbon .qr-gift { animation: qr-breathe 2.8s ease-in-out infinite; }
+        .qr-ribbon:hover .qr-gift { animation-play-state: paused; opacity: 1; transform: scale(1.12); }
+      `}</style>
       <button
         onClick={onOpen}
         aria-label="扫码进群领会员"
+        className="qr-ribbon"
         style={{
           position: 'fixed',
           top: 0,
           right: 'clamp(20px, 6vw, 96px)',
           zIndex: 60,
-          width: 44,
-          paddingTop: 13,
+          width: 46,
+          paddingTop: 12,
           paddingBottom: 22,
           border: 'none',
-          background: 'linear-gradient(180deg, rgba(32,28,42,0.97) 0%, rgba(20,18,26,0.97) 100%)',
-          boxShadow: '0 8px 28px -10px rgba(0,0,0,0.8), inset 0 0 0 1px rgba(167,139,250,0.2)',
-          clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 9px), 50% 100%, 0 calc(100% - 9px))',
+          // 白底黑字。顶部纯白往下压到极浅灰，在深色首页上像一张纸
+          background: 'linear-gradient(180deg, #ffffff 0%, #f4f4f5 100%)',
+          boxShadow: '0 10px 24px -12px rgba(0,0,0,.5)',
+          clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 10px), 50% 100%, 0 calc(100% - 10px))',
           cursor: 'pointer',
-          transition: 'padding-bottom .22s ease',
         }}
-        onMouseEnter={(e) => { e.currentTarget.style.paddingBottom = '28px'; }}
-        onMouseLeave={(e) => { e.currentTarget.style.paddingBottom = '22px'; }}
       >
-        {/* 顶部一道细光，呼应首页各处的高光线 */}
         <span
-          style={{
-            position: 'absolute', top: 0, left: 6, right: 6, height: 1,
-            background: 'linear-gradient(90deg, transparent, rgba(196,181,253,0.85), transparent)',
-          }}
-        />
+          className="qr-gift"
+          style={{ display: 'block', fontSize: 13, lineHeight: 1, marginBottom: 7, textAlign: 'center' }}
+        >
+          🎁
+        </span>
         <span
           style={{
             display: 'block',
             fontSize: 12,
             fontWeight: 600,
-            letterSpacing: 1,
-            lineHeight: 1.45,
-            color: 'rgba(237,233,254,0.92)',
+            letterSpacing: 1.5,
+            lineHeight: 1.5,
+            color: '#18181b',
             writingMode: 'vertical-rl',
             textOrientation: 'upright',
             margin: '0 auto',
