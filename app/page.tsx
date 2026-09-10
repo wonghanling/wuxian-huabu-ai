@@ -10,6 +10,7 @@ import { FeatureTabsShowcase } from './_components/FeatureTabsShowcase';
 import { WorkflowScrollShowcase } from './_components/WorkflowScrollShowcase';
 import { ScriptStudioDemo } from './_components/ScriptStudioDemo';
 import { UpcomingModels } from './_components/UpcomingModels';
+import { GroupQrRibbon } from './_components/GroupQrRibbon';
 
 /**
  * 悬停才加载的视频。平时只显示封面图，鼠标移上去才挂 src 开始下载并播放。
@@ -56,6 +57,9 @@ export default function Home() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [showPromoModal, setShowPromoModal] = useState(false);
+  // 群二维码面板。顶部书签与活动弹窗的"扫码进群领取"共用这一个状态，
+  // 免得两处各持一份而同时弹出两层。
+  const [showGroupQr, setShowGroupQr] = useState(false);
   const [navScrolled, setNavScrolled] = useState(false);
   const supabase = createClient();
 
@@ -148,6 +152,13 @@ export default function Home() {
   return (
     <div className="relative bg-[#09090b] text-white">
 
+      {/* 顶部垂下的书签 + 群二维码面板。常驻显示 —— 登录与否都能进群领会员 */}
+      <GroupQrRibbon
+        open={showGroupQr}
+        onOpen={() => setShowGroupQr(true)}
+        onClose={() => setShowGroupQr(false)}
+      />
+
       {/* 活动弹窗 - 仅未登录用户自动弹出 */}
       {showPromoModal && (
         <div
@@ -195,14 +206,17 @@ export default function Home() {
             {/* 底部按钮区域 */}
             <div className="px-7 py-6">
               <div className="text-center mb-4">
-                <div className="text-white font-semibold text-lg mb-1">🎁 新用户注册即送 1 个月会员</div>
-                <div className="text-white/50 text-sm">注册成功后进入画布即可领取，限时活动</div>
+                <div className="text-white font-semibold text-lg mb-1">🎁 扫码进群领 1 个月会员</div>
+                <div className="text-white/50 text-sm">进群后说一声，我们为你手动开通</div>
               </div>
               <div className="flex gap-3">
+                {/* 原先是"立即注册领取"，但注册送会员从未真正自动发放过
+                    (promo/claim 接口没有任何前端调用)。改成扫码进群 ——
+                    后台手动续期，与顶部书签指向同一个二维码。 */}
                 <button
-                  onClick={() => { setShowPromoModal(false); window.location.href = '/auth'; }}
+                  onClick={() => { setShowPromoModal(false); setShowGroupQr(true); }}
                   className="flex-1 py-3.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-semibold text-sm transition-all shadow-lg shadow-violet-500/20"
-                >立即注册领取</button>
+                >扫码进群领取</button>
                 <button
                   onClick={() => setShowPromoModal(false)}
                   className="flex-1 py-3.5 rounded-xl border border-white/10 hover:bg-white/5 text-white/60 hover:text-white font-medium text-sm transition-all"
