@@ -27,19 +27,28 @@ export function useCanvasPersistence() {
   // ── 加载 ──
   useEffect(() => {
     let cancelled = false;
+    // 未登录跳转时要保持遮罩:下面的 finally 会 setLoading(false) 撤掉遮罩，
+    // 而 window.location.replace 是异步的(要等浏览器真正导航)，那段空窗期
+    // 画布会露出来一秒再消失。置为 true 则跳过那次 setLoading。
+    let redirecting = false;
     (async () => {
       isRestoringRef.current = true;
       try {
         const supabase = createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
+        // 用 getSession 而非 getUser 判断登录态:getUser 会发一趟网络请求去
+        // 服务端验 token，那段等待期间画布已经渲染出来了 —— 未登录用户会先
+        // 看到一秒空画布再被弹走。getSession 只读本地存储，同步就能拿到结果。
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) {
           // 未登录:跳登录注册页。
           // 原来停在空画布(canvas-v2 调试期遗留),导致未登录也能进画布并生成 ——
           // 生成接口是 `if (userId) 才扣费`,无身份就变成免费放行、烧平台额度。
           // 登录页登录成功后本身就会跳回 /canvas,无需额外传回跳参数。
+          redirecting = true;   // 让 finally 跳过 setLoading，遮罩留到导航完成
           if (typeof window !== 'undefined') window.location.replace('/auth');
           return;
         }
+        const user = session.user;
 
         // 带 templateId:从模板创建新画布并加载(照旧版数据流,快照换成 React Flow 格式)
         const templateId = new URLSearchParams(window.location.search).get('templateId');
@@ -118,7 +127,8 @@ export function useCanvasPersistence() {
         console.error('加载画布失败:', err);
         isRestoringRef.current = false;
       } finally {
-        if (!cancelled) setLoading(false);
+        // redirecting 时不撤遮罩 —— 否则画布会在导航生效前露出来一秒
+        if (!cancelled && !redirecting) setLoading(false);
       }
     })();
     return () => { cancelled = true; };

@@ -512,12 +512,12 @@ export async function generateKlingV3(
       const qData = await qRes.json();
       if (qData.success && qData.videoUrl) return qData.videoUrl;
       if (qData.failed) throw new Error(qData.reason || qData.error || '审核未通过');
-      if (attempts >= 120) throw new Error('生成超时');
+      if (attempts >= 240) throw new Error('生成超时');
       onProgress?.(Math.min(90, 10 + attempts * 1.5), '生成中...');
       return poll();
     } catch (e: any) {
       if (e?.message && (e.message.includes('超时') || e.message.includes('失败') || e.message.includes('审核'))) throw e;
-      if (attempts >= 120) throw new Error('生成超时');
+      if (attempts >= 240) throw new Error('生成超时');
       onProgress?.(50, '网络重试中...');
       await new Promise((r) => setTimeout(r, 8000));
       return poll();
