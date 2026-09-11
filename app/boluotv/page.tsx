@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { PublishCommissionModal } from './PublishModal';
 import { CreatorView } from './CreatorView';
 import { ClientProjects } from './ClientProjects';
+import { COMMISSION_MEMBERSHIP_REQUIRED } from '@/lib/commission-config';
 
 // ============================================================
 // 创作委托大厅(独立于画布,只共用 users 账号)
@@ -178,18 +179,22 @@ export default function CommissionHall() {
           <div className="flex items-center gap-4 text-sm">
             <Link href="/" className="text-zinc-400 hover:text-white transition-colors hidden sm:block">首页</Link>
             <Link href="/canvas" className="text-zinc-400 hover:text-white transition-colors hidden sm:block">进入画布</Link>
-            {/* 会员状态 */}
+            {/* 会员状态。
+                平台起步期不要求会员即可投标，故隐藏"开通"入口 —— 门槛还没
+                启用就摆一个收费按钮，会让人以为不付钱不能接单。
+                已有会员(含测试账号)仍显示到期日:记录没被清掉，
+                开关打开后照旧生效。 */}
             {loggedIn && (
               membership.active ? (
                 <span className="px-3 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs">
                   接单会员 · {membership.expiresAt ? new Date(membership.expiresAt).toLocaleDateString('zh-CN') : ''} 到期
                 </span>
-              ) : (
+              ) : COMMISSION_MEMBERSHIP_REQUIRED ? (
                 <button onClick={openMembership} disabled={openingMember}
                   className="px-3 py-1.5 rounded-full border border-emerald-500/40 text-emerald-400 text-xs hover:bg-emerald-500/10 transition-colors disabled:opacity-50">
                   {openingMember ? '跳转支付…' : '开通接单会员 ¥9.9/月'}
                 </button>
-              )
+              ) : null
             )}
             <button
               onClick={() => { if (!loggedIn) { window.location.href = '/auth'; return; } setPublishOpen(true); }}

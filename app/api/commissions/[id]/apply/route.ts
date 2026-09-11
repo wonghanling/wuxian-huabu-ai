@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { COMMISSION_MEMBERSHIP_REQUIRED } from '@/lib/commission-config';
 
 // 创作者申请项目。只允许填已有信息(报价/工期/档期/介绍),禁止上传定制试稿。
 const supabaseAdmin = createClient(
@@ -32,15 +33,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (project.status !== 'open') return NextResponse.json({ error: '该项目当前不接受申请' }, { status: 400 });
     if (project.client_id === user.id) return NextResponse.json({ error: '不能申请自己发布的项目' }, { status: 400 });
 
-    // 会员校验:必须有有效接单会员才能申请
-    const { data: cp } = await supabaseAdmin
-      .from('creator_profiles')
-      .select('membership_expires_at')
-      .eq('user_id', user.id)
-      .maybeSingle();
-    const hasMembership = cp?.membership_expires_at && new Date(cp.membership_expires_at) > new Date();
-    if (!hasMembership) {
-      return NextResponse.json({ error: '需要开通接单会员', needMembership: true }, { status: 403 });
+    // 会员校验:必须有有效接单会员才能申请。
+    // 平台起步期整段跳过 —— 创作者还少时收门槛费会把人挡在门外。
+    // 校验逻辑原样保留，COMMISSION_MEMBERSHIP_REQUIRED 打开即恢复，
+    // 既有会员的 membership_expires_at 关闭期间一律不动。
+    if (COMMISSION_MEMBERSHIP_REQUIRED) {
+      const { data: cp } = await supabaseAdmin
+        .from('creator_profiles')
+        .select('membership_expires_at')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      const hasMembership = cp?.membership_expires_at && new Date(cp.membership_expires_at) > new Date();
+      if (!hasMembership) {
+        return NextResponse.json({ error: '需要开通接单会员', needMembership: true }, { status: 403 });
+      }
     }
 
     // 插入申请(UNIQUE(project_id,creator_id) 保证不重复)
