@@ -29,7 +29,9 @@ const KIE_MODEL_LAYER = 'seedream/5-pro-layer-decomposition';
 const KIE_QUALITY = 'high';
 // 内部轮询：前端仍是一次请求拿结果，轮询在服务端完成（maxDuration 300s 足够）
 const KIE_POLL_INTERVAL_MS = 2500;
-const KIE_POLL_MAX = 80;   // 最长约 200 秒
+// 110 x 2.5s = 275 秒。maxDuration 是 300，留 25 秒给下载转存与响应 ——
+// 原先 80 次(200 秒)会在上游还在跑时就放弃，用户看到失败而 Kie 那边其实成功了。
+const KIE_POLL_MAX = 110;
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,

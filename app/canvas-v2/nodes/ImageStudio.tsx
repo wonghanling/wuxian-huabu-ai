@@ -2,11 +2,9 @@
 
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { RegionEditTool } from './imageStudioTools/RegionEditTool';
 import { ExpandTool } from './imageStudioTools/ExpandTool';
 import { RemoveTool } from './imageStudioTools/RemoveTool';
 import { ReplaceTool } from './imageStudioTools/ReplaceTool';
-import { BgReplaceTool } from './imageStudioTools/BgReplaceTool';
 import { ExtractTool } from './imageStudioTools/ExtractTool';
 import { GptEditTool } from './imageStudioTools/GptEditTool';
 import { TextLayerTool } from './imageStudioTools/TextLayerTool';
@@ -24,18 +22,20 @@ interface ImageStudioProps {
   onClose: () => void;
 }
 
-// 工具注册表（V1 只 region-edit 可用）
+// 工具注册表。
+// 下架了「局部重绘」与「换背景」—— 组件文件(RegionEditTool / BgReplaceTool)
+// 保留未删，日后想恢复只需把两行加回来。
 const TOOLS: ImageTool[] = [
-  { id: 'region-edit', label: '局部重绘', enabled: true,  render: (ctx) => <RegionEditTool {...ctx} /> },
   { id: 'gpt-edit',    label: 'GPT编辑',  enabled: true,  render: (ctx) => <GptEditTool {...ctx} /> },
   { id: 'expand',      label: '扩图',    enabled: true,  render: (ctx) => <ExpandTool {...ctx} /> },
   { id: 'remove',      label: '消除',    enabled: true,  render: (ctx) => <RemoveTool {...ctx} /> },
-  { id: 'bg-replace',  label: '换背景',  enabled: true,  render: (ctx) => <BgReplaceTool {...ctx} /> },
   { id: 'extract',     label: '抠图',    enabled: true,  render: (ctx) => <ExtractTool {...ctx} /> },
 ];
 
 export function ImageStudio({ initialImageUrl, onApply, onClose }: ImageStudioProps) {
-  const [activeTool, setActiveTool] = useState('region-edit');
+  // 默认工具跟着注册表第一项 —— 写死 'region-edit' 的话，那个工具下架后
+  // 打开界面会是空白面板
+  const [activeTool, setActiveTool] = useState(TOOLS[0].id);
   const [versions, setVersions] = useState<string[]>([initialImageUrl]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [busy, setBusy] = useState(false);
