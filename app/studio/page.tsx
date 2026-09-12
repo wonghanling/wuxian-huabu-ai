@@ -189,43 +189,43 @@ export default function StudioPage() {
 
   // 登录判定完成前不渲染界面 —— 免得未登录用户看到一眼再被弹走
   if (authed === null) {
-    return <div style={{ minHeight: '100vh', background: '#09090b' }} />;
+    return <div style={{ minHeight: '100vh', background: '#f8fafc' }} />;
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#09090b', color: '#fff', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: '#f8fafc', color: '#0f172a', display: 'flex', flexDirection: 'column' }}>
       {/* 顶栏 */}
       <header
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '12px 20px', borderBottom: '1px solid rgba(255,255,255,0.08)',
-          position: 'sticky', top: 0, zIndex: 20, background: 'rgba(9,9,11,0.92)',
+          padding: '12px 20px', borderBottom: '1px solid #e2e8f0',
+          position: 'sticky', top: 0, zIndex: 20, background: 'rgba(255,255,255,0.9)',
           backdropFilter: 'blur(12px)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-          <Link href="/" style={{ fontWeight: 700, letterSpacing: 1, color: '#fff', textDecoration: 'none' }}>
+          <Link href="/" style={{ fontWeight: 700, letterSpacing: 1, color: '#0f172a', textDecoration: 'none' }}>
             FILMAVO
           </Link>
-          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>AI 生图</span>
+          <span style={{ fontSize: 13, color: '#64748b' }}>AI 生图</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: 13 }}>
-          <Link href="/canvas" style={{ color: 'rgba(255,255,255,0.55)', textDecoration: 'none' }}>
+          <Link href="/canvas" style={{ color: '#475569', textDecoration: 'none' }}>
             进入画布
           </Link>
           {/* 余额与画布同源(useMembership)，一边充值另一边刷新即可见 */}
-          <span style={{ color: 'rgba(255,255,255,0.6)' }}>
+          <span style={{ color: '#475569' }}>
             {memberLoading ? '···' : `¥${(balance ?? 0).toFixed(2)}`}
           </span>
           {isMember && (
-            <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 999, background: 'rgba(255,255,255,0.1)' }}>
+            <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 999, background: '#dbeafe', color: '#2563eb' }}>
               会员
             </span>
           )}
           <Link
             href="/pricing"
             style={{
-              padding: '6px 14px', borderRadius: 999, background: '#fff', color: '#000',
+              padding: '6px 14px', borderRadius: 999, background: '#2563eb', color: '#fff',
               fontWeight: 600, fontSize: 12.5, textDecoration: 'none',
             }}
           >
@@ -239,7 +239,7 @@ export default function StudioPage() {
         <aside
           style={{
             width: 340, flexShrink: 0, padding: 20, overflowY: 'auto',
-            borderRight: '1px solid rgba(255,255,255,0.08)',
+            borderRight: '1px solid #e2e8f0',
           }}
         >
           <Field label="模型">
@@ -254,7 +254,7 @@ export default function StudioPage() {
                 </option>
               ))}
             </select>
-            <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.38)', marginTop: 6 }}>
+            <div style={{ fontSize: 11.5, color: '#94a3b8', marginTop: 6 }}>
               {model.price}
             </div>
           </Field>
@@ -358,8 +358,8 @@ export default function StudioPage() {
             disabled={pending.length > 0}
             style={{
               width: '100%', padding: '13px 0', borderRadius: 12, border: 'none',
-              background: pending.length ? 'rgba(255,255,255,0.18)' : '#fff',
-              color: pending.length ? 'rgba(255,255,255,0.6)' : '#000',
+              background: pending.length ? '#cbd5e1' : '#2563eb',
+              color: '#fff',
               fontWeight: 700, fontSize: 14, cursor: pending.length ? 'default' : 'pointer',
             }}
           >
@@ -386,8 +386,8 @@ export default function StudioPage() {
               {pending.map((p) => (
                 <div key={p.key} style={{ ...cardStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', aspectRatio: '1' }}>
                   <div style={{ textAlign: 'center', padding: 16 }}>
-                    <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.75)', marginBottom: 6 }}>生成中…</div>
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', lineHeight: 1.5 }}>
+                    <div style={{ fontSize: 12.5, color: '#334155', marginBottom: 6 }}>生成中…</div>
+                    <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.5 }}>
                       {p.prompt.slice(0, 40) || '(无提示词)'}
                     </div>
                   </div>
@@ -405,7 +405,7 @@ export default function StudioPage() {
                   <div style={{ padding: '9px 11px' }}>
                     <div
                       style={{
-                        fontSize: 11.5, color: 'rgba(255,255,255,0.62)', lineHeight: 1.5,
+                        fontSize: 11.5, color: '#475569', lineHeight: 1.5,
                         overflow: 'hidden', display: '-webkit-box',
                         WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
                       }}
@@ -414,7 +414,7 @@ export default function StudioPage() {
                       {h.prompt || '(无提示词)'}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 7 }}>
-                      <span style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.3)' }}>
+                      <span style={{ fontSize: 10.5, color: '#94a3b8' }}>
                         {IMAGE_MODELS.find((m) => m.id === h.model)?.label ?? h.model}
                       </span>
                       <span style={{ display: 'flex', gap: 8 }}>
@@ -450,7 +450,7 @@ export default function StudioPage() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 18 }}>
-      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 7, letterSpacing: 0.3 }}>
+      <div style={{ fontSize: 12, color: '#64748b', marginBottom: 7, letterSpacing: 0.3 }}>
         {label}
       </div>
       {children}
@@ -460,31 +460,31 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 const inputStyle: React.CSSProperties = {
   width: '100%', padding: '9px 11px', borderRadius: 9,
-  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)',
-  color: '#fff', fontSize: 13, outline: 'none',
+  background: '#fff', border: '1px solid #cbd5e1',
+  color: '#0f172a', fontSize: 13, outline: 'none',
 };
 
 const chipStyle: React.CSSProperties = {
   padding: '6px 11px', borderRadius: 8, fontSize: 11.5, cursor: 'pointer',
-  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)',
-  color: 'rgba(255,255,255,0.72)',
+  background: '#fff', border: '1px solid #cbd5e1', color: '#475569',
 };
 
+// 选中态用蓝色 —— 蓝只出现在强调处，铺太满会像模板站
 const chipActive: React.CSSProperties = {
-  ...chipStyle, background: '#fff', color: '#000', borderColor: '#fff', fontWeight: 600,
+  ...chipStyle, background: '#2563eb', color: '#fff', borderColor: '#2563eb', fontWeight: 600,
 };
 
 const cardStyle: React.CSSProperties = {
-  borderRadius: 12, overflow: 'hidden',
-  background: 'rgba(255,255,255,0.035)', border: '1px solid rgba(255,255,255,0.09)',
+  borderRadius: 12, overflow: 'hidden', background: '#fff',
+  border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(15,23,42,.06)',
 };
 
 const miniBtn: React.CSSProperties = {
-  border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.5)',
+  border: 'none', background: 'transparent', color: '#64748b',
   fontSize: 11, cursor: 'pointer', padding: 0,
 };
 
 const emptyStyle: React.CSSProperties = {
   height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-  color: 'rgba(255,255,255,0.3)', fontSize: 13,
+  color: '#94a3b8', fontSize: 13,
 };

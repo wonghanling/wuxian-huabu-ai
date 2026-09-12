@@ -118,7 +118,7 @@ export default function AuthPage() {
       if (updateError) throw updateError;
 
       setMessage('注册成功！正在跳转...');
-      setTimeout(() => router.push('/canvas?welcome=1'), 1500);
+      setTimeout(() => router.push('/?welcome=1'), 1500);
     } catch (error: any) {
       setMessage(error.message || '注册失败');
     } finally {
@@ -152,7 +152,7 @@ export default function AuthPage() {
       if (error) throw error;
 
       setMessage('登录成功！正在跳转...');
-      setTimeout(() => router.push('/canvas'), 1500);
+      setTimeout(() => router.push('/'), 1500);
     } catch (error: any) {
       setMessage(error.message || '登录失败');
     } finally {
@@ -187,7 +187,7 @@ export default function AuthPage() {
       if (error) throw error;
 
       setMessage('登录成功！正在跳转...');
-      setTimeout(() => router.push('/canvas'), 1500);
+      setTimeout(() => router.push('/'), 1500);
     } catch (error: any) {
       setMessage(error.message || '登录失败');
     } finally {
@@ -196,16 +196,41 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#09090b] text-white overflow-hidden">
-      {/* Animated Grid Background */}
-      <div className="infinite-grid absolute inset-0 opacity-30" />
-
-      {/* Glowing Orbs */}
-      <div className="orb orb-blue" />
-      <div className="orb orb-purple" />
+    <div className="relative min-h-screen bg-[#f8fafc] text-slate-900 overflow-hidden">
+      {/* 背景装饰。
+          原来用的全局 .infinite-grid / .orb 是给深色底设计的（亮线条 + 高亮光晕），
+          放在白底上会发灰、发脏。那两个 class 首页还在用，不能改全局样式，
+          所以这里换成本页自绘的浅色版：淡蓝网格 + 两团很轻的蓝色光斑。 */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(37,99,235,.055) 1px, transparent 1px),' +
+            'linear-gradient(90deg, rgba(37,99,235,.055) 1px, transparent 1px)',
+          backgroundSize: '56px 56px',
+          maskImage: 'radial-gradient(ellipse 90% 70% at 50% 40%, #000 40%, transparent 100%)',
+          WebkitMaskImage: 'radial-gradient(ellipse 90% 70% at 50% 40%, #000 40%, transparent 100%)',
+        }}
+      />
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          top: '-12%', left: '-8%', width: 520, height: 520, borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(59,130,246,.16) 0%, transparent 70%)',
+          filter: 'blur(20px)',
+        }}
+      />
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          bottom: '-16%', right: '-6%', width: 460, height: 460, borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(99,102,241,.13) 0%, transparent 70%)',
+          filter: 'blur(20px)',
+        }}
+      />
 
       {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 border-b border-white/5 bg-zinc-950/50 backdrop-blur-md">
+      <nav className="fixed top-0 w-full z-50 border-b border-slate-200 bg-white/80 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center space-x-2">
             <img src="/filmavo-logo-primary.svg" alt="filmavo" className="h-8 w-auto" />
@@ -221,13 +246,13 @@ export default function AuthPage() {
         {/* 左侧 - 品牌 + 卖点（lg 以上显示） */}
         <div className="hidden lg:flex flex-1 flex-col relative z-10">
           <div>
-            <div className="text-xs tracking-[0.4em] text-violet-300 font-semibold mb-6 uppercase">
+            <div className="text-xs tracking-[0.4em] text-blue-600 font-semibold mb-6 uppercase">
               FILMAVO
             </div>
             <h1 className="text-5xl xl:text-6xl font-bold leading-[1.1] mb-5 tracking-tight">
               AI 驱动的<br />无限创作画布
             </h1>
-            <p className="text-zinc-400 text-base mb-8 tracking-wide">
+            <p className="text-slate-500 text-base mb-8 tracking-wide">
               AI-Powered Infinite Creative Canvas
             </p>
 
@@ -238,24 +263,24 @@ export default function AuthPage() {
             </div>
 
             <ul className="space-y-4">
-              <li className="flex items-center gap-4 text-zinc-200">
-                <span className="text-violet-400 text-lg">✦</span>
+              <li className="flex items-center gap-4 text-slate-700">
+                <span className="text-blue-500 text-lg">✦</span>
                 <span className="text-[15px]">Seedance 2.0 图生视频</span>
               </li>
-              <li className="flex items-center gap-4 text-zinc-200">
-                <span className="text-violet-400 text-lg">✦</span>
+              <li className="flex items-center gap-4 text-slate-700">
+                <span className="text-blue-500 text-lg">✦</span>
                 <span className="text-[15px]">角色设计 / 故事板</span>
               </li>
-              <li className="flex items-center gap-4 text-zinc-200">
-                <span className="text-violet-400 text-lg">✦</span>
+              <li className="flex items-center gap-4 text-slate-700">
+                <span className="text-blue-500 text-lg">✦</span>
                 <span className="text-[15px]">实时协作画布</span>
               </li>
-              <li className="flex items-center gap-4 text-zinc-200">
-                <span className="text-violet-400 text-lg">✦</span>
+              <li className="flex items-center gap-4 text-slate-700">
+                <span className="text-blue-500 text-lg">✦</span>
                 <span className="text-[15px]">AI 助手对话</span>
               </li>
             </ul>
-            <p className="mt-16 text-xs text-zinc-600 tracking-wide">
+            <p className="mt-16 text-xs text-slate-400 tracking-wide">
               © 2026 Filmavo · 一站式 AI 创作平台
             </p>
           </div>
@@ -267,7 +292,7 @@ export default function AuthPage() {
 
             {/* 移动端 title（lg 以下显示） */}
             <div className="lg:hidden text-center mb-8">
-              <div className="text-xs tracking-[0.3em] text-violet-300 font-semibold mb-2 uppercase">
+              <div className="text-xs tracking-[0.3em] text-blue-600 font-semibold mb-2 uppercase">
                 FILMAVO
               </div>
               <h2 className="text-2xl font-bold tracking-tight">AI 创作画布</h2>
@@ -279,15 +304,15 @@ export default function AuthPage() {
                 <div className="w-12 h-12 rounded-xl bg-green-500/20 border border-green-500/30 flex items-center justify-center mx-auto mb-4">
                   <span className="text-green-400 text-xl">✓</span>
                 </div>
-                <h2 className="text-white font-bold text-lg mb-2">您已登录</h2>
-                <p className="text-white/50 text-sm mb-6">该账号已注册并登录，无需重复注册</p>
+                <h2 className="text-slate-900 font-bold text-lg mb-2">您已登录</h2>
+                <p className="text-slate-400 text-sm mb-6">该账号已注册并登录，无需重复注册</p>
                 <button
                   onClick={() => router.push('/canvas')}
                   className="w-full py-3 rounded-lg font-semibold btn-primary transition-all"
                 >
                   进入画布 / Canvas
                 </button>
-                <Link href="/" className="block mt-3 text-white/30 hover:text-white/50 text-sm transition-colors">
+                <Link href="/" className="block mt-3 text-slate-300 hover:text-slate-400 text-sm transition-colors">
                   返回首页 / Back to Home
                 </Link>
               </div>
@@ -307,8 +332,8 @@ export default function AuthPage() {
                   }}
                   className={`flex-1 py-3 rounded-lg font-semibold transition-all ${
                     mode === 'login'
-                      ? 'bg-white text-black'
-                      : 'bg-white/5 text-zinc-400 hover:bg-white/10'
+                      ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/25'
+                      : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
                   }`}
                 >
                   登录 / Login
@@ -321,8 +346,8 @@ export default function AuthPage() {
                   }}
                   className={`flex-1 py-3 rounded-lg font-semibold transition-all ${
                     mode === 'signup'
-                      ? 'bg-white text-black'
-                      : 'bg-white/5 text-zinc-400 hover:bg-white/10'
+                      ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/25'
+                      : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
                   }`}
                 >
                   注册 / Sign up
@@ -342,8 +367,8 @@ export default function AuthPage() {
                       }}
                       className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
                         loginMethod === 'password'
-                          ? 'bg-white/10 text-white'
-                          : 'text-zinc-400 hover:text-white'
+                          ? 'bg-slate-100 text-slate-900'
+                          : 'text-slate-500 hover:text-slate-900'
                       }`}
                     >
                       密码登录
@@ -356,8 +381,8 @@ export default function AuthPage() {
                       }}
                       className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
                         loginMethod === 'otp'
-                          ? 'bg-white/10 text-white'
-                          : 'text-zinc-400 hover:text-white'
+                          ? 'bg-slate-100 text-slate-900'
+                          : 'text-slate-500 hover:text-slate-900'
                       }`}
                     >
                       验证码登录
@@ -368,21 +393,21 @@ export default function AuthPage() {
                   {loginMethod === 'password' && (
                     <form onSubmit={handlePasswordLogin} className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-2">
+                        <label className="block text-sm font-medium text-slate-500 mb-2">
                           邮箱 / Email
                         </label>
                         <input
                           type="email"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          className="w-full px-4 py-3 bg-black/30 border border-white/10 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 transition-all"
+                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-zinc-500 focus:outline-none focus:border-blue-500 transition-all"
                           placeholder="your@email.com"
                           required
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-2">
+                        <label className="block text-sm font-medium text-slate-500 mb-2">
                           密码 / Password
                         </label>
                         <div className="relative">
@@ -390,12 +415,12 @@ export default function AuthPage() {
                             type={showPassword ? 'text' : 'password'}
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-4 py-3 pr-11 bg-black/30 border border-white/10 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 transition-all"
+                            className="w-full px-4 py-3 pr-11 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-zinc-500 focus:outline-none focus:border-blue-500 transition-all"
                             placeholder="••••••••"
                             required
                           />
                           <button type="button" onClick={() => setShowPassword(v => !v)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors">
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
                             {showPassword
                               ? <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
                               : <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
@@ -418,7 +443,7 @@ export default function AuthPage() {
                   {loginMethod === 'otp' && (
                     <form onSubmit={handleOTPLogin} className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-2">
+                        <label className="block text-sm font-medium text-slate-500 mb-2">
                           邮箱 / Email
                         </label>
                         <div className="flex gap-2">
@@ -426,7 +451,7 @@ export default function AuthPage() {
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="flex-1 px-4 py-3 bg-black/30 border border-white/10 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 transition-all"
+                            className="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-zinc-500 focus:outline-none focus:border-blue-500 transition-all"
                             placeholder="your@email.com"
                             required
                           />
@@ -434,7 +459,7 @@ export default function AuthPage() {
                             type="button"
                             onClick={handleSendOTP}
                             disabled={loading || otpSent}
-                            className="px-4 py-3 bg-white/10 hover:bg-white/20 rounded-lg font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                            className="px-4 py-3 bg-slate-100 hover:bg-blue-600 rounded-lg font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                           >
                             {otpSent ? '已发送' : '发送验证码'}
                           </button>
@@ -443,14 +468,14 @@ export default function AuthPage() {
 
                       {otpSent && (
                         <div>
-                          <label className="block text-sm font-medium text-zinc-400 mb-2">
+                          <label className="block text-sm font-medium text-slate-500 mb-2">
                             验证码 / OTP Code
                           </label>
                           <input
                             type="text"
                             value={otp}
                             onChange={(e) => setOtp(e.target.value)}
-                            className="w-full px-4 py-3 bg-black/30 border border-white/10 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 transition-all"
+                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-zinc-500 focus:outline-none focus:border-blue-500 transition-all"
                             placeholder="输入6位验证码"
                             required
                           />
@@ -473,7 +498,7 @@ export default function AuthPage() {
               {mode === 'signup' && (
                 <form onSubmit={handleSignup} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-zinc-400 mb-2">
+                    <label className="block text-sm font-medium text-slate-500 mb-2">
                       邮箱 / Email
                     </label>
                     <div className="flex gap-2">
@@ -481,7 +506,7 @@ export default function AuthPage() {
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="flex-1 px-4 py-3 bg-black/30 border border-white/10 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 transition-all"
+                        className="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-zinc-500 focus:outline-none focus:border-blue-500 transition-all"
                         placeholder="your@email.com"
                         required
                       />
@@ -489,7 +514,7 @@ export default function AuthPage() {
                         type="button"
                         onClick={handleSendOTP}
                         disabled={loading || otpSent}
-                        className="px-4 py-3 bg-white/10 hover:bg-white/20 rounded-lg font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                        className="px-4 py-3 bg-slate-100 hover:bg-blue-600 rounded-lg font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                       >
                         {otpSent ? '已发送' : '发送验证码'}
                       </button>
@@ -499,21 +524,21 @@ export default function AuthPage() {
                   {otpSent && (
                     <>
                       <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-2">
+                        <label className="block text-sm font-medium text-slate-500 mb-2">
                           验证码 / OTP Code
                         </label>
                         <input
                           type="text"
                           value={otp}
                           onChange={(e) => setOtp(e.target.value)}
-                          className="w-full px-4 py-3 bg-black/30 border border-white/10 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 transition-all"
+                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-zinc-500 focus:outline-none focus:border-blue-500 transition-all"
                           placeholder="输入6位验证码"
                           required
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-2">
+                        <label className="block text-sm font-medium text-slate-500 mb-2">
                           密码 / Password
                         </label>
                         <div className="relative">
@@ -521,12 +546,12 @@ export default function AuthPage() {
                             type={showPassword ? 'text' : 'password'}
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-4 py-3 pr-11 bg-black/30 border border-white/10 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 transition-all"
+                            className="w-full px-4 py-3 pr-11 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-zinc-500 focus:outline-none focus:border-blue-500 transition-all"
                             placeholder="至少6位密码"
                             required
                           />
                           <button type="button" onClick={() => setShowPassword(v => !v)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors">
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
                             {showPassword
                               ? <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
                               : <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
@@ -536,7 +561,7 @@ export default function AuthPage() {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-zinc-400 mb-2">
+                        <label className="block text-sm font-medium text-slate-500 mb-2">
                           确认密码 / Confirm Password
                         </label>
                         <div className="relative">
@@ -544,12 +569,12 @@ export default function AuthPage() {
                             type={showConfirmPassword ? 'text' : 'password'}
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
-                            className="w-full px-4 py-3 pr-11 bg-black/30 border border-white/10 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 transition-all"
+                            className="w-full px-4 py-3 pr-11 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-zinc-500 focus:outline-none focus:border-blue-500 transition-all"
                             placeholder="再次输入密码"
                             required
                           />
                           <button type="button" onClick={() => setShowConfirmPassword(v => !v)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors">
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
                             {showConfirmPassword
                               ? <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
                               : <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
@@ -588,7 +613,7 @@ export default function AuthPage() {
             <div className="text-center mt-6">
               <a
                 href="/"
-                className="text-sm text-zinc-400 hover:text-white transition-colors"
+                className="text-sm text-slate-500 hover:text-slate-900 transition-colors"
               >
                 ← 返回首页 / Back to Home
               </a>
