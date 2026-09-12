@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { PeekingBuddies } from '../_components/PeekingBuddies';
 
 export default function AuthPage() {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
@@ -226,9 +227,16 @@ export default function AuthPage() {
             <h1 className="text-5xl xl:text-6xl font-bold leading-[1.1] mb-5 tracking-tight">
               AI 驱动的<br />无限创作画布
             </h1>
-            <p className="text-zinc-400 text-base mb-12 tracking-wide">
+            <p className="text-zinc-400 text-base mb-8 tracking-wide">
               AI-Powered Infinite Creative Canvas
             </p>
+
+            {/* 眼睛跟着鼠标转的小角色。放在卖点列表之前 —— 视线自上而下，
+                先被这排动的东西吸住，再往下读文字 */}
+            <div className="mb-11">
+              <PeekingBuddies />
+            </div>
+
             <ul className="space-y-4">
               <li className="flex items-center gap-4 text-zinc-200">
                 <span className="text-violet-400 text-lg">✦</span>
