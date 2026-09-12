@@ -236,9 +236,36 @@ export function DoodleModal({ imageUrl, onClose, onConfirm, onGenerated }: Props
         // mode 供后端选端点:图层分离走专用端点,其余走通用图生图
         body: JSON.stringify({ imageUrl: uploadedUrl, prompt: prompt.trim(), mode: editMode, userId }),
       });
-      const data = await res.json();
+      let data = await res.json();
       if (data.failed) { alert(data.reason || '审核未通过'); return; }
-      if (!res.ok || !data.imageUrl) throw new Error(data.error || '生成失败');
+      if (!res.ok) throw new Error(data.error || '生成失败');
+
+      // 后端改成两段式:提交只返回 taskId，结果靠轮询 seedream-query 拿。
+      // 原因是 Azure App Service 的负载均衡器有 230 秒硬性请求超时(改不了)，
+      // 而实测有耗时 6 分钟才出图的 —— 服务端一路等到底必然被掐断，
+      // 用户看到失败而上游其实已出图。
+      // 上限给 5 分钟:每 3 秒一次、单次请求只几秒，已远超原先 230 秒天花板。
+      if (data.pending && data.taskId) {
+        const q = new URLSearchParams({ taskId: data.taskId });
+        if (userId) q.set('userId', userId);
+        if (data.price) q.set('price', String(data.price));
+        let got: any = null;
+        for (let i = 0; i < 100; i++) {          // 100 x 3s = 300 秒
+          await new Promise((r) => setTimeout(r, 3000));
+          try {
+            const qr = await fetch(`/api/design/seedream-query?${q}`);
+            const qd = await qr.json();
+            if (qd.failed) { alert(qd.reason || '生成失败'); return; }
+            if (qd.success && qd.imageUrl) { got = qd; break; }
+          } catch {
+            // 单次查询失败不中断 —— 网络抖动不该判定为生成失败
+          }
+        }
+        if (!got) throw new Error('生成超时，请稍后重试');
+        data = got;
+      }
+
+      if (!data.imageUrl) throw new Error(data.error || '生成失败');
 
       // 生成成功:弹窗内直接预览结果，不立即关窗(用户看效果后再决定发送到画布)
       // imageUrls 是全部结果(图层分离多张);后端未返回时退回单张,兼容旧行为

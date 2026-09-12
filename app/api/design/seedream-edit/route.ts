@@ -21,17 +21,12 @@ const PRICE_KEY = 'seedream-5-pro-edit';
 
 // ── Kie ──
 const KIE_CREATE_URL = 'https://api.kie.ai/api/v1/jobs/createTask';
-const KIE_QUERY_URL = 'https://api.kie.ai/api/v1/jobs/recordInfo';
 // 交互编辑的四种模式里，只有"图层分离"有专用端点，其余走通用图生图
 const KIE_MODEL_I2I = 'seedream/5-pro-image-to-image';
 const KIE_MODEL_LAYER = 'seedream/5-pro-layer-decomposition';
 // quality: basic=1K / high=2K；本功能固定出 2K
 const KIE_QUALITY = 'high';
 // 内部轮询：前端仍是一次请求拿结果，轮询在服务端完成（maxDuration 300s 足够）
-const KIE_POLL_INTERVAL_MS = 2500;
-// 110 x 2.5s = 275 秒。maxDuration 是 300，留 25 秒给下载转存与响应 ——
-// 原先 80 次(200 秒)会在上游还在跑时就放弃，用户看到失败而 Kie 那边其实成功了。
-const KIE_POLL_MAX = 110;
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -128,64 +123,19 @@ export async function POST(req: NextRequest) {
         await releaseKey(kieKeyInfo, kieSuccess, kieSuccess ? undefined : categorizeError(kieErr), kieErr ? String(kieErr?.message || kieErr) : undefined);
       }
 
-      // ── 服务端轮询到出图 ──
-      // 图层分离会返回多张(1 张底图 + N 张分离图层),所以收全部 URL；
-      // 图生图只有 1 张。outUrl 取第一张,供现有前端沿用。
-      let outUrls: string[] = [];
-      let failReason = '';
-      for (let i = 0; i < KIE_POLL_MAX; i++) {
-        await new Promise((r) => setTimeout(r, KIE_POLL_INTERVAL_MS));
-        const qRes = await fetch(`${KIE_QUERY_URL}?taskId=${encodeURIComponent(taskId)}`, {
-          headers: { 'Authorization': `Bearer ${kieKeyInfo.keyValue}` },
-        });
-        const qBody = await qRes.json();
-        if (!qRes.ok || qBody?.code !== 200) continue;   // 单次查询失败不中断，继续重试
-
-        const d = qBody?.data || {};
-        if (d.state === 'success') {
-          try {
-            const arr = JSON.parse(d.resultJson || '{}')?.resultUrls;
-            outUrls = Array.isArray(arr) ? arr.filter((u: unknown) => typeof u === 'string' && u) : [];
-          } catch { outUrls = []; }
-          break;
-        }
-        if (d.state === 'fail') {
-          failReason = d.failMsg || `生成失败${d.failCode ? `(${d.failCode})` : ''}`;
-          break;
-        }
-      }
-      const outUrl = outUrls[0] || '';
-
-      // ── 失败：退款，用与方舟分支一致的返回结构 ──
-      if (!outUrl) {
-        if (userId) await refundBalance(userId, price, 'Seedream 编辑失败退款', { model: kieModel });
-        const isModeration = /sensitive|safety|policy|审核|违规|unsafe|risk|blocked|nsfw/i.test(failReason);
-        if (isModeration) {
-          return NextResponse.json({ failed: true, reason: '审核未通过：本次编辑被平台判定为不合规，请调整描述后重试' }, { status: 200 });
-        }
-        return NextResponse.json({
-          failed: true,
-          reason: failReason || '生成超时或未返回图片，请重试',
-        }, { status: 200 });
-      }
-
-      // ── 成功：全部图转存 Supabase 拿永久 URL ──
-      // 图层分离有多张,逐张转存;单张失败降级用原 URL,不影响其余。
-      const kieFinalUrls = await Promise.all(
-        outUrls.map(async (u) => {
-          try {
-            return await transferToStorage(u);
-          } catch (e) {
-            console.error('[design/seedream-edit] Kie 图转存失败，降级用原 URL:', e);
-            return u;
-          }
-        })
-      );
-      // imageUrl 保持单值供现有前端沿用；imageUrls 是全部结果,供图层分离的多图 UI 用
+      // ── 只返回 taskId，由前端轮询 /api/design/seedream-query ──
+      // 原先在这里一路轮询到出图。但 Azure App Service 的负载均衡器有 230 秒
+      // 硬性请求超时(改不了，maxDuration 设 300 也无效)，而实测有耗时 6 分钟
+      // 才出图的情况 —— 请求被掐断，用户看到失败而 Kie 那边已经出图，
+      // 钱扣了图拿不到。
+      //
+      // 改成两段式后每次请求只几秒，总时长不再受 230 秒限制。
+      // 退款移到查询侧:此刻还不知道成败，不能在这里退。
       return NextResponse.json({
         success: true,
-        imageUrl: kieFinalUrls[0] || outUrl,
-        imageUrls: kieFinalUrls,
+        pending: true,
+        taskId,
+        price,           // 前端轮询时带回来，失败时据此退款
       });
     }
 
