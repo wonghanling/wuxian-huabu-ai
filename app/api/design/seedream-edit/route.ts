@@ -95,16 +95,30 @@ export async function POST(req: NextRequest) {
               quality: KIE_QUALITY,
               output_format: 'jpeg',
             };
-        const res = await fetch(KIE_CREATE_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${kieKeyInfo.keyValue}`,
-          },
-          body: JSON.stringify({ model: kieModel, input: kieInput }),
-        });
-        const submitted = await res.json();
-        console.log('[seedream-edit] Kie 提交:', JSON.stringify(submitted).slice(0, 260));
+        // Seedream 偶发 "Timeout while downloading url=..." —— 它拉我们图片的
+        // 超时阈值比其他模型严格(同一批 Azure URL，image 2.5 一直正常;
+        // 且失败那张只有 258KB，而同期 2.7MB 的图反而没事，与体积无关)。
+        // 这类超时重试一次通常就过，所以在提交侧重试而不是让用户重来。
+        let res!: Response;
+        let submitted: any;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          res = await fetch(KIE_CREATE_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${kieKeyInfo.keyValue}`,
+            },
+            body: JSON.stringify({ model: kieModel, input: kieInput }),
+          });
+          submitted = await res.json();
+          console.log(`[seedream-edit] Kie 提交(第${attempt}次):`, JSON.stringify(submitted).slice(0, 260));
+
+          const msg = String(submitted?.msg || submitted?.message || '');
+          const isDownloadTimeout = /timeout while downloading|not valid.*download/i.test(msg);
+          if (!isDownloadTimeout || attempt === 3) break;
+          // 退避:立刻重试常常还在同一波网络状况里
+          await new Promise((r) => setTimeout(r, attempt * 1500));
+        }
 
         // Kie 用 body 里的 code 表达错误，HTTP 状态可能仍是 200
         if (!res.ok || submitted?.code !== 200) {

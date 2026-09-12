@@ -30,12 +30,26 @@ export async function uploadImageToStorage(file: File): Promise<string | null> {
     const jpegBlob = await new Promise<Blob>((resolve, reject) => {
       const img = new Image();
       img.onload = () => {
+        // 长边限 2560，等比缩放 —— 比例不变，只有超过这个尺寸的图才会缩。
+        //
+        // 原先直接用 naturalWidth/naturalHeight，只转 JPEG 不缩尺寸。实测存储里
+        // 58 张走本函数的 JPG 平均 1.51MB、最大 5.38MB —— 手机拍的 4000×3000
+        // 转成 JPEG 照样好几 MB。一个画布能积累几百个节点，大图既拖慢画布渲染，
+        // 也让上游拉取更容易超时（Seedream 就报过 download timeout）。
+        //
+        // 2560 而非 softCompressImage 的 2048：那个是"喂给模型看"用的可以更狠，
+        // 这里是用户上传的素材，会被反复编辑、可能想下载，留多一点余量。
+        const MAX_SIDE = 2560;
+        const scale = Math.min(1, MAX_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
+        const w = Math.round(img.naturalWidth * scale);
+        const h = Math.round(img.naturalHeight * scale);
+
         const canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
+        canvas.width = w;
+        canvas.height = h;
         const ctx = canvas.getContext('2d');
         if (!ctx) { reject(new Error('canvas 初始化失败')); return; }
-        ctx.drawImage(img, 0, 0);
+        ctx.drawImage(img, 0, 0, w, h);
         canvas.toBlob((blob) => {
           if (blob) resolve(blob);
           else reject(new Error('转 JPEG 失败'));
