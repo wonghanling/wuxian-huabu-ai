@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { fal as falSingleton, createFalClient } from '@fal-ai/client';
 import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
-import { deductBalance, refundBalance, checkMembership } from '@/lib/billing';
+import {deductBalance, refundBalance} from '@/lib/billing';
 import { createClient } from '@supabase/supabase-js';
 
 export const maxDuration = 300;
@@ -26,12 +26,10 @@ export async function POST(req: NextRequest) {
 
     const spec = STEP4_SPEC[aspectRatio] ?? STEP4_SPEC['2048x1152'];
 
-    // 守卫：会员检查
+    // 只扣费，不要求会员 —— 与图片卡、视频卡一致。
+    // 原先是"非会员直接拒绝 + 会员还要扣费"，同一件事收两道门槛:
+    // 既然已按次计费，再要求开会员就把只想试一次的人挡在门外了。
     if (userId) {
-      const isMember = await checkMembership(userId);
-      if (!isMember) return NextResponse.json({ error: '需要开通会员才能使用导演引擎' }, { status: 402 });
-
-      // 扣费
       const deduct = await deductBalance(userId, spec.price, 'image_deduct', 'GEM Step4 分镜图生成（GPT Image 2）', { model: 'gpt-image-2', aspectRatio });
       if (!deduct.success) {
         return NextResponse.json({ error: deduct.error || '余额不足，请充值' }, { status: 402 });

@@ -10,6 +10,7 @@ import { RefThumb } from './RefThumb';
 import { PromptTools } from './PromptTools';
 import { uploadImageToStorage, generateText, optimizePrompt, getUserId } from '../lib/api';
 import { useDebouncedField } from '../lib/useDebouncedField';
+import { useMembership } from '@/lib/useMembership';
 
 // ============================================================
 // 文本卡片 · 超现代高端风格
@@ -24,7 +25,13 @@ const SEL_BORDER = 'rgba(192,192,192,0.45)';
 const INPUT_PORT = 'rgba(59,130,246,0.9)';   // 蓝=输入
 const OUTPUT_PORT = 'rgba(156,163,175,0.9)'; // 灰=输出
 
+/** 与 lib/billing.ts 的 TEXT_FEATURE_PRICE 一致。
+ *  不直接 import 那个文件 —— 它用了 service role key 属服务端专用，
+ *  前端引入会把服务端代码打进客户端包。改价时两处要一起改。 */
+const TEXT_FEATURE_PRICE = 0.1;
+
 function TextNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
+  const { isMember, loading: memberLoading } = useMembership();
   const collapsed = data.collapsed ?? false;
   const enlarged = data.enlarged ?? false;
   const hasText = data.status === 'done' && !!data.text;
@@ -308,6 +315,13 @@ function TextNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                   </div>
                 )}
               </div>
+            )}
+            {/* 价格提示。只对非会员显示 —— 会员这些是免费的，标价反而让人误会。
+                不标的话用户点了才发现扣钱，那是最差的体验。 */}
+            {!isMember && !memberLoading && (
+              <span style={{ fontSize: 10.5, color: '#71717a', whiteSpace: 'nowrap' }}>
+                ¥{TEXT_FEATURE_PRICE}/次
+              </span>
             )}
             <button onClick={handleGenerate} disabled={data.status === 'generating'} style={{ ...generateBtn, opacity: data.status === 'generating' ? 0.4 : 1, cursor: data.status === 'generating' ? 'default' : 'pointer' }}>{data.status === 'generating' ? '生成中…' : 'Generate'}</button>
             {optimizeMode && <span style={{ fontSize: 11, color: '#71717a' }}>专有模型</span>}

@@ -3,7 +3,7 @@ import { createFalClient } from '@fal-ai/client';
 import { createClient } from '@supabase/supabase-js';
 import { pickKey, releaseKey, categorizeError } from '@/lib/api-key-pool';
 import { putAsset } from '@/lib/asset-upload';
-import { checkMembership, deductBalance, refundBalance } from '@/lib/billing';
+import {deductBalance, refundBalance} from '@/lib/billing';
 
 export const maxDuration = 120;
 
@@ -44,10 +44,10 @@ export async function POST(req: NextRequest) {
     if (!prompt) return NextResponse.json({ error: '缺少 prompt' }, { status: 400 });
     if (cfg.needAudio && !audioUrl) return NextResponse.json({ error: '该模式需要输入音频' }, { status: 400 });
 
-    // 会员校验 + 扣费(照图片/视频卡一致)
+    // 只扣费，不要求会员 —— 与图片卡、视频卡一致。
+    // 原先是"非会员直接拒绝 + 会员还要扣费"，等于同一件事收两道门槛:
+    // 既然已按次计费，再要求开会员就把只想试一次的人挡在门外了。
     if (userId) {
-      const isMember = await checkMembership(userId);
-      if (!isMember) return NextResponse.json({ error: '需要开通会员才能使用' }, { status: 402 });
       const deduct = await deductBalance(userId, SCENE_PRICE, 'image_deduct', '场景声生成(stable-audio-3)', { model: cfg.endpoint });
       if (!deduct.success) return NextResponse.json({ error: deduct.error || '余额不足，请充值' }, { status: 402 });
     }
