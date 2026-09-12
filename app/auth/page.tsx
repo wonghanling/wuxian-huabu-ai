@@ -196,38 +196,10 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#f8fafc] text-slate-900 overflow-hidden">
-      {/* 背景装饰。
-          原来用的全局 .infinite-grid / .orb 是给深色底设计的（亮线条 + 高亮光晕），
-          放在白底上会发灰、发脏。那两个 class 首页还在用，不能改全局样式，
-          所以这里换成本页自绘的浅色版：淡蓝网格 + 两团很轻的蓝色光斑。 */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage:
-            'linear-gradient(rgba(15,23,42,.045) 1px, transparent 1px),' +
-            'linear-gradient(90deg, rgba(15,23,42,.045) 1px, transparent 1px)',
-          backgroundSize: '56px 56px',
-          maskImage: 'radial-gradient(ellipse 90% 70% at 50% 40%, #000 40%, transparent 100%)',
-          WebkitMaskImage: 'radial-gradient(ellipse 90% 70% at 50% 40%, #000 40%, transparent 100%)',
-        }}
-      />
-      <div
-        className="absolute pointer-events-none"
-        style={{
-          top: '-12%', left: '-8%', width: 520, height: 520, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(15,23,42,.055) 0%, transparent 70%)',
-          filter: 'blur(20px)',
-        }}
-      />
-      <div
-        className="absolute pointer-events-none"
-        style={{
-          bottom: '-16%', right: '-6%', width: 460, height: 460, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(15,23,42,.045) 0%, transparent 70%)',
-          filter: 'blur(20px)',
-        }}
-      />
+    // 左右各半分栏:左侧浅灰承载品牌与步骤说明，右侧纯白只放表单。
+    // 用背景色差分区而非描边或网格 —— 网格线在白底上只会让页面显脏，
+    // 原先那层淡灰网格已去掉。
+    <div className="relative min-h-screen bg-white text-slate-900 overflow-hidden">
 
       {/* Navigation */}
       <nav className="fixed top-0 w-full z-50 border-b border-slate-200 bg-white/80 backdrop-blur-md">
@@ -239,42 +211,49 @@ export default function AuthPage() {
         </div>
       </nav>
 
-      {/* Main - 左右分栏 */}
-      <main className="relative pt-16 min-h-screen flex items-center justify-center">
-        <div className="w-full max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-12 lg:gap-24 px-6 py-12">
+      {/* Main - 左右各半 */}
+      <main className="relative pt-16 min-h-screen flex flex-col lg:flex-row">
 
-        {/* 左侧 - 品牌 + 卖点（lg 以上显示） */}
-        <div className="hidden lg:flex flex-1 flex-col relative z-10">
+        {/* 左侧:浅灰底承载品牌与步骤，怪物贴底探出 */}
+        <div className="hidden lg:flex lg:w-1/2 flex-col justify-between bg-[#f5f5f7] px-14 xl:px-20 pt-20 pb-0 relative">
           <div>
-            {/* 黑白极简。去掉了原先那四条卖点列表 —— 登录页的任务是让人尽快
-                登进去，罗列功能是首页该做的事，在这里只是分散注意力。
-                留 logo + 一句话 + 小角色，视觉重心自然落到右侧表单。 */}
-            <img
-              src="/filmavo-logo-primary.svg"
-              alt="filmavo"
-              className="h-10 w-auto mb-8"
-              style={{ filter: 'brightness(0)' }}   /* logo 是浅色版，白底上需压黑 */
-            />
-
-            <h1 className="text-5xl xl:text-6xl font-semibold leading-[1.08] mb-5 tracking-tight text-slate-900">
+            <h1 className="text-[44px] xl:text-[52px] font-semibold leading-[1.1] tracking-tight text-[#1d1d1f] mb-4">
               AI 驱动的<br />无限创作画布
             </h1>
-            <p className="text-slate-500 text-[15px] mb-12 tracking-wide">
+            <p className="text-[#6e6e73] text-[15px] mb-14">
               AI-Powered Infinite Creative Canvas
             </p>
 
-            {/* 眼睛跟着鼠标转的小角色 */}
-            <PeekingBuddies />
+            {/* 编号步骤代替原先那四条功能卖点 —— 卖点是首页的事，
+                这里说"接下来会发生什么"更贴合登录场景 */}
+            <ol className="space-y-7">
+              {[
+                ['注册账号', '邮箱注册，无需信用卡'],
+                ['选择业务', '无限画布 · AI 生图 · 创作接单'],
+                ['开始创作', '数十种模型，按次计费'],
+              ].map(([title, desc], i) => (
+                <li key={title} className="flex gap-4">
+                  <span className="flex-shrink-0 w-7 h-7 rounded-full bg-[#1d1d1f] text-white text-[12.5px] font-medium flex items-center justify-center">
+                    {i + 1}
+                  </span>
+                  <span>
+                    <span className="block text-[15px] font-medium text-[#1d1d1f] leading-6">{title}</span>
+                    <span className="block text-[13px] text-[#86868b] mt-0.5">{desc}</span>
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </div>
 
-            <p className="mt-14 text-xs text-slate-400 tracking-wide">
-              © 2026 Filmavo · 一站式 AI 创作平台
-            </p>
+          {/* 怪物贴左栏底部 —— 下半身被容器裁掉，做"探出来看你"的姿态 */}
+          <div className="mt-16">
+            <PeekingBuddies />
           </div>
         </div>
 
-        {/* 右侧 - 表单 */}
-        <div className="w-full lg:w-[420px] flex-shrink-0 relative z-10">
-          <div className="w-full">
+        {/* 右侧 - 表单。纯白，与左侧浅灰形成分区 */}
+        <div className="w-full lg:w-1/2 flex items-center justify-center px-6 py-12 lg:px-14">
+          <div className="w-full max-w-[400px]">
 
             {/* 移动端 title（lg 以下显示） */}
             <div className="lg:hidden text-center mb-8">
@@ -608,8 +587,6 @@ export default function AuthPage() {
             )}
 
           </div>
-        </div>
-
         </div>
       </main>
     </div>
