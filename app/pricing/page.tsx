@@ -300,6 +300,42 @@ export default function PricingPage() {
           })}
         </div>
 
+        {/* 人民币充值余额（支付宝）。
+            /studio 与画布顶栏的"充值"都跳到本页，但此前这里只有美元档位 ——
+            国内用户点进来找不到充值入口。补上与画布 AccountModal 一致的六档。
+            走已有的 handlePay('recharge', amount)，未新增支付逻辑。 */}
+        <div className="max-w-3xl mx-auto mt-20">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-semibold mb-2" style={{ color: 'rgb(238,238,238)' }}>
+              充值余额
+            </h2>
+            <p className="text-sm" style={{ color: 'rgb(150,150,150)' }}>
+              余额用于图片与视频生成，按次计费，不过期
+            </p>
+          </div>
+
+          <div
+            className="rounded-2xl p-7"
+            style={{ background: 'rgb(20,20,20)', border: '1px solid #ffffff14' }}
+          >
+            <div className="grid grid-cols-3 gap-3">
+              {[10, 30, 50, 100, 500, 1000].map((amount) => (
+                <button
+                  key={amount}
+                  onClick={() => handlePay('recharge', amount)}
+                  className="py-4 rounded-xl text-sm font-semibold transition-all hover:opacity-85"
+                  style={{ background: '#ffffff14', color: 'rgb(238,238,238)', border: '1px solid #ffffff2e' }}
+                >
+                  ¥{amount}
+                </button>
+              ))}
+            </div>
+            <p className="text-center text-xs mt-5" style={{ color: 'rgb(120,120,120)' }}>
+              支付宝支付 · 到账即可使用
+            </p>
+          </div>
+        </div>
+
         {/* 海外信用卡支付(Stripe)。纯新增区块，上方套餐卡片与 handlePay 未改。
             海外用户原先无法付款 —— 点开通会跳到支付宝页面无法完成。
             余额仍只有人民币一种，美元只是收款单位。 */}
