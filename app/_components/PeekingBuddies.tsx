@@ -26,11 +26,13 @@ type Buddy = {
   delay: number;     // 浮动动画错开
 };
 
+// 黑白灰阶。原先是橙紫黄绿四色，在极简白底页面上太跳 ——
+// 现在靠明度和形状区分，视觉重心留给右侧表单。
 const BUDDIES: Buddy[] = [
-  { id: 'a', bg: '#f97316', shade: '#c2410c', size: 72, round: 0.5,  rotate: -7, delay: 0 },
-  { id: 'b', bg: '#8b5cf6', shade: '#6d28d9', size: 90, round: 0.28, rotate: 4,  delay: 0.7 },
-  { id: 'c', bg: '#facc15', shade: '#ca8a04', size: 66, round: 0.14, rotate: 10, delay: 1.4 },
-  { id: 'd', bg: '#34d399', shade: '#059669', size: 80, round: 0.42, rotate: -4, delay: 2.1 },
+  { id: 'a', bg: '#27272a', shade: '#09090b', size: 72, round: 0.5,  rotate: -7, delay: 0 },
+  { id: 'b', bg: '#52525b', shade: '#27272a', size: 90, round: 0.28, rotate: 4,  delay: 0.7 },
+  { id: 'c', bg: '#a1a1aa', shade: '#71717a', size: 66, round: 0.14, rotate: 10, delay: 1.4 },
+  { id: 'd', bg: '#3f3f46', shade: '#18181b', size: 80, round: 0.42, rotate: -4, delay: 2.1 },
 ];
 
 export function PeekingBuddies() {

@@ -218,14 +218,14 @@ export default function StudioPage() {
             {memberLoading ? '···' : `¥${(balance ?? 0).toFixed(2)}`}
           </span>
           {isMember && (
-            <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 999, background: '#dbeafe', color: '#2563eb' }}>
+            <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 999, background: '#f1f5f9', color: '#334155' }}>
               会员
             </span>
           )}
           <Link
             href="/pricing"
             style={{
-              padding: '6px 14px', borderRadius: 999, background: '#2563eb', color: '#fff',
+              padding: '6px 14px', borderRadius: 999, background: '#0f172a', color: '#fff',
               fontWeight: 600, fontSize: 12.5, textDecoration: 'none',
             }}
           >
@@ -249,7 +249,7 @@ export default function StudioPage() {
               style={inputStyle}
             >
               {IMAGE_MODELS.map((m) => (
-                <option key={m.id} value={m.id} style={{ background: '#18181b' }}>
+                <option key={m.id} value={m.id}>
                   {m.label}
                 </option>
               ))}
@@ -358,7 +358,7 @@ export default function StudioPage() {
             disabled={pending.length > 0}
             style={{
               width: '100%', padding: '13px 0', borderRadius: 12, border: 'none',
-              background: pending.length ? '#cbd5e1' : '#2563eb',
+              background: pending.length ? '#cbd5e1' : '#0f172a',
               color: '#fff',
               fontWeight: 700, fontSize: 14, cursor: pending.length ? 'default' : 'pointer',
             }}
@@ -471,7 +471,7 @@ const chipStyle: React.CSSProperties = {
 
 // 选中态用蓝色 —— 蓝只出现在强调处，铺太满会像模板站
 const chipActive: React.CSSProperties = {
-  ...chipStyle, background: '#2563eb', color: '#fff', borderColor: '#2563eb', fontWeight: 600,
+  ...chipStyle, background: '#0f172a', color: '#fff', borderColor: '#0f172a', fontWeight: 600,
 };
 
 const cardStyle: React.CSSProperties = {

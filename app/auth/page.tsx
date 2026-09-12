@@ -205,8 +205,8 @@ export default function AuthPage() {
         className="absolute inset-0 pointer-events-none"
         style={{
           backgroundImage:
-            'linear-gradient(rgba(37,99,235,.055) 1px, transparent 1px),' +
-            'linear-gradient(90deg, rgba(37,99,235,.055) 1px, transparent 1px)',
+            'linear-gradient(rgba(15,23,42,.045) 1px, transparent 1px),' +
+            'linear-gradient(90deg, rgba(15,23,42,.045) 1px, transparent 1px)',
           backgroundSize: '56px 56px',
           maskImage: 'radial-gradient(ellipse 90% 70% at 50% 40%, #000 40%, transparent 100%)',
           WebkitMaskImage: 'radial-gradient(ellipse 90% 70% at 50% 40%, #000 40%, transparent 100%)',
@@ -216,7 +216,7 @@ export default function AuthPage() {
         className="absolute pointer-events-none"
         style={{
           top: '-12%', left: '-8%', width: 520, height: 520, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(59,130,246,.16) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(15,23,42,.055) 0%, transparent 70%)',
           filter: 'blur(20px)',
         }}
       />
@@ -224,7 +224,7 @@ export default function AuthPage() {
         className="absolute pointer-events-none"
         style={{
           bottom: '-16%', right: '-6%', width: 460, height: 460, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(99,102,241,.13) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(15,23,42,.045) 0%, transparent 70%)',
           filter: 'blur(20px)',
         }}
       />
@@ -246,41 +246,27 @@ export default function AuthPage() {
         {/* 左侧 - 品牌 + 卖点（lg 以上显示） */}
         <div className="hidden lg:flex flex-1 flex-col relative z-10">
           <div>
-            <div className="text-xs tracking-[0.4em] text-blue-600 font-semibold mb-6 uppercase">
-              FILMAVO
-            </div>
-            <h1 className="text-5xl xl:text-6xl font-bold leading-[1.1] mb-5 tracking-tight">
+            {/* 黑白极简。去掉了原先那四条卖点列表 —— 登录页的任务是让人尽快
+                登进去，罗列功能是首页该做的事，在这里只是分散注意力。
+                留 logo + 一句话 + 小角色，视觉重心自然落到右侧表单。 */}
+            <img
+              src="/filmavo-logo-primary.svg"
+              alt="filmavo"
+              className="h-10 w-auto mb-8"
+              style={{ filter: 'brightness(0)' }}   /* logo 是浅色版，白底上需压黑 */
+            />
+
+            <h1 className="text-5xl xl:text-6xl font-semibold leading-[1.08] mb-5 tracking-tight text-slate-900">
               AI 驱动的<br />无限创作画布
             </h1>
-            <p className="text-slate-500 text-base mb-8 tracking-wide">
+            <p className="text-slate-500 text-[15px] mb-12 tracking-wide">
               AI-Powered Infinite Creative Canvas
             </p>
 
-            {/* 眼睛跟着鼠标转的小角色。放在卖点列表之前 —— 视线自上而下，
-                先被这排动的东西吸住，再往下读文字 */}
-            <div className="mb-11">
-              <PeekingBuddies />
-            </div>
+            {/* 眼睛跟着鼠标转的小角色 */}
+            <PeekingBuddies />
 
-            <ul className="space-y-4">
-              <li className="flex items-center gap-4 text-slate-700">
-                <span className="text-blue-500 text-lg">✦</span>
-                <span className="text-[15px]">Seedance 2.0 图生视频</span>
-              </li>
-              <li className="flex items-center gap-4 text-slate-700">
-                <span className="text-blue-500 text-lg">✦</span>
-                <span className="text-[15px]">角色设计 / 故事板</span>
-              </li>
-              <li className="flex items-center gap-4 text-slate-700">
-                <span className="text-blue-500 text-lg">✦</span>
-                <span className="text-[15px]">实时协作画布</span>
-              </li>
-              <li className="flex items-center gap-4 text-slate-700">
-                <span className="text-blue-500 text-lg">✦</span>
-                <span className="text-[15px]">AI 助手对话</span>
-              </li>
-            </ul>
-            <p className="mt-16 text-xs text-slate-400 tracking-wide">
+            <p className="mt-14 text-xs text-slate-400 tracking-wide">
               © 2026 Filmavo · 一站式 AI 创作平台
             </p>
           </div>
@@ -292,7 +278,7 @@ export default function AuthPage() {
 
             {/* 移动端 title（lg 以下显示） */}
             <div className="lg:hidden text-center mb-8">
-              <div className="text-xs tracking-[0.3em] text-blue-600 font-semibold mb-2 uppercase">
+              <div className="text-xs tracking-[0.3em] text-slate-500 font-semibold mb-2 uppercase">
                 FILMAVO
               </div>
               <h2 className="text-2xl font-bold tracking-tight">AI 创作画布</h2>
@@ -332,7 +318,7 @@ export default function AuthPage() {
                   }}
                   className={`flex-1 py-3 rounded-lg font-semibold transition-all ${
                     mode === 'login'
-                      ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/25'
+                      ? 'bg-slate-900 text-white'
                       : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
                   }`}
                 >
@@ -346,7 +332,7 @@ export default function AuthPage() {
                   }}
                   className={`flex-1 py-3 rounded-lg font-semibold transition-all ${
                     mode === 'signup'
-                      ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/25'
+                      ? 'bg-slate-900 text-white'
                       : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
                   }`}
                 >
@@ -400,7 +386,7 @@ export default function AuthPage() {
                           type="email"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-zinc-500 focus:outline-none focus:border-blue-500 transition-all"
+                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-zinc-500 focus:outline-none focus:border-slate-900 transition-all"
                           placeholder="your@email.com"
                           required
                         />
@@ -415,7 +401,7 @@ export default function AuthPage() {
                             type={showPassword ? 'text' : 'password'}
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-4 py-3 pr-11 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-zinc-500 focus:outline-none focus:border-blue-500 transition-all"
+                            className="w-full px-4 py-3 pr-11 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-zinc-500 focus:outline-none focus:border-slate-900 transition-all"
                             placeholder="••••••••"
                             required
                           />
@@ -451,7 +437,7 @@ export default function AuthPage() {
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-zinc-500 focus:outline-none focus:border-blue-500 transition-all"
+                            className="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-zinc-500 focus:outline-none focus:border-slate-900 transition-all"
                             placeholder="your@email.com"
                             required
                           />
@@ -459,7 +445,7 @@ export default function AuthPage() {
                             type="button"
                             onClick={handleSendOTP}
                             disabled={loading || otpSent}
-                            className="px-4 py-3 bg-slate-100 hover:bg-blue-600 rounded-lg font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                            className="px-4 py-3 bg-slate-100 hover:bg-slate-900 rounded-lg font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                           >
                             {otpSent ? '已发送' : '发送验证码'}
                           </button>
@@ -475,7 +461,7 @@ export default function AuthPage() {
                             type="text"
                             value={otp}
                             onChange={(e) => setOtp(e.target.value)}
-                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-zinc-500 focus:outline-none focus:border-blue-500 transition-all"
+                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-zinc-500 focus:outline-none focus:border-slate-900 transition-all"
                             placeholder="输入6位验证码"
                             required
                           />
@@ -506,7 +492,7 @@ export default function AuthPage() {
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-zinc-500 focus:outline-none focus:border-blue-500 transition-all"
+                        className="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-zinc-500 focus:outline-none focus:border-slate-900 transition-all"
                         placeholder="your@email.com"
                         required
                       />
@@ -514,7 +500,7 @@ export default function AuthPage() {
                         type="button"
                         onClick={handleSendOTP}
                         disabled={loading || otpSent}
-                        className="px-4 py-3 bg-slate-100 hover:bg-blue-600 rounded-lg font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                        className="px-4 py-3 bg-slate-100 hover:bg-slate-900 rounded-lg font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                       >
                         {otpSent ? '已发送' : '发送验证码'}
                       </button>
@@ -531,7 +517,7 @@ export default function AuthPage() {
                           type="text"
                           value={otp}
                           onChange={(e) => setOtp(e.target.value)}
-                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-zinc-500 focus:outline-none focus:border-blue-500 transition-all"
+                          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-zinc-500 focus:outline-none focus:border-slate-900 transition-all"
                           placeholder="输入6位验证码"
                           required
                         />
@@ -546,7 +532,7 @@ export default function AuthPage() {
                             type={showPassword ? 'text' : 'password'}
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-4 py-3 pr-11 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-zinc-500 focus:outline-none focus:border-blue-500 transition-all"
+                            className="w-full px-4 py-3 pr-11 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-zinc-500 focus:outline-none focus:border-slate-900 transition-all"
                             placeholder="至少6位密码"
                             required
                           />
@@ -569,7 +555,7 @@ export default function AuthPage() {
                             type={showConfirmPassword ? 'text' : 'password'}
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
-                            className="w-full px-4 py-3 pr-11 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-zinc-500 focus:outline-none focus:border-blue-500 transition-all"
+                            className="w-full px-4 py-3 pr-11 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder-zinc-500 focus:outline-none focus:border-slate-900 transition-all"
                             placeholder="再次输入密码"
                             required
                           />
