@@ -644,6 +644,11 @@ export default function AccountModal({ onClose, onPay, balance, isMember, member
                       if (tx.description && /场景声|音频|语音|stable-audio/i.test(tx.description)) {
                         info = { label: '音频生成', color: 'text-red-400' };
                       }
+                      // 文本类功能(文本卡 / 提示词优化 / 导演引擎)同样复用 image_deduct，
+                      // 不纠正的话会挂上"图片生成"标签，与实际不符
+                      if (tx.description && /文本功能/.test(tx.description)) {
+                        info = { label: '文本生成', color: 'text-red-400' };
+                      }
                       const isIncome = tx.amount > 0;
                       // 待退款判定:该扣费(支出)有一条金额相同、时间接近(±3分钟)的 pending 退款记录
                       const txTime = new Date(tx.created_at).getTime();

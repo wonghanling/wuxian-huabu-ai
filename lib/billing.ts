@@ -122,7 +122,22 @@ export async function getBalance(userId: string): Promise<number> {
   return data?.balance ?? 0;
 }
 
-// 会员每日额度检查 + 计数（用于导演引擎、文本、Prompt 优化等会员功能）
+/** 非会员使用文本类功能的单次价格（元）。文本调用的上游成本只有几分钱，
+ *  这个数主要是防滥用，不指望靠它赚钱 —— 目标是让人先用上。 */
+export const TEXT_FEATURE_PRICE = 0.1;
+
+// 文本类功能的准入（导演引擎、文本卡、Prompt 优化等）
+//
+// 原先是"必须开会员"，非会员直接 402 挡掉。问题是这挡掉的正是"只想试一次"
+// 的人 —— 而文本调用成本极低，为它设会员门槛不划算。
+//
+// 现在改成两条路：
+//   会员    免费，仍受每日额度限制（防脚本滥用）
+//   非会员  从余额扣 TEXT_FEATURE_PRICE 元／次，不限每日次数
+//           （已按次付费，再限次数没道理）
+//
+// 9 个调用方（chat、gem/* 七个、optimize-prompt）都不必改 —— 函数签名与
+// 返回结构未变，只是非会员这条分支从"拒绝"变成"扣费放行"。
 export async function requireMemberWithDailyQuota(
   userId: string,
   dailyLimit: number = 100,
@@ -144,9 +159,29 @@ export async function requireMemberWithDailyQuota(
     u?.member_expires_at &&
     new Date(u.member_expires_at) > new Date()
   );
-  if (!isMember) return { ok: false, status: 402, error: '需要开通会员才能使用此功能' };
 
-  // 每日额度
+  // 非会员:按次扣余额。走与图片/视频同一个 deduct_balance 事务，
+  // 余额不足时的提示也一致，用户不必理解"会员"这个概念就能用。
+  if (!isMember) {
+    const deduct = await deductBalance(
+      userId,
+      TEXT_FEATURE_PRICE,
+      'image_deduct',            // 复用现有的账目类型，避免改数据库枚举
+      `文本功能 ¥${TEXT_FEATURE_PRICE}`,
+      { kind: 'text_feature' },  // 靠 meta 区分，日后对账能筛出来
+    );
+    if (!deduct.success) {
+      return {
+        ok: false,
+        status: 402,
+        error: deduct.error || `余额不足，本次需 ¥${TEXT_FEATURE_PRICE}`,
+      };
+    }
+    // 已付费就不再限每日次数
+    return { ok: true };
+  }
+
+  // 会员:免费，但保留每日额度作为滥用保护
   const today = new Date().toISOString().slice(0, 10);
   const isNewDay = (u as any)?.gem_daily_reset_date !== today;
   const newCount = isNewDay ? 1 : ((u as any)?.gem_daily_count ?? 0) + 1;

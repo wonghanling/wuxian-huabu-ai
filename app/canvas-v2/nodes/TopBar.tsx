@@ -129,14 +129,34 @@ export function TopBar({ saveStatus, switchCanvas, getCurrentCanvasId }: Props) 
           {memberLoading ? (
             <span className="text-white/30">···</span>
           ) : isMember ? (
-            <span className="text-zinc-200 font-semibold cursor-pointer hover:text-white transition-colors" onClick={() => setShowAccountModal(true)}>会员</span>
+            /* 悬浮说明:文本功能对会员免费、对非会员按次扣费，这个差别
+               光看"会员"两个字看不出来，得有地方讲清楚。用 group-hover
+               纯 CSS 实现，不引入额外状态。 */
+            <span className="relative group">
+              <span
+                className="text-zinc-200 font-semibold cursor-pointer hover:text-white transition-colors"
+                onClick={() => setShowAccountModal(true)}
+              >
+                会员
+              </span>
+              <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-2 hidden group-hover:block whitespace-nowrap rounded-lg bg-black/95 px-3 py-2 text-[11px] leading-relaxed text-white shadow-xl z-50">
+                文本功能免费无限使用
+              </span>
+            </span>
           ) : (
-            <button
-              className="text-white hover:text-white/80 transition-colors"
-              onClick={() => setShowAccountModal(true)}
-            >
-              开通会员
-            </button>
+            <span className="relative group">
+              <button
+                className="text-white hover:text-white/80 transition-colors"
+                onClick={() => setShowAccountModal(true)}
+              >
+                开通会员
+              </button>
+              <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-full mt-2 hidden group-hover:block rounded-lg bg-black/95 px-3 py-2 text-[11px] leading-relaxed text-white shadow-xl z-50 w-[190px] text-left">
+                文本卡片、提示词优化、导演引擎按次扣 ¥0.1
+                <br />
+                <span className="text-white/55">开通会员后这些免费无限使用</span>
+              </span>
+            </span>
           )}
           <span className="text-white/20">|</span>
           <span className="text-white/60">¥{(balance ?? 0).toFixed(2)}</span>
