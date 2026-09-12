@@ -39,8 +39,25 @@ function blobOf(path: string): BlockBlobClient {
 
 /** 公开读地址。容器是 Blob 级匿名读，URL 干净不带签名 —— 可被 CDN 长期缓存 */
 export function azureUrl(path: string): string {
+  const clean = path.replace(/^\/+/, '');
+
+  // 配了 CDN 域名就用它，否则回落到 Blob 直连地址。
+  //
+  // 为什么需要 CDN:Azure Blob 是香港单区、无边缘节点。上游(Kie / fal)的
+  // 服务器在海外，跨境拉我们的图会超时 —— 实测报
+  // "Timeout while downloading url=https://filmavo.blob.core.windows.net/..."。
+  // 迁移前存在 Supabase 没这问题，因为它自带 Cloudflare CDN 有全球节点。
+  //
+  // 全站 26 处传图给上游都是给我们自己的 URL，而这些 URL 全部由本函数产出，
+  // 所以配上 AZURE_CDN_HOST 一处即可全站生效，不必改任何调用方。
+  const cdn = process.env.AZURE_CDN_HOST;
+  if (cdn) {
+    const host = cdn.replace(/^https?:\/\//, '').replace(/\/+$/, '');
+    return `https://${host}/${CONTAINER}/${clean}`;
+  }
+
   const account = process.env.AZURE_STORAGE_ACCOUNT || 'filmavo';
-  return `https://${account}.blob.core.windows.net/${CONTAINER}/${path.replace(/^\/+/, '')}`;
+  return `https://${account}.blob.core.windows.net/${CONTAINER}/${clean}`;
 }
 
 /** 是否已配置 Azure。没配就让调用方回退 Supabase，避免漏配环境变量导致全站上传失败 */
