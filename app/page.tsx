@@ -264,7 +264,8 @@ export default function Home() {
             <a href="/filmavo-tv" className="hover:text-white transition-colors">Filmavo TV</a>
             <a href="#" className="hover:text-white transition-colors">平台</a>
             <a href="#" className="hover:text-white transition-colors">案例展示</a>
-            <a href="#" className="hover:text-white transition-colors">企业版</a>
+            {/* 原先是占位的"企业版"(href="#" 点了没反应)，换成 AI 生图入口 */}
+            <Link href="/studio" className="hover:text-white transition-colors">AI 生图</Link>
             <a href="/pricing" className="hover:text-white transition-colors">定价</a>
           </div>
 
