@@ -57,11 +57,8 @@ export default function StudioPage() {
   const [lightbox, setLightbox] = useState<string | null>(null);
 
   // 三栏布局的状态。
-  //   current  中间大图当前显示哪张（点右侧历史或下方拆分图都改它）
-  //   derived  当前图编辑/拆分出来的产物 —— 与 history 分开:
-  //            history 是各次独立生成，derived 是"这一张"的衍生物
+  //   current  中间大图当前显示哪张（点右侧历史缩略图切换）
   const [current, setCurrent] = useState<string | null>(null);
-  const [derived, setDerived] = useState<string[]>([]);
   // 两个编辑器各自的开关。刻意不合并成一个 —— 它们能力不同:
   //   doodle  涂抹/圈选 + 指令，Seedream 5.0 Pro 一个模型
   //   studio  6 个精修工具（局部重绘/GPT编辑/扩图/消除/换背景/抠图）
@@ -70,7 +67,7 @@ export default function StudioPage() {
   const [editMenu, setEditMenu] = useState(false);
 
   // 当前大图对应的历史记录 —— 用来在操作条显示它的提示词。
-  // derived(编辑产物)不在 history 里，查不到时为 undefined，界面留空即可。
+  // 查不到时为 undefined（比如刚生成还没回表），界面留空即可。
   const currentMeta = current ? history.find((h) => h.image_url === current) : undefined;
 
   const fileRef = useRef<HTMLInputElement>(null);
@@ -132,6 +129,28 @@ export default function StudioPage() {
     }
   };
 
+  // 把一张图记进历史表。生成与两个编辑器都走这里。
+  //
+  // 原先编辑产出只存在内存里 —— 刷新页面、点其他历史、去画布再回来
+  // 就没了，用户以为改好的图丢了，其实从来没存过。产出即保存能一次解决这类问题。
+  const saveToHistory = useCallback(async (
+    imageUrl: string,
+    meta: { model: string; prompt?: string; aspectRatio?: string; quality?: string; refCount?: number },
+  ) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      await fetch('/api/studio/history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ imageUrl, ...meta }),
+      });
+      await loadHistory();
+    } catch {
+      // 写历史失败不影响图片本身 —— 图已在 Azure，只是列表少一条
+    }
+  }, [loadHistory]);
+
   const submit = async () => {
     if (!prompt.trim() && refImages.length === 0) {
       setError('请输入提示词或上传参考图');
@@ -153,25 +172,13 @@ export default function StudioPage() {
         userId: user?.id,
       });
 
-      // 记一条历史。失败不影响图片本身 —— 图已在 Azure，只是列表少一条
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        fetch('/api/studio/history', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            imageUrl: url, model: modelId, prompt: prompt.trim(),
-            aspectRatio: ratio, quality, refCount: refImages.length,
-          }),
-        }).then(() => loadHistory()).catch(() => {});
-      }
+      saveToHistory(url, {
+        model: modelId, prompt: prompt.trim(),
+        aspectRatio: ratio, quality, refCount: refImages.length,
+      });
 
       // 新图直接成为中间大图，并清掉上一张的衍生物
       setCurrent(url);
-      setDerived([]);
 
       // 乐观插入，不等 loadHistory 回来
       setHistory((cur) => [{
@@ -466,25 +473,6 @@ export default function StudioPage() {
                 />
               </div>
 
-              {/* 拆分图缩略条。与右侧历史不是一回事:这里是"当前这张图编辑或
-                  拆分出来的产物"(如图层分离出多张)，历史是各次独立生成。 */}
-              {derived.length > 0 && (
-                <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2, flexShrink: 0 }}>
-                  {derived.map((u) => (
-                    <img
-                      key={u}
-                      src={u}
-                      alt=""
-                      onClick={() => setCurrent(u)}
-                      style={{
-                        width: 68, height: 68, objectFit: 'cover', borderRadius: 9,
-                        cursor: 'pointer', flexShrink: 0,
-                        border: current === u ? '2px solid #1d1d1f' : '1px solid rgba(0,0,0,.08)',
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
             </>
           ) : pending.length > 0 ? (
             <div style={emptyStyle}>生成中</div>
@@ -500,7 +488,20 @@ export default function StudioPage() {
             borderLeft: '1px solid rgba(0,0,0,.07)',
           }}
         >
-          <div style={{ fontSize: 11.5, color: '#86868b', marginBottom: 11 }}>历史</div>
+          <div style={{ fontSize: 11.5, color: '#86868b', marginBottom: 11, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span>历史</span>
+            <span style={{ color: history.length >= 50 ? '#c2410c' : '#c7c7cc' }}>{history.length}</span>
+          </div>
+          {/* 到 50 条给个提醒而不是自动删 —— 自动删可能清掉用户还要的图，
+              而他未必看到提示。让他自己决定删哪些更稳妥。 */}
+          {history.length >= 50 && (
+            <div style={{
+              fontSize: 10.5, lineHeight: 1.55, color: '#7c2d12', background: '#fff7ed',
+              border: '1px solid #fed7aa', borderRadius: 8, padding: '7px 9px', marginBottom: 10,
+            }}>
+              已有 {history.length} 张，建议下载保存后删掉不需要的
+            </div>
+          )}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
               {pending.map((p) => (
                 <div
@@ -520,7 +521,7 @@ export default function StudioPage() {
                   <img
                     src={h.image_url}
                     alt={h.prompt ?? ''}
-                    onClick={() => { setCurrent(h.image_url); setDerived([]); }}
+                    onClick={() => setCurrent(h.image_url)}
                     title={h.prompt ?? ''}
                     style={{
                       width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: 9,
@@ -549,17 +550,17 @@ export default function StudioPage() {
       </div>
 
       {/* 图片交互编辑(Seedream 5.0 Pro)。图层分离会返回多张 —— 
-          产出落进 derived，显示为大图下方的缩略条 */}
+          每张都写进历史 —— 存内存的话切换记录就丢了 */}
       {doodleUrl !== null && (
         <DoodleModal
           imageUrl={doodleUrl || undefined}
           onClose={() => setDoodleUrl(null)}
           onConfirm={() => setDoodleUrl(null)}
           onGenerated={({ imageUrl }) => {
+            // 写进历史而非内存 —— 图层分离拆出的每一张都会走到这里
             setCurrent(imageUrl);
-            setDerived((cur) => (cur.includes(imageUrl) ? cur : [...cur, imageUrl]));
+            saveToHistory(imageUrl, { model: 'seedream-5-pro', prompt: '交互编辑' });
             setDoodleUrl(null);
-            loadHistory();
           }}
         />
       )}
@@ -570,9 +571,8 @@ export default function StudioPage() {
           initialImageUrl={editing}
           onApply={(finalUrl) => {
             setCurrent(finalUrl);
-            setDerived((cur) => (cur.includes(finalUrl) ? cur : [...cur, finalUrl]));
+            saveToHistory(finalUrl, { model: 'image-studio', prompt: '设计师工具' });
             setEditing(null);
-            loadHistory();
           }}
           onClose={() => setEditing(null)}
         />
