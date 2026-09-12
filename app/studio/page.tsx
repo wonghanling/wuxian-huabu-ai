@@ -9,6 +9,8 @@ import {
 } from '../canvas-v2/imageModels';
 import { refImageMax, STYLE_PRESETS, applyStylePrefix } from '../canvas-v2/imagePresets';
 import { generateImage, uploadImageToStorage } from '../canvas-v2/lib/api';
+import { DoodleModal } from '../canvas-v2/nodes/DoodleModal';
+import { ImageStudio } from '../canvas-v2/nodes/ImageStudio';
 
 // ============================================================
 // AI 生图（/studio）
@@ -53,6 +55,23 @@ export default function StudioPage() {
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [error, setError] = useState('');
   const [lightbox, setLightbox] = useState<string | null>(null);
+
+  // 三栏布局的状态。
+  //   current  中间大图当前显示哪张（点右侧历史或下方拆分图都改它）
+  //   derived  当前图编辑/拆分出来的产物 —— 与 history 分开:
+  //            history 是各次独立生成，derived 是"这一张"的衍生物
+  const [current, setCurrent] = useState<string | null>(null);
+  const [derived, setDerived] = useState<string[]>([]);
+  // 两个编辑器各自的开关。刻意不合并成一个 —— 它们能力不同:
+  //   doodle  涂抹/圈选 + 指令，Seedream 5.0 Pro 一个模型
+  //   studio  6 个精修工具（局部重绘/GPT编辑/扩图/消除/换背景/抠图）
+  const [doodleUrl, setDoodleUrl] = useState<string | null>(null);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [editMenu, setEditMenu] = useState(false);
+
+  // 当前大图对应的历史记录 —— 用来在操作条显示它的提示词。
+  // derived(编辑产物)不在 history 里，查不到时为 undefined，界面留空即可。
+  const currentMeta = current ? history.find((h) => h.image_url === current) : undefined;
 
   const fileRef = useRef<HTMLInputElement>(null);
   const model: ImageModel = IMAGE_MODELS.find((m) => m.id === modelId) ?? IMAGE_MODELS[0];
@@ -149,6 +168,10 @@ export default function StudioPage() {
           }),
         }).then(() => loadHistory()).catch(() => {});
       }
+
+      // 新图直接成为中间大图，并清掉上一张的衍生物
+      setCurrent(url);
+      setDerived([]);
 
       // 乐观插入，不等 loadHistory 回来
       setHistory((cur) => [{
@@ -367,68 +390,193 @@ export default function StudioPage() {
           </button>
         </aside>
 
-        {/* 右侧结果 */}
-        <main style={{ flex: 1, padding: '26px 28px', overflowY: 'auto' }}>
-          {loadingHistory ? (
-            <div style={emptyStyle} />
-          ) : pending.length === 0 && history.length === 0 ? (
-            <div style={emptyStyle}>
-              开始你的第一张作品
-            </div>
-          ) : (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-                gap: 14,
-              }}
-            >
-              {pending.map((p) => (
-                <div key={p.key} style={{ ...cardStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', aspectRatio: '1' }}>
-                  <div style={{ textAlign: 'center', padding: 16 }}>
-                    <div style={{ fontSize: 12.5, color: '#1d1d1f', marginBottom: 6 }}>生成中</div>
-                    <div style={{ fontSize: 11, color: '#86868b', lineHeight: 1.5 }}>
-                      {p.prompt.slice(0, 40)}
-                    </div>
+        {/* 中间:大图预览。撑满可用空间 —— 生图工具的主体是"看图"，
+            原先做成网格小卡片，图小到看不清细节，本末倒置了。 */}
+        <main
+          style={{
+            flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column',
+            padding: '22px 26px', gap: 14,
+          }}
+        >
+          {current ? (
+            <>
+              {/* 操作条 */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                <div style={{ fontSize: 12.5, color: '#6e6e73', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {currentMeta?.prompt || ''}
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                  {/* 一个"编辑"入口，点开三条路 —— 三者是不同层次的改图方式:
+                       交互编辑  涂抹/圈选标记 + 指令，Seedream 5.0 Pro，
+                                 含图层分离(拆出多张，落到大图下方缩略条)
+                       设计工具  6 个精修工具:局部重绘/GPT编辑/扩图/消除/换背景/抠图
+                       以此图重绘 不做局部编辑，把当前图当参考图交给左栏的模型
+                                 (Nano Banana / GPT Image 2.5 等)整图生成新图 */}
+                  <div style={{ position: 'relative' }}>
+                    <button onClick={() => setEditMenu((v) => !v)} style={ghostBtn}>
+                      编辑 ▾
+                    </button>
+                    {editMenu && (
+                      <div
+                        style={{
+                          position: 'absolute', top: '100%', right: 0, marginTop: 6, zIndex: 40,
+                          width: 216, padding: 6, borderRadius: 12, background: '#fff',
+                          border: '1px solid rgba(0,0,0,.08)', boxShadow: '0 12px 32px -12px rgba(0,0,0,.28)',
+                        }}
+                      >
+                        <MenuItem
+                          title="图片交互编辑"
+                          desc="涂抹标记改局部 · 图层分离"
+                          onClick={() => { setEditMenu(false); setDoodleUrl(current); }}
+                        />
+                        <MenuItem
+                          title="设计师工具"
+                          desc="局部重绘 · 扩图 · 消除 · 抠图"
+                          onClick={() => { setEditMenu(false); setEditing(current); }}
+                        />
+                        <MenuItem
+                          title="以此图重绘"
+                          desc="作为参考图，用左栏模型生成新图"
+                          onClick={() => {
+                            setEditMenu(false);
+                            // 当前图放进参考图，用户改提示词后点生成即可
+                            setRefImages((cur) => (cur.includes(current) ? cur : [...cur, current].slice(0, refImageMax(modelId))));
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
+                  <button onClick={() => download(current)} style={ghostBtn}>下载</button>
+                </div>
+              </div>
+
+              {/* 大图 */}
+              <div
+                style={{
+                  flex: 1, minHeight: 0, borderRadius: 14, background: '#f5f5f7',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  overflow: 'hidden',
+                }}
+              >
+                <img
+                  src={current}
+                  alt=""
+                  onClick={() => setLightbox(current)}
+                  style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', cursor: 'zoom-in' }}
+                />
+              </div>
+
+              {/* 拆分图缩略条。与右侧历史不是一回事:这里是"当前这张图编辑或
+                  拆分出来的产物"(如图层分离出多张)，历史是各次独立生成。 */}
+              {derived.length > 0 && (
+                <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2, flexShrink: 0 }}>
+                  {derived.map((u) => (
+                    <img
+                      key={u}
+                      src={u}
+                      alt=""
+                      onClick={() => setCurrent(u)}
+                      style={{
+                        width: 68, height: 68, objectFit: 'cover', borderRadius: 9,
+                        cursor: 'pointer', flexShrink: 0,
+                        border: current === u ? '2px solid #1d1d1f' : '1px solid rgba(0,0,0,.08)',
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          ) : pending.length > 0 ? (
+            <div style={emptyStyle}>生成中</div>
+          ) : (
+            <div style={emptyStyle}>{loadingHistory ? '' : '开始你的第一张作品'}</div>
+          )}
+        </main>
+
+        {/* 右侧:历史缩略图。点击切换中间大图 */}
+        <aside
+          style={{
+            width: 132, flexShrink: 0, padding: '22px 14px', overflowY: 'auto',
+            borderLeft: '1px solid rgba(0,0,0,.07)',
+          }}
+        >
+          <div style={{ fontSize: 11.5, color: '#86868b', marginBottom: 11 }}>历史</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+              {pending.map((p) => (
+                <div
+                  key={p.key}
+                  style={{
+                    width: '100%', aspectRatio: '1', borderRadius: 9, background: '#f5f5f7',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 10.5, color: '#86868b',
+                  }}
+                >
+                  生成中
                 </div>
               ))}
 
               {history.map((h) => (
-                <div key={h.id} style={cardStyle}>
+                <div key={h.id} style={{ position: 'relative' }}>
                   <img
                     src={h.image_url}
                     alt={h.prompt ?? ''}
-                    onClick={() => setLightbox(h.image_url)}
-                    style={{ width: '100%', display: 'block', cursor: 'zoom-in' }}
+                    onClick={() => { setCurrent(h.image_url); setDerived([]); }}
+                    title={h.prompt ?? ''}
+                    style={{
+                      width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: 9,
+                      cursor: 'pointer', display: 'block',
+                      border: current === h.image_url ? '2px solid #1d1d1f' : '1px solid rgba(0,0,0,.08)',
+                    }}
                   />
-                  <div style={{ padding: '9px 11px' }}>
-                    <div
-                      style={{
-                        fontSize: 11.5, color: '#424245', lineHeight: 1.5,
-                        overflow: 'hidden', display: '-webkit-box',
-                        WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-                      }}
-                      title={h.prompt ?? ''}
-                    >
-                      {h.prompt || ''}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 7 }}>
-                      <span style={{ fontSize: 10.5, color: '#86868b' }}>
-                        {IMAGE_MODELS.find((m) => m.id === h.model)?.label ?? h.model}
-                      </span>
-                      <span style={{ display: 'flex', gap: 8 }}>
-                        <button onClick={() => download(h.image_url)} style={miniBtn}>下载</button>
-                        <button onClick={() => removeHistory(h.id)} style={miniBtn}>删除</button>
-                      </span>
-                    </div>
-                  </div>
+                  {/* 删除按钮:悬停才出现，缩略图很小，常驻会挡住画面 */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); removeHistory(h.id); }}
+                    style={{
+                      position: 'absolute', top: 4, right: 4, width: 18, height: 18,
+                      borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,.55)',
+                      color: '#fff', fontSize: 10, cursor: 'pointer', lineHeight: 1,
+                      opacity: 0, transition: 'opacity .15s ease',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.opacity = '0'; }}
+                  >
+                    ×
+                  </button>
                 </div>
               ))}
-            </div>
-          )}
-        </main>
+          </div>
+        </aside>
       </div>
+
+      {/* 图片交互编辑(Seedream 5.0 Pro)。图层分离会返回多张 —— 
+          产出落进 derived，显示为大图下方的缩略条 */}
+      {doodleUrl !== null && (
+        <DoodleModal
+          imageUrl={doodleUrl || undefined}
+          onClose={() => setDoodleUrl(null)}
+          onConfirm={() => setDoodleUrl(null)}
+          onGenerated={({ imageUrl }) => {
+            setCurrent(imageUrl);
+            setDerived((cur) => (cur.includes(imageUrl) ? cur : [...cur, imageUrl]));
+            setDoodleUrl(null);
+            loadHistory();
+          }}
+        />
+      )}
+
+      {/* 设计师专用编辑中心。onApply 回传最终版本 */}
+      {editing !== null && (
+        <ImageStudio
+          initialImageUrl={editing}
+          onApply={(finalUrl) => {
+            setCurrent(finalUrl);
+            setDerived((cur) => (cur.includes(finalUrl) ? cur : [...cur, finalUrl]));
+            setEditing(null);
+            loadHistory();
+          }}
+          onClose={() => setEditing(null)}
+        />
+      )}
 
       {/* 放大查看 */}
       {lightbox && (
@@ -444,6 +592,24 @@ export default function StudioPage() {
         </div>
       )}
     </div>
+  );
+}
+
+/** 编辑菜单里的一项:标题 + 一行说明。三条路的差别不写清楚，用户会乱点 */
+function MenuItem({ title, desc, onClick }: { title: string; desc: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: 'block', width: '100%', textAlign: 'left', border: 'none',
+        background: 'transparent', padding: '9px 10px', borderRadius: 8, cursor: 'pointer',
+      }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = '#f5f5f7'; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+    >
+      <span style={{ display: 'block', fontSize: 13, color: '#1d1d1f', fontWeight: 500 }}>{title}</span>
+      <span style={{ display: 'block', fontSize: 11, color: '#86868b', marginTop: 2 }}>{desc}</span>
+    </button>
   );
 }
 
@@ -478,6 +644,13 @@ const chipActive: React.CSSProperties = {
 const cardStyle: React.CSSProperties = {
   borderRadius: 14, overflow: 'hidden', background: '#fff',
   border: '1px solid rgba(0,0,0,.06)', boxShadow: '0 1px 2px rgba(0,0,0,.04)',
+};
+
+/** 操作条上的按钮:浅灰底无描边，与页面的苹果风格一致 */
+const ghostBtn: React.CSSProperties = {
+  padding: '7px 14px', borderRadius: 999, border: 'none', cursor: 'pointer',
+  background: '#f5f5f7', color: '#1d1d1f', fontSize: 12.5, fontWeight: 500,
+  whiteSpace: 'nowrap',
 };
 
 const miniBtn: React.CSSProperties = {

@@ -38,8 +38,8 @@ const PLANS: Plan[] = [
       { text: '无限画布创作', on: true },
       { text: '图片生成 ¥0.3–1.5', on: true },
       { text: '视频生成普通价', on: true },
-      { text: '文本卡片 / 角色设计', on: false },
-      { text: 'Prompt 优化', on: false },
+      { text: '文本卡片 ¥0.1/次', on: true },
+      { text: 'Prompt 优化 ¥0.1/次', on: true },
     ],
     action: { type: 'signup' },
     accent: 'rgb(120,120,120)',
@@ -52,8 +52,8 @@ const PLANS: Plan[] = [
     unit: '/月 · 不自动续费',
     desc: '适合高频创作者，解锁全部专业功能',
     features: [
-      { text: '无限文本大模型', on: true },
-      { text: '导演引擎功能', on: true },
+      { text: '文本大模型无限使用', on: true },
+      { text: '导演引擎无限使用', on: true },
       { text: '视频生成每秒省 ¥0.2', on: true },
       { text: '设计师专业工具', on: true },
     ],
@@ -310,7 +310,7 @@ export default function PricingPage() {
               充值余额
             </h2>
             <p className="text-sm" style={{ color: 'rgb(150,150,150)' }}>
-              余额用于图片与视频生成，按次计费，不过期
+              余额用于图片、视频与文本生成，按次计费，不过期
             </p>
           </div>
 
@@ -356,7 +356,7 @@ export default function PricingPage() {
                 开通会员
               </h3>
               <p className="text-xs mb-5" style={{ color: 'rgb(140,140,140)' }}>
-                解锁剧本工作室、分镜脚本、导演引擎
+                剧本工作室、分镜脚本、导演引擎无限使用
               </p>
               <div className="space-y-2.5">
                 {USD_MEMBERSHIP_TIERS.map(({ plan, usd, label, months }) => (
@@ -382,7 +382,7 @@ export default function PricingPage() {
                 充值余额
               </h3>
               <p className="text-xs mb-5" style={{ color: 'rgb(140,140,140)' }}>
-                余额用于图片与视频生成，充得多送得多
+                余额用于图片、视频与文本生成，充得多送得多
               </p>
               <div className="space-y-2.5">
                 {USD_TIERS.map(({ usd, cny, bonus }) => (
@@ -432,7 +432,7 @@ export default function PricingPage() {
               {[
                 '自带 Key 的模型调用不扣画布余额，用量与账单在官方控制台查看',
                 '图片生成等按量计费功能，不需要开通套餐',
-                '套餐解锁的是剧本工作室、分镜脚本、导演引擎等文本创作功能',
+                '文本类功能(剧本工作室、分镜脚本、导演引擎)非会员按 ¥0.1/次计费，会员无限使用',
               ].map((t) => (
                 <li key={t} className="flex items-start gap-2.5 text-sm" style={{ color: 'rgb(160,160,160)' }}>
                   <span className="mt-[7px] w-1 h-1 rounded-full flex-shrink-0" style={{ background: 'rgb(113,208,131)' }} />
