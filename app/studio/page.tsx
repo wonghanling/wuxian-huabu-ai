@@ -115,7 +115,7 @@ export default function StudioPage() {
 
   const submit = async () => {
     if (!prompt.trim() && refImages.length === 0) {
-      setError('请输入提示词，或上传参考图');
+      setError('请输入提示词或上传参考图');
       return;
     }
     setError('');
@@ -189,43 +189,43 @@ export default function StudioPage() {
 
   // 登录判定完成前不渲染界面 —— 免得未登录用户看到一眼再被弹走
   if (authed === null) {
-    return <div style={{ minHeight: '100vh', background: '#f8fafc' }} />;
+    return <div style={{ minHeight: '100vh', background: '#fff' }} />;
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f8fafc', color: '#0f172a', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: '#fff', color: '#1d1d1f', display: 'flex', flexDirection: 'column' }}>
       {/* 顶栏 */}
       <header
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '12px 20px', borderBottom: '1px solid #e2e8f0',
-          position: 'sticky', top: 0, zIndex: 20, background: 'rgba(255,255,255,0.9)',
+          padding: '14px 26px', borderBottom: '1px solid rgba(0,0,0,.07)',
+          position: 'sticky', top: 0, zIndex: 20, background: 'rgba(255,255,255,.82)',
           backdropFilter: 'blur(12px)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-          <Link href="/" style={{ fontWeight: 700, letterSpacing: 1, color: '#0f172a', textDecoration: 'none' }}>
+          <Link href="/" style={{ fontWeight: 700, letterSpacing: 1, color: '#1d1d1f', textDecoration: 'none' }}>
             FILMAVO
           </Link>
-          <span style={{ fontSize: 13, color: '#64748b' }}>AI 生图</span>
+          <span style={{ fontSize: 13, color: '#6e6e73' }}>AI 生图</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: 13 }}>
-          <Link href="/canvas" style={{ color: '#475569', textDecoration: 'none' }}>
+          <Link href="/canvas" style={{ color: '#424245', textDecoration: 'none' }}>
             进入画布
           </Link>
           {/* 余额与画布同源(useMembership)，一边充值另一边刷新即可见 */}
-          <span style={{ color: '#475569' }}>
-            {memberLoading ? '···' : `¥${(balance ?? 0).toFixed(2)}`}
+          <span style={{ color: '#424245' }}>
+            {memberLoading ? '' : `¥${(balance ?? 0).toFixed(2)}`}
           </span>
           {isMember && (
-            <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 999, background: '#f1f5f9', color: '#334155' }}>
+            <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 999, background: '#f5f5f7', color: '#1d1d1f' }}>
               会员
             </span>
           )}
           <Link
             href="/pricing"
             style={{
-              padding: '6px 14px', borderRadius: 999, background: '#0f172a', color: '#fff',
+              padding: '6px 14px', borderRadius: 999, background: '#1d1d1f', color: '#fff',
               fontWeight: 600, fontSize: 12.5, textDecoration: 'none',
             }}
           >
@@ -238,8 +238,8 @@ export default function StudioPage() {
         {/* 左侧参数栏 */}
         <aside
           style={{
-            width: 340, flexShrink: 0, padding: 20, overflowY: 'auto',
-            borderRight: '1px solid #e2e8f0',
+            width: 352, flexShrink: 0, padding: '26px 24px', overflowY: 'auto',
+            borderRight: '1px solid rgba(0,0,0,.07)',
           }}
         >
           <Field label="模型">
@@ -254,7 +254,7 @@ export default function StudioPage() {
                 </option>
               ))}
             </select>
-            <div style={{ fontSize: 11.5, color: '#94a3b8', marginTop: 6 }}>
+            <div style={{ fontSize: 11.5, color: '#86868b', marginTop: 6 }}>
               {model.price}
             </div>
           </Field>
@@ -263,7 +263,7 @@ export default function StudioPage() {
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="描述你想要的画面…"
+              placeholder="描述你想要的画面"
               rows={5}
               style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6 }}
             />
@@ -295,7 +295,7 @@ export default function StudioPage() {
                 disabled={uploading || refImages.length >= maxRef}
                 style={{ ...inputStyle, cursor: 'pointer', opacity: refImages.length >= maxRef ? 0.4 : 1 }}
               >
-                {uploading ? '上传中…' : `上传图片（还能传 ${maxRef - refImages.length} 张）`}
+                {uploading ? '上传中' : `上传图片（还能传 ${maxRef - refImages.length} 张）`}
               </button>
               {refImages.length > 0 && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
@@ -357,23 +357,23 @@ export default function StudioPage() {
             onClick={submit}
             disabled={pending.length > 0}
             style={{
-              width: '100%', padding: '13px 0', borderRadius: 12, border: 'none',
-              background: pending.length ? '#cbd5e1' : '#0f172a',
+              width: '100%', padding: '13px 0', borderRadius: 999, border: 'none',
+              background: pending.length ? '#d2d2d7' : '#1d1d1f',
               color: '#fff',
-              fontWeight: 700, fontSize: 14, cursor: pending.length ? 'default' : 'pointer',
+              fontWeight: 500, fontSize: 14.5, cursor: pending.length ? 'default' : 'pointer',
             }}
           >
-            {pending.length ? '生成中…' : '生成'}
+            {pending.length ? '生成中' : '生成'}
           </button>
         </aside>
 
         {/* 右侧结果 */}
-        <main style={{ flex: 1, padding: 20, overflowY: 'auto' }}>
+        <main style={{ flex: 1, padding: '26px 28px', overflowY: 'auto' }}>
           {loadingHistory ? (
-            <div style={emptyStyle}>加载中…</div>
+            <div style={emptyStyle} />
           ) : pending.length === 0 && history.length === 0 ? (
             <div style={emptyStyle}>
-              还没有作品 —— 在左侧写下提示词，点「生成」开始
+              开始你的第一张作品
             </div>
           ) : (
             <div
@@ -386,9 +386,9 @@ export default function StudioPage() {
               {pending.map((p) => (
                 <div key={p.key} style={{ ...cardStyle, display: 'flex', alignItems: 'center', justifyContent: 'center', aspectRatio: '1' }}>
                   <div style={{ textAlign: 'center', padding: 16 }}>
-                    <div style={{ fontSize: 12.5, color: '#334155', marginBottom: 6 }}>生成中…</div>
-                    <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.5 }}>
-                      {p.prompt.slice(0, 40) || '(无提示词)'}
+                    <div style={{ fontSize: 12.5, color: '#1d1d1f', marginBottom: 6 }}>生成中</div>
+                    <div style={{ fontSize: 11, color: '#86868b', lineHeight: 1.5 }}>
+                      {p.prompt.slice(0, 40)}
                     </div>
                   </div>
                 </div>
@@ -405,16 +405,16 @@ export default function StudioPage() {
                   <div style={{ padding: '9px 11px' }}>
                     <div
                       style={{
-                        fontSize: 11.5, color: '#475569', lineHeight: 1.5,
+                        fontSize: 11.5, color: '#424245', lineHeight: 1.5,
                         overflow: 'hidden', display: '-webkit-box',
                         WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
                       }}
                       title={h.prompt ?? ''}
                     >
-                      {h.prompt || '(无提示词)'}
+                      {h.prompt || ''}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 7 }}>
-                      <span style={{ fontSize: 10.5, color: '#94a3b8' }}>
+                      <span style={{ fontSize: 10.5, color: '#86868b' }}>
                         {IMAGE_MODELS.find((m) => m.id === h.model)?.label ?? h.model}
                       </span>
                       <span style={{ display: 'flex', gap: 8 }}>
@@ -450,7 +450,7 @@ export default function StudioPage() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 18 }}>
-      <div style={{ fontSize: 12, color: '#64748b', marginBottom: 7, letterSpacing: 0.3 }}>
+      <div style={{ fontSize: 12, color: '#6e6e73', marginBottom: 7, letterSpacing: 0.3 }}>
         {label}
       </div>
       {children}
@@ -459,32 +459,33 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 const inputStyle: React.CSSProperties = {
-  width: '100%', padding: '9px 11px', borderRadius: 9,
-  background: '#fff', border: '1px solid #cbd5e1',
-  color: '#0f172a', fontSize: 13, outline: 'none',
+  width: '100%', padding: '11px 13px', borderRadius: 11,
+  background: '#f5f5f7', border: '1px solid transparent',
+  color: '#1d1d1f', fontSize: 13.5, outline: 'none',
 };
 
 const chipStyle: React.CSSProperties = {
-  padding: '6px 11px', borderRadius: 8, fontSize: 11.5, cursor: 'pointer',
-  background: '#fff', border: '1px solid #cbd5e1', color: '#475569',
+  padding: '7px 13px', borderRadius: 999, fontSize: 12, cursor: 'pointer',
+  background: '#f5f5f7', border: '1px solid transparent', color: '#424245',
+  transition: 'background .16s ease',
 };
 
 // 选中态用蓝色 —— 蓝只出现在强调处，铺太满会像模板站
 const chipActive: React.CSSProperties = {
-  ...chipStyle, background: '#0f172a', color: '#fff', borderColor: '#0f172a', fontWeight: 600,
+  ...chipStyle, background: '#1d1d1f', color: '#fff', borderColor: '#1d1d1f', fontWeight: 500,
 };
 
 const cardStyle: React.CSSProperties = {
-  borderRadius: 12, overflow: 'hidden', background: '#fff',
-  border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(15,23,42,.06)',
+  borderRadius: 14, overflow: 'hidden', background: '#fff',
+  border: '1px solid rgba(0,0,0,.06)', boxShadow: '0 1px 2px rgba(0,0,0,.04)',
 };
 
 const miniBtn: React.CSSProperties = {
-  border: 'none', background: 'transparent', color: '#64748b',
+  border: 'none', background: 'transparent', color: '#6e6e73',
   fontSize: 11, cursor: 'pointer', padding: 0,
 };
 
 const emptyStyle: React.CSSProperties = {
   height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-  color: '#94a3b8', fontSize: 13,
+  color: '#86868b', fontSize: 13,
 };
