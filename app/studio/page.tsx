@@ -35,8 +35,11 @@ type HistoryItem = {
   created_at: string;
 };
 
-/** 历史保留上限。超出的最旧记录会在下次加载时被清掉 */
+/** 历史保留规则:最多 50 张，且只留 7 天。
+ *  两条哪个先触及就按哪个清 —— 生图页是"工作台"不是长期存档;
+ *  要长期保存的作品应该下载，或者用画布(那边的快照不设期限)。 */
 const MAX_HISTORY = 50;
+const MAX_HISTORY_DAYS = 7;
 
 /** 生成中的占位项 —— 与历史项同列展示，让用户看到进度而非空白 */
 type PendingItem = { key: string; prompt: string; model: string };
@@ -103,18 +106,21 @@ export default function StudioPage() {
       const items: HistoryItem[] = data.items ?? [];
       setHistory(items);
 
-      // 超过 50 张清掉最旧的。接口按时间倒序返回，所以第 50 项之后就是最旧的那批。
-      // 提醒文案里承诺了会自动清除，那就得真做 —— 不然是空话。
-      // 静默进行:用户已经在 40 张时看到过提醒，删除时再弹窗打扰反而烦。
-      if (items.length > MAX_HISTORY) {
-        const stale = items.slice(MAX_HISTORY);
+      // 清理:超 50 张 或 超 7 天，两条任一命中就删。
+      // 接口按时间倒序返回，所以第 50 项之后即最旧的那批。
+      // 静默进行 —— 用户在 40 张时已看过提醒，删除时再弹窗反而打扰。
+      const cutoff = Date.now() - MAX_HISTORY_DAYS * 86400000;
+      const stale = items.filter((it, i) =>
+        i >= MAX_HISTORY || new Date(it.created_at).getTime() < cutoff
+      );
+      if (stale.length > 0) {
         for (const it of stale) {
           fetch(`/api/studio/history?id=${it.id}`, {
             method: 'DELETE',
             headers: { Authorization: `Bearer ${session.access_token}` },
           }).catch(() => {});
         }
-        setHistory(items.slice(0, MAX_HISTORY));
+        setHistory(items.filter((it) => !stale.includes(it)));
       }
     } finally {
       setLoadingHistory(false);
@@ -544,7 +550,7 @@ export default function StudioPage() {
               fontSize: 10.5, lineHeight: 1.6, color: '#fff', background: '#1d1d1f',
               borderRadius: 9, padding: '8px 10px', marginBottom: 10,
             }}>
-              已有 {history.length} 张，超过 50 张会自动清除最旧的，请及时保存
+              已有 {history.length} 张。历史只保留 50 张 / 7 天，超出会自动清除，请及时下载保存
             </div>
           )}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
