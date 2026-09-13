@@ -35,6 +35,9 @@ type HistoryItem = {
   created_at: string;
 };
 
+/** 历史保留上限。超出的最旧记录会在下次加载时被清掉 */
+const MAX_HISTORY = 50;
+
 /** 生成中的占位项 —— 与历史项同列展示，让用户看到进度而非空白 */
 type PendingItem = { key: string; prompt: string; model: string };
 
@@ -96,7 +99,23 @@ export default function StudioPage() {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
       const data = await res.json();
-      if (res.ok) setHistory(data.items ?? []);
+      if (!res.ok) return;
+      const items: HistoryItem[] = data.items ?? [];
+      setHistory(items);
+
+      // 超过 50 张清掉最旧的。接口按时间倒序返回，所以第 50 项之后就是最旧的那批。
+      // 提醒文案里承诺了会自动清除，那就得真做 —— 不然是空话。
+      // 静默进行:用户已经在 40 张时看到过提醒，删除时再弹窗打扰反而烦。
+      if (items.length > MAX_HISTORY) {
+        const stale = items.slice(MAX_HISTORY);
+        for (const it of stale) {
+          fetch(`/api/studio/history?id=${it.id}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          }).catch(() => {});
+        }
+        setHistory(items.slice(0, MAX_HISTORY));
+      }
     } finally {
       setLoadingHistory(false);
     }
@@ -348,16 +367,42 @@ export default function StudioPage() {
           )}
 
           <Field label="比例">
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {(model.ratios ?? RATIO_OPTIONS).map((r) => (
-                <button
-                  key={r.value}
-                  onClick={() => setRatio(r.value)}
-                  style={ratio === r.value ? chipActive : chipStyle}
-                >
-                  {r.label}
-                </button>
-              ))}
+            {/* 带形状预览的按钮 —— 纯文字标签（"16:9 宽屏"）要用户在脑子里
+                换算成画面形状，给个等比小方块一眼就懂。方块按真实比例算宽高，
+                所以 9:16 是竖的、21:9 是扁的。 */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+              {(model.ratios ?? RATIO_OPTIONS).map((r) => {
+                const on = ratio === r.value;
+                const [rw, rh] = r.value.split(':').map(Number);
+                // 长边固定 22px，短边按比例缩 —— 保证各选项视觉重量一致
+                const box = 22;
+                const w = rw >= rh ? box : Math.round((rw / rh) * box);
+                const h = rh > rw ? box : Math.round((rh / rw) * box);
+                return (
+                  <button
+                    key={r.value}
+                    onClick={() => setRatio(r.value)}
+                    title={r.label}
+                    style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center',
+                      gap: 5, padding: '8px 10px 7px', borderRadius: 10, cursor: 'pointer',
+                      background: on ? '#1d1d1f' : '#f5f5f7',
+                      border: '1px solid transparent',
+                      transition: 'background .16s ease',
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: 'block', width: w || box, height: h || box, borderRadius: 3,
+                        border: `1.5px solid ${on ? 'rgba(255,255,255,.85)' : '#a1a1a6'}`,
+                      }}
+                    />
+                    <span style={{ fontSize: 10.5, lineHeight: 1, color: on ? '#fff' : '#6e6e73' }}>
+                      {r.value}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </Field>
 
@@ -492,14 +537,14 @@ export default function StudioPage() {
             <span>历史</span>
             <span style={{ color: history.length >= 50 ? '#c2410c' : '#c7c7cc' }}>{history.length}</span>
           </div>
-          {/* 到 50 条给个提醒而不是自动删 —— 自动删可能清掉用户还要的图，
-              而他未必看到提示。让他自己决定删哪些更稳妥。 */}
-          {history.length >= 50 && (
+          {/* 黑底白字的提醒。到 40 张就开始提示，不等满 50 —— 提示要早于
+              清理发生，否则用户看到时可能已经被删了。 */}
+          {history.length >= 40 && (
             <div style={{
-              fontSize: 10.5, lineHeight: 1.55, color: '#7c2d12', background: '#fff7ed',
-              border: '1px solid #fed7aa', borderRadius: 8, padding: '7px 9px', marginBottom: 10,
+              fontSize: 10.5, lineHeight: 1.6, color: '#fff', background: '#1d1d1f',
+              borderRadius: 9, padding: '8px 10px', marginBottom: 10,
             }}>
-              已有 {history.length} 张，建议下载保存后删掉不需要的
+              已有 {history.length} 张，超过 50 张会自动清除最旧的，请及时保存
             </div>
           )}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
@@ -530,16 +575,26 @@ export default function StudioPage() {
                     }}
                   />
                   {/* 删除按钮:悬停才出现，缩略图很小，常驻会挡住画面 */}
+                  {/* 删除按钮常驻显示 —— 原先 opacity:0 靠 hover 才出现，
+                      而缩略图只有 100px 宽，用户不容易发现有这个功能。 */}
                   <button
                     onClick={(e) => { e.stopPropagation(); removeHistory(h.id); }}
+                    title="删除这张"
                     style={{
-                      position: 'absolute', top: 4, right: 4, width: 18, height: 18,
-                      borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,.55)',
-                      color: '#fff', fontSize: 10, cursor: 'pointer', lineHeight: 1,
-                      opacity: 0, transition: 'opacity .15s ease',
+                      position: 'absolute', top: 5, right: 5, width: 20, height: 20,
+                      borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,.6)',
+                      color: '#fff', fontSize: 12, cursor: 'pointer', lineHeight: 1,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      opacity: 0.75, transition: 'opacity .15s ease, background .15s ease',
                     }}
-                    onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.opacity = '0'; }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.opacity = '1';
+                      e.currentTarget.style.background = 'rgba(0,0,0,.85)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.opacity = '0.75';
+                      e.currentTarget.style.background = 'rgba(0,0,0,.6)';
+                    }}
                   >
                     ×
                   </button>
