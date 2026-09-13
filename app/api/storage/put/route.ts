@@ -93,9 +93,41 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: `不支持的格式: ${ext || '未知'}` }, { status: 400 });
       }
 
-      const buf = Buffer.from(await file.arrayBuffer());
-      const path = `${folder}/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
-      url = await putAsset(path, buf, MIME[ext]);
+      let buf: Uint8Array = Buffer.from(await file.arrayBuffer());
+      let outExt = ext;
+
+      // 服务端兜底压缩。
+      //
+      // 前端 uploadImageToStorage 已限长边 2560，但不是所有上传都经过它 ——
+      // boluotv 的作品集与项目封面是把原始文件直接 POST 到本接口的，绕过了
+      // 那层压缩，几 MB 的手机原图会原样进存储。
+      //
+      // 放这里而不是逐个改前端:本接口是所有"上传文件"的唯一入口，一处覆盖
+      // 全部，以后新增上传点也自动受益。
+      const isImage = ['jpg', 'jpeg', 'png', 'webp'].includes(ext);
+      if (isImage) {
+        try {
+          const sharp = (await import('sharp')).default;
+          const meta = await sharp(buf).metadata();
+          const longest = Math.max(meta.width ?? 0, meta.height ?? 0);
+          // 只有超过 2560 或体积偏大时才重编码 —— 小图重编码是白做功，
+          // 还会因为再压一次而掉画质
+          if (longest > 2560 || buf.length > 1200000) {
+            buf = await sharp(buf)
+              .rotate()                                   // 按 EXIF 摆正，手机照片常见
+              .resize({ width: 2560, height: 2560, fit: 'inside', withoutEnlargement: true })
+              .jpeg({ quality: 88, mozjpeg: true })
+              .toBuffer();
+            outExt = 'jpg';                               // 统一转 JPEG，PNG 原图往往大得多
+          }
+        } catch (e) {
+          // 压缩失败就传原图 —— 图能存进去比省流量重要
+          console.warn('[storage/put] 压缩失败，改传原图:', (e as any)?.message || e);
+        }
+      }
+
+      const path = `${folder}/${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${outExt}`;
+      url = await putAsset(path, buf, MIME[outExt] || MIME[ext]);
     }
 
     return NextResponse.json({ success: true, url });

@@ -363,10 +363,10 @@ export async function generateVideo(
   const byok = data.byok === true;  // 用了自带 key,轮询必须用同一把
   if (!taskId) throw new Error('未返回 taskId');
 
-  // 轮询(5秒间隔,60次超时,照原网)
+  // 轮询 5 秒一次，180 次 = 15 分钟。原先 60 次(300 秒)不够 --
   let attempts = 0;
   const poll = async (): Promise<string> => {
-    if (attempts >= 60) throw new Error('视频生成超时,请稍后重试');
+    if (attempts >= 180) throw new Error('视频生成超时,请稍后重试');
     attempts++;
     await new Promise((r) => setTimeout(r, 5000));
     const qRes = await fetch(`/api/video/query?taskId=${encodeURIComponent(taskId)}&endpoint=${encodeURIComponent(endpoint || '')}&keyId=${encodeURIComponent(keyId || '')}${byok ? '&byok=1' : ''}`, {
@@ -461,13 +461,13 @@ export async function generateSeedance(
       const qData = await qRes.json();
       if (qData.status === 'completed' && qData.videoUrl) return qData.videoUrl;
       if (qData.status === 'failed') throw new Error(qData.error || 'Seedance 生成失败');
-      if (attempts >= 120) throw new Error('生成超时');
+      if (attempts >= 180) throw new Error('生成超时');
       const prog = qData.status === 'queued' ? 10 : Math.min(90, 10 + attempts * 1.5);
       onProgress?.(prog, qData.status === 'queued' ? '排队中...' : '生成中...');
       return poll();
     } catch (e: any) {
       if (e?.message && (e.message.includes('超时') || e.message.includes('失败'))) throw e;
-      if (attempts >= 120) throw new Error('生成超时');
+      if (attempts >= 180) throw new Error('生成超时');
       onProgress?.(50, '网络重试中...');
       await new Promise((r) => setTimeout(r, 8000));
       return poll();
@@ -601,12 +601,12 @@ export async function generateKlingLipSync(
       const qData = await qRes.json();
       if (qData.status === 'completed' && qData.videoUrl) return qData.videoUrl;
       if (qData.status === 'failed') throw new Error(qData.error || '生成失败');
-      if (attempts >= 60) throw new Error('生成超时');
+      if (attempts >= 180) throw new Error('生成超时');
       onProgress?.(Math.min(90, 20 + attempts * 2), '生成中...');
       return poll();
     } catch (e: any) {
       if (e?.message && (e.message.includes('超时') || e.message.includes('失败'))) throw e;
-      if (attempts >= 60) throw new Error('生成超时');
+      if (attempts >= 180) throw new Error('生成超时');
       onProgress?.(50, '网络重试中...');
       await new Promise((r) => setTimeout(r, 8000));
       return poll();
