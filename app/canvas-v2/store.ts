@@ -146,6 +146,8 @@ interface CanvasState {
   // 剧本工作室"发送到画布"：在画布上新建一张预填内容的卡片(不自动连线/生成)
   // 返回新卡 id;多张连续发送时按 index 错位铺开
   addCardFromStudio: (kind: 'text' | 'character' | 'image', prefillText: string, index?: number) => string;
+  /** 放一张已生成好的图到新卡片并与来源连线（GEM 分镜一键出图用） */
+  addImageResultFrom: (sourceId: string, imageUrl: string, cfg: Record<string, unknown>) => string;
   // 涂鸦编辑:用涂鸦图当参考图新建图片卡,返回新卡 id
   addImageCardWithRef: (refUrl: string, prompt: string, model: string) => string;
 }
@@ -271,6 +273,41 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       ),
       selectedId: newId,
     });
+  },
+
+  // 把一张已生成的图放进新卡片并连线。
+  //
+  // 与 spawnFrom 的区别:那个建的是空卡等用户操作，这里是结果已经有了，
+  // 直接以 done 态落卡。结构与手动新建的图片卡完全一致(kind:'image' + config)，
+  // 所以顶部工具栏、连线、放大、下载那些能力自动都有。
+  addImageResultFrom: (sourceId, imageUrl, cfg) => {
+    const src = get().nodes.find((n) => n.id === sourceId);
+    const newId = `i${Date.now()}`;
+    const newNode: CardNode = {
+      id: newId,
+      type: 'card',
+      // 放在来源右侧，与 spawnFrom 的落点规则一致
+      position: {
+        x: (src?.position.x ?? 0) + 400,
+        y: (src?.position.y ?? 0) + 40,
+      },
+      data: {
+        kind: 'image',
+        status: 'done',
+        outputUrl: imageUrl,
+        text: '',
+        config: cfg as any,
+      } as any,
+    };
+    set({
+      nodes: [...get().nodes, newNode],
+      edges: addEdge(
+        { id: `e${sourceId}-${newId}`, source: sourceId, target: newId, animated: true },
+        get().edges
+      ),
+      selectedId: newId,
+    });
+    return newId;
   },
 
   // 剧本工作室"发送到画布":新建一张预填内容的卡片(不连线、不自动生成)

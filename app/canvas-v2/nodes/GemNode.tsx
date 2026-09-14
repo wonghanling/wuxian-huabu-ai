@@ -7,7 +7,8 @@ import { IconExpand, IconShrink, IconMinus, IconPlus } from './icons';
 import { SpawnMenu } from './SpawnMenu';
 import { RefThumb } from './RefThumb';
 import { PromptTools } from './PromptTools';
-import { uploadImageToStorage, generateGemStoryboard, getUserId } from '../lib/api';
+import { uploadImageToStorage, generateGemStoryboard, getUserId, generateImage, mirrorOutput } from '../lib/api';
+import { useMembership } from '@/lib/useMembership';
 import { useUpstream } from '../lib/connections';
 import { useDebouncedField } from '../lib/useDebouncedField';
 import { applyStylePrefix } from '../imagePresets';
@@ -78,6 +79,19 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const textField = useDebouncedField(data.text ?? '', (v) => updateCard(id, { text: v }));
   const promptField = useDebouncedField(data.config.prompt ?? '', (v) => updateConfig(id, { prompt: v }));
 
+  // 文本扣费提示(非会员 ¥0.1/次，会员免费无限)
+  const { isMember, loading: memberLoading } = useMembership();
+  const addImageResultFrom = useCanvasStore((st) => st.addImageResultFrom);
+
+  // 一键出图的参数。存进 config，切走再回来仍是上次的选择。
+  const [imaging, setImaging] = useState(false);
+  const [imgPanel, setImgPanel] = useState(false);
+  const cfgAny = data.config as any;
+  const imgModel: string = cfgAny.gemImgModel ?? 'nano-banana-pro';
+  const imgRatio: string = cfgAny.gemImgRatio ?? '16:9';
+  const imgQuality: string = cfgAny.gemImgQuality ?? '2k';
+  const imgExtra: string = cfgAny.gemImgExtra ?? '';
+
   const mode: GemMode = (data.config.preset as GemMode) ?? 'story';
   const gridSize = data.config.textDuration ?? '9';   // 复用 textDuration 存格子数
   const style = data.config.ratio ?? '';              // 复用 ratio 存风格 prompt
@@ -140,6 +154,59 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
       clearInterval(timer);
       updateCard(id, { status: 'error', progress: 0 });
       alert('分镜生成失败: ' + (err?.message || err));
+    }
+  };
+
+  // 一键出图:用本卡已有的图 + 刚出的分镜 JSON 生成宫格图，结果自动落成一张
+  // 标准图片卡并连线 —— 分镜图几乎一定要继续用(去生成视频、当参考图)，
+  // 留在本卡里就是死路，用户还得手动搬。
+  //
+  // 省掉的是原来那四步:开菜单 → 选图片卡 → 拖连线 → 把文本复制过去。
+  // 本卡手里两样输入都齐(allImages + data.text)，那几步纯属搬运。
+  //
+  // 不套 step4 的模板图:step2 的宫格数由用户选(故事 4/9/25、时空 4/9)，
+  // 而那边模板只有 4/9 两种，25 格塞不下。这里让模型按 JSON 的格子数排版。
+  const handleMakeImage = async () => {
+    if (!data.text || imaging) return;
+    setImaging(true);
+    try {
+      const userId = await getUserId();
+      const allImages = [...refImages, ...connImages];
+      const gridLabel = gridSize === '25' ? '25 宫格(5×5)'
+        : gridSize === '9' ? '9 宫格(3×3)' : '4 宫格(2×2)';
+      // 风格与文本同源(都取自 style)，拼在最前保证画面风格一致
+      const finalPrompt = [
+        style,
+        `根据参考图和下面的分镜脚本，生成一张 ${gridLabel} 分镜图。每格对应脚本里的一个镜头，按顺序从左到右、从上到下排列。`,
+        imgExtra,
+        data.text,
+      ].filter(Boolean).join('\n\n');
+
+      const url = await generateImage({
+        model: imgModel,
+        prompt: finalPrompt,
+        aspectRatio: imgRatio,
+        imageQuality: imgQuality,
+        imageUrlArray: allImages.length > 0 ? allImages : undefined,
+        userId,
+      });
+      // 转存拿永久地址 —— 上游给的是临时链接，几天后失效
+      const perm = (await mirrorOutput(url, 'image')) || url;
+
+      const newId = addImageResultFrom(id, perm, {
+        model: imgModel, prompt: finalPrompt, ratio: imgRatio, imageQuality: imgQuality,
+      });
+      // 宽高探测出来再写回，卡片比例跟随原图
+      const probe = new Image();
+      probe.onload = () => updateCard(newId, { aspectW: probe.naturalWidth, aspectH: probe.naturalHeight });
+      probe.src = perm;
+
+      setImgPanel(false);
+      (window as any).saveCanvasV2Now?.();
+    } catch (err: any) {
+      alert('出图失败: ' + (err?.message || err));
+    } finally {
+      setImaging(false);
     }
   };
 
@@ -218,6 +285,71 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           )}
         </div>
       </div>
+
+      {/* 出图面板(有分镜文本时显示)。
+          与下方那个输入栏互斥:它的 isVisible 带 !hasResult。
+          做成一整套图片参数而非单个按钮 —— 用户要选模型、比例、清晰度，
+          还常要补一句"保持品牌色"这类要求。 */}
+      <NodeToolbar isVisible={selected && !spawnOpen && hasResult} position={Position.Bottom} offset={16}>
+        <div className="nodrag nopan" style={promptBar} onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+          {!imgPanel ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 8px' }}>
+              <span style={{ fontSize: 12, color: '#a1a1aa' }}>分镜词已生成</span>
+              <button onClick={() => setImgPanel(true)} style={{ ...generateBtn, marginLeft: 'auto' }}>
+                生成分镜图
+              </button>
+            </div>
+          ) : (
+            <div style={{ padding: '6px 8px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <textarea
+                value={imgExtra}
+                onChange={(e) => updateConfig(id, { gemImgExtra: e.target.value } as any)}
+                placeholder="补充要求(可留空)，如:保持品牌主色 / 每格右下角标镜头号"
+                rows={2}
+                className="nodrag nopan nowheel"
+                style={{
+                  width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: 8, padding: '6px 8px', fontSize: 11, color: '#e4e4e7',
+                  outline: 'none', resize: 'none', lineHeight: 1.5,
+                }}
+              />
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+                {GEM_IMG_MODELS.map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => updateConfig(id, { gemImgModel: m.id } as any)}
+                    style={imgModel === m.id ? gemChipActive : gemChip}
+                    title={m.price}
+                  >
+                    {m.short}
+                  </button>
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                {['16:9', '9:16', '1:1'].map((r) => (
+                  <button key={r} onClick={() => updateConfig(id, { gemImgRatio: r } as any)}
+                    style={imgRatio === r ? gemChipActive : gemChip}>{r}</button>
+                ))}
+                <span style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.14)', margin: '0 2px' }} />
+                {['2k', '4k'].map((q) => (
+                  <button key={q} onClick={() => updateConfig(id, { gemImgQuality: q } as any)}
+                    style={imgQuality === q ? gemChipActive : gemChip}>{q.toUpperCase()}</button>
+                ))}
+                <button onClick={() => setImgPanel(false)} style={{ ...gemChip, marginLeft: 'auto' }}>收起</button>
+                <button
+                  onClick={handleMakeImage}
+                  disabled={imaging}
+                  style={{ ...generateBtn, opacity: imaging ? 0.4 : 1, cursor: imaging ? 'default' : 'pointer' }}
+                >
+                  {imaging ? '出图中…' : '出图'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </NodeToolbar>
 
       {/* 底部弹窗(无输出时显示) */}
       <NodeToolbar isVisible={selected && !spawnOpen && !hasResult} position={Position.Bottom} offset={16}>
@@ -340,7 +472,14 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
           {/* 底行 Generate */}
           <div style={{ display: 'flex', alignItems: 'center', padding: '4px 8px 8px' }}>
-            <span style={{ fontSize: 12, color: '#71717a' }}>GEM 分镜 · 内置专业系统指令</span>
+            <span style={{ fontSize: 12, color: '#71717a' }}>
+              GEM 分镜 · 内置专业系统指令
+              {/* 标出文本扣费 —— 之前界面上没写，用户不知道点一次要花钱。
+                  会员免费所以不显示，标价反而让人误会。 */}
+              {!isMember && !memberLoading && (
+                <span style={{ marginLeft: 6, color: '#52525b' }}>¥0.1/次</span>
+              )}
+            </span>
             <button onClick={handleGenerate} disabled={data.status === 'generating'} style={{ ...generateBtn, opacity: data.status === 'generating' ? 0.4 : 1, cursor: data.status === 'generating' ? 'default' : 'pointer' }}>{data.status === 'generating' ? '生成中…' : 'Generate'}</button>
           </div>
         </div>
@@ -494,6 +633,25 @@ const toolBtnWide: React.CSSProperties = {
   color: '#e4e4e7', fontSize: 12, fontWeight: 600, cursor: 'pointer',
   boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
 };
+// 一键出图可选的模型 —— 只列适合出宫格分镜的五个:
+// 多图融合两款对多张参考图更稳，2.5 系列支持最多 16 张参考图。
+const GEM_IMG_MODELS = [
+  { id: 'nano-banana-pro',        short: 'Nano Banana 2',   price: '2K ¥0.5 / 4K ¥0.7' },
+  { id: 'nano-banana-pro-multi',  short: '多图融合 NB Pro',  price: '2K ¥0.7 / 4K ¥0.9' },
+  { id: 'gpt-image-2-all',        short: 'GPT2 多图融合',    price: '2K ¥0.43 / 4K ¥0.63' },
+  { id: 'gpt-image-2-5-sunburst', short: '2.5 Sunburst',    price: '¥0.30~0.63/次' },
+  { id: 'gpt-image-2-5-flare',    short: '2.5 Flare',       price: '¥0.30~0.63/次' },
+];
+
+const gemChip: React.CSSProperties = {
+  padding: '4px 9px', borderRadius: 7, fontSize: 10.5, cursor: 'pointer',
+  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)',
+  color: '#a1a1aa', whiteSpace: 'nowrap',
+};
+const gemChipActive: React.CSSProperties = {
+  ...gemChip, background: 'rgba(255,255,255,0.14)', color: '#fff', borderColor: 'rgba(255,255,255,0.3)',
+};
+
 const modeBtnBase: React.CSSProperties = {
   padding: '9px 16px', border: 'none',
   background: 'rgba(255,255,255,0.06)', color: '#d4d4d8', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap',
