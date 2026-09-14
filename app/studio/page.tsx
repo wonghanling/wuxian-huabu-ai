@@ -7,7 +7,7 @@ import { useMembership } from '@/lib/useMembership';
 import {
   IMAGE_MODELS, DEFAULT_IMAGE_MODEL, RATIO_OPTIONS, type ImageModel,
 } from '../canvas-v2/imageModels';
-import { refImageMax, STYLE_PRESETS, applyStylePrefix } from '../canvas-v2/imagePresets';
+import { refImageMax } from '../canvas-v2/imagePresets';
 import { generateImage, uploadImageToStorage } from '../canvas-v2/lib/api';
 import { DoodleModal } from '../canvas-v2/nodes/DoodleModal';
 import { ImageStudio } from '../canvas-v2/nodes/ImageStudio';
@@ -322,17 +322,6 @@ export default function StudioPage() {
               rows={5}
               style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6 }}
             />
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-              {STYLE_PRESETS.slice(0, 6).map((p) => (
-                <button
-                  key={p.label}
-                  onClick={() => setPrompt((cur) => applyStylePrefix(cur, p.prompt))}
-                  style={chipStyle}
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
           </Field>
 
           {model.supportsImage !== false && maxRef > 0 && (
