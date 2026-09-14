@@ -77,6 +77,11 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [uploading, setUploading] = useState(false);   // 上传中指示(照原网)
   // 输入框本地state+防抖(中文输入不被打断)
   const textField = useDebouncedField(data.text ?? '', (v) => updateCard(id, { text: v }));
+  // 出图面板的补充说明。同样走防抖 —— 直接 onChange 写 store 会打断拼音输入
+  const imgExtraField = useDebouncedField(
+    (data.config as any).gemImgExtra ?? '',
+    (v) => updateConfig(id, { gemImgExtra: v } as any),
+  );
   const promptField = useDebouncedField(data.config.prompt ?? '', (v) => updateConfig(id, { prompt: v }));
 
   // 文本扣费提示(非会员 ¥0.1/次，会员免费无限)
@@ -178,7 +183,7 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
       const finalPrompt = [
         style,
         `根据参考图和下面的分镜脚本，生成一张 ${gridLabel} 分镜图。每格对应脚本里的一个镜头，按顺序从左到右、从上到下排列。`,
-        imgExtra,
+        imgExtraField.value,   // 读本地 state 而非 store —— 防抖有 300ms 延迟，打完字立刻点出图会漏掉最后几个字
         data.text,
       ].filter(Boolean).join('\n\n');
 
@@ -302,8 +307,8 @@ function GemNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
           ) : (
             <div style={{ padding: '6px 8px', display: 'flex', flexDirection: 'column', gap: 8 }}>
               <textarea
-                value={imgExtra}
-                onChange={(e) => updateConfig(id, { gemImgExtra: e.target.value } as any)}
+                value={imgExtraField.value}
+                {...imgExtraField.bind}
                 placeholder="补充要求(可留空)，如:保持品牌主色 / 每格右下角标镜头号"
                 rows={2}
                 className="nodrag nopan nowheel"
