@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { useCanvasStore, type CardNode } from '../store';
+import { useShallow } from 'zustand/react/shallow';
 
 // ============================================================
 // 连线传参 — React Flow edges 版(复刻原网 tldraw binding 的"下游拉上游输出")
@@ -73,15 +74,39 @@ export function hasUpstream(nodeId: string): boolean {
 // 响应式 hook:订阅 nodes/edges 变化,连线/上游出图后实时返回上游输出
 // 卡片用它做"连上线立即显示上游图/文案"(像原网)
 export function useUpstream(nodeId: string): UpstreamOutputs {
-  const nodes = useCanvasStore((s) => s.nodes);
-  const edges = useCanvasStore((s) => s.edges);
+  // 只订阅"上游那几个节点的输出"，而不是整个 nodes 数组。
+  //
+  // 原先是 useCanvasStore((s) => s.nodes) —— 订阅整个数组，于是任何一个节点
+  // 的任何变化(拖动、生成进度、状态改变)都会让每张卡片重算一次 useUpstream。
+  // 700 节点的画布里拖一张卡就是 700 次重算，每次还要 nodes.find() 遍历数组，
+  // 拖动会明显发涩。memo 在这里救不了 —— hook 返回值变了就算 props 变化。
+  //
+  // 改成 useShallow + 只取上游节点的必要字段:无关节点变化时选择器返回的数组
+  // 浅比较相等，不触发重渲染。输出结构与行为完全不变。
+  const upstreamData = useCanvasStore(
+    useShallow((s) => {
+      const ids = s.edges.filter((e) => e.target === nodeId).map((e) => e.source);
+      // 只取用得上的四个字段 —— 取整个 data 对象的话，上游卡片改个位置
+      // 也会让浅比较失败，白白重算
+      return ids.map((upId) => {
+        const up = s.nodes.find((n) => n.id === upId);
+        if (!up) return null;
+        const d = up.data;
+        return {
+          kind: d.kind,
+          status: d.status,
+          outputUrl: d.outputUrl ?? null,
+          text: d.text ?? null,
+          mediaType: (d.config as any)?.mediaType ?? null,
+        };
+      });
+    }),
+  );
+
   return useMemo(() => {
     const out: UpstreamOutputs = { images: [], videos: [], texts: [], audios: [] };
-    const upstreamIds = edges.filter((e) => e.target === nodeId).map((e) => e.source);
-    for (const upId of upstreamIds) {
-      const up = nodes.find((n) => n.id === upId);
-      if (!up) continue;
-      const d = up.data;
+    for (const d of upstreamData) {
+      if (!d) continue;
       if (d.status !== 'done') continue;
       switch (d.kind) {
         case 'image': case 'character': case 'extend':
@@ -96,7 +121,7 @@ export function useUpstream(nodeId: string): UpstreamOutputs {
           break;
         case 'upload':   // 素材卡:按 mediaType 归类
           if (d.outputUrl) {
-            if ((d.config as any)?.mediaType === 'video') out.videos.push(d.outputUrl);
+            if (d.mediaType === 'video') out.videos.push(d.outputUrl);
             else out.images.push(d.outputUrl);
           }
           break;
@@ -109,5 +134,5 @@ export function useUpstream(nodeId: string): UpstreamOutputs {
       }
     }
     return out;
-  }, [nodes, edges, nodeId]);
+  }, [upstreamData]);
 }
