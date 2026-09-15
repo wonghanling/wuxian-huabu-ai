@@ -25,7 +25,8 @@ export type SpawnAction =
   | 'kling'        // Kling 视频配音(视频输出连接用)
   | 'character'    // 角色设计
   | 'gem'          // GEM 分镜设计
-  | 'extend';      // 时空镜头延展
+  | 'extend'
+  | 'gem4'        // Step4 剧情推演分镜优化;      // 时空镜头延展
 
 // 单个菜单项定义
 export interface SpawnItem { action: SpawnAction; label: string; kind: NodeKind; icon: string }
@@ -40,6 +41,7 @@ const SPAWN_ITEMS: Record<SpawnAction, SpawnItem> = {
   character: { action: 'character', label: '角色设计',      kind: 'character', icon: 'image' },
   gem:       { action: 'gem',       label: 'GEM 分镜设计',  kind: 'gem',       icon: 'split' },
   extend:    { action: 'extend',    label: '时空镜头延展',  kind: 'extend',    icon: 'image' },
+  gem4:      { action: 'gem4',      label: '剧情推演分镜优化', kind: 'gem4',   icon: 'split' },
 };
 
 // 连接规则表(照原网"+"号菜单,按源卡片类型决定可创建的下游):
@@ -47,7 +49,7 @@ const SPAWN_ITEMS: Record<SpawnAction, SpawnItem> = {
 // - 视频类(视频/Seedance/Kling):2 项(Seedance 多模态 / Kling 配音)
 // - Step2(gem):仅图片生成卡片
 // - Step3/文本(gem3/text):原网无"+"号菜单 → 空(不显示加号)
-const IMAGE_OUTPUT_ACTIONS: SpawnAction[] = ['image', 'video', 'seedance', 'character', 'gem', 'extend'];
+const IMAGE_OUTPUT_ACTIONS: SpawnAction[] = ['image', 'video', 'seedance', 'character', 'gem', 'gem4', 'extend'];
 const VIDEO_OUTPUT_ACTIONS: SpawnAction[] = ['seedanceMM', 'kling'];
 const SPAWN_RULES: Record<NodeKind, SpawnAction[]> = {
   image:     IMAGE_OUTPUT_ACTIONS,
@@ -248,6 +250,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       character: 'nano-banana-pro',
       gem: 'nano-banana-pro',
       extend: 'nano-banana-pro',
+      gem4: 'nano-banana-pro',
     };
     // 各类型卡片的初始 config(Seedance 多模态预设 multimodal 模式)
     const baseConfig: any = { model: modelMap[action], prompt: '' };
