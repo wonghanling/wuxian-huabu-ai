@@ -8,7 +8,7 @@ import {
   ratioToWH, fluxImagePrice, type ImageModel,
 } from '../imageModels';
 import { STYLE_PRESETS, OTHER_PRESETS, refImageMax, applyStylePrefix } from '../imagePresets';
-import { IconImage, IconModel, IconExpand, IconShrink, IconMinus, IconPlus } from './icons';
+import { IconImage, IconModel, IconExpand, IconShrink, IconMinus, IconPlus, IconSplit } from './icons';
 import { SpawnMenu } from './SpawnMenu';
 import { RefThumb } from './RefThumb';
 import { PromptTools } from './PromptTools';
@@ -119,6 +119,69 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   };
 
   // 顶部上传:成品图,真实上传 Supabase 拿持久 URL(blob URL 刷新即失效)
+  // ── 宫格切格 ──
+  // 把宫格分镜图的某一格裁出来成独立卡片。原图完好无损 —— 是复制那块区域，
+  // 不是从原图挖掉。
+  //
+  // 为什么真裁而不是"传坐标让下游自己裁":后者要改 useUpstream 的数据结构
+  // 和 12 张卡片的处理逻辑，风险大;而且传给上游模型时终究还是得裁出真图。
+  //
+  // 裁完不自动连线 —— 用户可能接图片卡、接视频卡，也可能只想下载，
+  // 我们不知道他要什么，不替他决定。
+  const [gridOpen, setGridOpen] = useState(false);
+  const [gridN, setGridN] = useState<0 | 4 | 9 | 25>(0);
+  const [cropping, setCropping] = useState<number | null>(null);
+  const addImageCardNear = useCanvasStore((st) => st.addImageCardNear);
+
+  const cropCell = async (index: number, cols: number) => {
+    if (!displayImg || cropping !== null) return;
+    setCropping(index);
+    try {
+      // crossOrigin 必须设 —— 不设的话 canvas 会被跨域图污染，toBlob 直接抛错
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const im = new Image();
+        im.crossOrigin = 'anonymous';
+        im.onload = () => resolve(im);
+        im.onerror = () => reject(new Error('图片加载失败'));
+        im.src = displayImg;
+      });
+
+      const cw = img.naturalWidth / cols;
+      const ch = img.naturalHeight / cols;
+      const r = Math.floor(index / cols);
+      const c = index % cols;
+
+      // 每边内缩 1% —— 模型出的宫格图格线不一定正好在等分处，
+      // 内缩一点避免把相邻格的边缘带进来
+      const inset = Math.min(cw, ch) * 0.01;
+      const sx = c * cw + inset;
+      const sy = r * ch + inset;
+      const sw = cw - inset * 2;
+      const sh = ch - inset * 2;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(sw);
+      canvas.height = Math.round(sh);
+      canvas.getContext('2d')!.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+
+      const blob = await new Promise<Blob | null>((res) =>
+        canvas.toBlob((b) => res(b), 'image/jpeg', 0.92));
+      if (!blob) throw new Error('裁切失败');
+
+      const file = new File([blob], `cell-${index + 1}-${Date.now()}.jpg`, { type: 'image/jpeg' });
+      const url = await uploadImageToStorage(file);
+      if (!url) throw new Error('上传失败');
+
+      const newId = addImageCardNear(id, url, `第 ${index + 1} 格`);
+      updateCard(newId, { aspectW: canvas.width, aspectH: canvas.height });
+      (window as any).saveCanvasV2Now?.();
+    } catch (e: any) {
+      alert('切格失败: ' + (e?.message || e));
+    } finally {
+      setCropping(null);
+    }
+  };
+
   const uploadResult = async (fileList: FileList | null) => {
     const f = fileList?.[0];
     if (!f) return;
@@ -273,13 +336,53 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               <div style={track}><div style={{ height: '100%', width: `${data.progress ?? 0}%`, background: 'linear-gradient(90deg,#a0a0a0,#fff)', borderRadius: 99, transition: 'width .3s' }} /></div>
             </div>
           ) : displayImg ? (
-            <img
-              src={displayImg}
-              alt=""
-              onDoubleClick={(e) => { e.stopPropagation(); setEditOpen(true); }}
-              title="双击进入 Image Studio 编辑"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', cursor: 'pointer' }}
-            />
+            <>
+              <img
+                src={displayImg}
+                alt=""
+                onDoubleClick={(e) => { e.stopPropagation(); setEditOpen(true); }}
+                title="双击进入 Image Studio 编辑"
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', cursor: 'pointer' }}
+              />
+              {/* 宫格浮层:点某格把它裁成独立卡片。原图不动 —— 是复制那块区域。
+                  只在点了"切格"按钮后显示，平时不挡图。 */}
+              {gridOpen && gridN > 0 && (() => {
+                const cols = gridN === 4 ? 2 : gridN === 9 ? 3 : 5;
+                return (
+                  <div
+                    className="nodrag nopan"
+                    onClick={(e) => e.stopPropagation()}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    style={{
+                      position: 'absolute', inset: 0, display: 'grid',
+                      gridTemplateColumns: `repeat(${cols}, 1fr)`,
+                      gridTemplateRows: `repeat(${cols}, 1fr)`,
+                    }}
+                  >
+                    {Array.from({ length: gridN }).map((_, i) => (
+                      <button
+                        key={i}
+                        onClick={() => cropCell(i, cols)}
+                        disabled={cropping !== null}
+                        title={`裁出第 ${i + 1} 格`}
+                        style={{
+                          border: '1px solid rgba(255,255,255,.35)',
+                          background: cropping === i ? 'rgba(0,0,0,.55)' : 'rgba(0,0,0,.12)',
+                          color: '#fff', fontSize: gridN === 25 ? 9 : 12, fontWeight: 600,
+                          cursor: cropping !== null ? 'default' : 'pointer',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          transition: 'background .15s ease',
+                        }}
+                        onMouseEnter={(e) => { if (cropping === null) e.currentTarget.style.background = 'rgba(0,0,0,.45)'; }}
+                        onMouseLeave={(e) => { if (cropping === null) e.currentTarget.style.background = 'rgba(0,0,0,.12)'; }}
+                      >
+                        {cropping === i ? '…' : i + 1}
+                      </button>
+                    ))}
+                  </div>
+                );
+              })()}
+            </>
           ) : (data.status === 'error' && (data as any).reviewPending) ? (
             <div style={{ width: '82%', textAlign: 'center', padding: '12px 14px', borderRadius: 10,
               background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.25)' }}>
@@ -422,6 +525,34 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
               <button onClick={() => setEditOpen(true)} style={toolBtnWide} title="进入 Image Studio 编辑">
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>✎ 设计师</span>
               </button>
+              {/* 宫格切格:把分镜宫格图的某一格裁成独立卡片。
+                  和左下角那个"图片切割"弹窗不同 —— 那个是上传图片打包下载 zip，
+                  这个直接在画布上出卡片，能继续连去图片卡或视频卡。 */}
+              <button
+                onClick={() => { setGridOpen((v) => !v); if (!gridN) setGridN(9); }}
+                style={{ ...toolBtnWide, ...(gridOpen ? { background: 'rgba(255,255,255,0.18)' } : {}) }}
+                title="按宫格切出单格"
+              >
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <IconSplit size={16} /> 切格
+                </span>
+              </button>
+              {/* 宫格数由用户选 —— 图片卡本身不知道自己是几宫格，
+                  那个信息在 GEM 卡里。只在切格开着时显示，平时不占位。 */}
+              {gridOpen && ([4, 9, 25] as const).map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setGridN(n)}
+                  style={{
+                    ...toolBtnWide,
+                    minWidth: 44,
+                    ...(gridN === n ? { background: '#fff', color: '#000' } : {}),
+                  }}
+                  title={`${n} 宫格`}
+                >
+                  {n}
+                </button>
+              ))}
               <button onClick={() => updateCard(id, { status: 'empty', outputUrl: null })} style={toolBtnWide} title="删除图片">
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>× 删除</span>
               </button>

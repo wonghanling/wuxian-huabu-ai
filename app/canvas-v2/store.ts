@@ -148,6 +148,8 @@ interface CanvasState {
   addCardFromStudio: (kind: 'text' | 'character' | 'image', prefillText: string, index?: number) => string;
   /** 放一张已生成好的图到新卡片并与来源连线（GEM 分镜一键出图用） */
   addImageResultFrom: (sourceId: string, imageUrl: string, cfg: Record<string, unknown>) => string;
+  /** 放一张图到新卡片但【不连线】（宫格切格用 —— 用户自己决定接到哪） */
+  addImageCardNear: (sourceId: string, imageUrl: string, label?: string) => string;
   // 涂鸦编辑:用涂鸦图当参考图新建图片卡,返回新卡 id
   addImageCardWithRef: (refUrl: string, prompt: string, model: string) => string;
 }
@@ -307,6 +309,35 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
       ),
       selectedId: newId,
     });
+    return newId;
+  },
+
+  // 放一张图到新卡片，不连线。
+  //
+  // 与 addImageResultFrom 的区别只在连线:切出来的单格图，用户可能接到图片卡、
+  // 视频卡，也可能只是留着下载 —— 我们不知道他要什么，所以不替他决定。
+  //
+  // 落点错开一点:连续切好几格时，卡片全叠在一处会看不清，按已有节点数偏移。
+  addImageCardNear: (sourceId, imageUrl, label) => {
+    const src = get().nodes.find((n) => n.id === sourceId);
+    const newId = `i${Date.now()}${Math.floor(Math.random() * 100)}`;
+    const n = get().nodes.length;
+    const newNode: CardNode = {
+      id: newId,
+      type: 'card',
+      position: {
+        x: (src?.position.x ?? 0) + 400,
+        y: (src?.position.y ?? 0) + (n % 5) * 60,
+      },
+      data: {
+        kind: 'image',
+        status: 'done',
+        outputUrl: imageUrl,
+        text: '',
+        config: { model: 'nano-banana-pro', prompt: label ?? '', ratio: '1:1' },
+      } as any,
+    };
+    set({ nodes: [...get().nodes, newNode], selectedId: newId });
     return newId;
   },
 
