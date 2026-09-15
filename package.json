@@ -20,10 +20,12 @@
     "@xyflow/react": "^12.10.2",
     "alipay-sdk": "^4.14.0",
     "jszip": "^3.10.1",
+    "konva": "^10.5.0",
     "lucide-react": "^0.563.0",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-konva": "^19.2.7",
     "stripe": "^22.6.0"
   },
   "devDependencies": {

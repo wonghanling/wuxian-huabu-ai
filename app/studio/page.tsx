@@ -11,6 +11,12 @@ import { refImageMax } from '../canvas-v2/imagePresets';
 import { generateImage, uploadImageToStorage } from '../canvas-v2/lib/api';
 import { RecipePicker, buildRecipePrompt } from './RecipePicker';
 import { IdleBuddies, BusyBuddy } from './StudioBuddies';
+import dynamic from 'next/dynamic';
+
+const SceneEditor = dynamic(() => import('./SceneEditor').then((m) => m.SceneEditor), {
+  ssr: false,
+  loading: () => <div style={{ padding: 40, fontSize: 12.5, color: '#86868b' }}>加载编排器…</div>,
+});
 import { DoodleModal } from '../canvas-v2/nodes/DoodleModal';
 import { ImageStudio } from '../canvas-v2/nodes/ImageStudio';
 
@@ -73,6 +79,10 @@ export default function StudioPage() {
   const [doodleUrl, setDoodleUrl] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [editMenu, setEditMenu] = useState(false);
+
+  // 两个模式并列:生图(提示词出图) / 场景编排(自己摆图层)。
+  // 共用顶栏的余额与充值入口，切换不丢左栏已填的参数。
+  const [tab, setTab] = useState<'gen' | 'scene'>('gen');
 
   // 配方模板。选中后提示词框换成"具体需求 + 短文案"两个字段 ——
   // 配方本身已经写好了画面描述，用户只需填主体，不必再写整段提示词。
@@ -309,6 +319,43 @@ export default function StudioPage() {
         </div>
       </header>
 
+      {/* 模式切换。两个模式共用顶栏的余额与充值入口。 */}
+      <div style={{
+        display: 'flex', gap: 6, padding: '10px 26px 0',
+        borderBottom: '1px solid rgba(0,0,0,.07)',
+      }}>
+        {([['gen', '生图'], ['scene', '场景编排']] as const).map(([k, l]) => (
+          <button
+            key={k}
+            onClick={() => setTab(k)}
+            style={{
+              padding: '8px 16px', border: 'none', cursor: 'pointer', fontSize: 13,
+              background: 'transparent',
+              color: tab === k ? '#1d1d1f' : '#86868b',
+              fontWeight: tab === k ? 600 : 400,
+              borderBottom: tab === k ? '2px solid #1d1d1f' : '2px solid transparent',
+              marginBottom: -1,
+            }}
+          >
+            {l}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'scene' ? (
+        <div style={{ flex: 1, overflow: 'auto', padding: '22px 26px' }}>
+          <SceneEditor
+            onFuse={(url, note) => {
+              // 融合就是"把合成图当参考图走一次生图" —— 复用现有链路，
+              // 不新建生成通道。切回生图页让用户确认模型与参数再点生成。
+              setRefImages([url]);
+              setPrompt(note || '在保持画面元素位置与产品外形不变的前提下，统一光线、阴影与空间关系，使其看起来像一次真实拍摄。');
+              setRecipe(null);
+              setTab('gen');
+            }}
+          />
+        </div>
+      ) : (
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
         {/* 左侧参数栏 */}
         <aside
@@ -653,6 +700,7 @@ export default function StudioPage() {
           </div>
         </aside>
       </div>
+      )}
 
       {/* 图片交互编辑(Seedream 5.0 Pro)。图层分离会返回多张 —— 
           每张都写进历史 —— 存内存的话切换记录就丢了 */}
