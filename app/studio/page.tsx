@@ -9,6 +9,7 @@ import {
 } from '../canvas-v2/imageModels';
 import { refImageMax } from '../canvas-v2/imagePresets';
 import { generateImage, uploadImageToStorage } from '../canvas-v2/lib/api';
+import { RecipePicker, buildRecipePrompt } from './RecipePicker';
 import { DoodleModal } from '../canvas-v2/nodes/DoodleModal';
 import { ImageStudio } from '../canvas-v2/nodes/ImageStudio';
 
@@ -71,6 +72,13 @@ export default function StudioPage() {
   const [doodleUrl, setDoodleUrl] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [editMenu, setEditMenu] = useState(false);
+
+  // 配方模板。选中后提示词框换成"具体需求 + 短文案"两个字段 ——
+  // 配方本身已经写好了画面描述，用户只需填主体，不必再写整段提示词。
+  // 不选则完全是原来的自由输入模式，一行逻辑都不变。
+  const [recipe, setRecipe] = useState<any>(null);
+  const [subject, setSubject] = useState('');
+  const [copyText, setCopyText] = useState('');
 
   // 当前大图对应的历史记录 —— 用来在操作条显示它的提示词。
   // 查不到时为 undefined（比如刚生成还没回表），界面留空即可。
@@ -177,20 +185,31 @@ export default function StudioPage() {
   }, [loadHistory]);
 
   const submit = async () => {
-    if (!prompt.trim() && refImages.length === 0) {
+    // 选了配方就用它渲染出的提示词，否则用自由输入的 —— 自由模式一字未改。
+    const effPrompt = recipe
+      ? buildRecipePrompt(recipe, subject, copyText)
+      : prompt.trim();
+
+    if (recipe && !subject.trim()) {
+      setError('请填写具体需求');
+      return;
+    }
+    if (!effPrompt && refImages.length === 0) {
       setError('请输入提示词或上传参考图');
       return;
     }
     setError('');
 
     const key = `p${Date.now()}`;
-    setPending((cur) => [{ key, prompt: prompt.trim(), model: modelId }, ...cur]);
+    // 历史里记配方名而非整段渲染结果 —— 那段很长，列表里看不出是什么
+    const histPrompt = recipe ? `${recipe.name}｜${subject.trim()}` : effPrompt;
+    setPending((cur) => [{ key, prompt: histPrompt, model: modelId }, ...cur]);
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
       const url = await generateImage({
         model: modelId,
-        prompt: prompt.trim(),
+        prompt: effPrompt,
         aspectRatio: ratio,
         imageQuality: quality,
         imageUrlArray: refImages.length ? refImages : undefined,
@@ -198,7 +217,7 @@ export default function StudioPage() {
       });
 
       saveToHistory(url, {
-        model: modelId, prompt: prompt.trim(),
+        model: modelId, prompt: histPrompt,
         aspectRatio: ratio, quality, refCount: refImages.length,
       });
 
@@ -207,7 +226,7 @@ export default function StudioPage() {
 
       // 乐观插入，不等 loadHistory 回来
       setHistory((cur) => [{
-        id: key, model: modelId, prompt: prompt.trim(), image_url: url,
+        id: key, model: modelId, prompt: histPrompt, image_url: url,
         aspect_ratio: ratio, quality, ref_count: refImages.length,
         created_at: new Date().toISOString(),
       }, ...cur]);
@@ -314,15 +333,50 @@ export default function StudioPage() {
             </div>
           </Field>
 
-          <Field label="提示词">
-            <textarea
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              placeholder="描述你想要的画面"
-              rows={5}
-              style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6 }}
+          <Field label="配方模板">
+            <RecipePicker
+              selected={recipe}
+              onSelect={(r) => {
+                setRecipe(r);
+                // 配方自带建议比例，选中时跟着切 —— 海报是 4:5、封面可能是 3:4，
+                // 让用户自己去比例栏改一遍没必要
+                if (r?.ratio) setRatio(r.ratio);
+              }}
             />
           </Field>
+
+          {recipe ? (
+            <>
+              <Field label="具体需求">
+                <textarea
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="要画什么，如:一杯冰美式配柠檬片"
+                  rows={3}
+                  style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6 }}
+                />
+              </Field>
+              <Field label="画面文字（可选）">
+                <textarea
+                  value={copyText}
+                  onChange={(e) => setCopyText(e.target.value)}
+                  placeholder="想出现在图上的短文案，留空则不放文字"
+                  rows={2}
+                  style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6 }}
+                />
+              </Field>
+            </>
+          ) : (
+            <Field label="提示词">
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="描述你想要的画面"
+                rows={5}
+                style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6 }}
+              />
+            </Field>
+          )}
 
           {model.supportsImage !== false && maxRef > 0 && (
             <Field label={`参考图 ${refImages.length}/${maxRef}`}>
