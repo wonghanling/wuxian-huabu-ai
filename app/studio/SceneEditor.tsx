@@ -1,9 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Stage, Layer, Image as KImage, Rect, Line, Transformer } from 'react-konva';
+import { Stage, Layer, Image as KImage, Text as KText, Rect, Line, Transformer } from 'react-konva';
 import type Konva from 'konva';
 import { uploadImageToStorage } from '../canvas-v2/lib/api';
+import { GenElementModal } from './GenElementModal';
 
 // ============================================================
 // 场景编排
@@ -24,7 +25,14 @@ import { uploadImageToStorage } from '../canvas-v2/lib/api';
 
 export type SceneElement = {
   id: string;
+  /** image = 图片素材，text = 文字 */
+  kind: 'image' | 'text';
+  /** kind=image 时是图片地址；kind=text 时忽略 */
   src: string;
+  /** kind=text 时的文字内容与样式 */
+  text?: string;
+  fontSize?: number;
+  color?: string;
   x: number;
   y: number;
   width: number;
@@ -62,6 +70,9 @@ export function SceneEditor({
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState('');
   const [guides, setGuides] = useState<{ v: boolean; h: boolean }>({ v: false, h: false });
+  // 生成透明元素的弹窗。target 决定生成结果放哪:
+  // 'bg' 当背景铺满，'el' 作为可摆放的元素。
+  const [genFor, setGenFor] = useState<null | 'bg' | 'el'>(null);
 
   const stageRef = useRef<Konva.Stage>(null);
   const trRef = useRef<Konva.Transformer>(null);
@@ -96,7 +107,7 @@ export function SceneEditor({
       const scale = targetW / img.naturalWidth;
       const id = `el${Date.now()}${Math.floor(Math.random() * 100)}`;
       setEls((cur) => [...cur, {
-        id, src: url,
+        id, kind: 'image', src: url,
         x: (W - targetW) / 2,
         y: (H - img.naturalHeight * scale) / 2,
         width: targetW,
@@ -110,6 +121,43 @@ export function SceneEditor({
       setBusy('');
     }
   }, [W, H]);
+
+  // 把一个已有地址放进画布 —— 生成透明元素后走这条，不必再上传一遍
+  const addUrl = useCallback(async (url: string) => {
+    try {
+      const img = await loadImage(url);
+      const targetW = W * 0.4;
+      const scale = targetW / img.naturalWidth;
+      const id = `el${Date.now()}${Math.floor(Math.random() * 100)}`;
+      setEls((cur) => [...cur, {
+        id, kind: 'image', src: url,
+        x: (W - targetW) / 2,
+        y: (H - img.naturalHeight * scale) / 2,
+        width: targetW,
+        height: img.naturalHeight * scale,
+        rotation: 0,
+      }]);
+      setSel(id);
+    } catch (e: any) {
+      alert('放入失败: ' + (e?.message || e));
+    }
+  }, [W, H]);
+
+  // 加一段文字。宽度给足画布六成 —— 文字元素的 width 决定换行位置，
+  // 太窄会挤成一列。
+  const addText = () => {
+    const id = `tx${Date.now()}${Math.floor(Math.random() * 100)}`;
+    setEls((cur) => [...cur, {
+      id, kind: 'text', src: '',
+      text: '双击编辑文字',
+      fontSize: Math.round(W * 0.06),
+      color: '#ffffff',
+      x: W * 0.2, y: H * 0.5,
+      width: W * 0.6, height: Math.round(W * 0.06) * 1.4,
+      rotation: 0,
+    }]);
+    setSel(id);
+  };
 
   // ── 拖动时的吸附与辅助线 ──
   const onDragMove = (id: string) => (e: Konva.KonvaEventObject<DragEvent>) => {
@@ -237,8 +285,30 @@ export function SceneEditor({
     <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start', flexWrap: 'wrap' }}>
       {/* 左:素材与操作 */}
       <div style={{ width: 210, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <Slot label="背景" hint="整张铺满的底图" onPick={(f) => addImage(f, true)} />
-        <Slot label="产品 / 道具" hint="可加多个，逐个摆放" onPick={(f) => addImage(f, false)} />
+        <Row
+          label="背景"
+          hint="整张铺满的底图"
+          onPick={(f) => addImage(f, true)}
+          onGen={() => setGenFor('bg')}
+        />
+        <Row
+          label="产品"
+          hint="主体，通常放中下方"
+          onPick={(f) => addImage(f, false)}
+          onGen={() => setGenFor('el')}
+        />
+        <Row
+          label="道具 / 人物"
+          hint="可加多个，逐个摆放"
+          onPick={(f) => addImage(f, false)}
+          onGen={() => setGenFor('el')}
+        />
+
+        <div>
+          <div style={label}>文字</div>
+          <button onClick={addText} style={{ ...uploadBtn, width: '100%' }}>添加文字</button>
+          <div style={{ fontSize: 10, color: '#a1a1a6', marginTop: 4 }}>双击画布上的文字可改内容</div>
+        </div>
 
         <div>
           <div style={label}>画布比例</div>
@@ -282,7 +352,23 @@ export function SceneEditor({
           <Layer>
             {bg && <BgImage src={bg} w={W} h={H} />}
 
-            {els.map((el) => (
+            {els.map((el) => el.kind === 'text' ? (
+              <ElText
+                key={el.id}
+                el={el}
+                onRef={(n) => { shapeRefs.current[el.id] = n as any; }}
+                onSelect={() => setSel(el.id)}
+                onDragMove={onDragMove(el.id)}
+                onCommit={commit(el.id)}
+                onEdit={() => {
+                  // 双击改文字。用 prompt 而不是自绘输入框 —— Konva 里做
+                  // 富文本编辑要叠一层 DOM 并同步坐标，那是另一个量级的工作，
+                  // 对"加一行标题"这个需求不值得。
+                  const v = window.prompt('文字内容', el.text ?? '');
+                  if (v != null) setEls((cur) => cur.map((x) => x.id === el.id ? { ...x, text: v } : x));
+                }}
+              />
+            ) : (
               <ElImage
                 key={el.id}
                 el={el}
@@ -344,23 +430,35 @@ export function SceneEditor({
 
         {busy && <div style={{ marginTop: 6, fontSize: 11.5, color: '#6e6e73' }}>{busy}</div>}
       </div>
+
+      {/* 生成透明元素。target 决定结果放哪 —— 背景铺满，元素可摆放。 */}
+      {genFor && (
+        <GenElementModal
+          onClose={() => setGenFor(null)}
+          onDone={(url) => { if (genFor === 'bg') setBg(url); else addUrl(url); }}
+        />
+      )}
     </div>
   );
 }
 
-function Slot({ label: l, hint, onPick }: { label: string; hint: string; onPick: (f: File) => void }) {
+/** 一行素材槽:上传与生成并列 —— 用户手里有图就上传，没有就让模型生成一个 */
+function Row({
+  label: l, hint, onPick, onGen,
+}: {
+  label: string; hint: string; onPick: (f: File) => void; onGen: () => void;
+}) {
   return (
     <div>
       <div style={label}>{l}</div>
-      <label style={{
-        display: 'block', padding: '13px 10px', borderRadius: 10, cursor: 'pointer',
-        border: '1px dashed rgba(0,0,0,.18)', textAlign: 'center',
-        fontSize: 12, color: '#424245',
-      }}>
-        上传图片
-        <input type="file" accept="image/*" style={{ display: 'none' }}
-          onChange={(e) => { const f = e.target.files?.[0]; if (f) onPick(f); e.currentTarget.value = ''; }} />
-      </label>
+      <div style={{ display: 'flex', gap: 6 }}>
+        <label style={{ ...uploadBtn, flex: 1 }}>
+          上传
+          <input type="file" accept="image/*" style={{ display: 'none' }}
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) onPick(f); e.currentTarget.value = ''; }} />
+        </label>
+        <button onClick={onGen} style={{ ...uploadBtn, flex: 1.4 }}>生成透明元素</button>
+      </div>
       <div style={{ fontSize: 10, color: '#a1a1a6', marginTop: 4 }}>{hint}</div>
     </div>
   );
@@ -404,6 +502,40 @@ function ElImage({
   );
 }
 
+function ElText({
+  el, onRef, onSelect, onDragMove, onCommit, onEdit,
+}: {
+  el: SceneElement;
+  onRef: (n: Konva.Text | null) => void;
+  onSelect: () => void;
+  onDragMove: (e: Konva.KonvaEventObject<DragEvent>) => void;
+  onCommit: (e: Konva.KonvaEventObject<Event>) => void;
+  onEdit: () => void;
+}) {
+  return (
+    <KText
+      ref={onRef}
+      text={el.text ?? ''}
+      x={el.x} y={el.y} width={el.width} rotation={el.rotation}
+      fontSize={el.fontSize ?? 32}
+      fill={el.color ?? '#ffffff'}
+      fontStyle="bold"
+      align="center"
+      // 描边让文字在任何底色上都读得清 —— 白字压在浅色背景上会看不见
+      stroke="rgba(0,0,0,.35)"
+      strokeWidth={1}
+      draggable
+      onClick={onSelect}
+      onTap={onSelect}
+      onDblClick={onEdit}
+      onDblTap={onEdit}
+      onDragMove={onDragMove}
+      onDragEnd={onCommit}
+      onTransformEnd={onCommit}
+    />
+  );
+}
+
 /** crossOrigin 必须设 —— 不设的话导出时 canvas 被跨域图污染，toDataURL 抛错 */
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -416,6 +548,11 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 }
 
 const label: React.CSSProperties = { fontSize: 11.5, color: '#6e6e73', marginBottom: 6 };
+const uploadBtn: React.CSSProperties = {
+  display: 'block', padding: '9px 8px', borderRadius: 9, cursor: 'pointer',
+  border: '1px solid rgba(0,0,0,.12)', background: '#fff', textAlign: 'center',
+  fontSize: 11.5, color: '#1d1d1f', whiteSpace: 'nowrap',
+};
 const chip: React.CSSProperties = {
   padding: '6px 11px', borderRadius: 999, border: 'none', cursor: 'pointer',
   background: '#f5f5f7', color: '#424245', fontSize: 11.5, whiteSpace: 'nowrap',

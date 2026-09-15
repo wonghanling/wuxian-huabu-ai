@@ -219,7 +219,7 @@ export async function POST(req: NextRequest) {
   let body: any = {};
   try {
     body = await req.json();
-    const { model, prompt, aspectRatio = '1:1', imageBase64, imageBase64Array, imageUrlArray, userId, imageQuality } = body;
+    const { model, prompt, aspectRatio = '1:1', imageBase64, imageBase64Array, imageUrlArray, userId, imageQuality, background } = body;
 
     if (!model) {
       return NextResponse.json({ error: '缺少必要参数' }, { status: 400 });
@@ -312,6 +312,16 @@ export async function POST(req: NextRequest) {
         kieInput.resolution = qRaw === '1k' ? '1K' : '2K';
       } else if (resMode !== 'none') {
         kieInput.resolution = qRaw.toUpperCase();
+      }
+
+      // 透明背景:GPT Image 2.5 系列的 input 支持 background，
+      // enum 是 transparent / opaque / auto。用它一次出透明 PNG，
+      // 省掉"生成完再调一次抠图"的第二笔费用。
+      // 只在前端明确要求时才带 —— 不传维持原行为，现有调用零影响。
+      if (background) {
+        kieInput.background = background;
+        // 透明通道必须 PNG:JPG 无 alpha 通道，透明会被填成白或黑
+        kieInput.output_format = 'png';
       }
 
       if (imgKey) {

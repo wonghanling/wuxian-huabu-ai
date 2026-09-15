@@ -140,6 +140,9 @@ export interface ImageGenParams {
   imageBase64Array?: string[];  // 参考图 base64(传给 n1n 多图)
   imageBase64?: string;         // 单张 base64
   userId?: string;
+  /** 透明背景。GPT Image 2.5 系列支持 —— 一次出透明 PNG，
+   *  省掉"生成完再调一次抠图"的第二笔费用。不传维持原行为。 */
+  background?: 'transparent' | 'opaque' | 'auto';
 }
 
 // 返回最终图片 URL
@@ -156,6 +159,8 @@ export async function generateImage(params: ImageGenParams): Promise<string> {
       imageBase64Array: params.imageBase64Array,
       imageBase64: params.imageBase64,
       userId: params.userId || undefined,
+      // 只在明确要求透明时才带 —— 请求体是显式列字段的，不加这行发不出去
+      background: params.background || undefined,
     }),
   });
   const data = await res.json();

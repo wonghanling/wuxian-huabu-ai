@@ -112,7 +112,18 @@ export async function POST(req: NextRequest) {
           const longest = Math.max(meta.width ?? 0, meta.height ?? 0);
           // 只有超过 2560 或体积偏大时才重编码 —— 小图重编码是白做功，
           // 还会因为再压一次而掉画质
-          if (longest > 2560 || buf.length > 1200000) {
+          // 有 alpha 通道的图跳过重编码 —— 转成 JPEG 会把透明填成黑色，
+          // 场景编排的透明素材就废了。这类图本来也不大。
+          if (meta.hasAlpha) {
+            // 只在超大时缩尺寸，保持 PNG 不转格式
+            if (longest > 2560) {
+              buf = await sharp(buf)
+                .rotate()
+                .resize({ width: 2560, height: 2560, fit: 'inside', withoutEnlargement: true })
+                .png({ compressionLevel: 9 })
+                .toBuffer();
+            }
+          } else if (longest > 2560 || buf.length > 1200000) {
             buf = await sharp(buf)
               .rotate()                                   // 按 EXIF 摆正，手机照片常见
               .resize({ width: 2560, height: 2560, fit: 'inside', withoutEnlargement: true })
