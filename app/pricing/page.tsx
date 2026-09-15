@@ -191,7 +191,10 @@ export default function PricingPage() {
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4" style={{ color: 'rgb(238,238,238)' }}>
           简单透明的定价
         </h1>
-        <p className="text-lg" style={{ color: 'rgb(180,180,180)' }}>按需付费，无隐藏费用</p>
+        <p className="text-xl md:text-2xl font-medium mb-3" style={{ color: 'rgb(238,238,238)' }}>
+          无需会员，所有模型按量付费
+        </p>
+        <p className="text-base" style={{ color: 'rgb(180,180,180)' }}>按需付费，无隐藏费用</p>
       </section>
 
       {/* 4列卡片 */}
