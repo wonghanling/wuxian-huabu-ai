@@ -133,6 +133,21 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
   const [cropping, setCropping] = useState<number | null>(null);
   const addImageCardNear = useCanvasStore((st) => st.addImageCardNear);
 
+  // 点画布空白关掉浮层。
+  // 浮层盖住整张卡片，点卡片只会点到格子 —— 顶部工具栏出不来，用户没有出口。
+  // 监听 document 而不是靠取消选中:浮层吞掉了 pointerdown，卡片不会失焦。
+  useEffect(() => {
+    if (!gridOpen) return;
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as HTMLElement;
+      // 点在本卡片内(格子、工具栏按钮)不关 —— 那是正常操作
+      if (t.closest(`[data-id="${id}"]`) || t.closest('.react-flow__node-toolbar')) return;
+      setGridOpen(false);
+    };
+    document.addEventListener('pointerdown', onDown);
+    return () => document.removeEventListener('pointerdown', onDown);
+  }, [gridOpen, id]);
+
   const cropCell = async (index: number, cols: number) => {
     if (!displayImg || cropping !== null) return;
     setCropping(index);
@@ -174,6 +189,9 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
 
       const newId = addImageCardNear(id, url, `第 ${index + 1} 格`);
       updateCard(newId, { aspectW: canvas.width, aspectH: canvas.height });
+      // 裁完关掉浮层 —— 新卡片已经出现在右侧，浮层还盖着原图的话
+      // 用户看不到结果，会以为没成功。要再裁一格重新点切格即可。
+      setGridOpen(false);
       (window as any).saveCanvasV2Now?.();
     } catch (e: any) {
       alert('切格失败: ' + (e?.message || e));
@@ -359,6 +377,22 @@ function ImageNodeComponent({ id, data, selected }: NodeProps<CardNode>) {
                       gridTemplateRows: `repeat(${cols}, 1fr)`,
                     }}
                   >
+                    {/* 退出按钮:浮层盖住整张图，没有出口用户只能回工具栏找 ——
+                        而工具栏要选中卡片才显示，裁完一格视线正在图上，不会想到那儿。
+                        absolute 定位所以不占格子。 */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setGridOpen(false); }}
+                      title="退出切格"
+                      style={{
+                        position: 'absolute', top: 6, right: 6, zIndex: 2,
+                        width: 22, height: 22, borderRadius: '50%', border: 'none',
+                        background: 'rgba(0,0,0,.72)', color: '#fff', fontSize: 13,
+                        cursor: 'pointer', lineHeight: 1,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}
+                    >
+                      x
+                    </button>
                     {Array.from({ length: gridN }).map((_, i) => (
                       <button
                         key={i}
