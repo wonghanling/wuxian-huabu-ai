@@ -448,7 +448,15 @@ function CanvasV2Inner() {
         zoomOnDoubleClick={false}
         panOnScroll
         panOnDrag={[1, 2]}
-        selectionOnDrag={false}
+        // 左键拖拽 = 框选多个卡片。中键/右键仍是平移(panOnDrag=[1,2])，
+        // 所以左键本来空闲，开框选不与现有操作冲突。
+        //
+        // 用途:框住几张图片卡后一起拖到视频卡上，多模态卡片会按顺序收下 ——
+        // SeedanceNode 的 connImages 本来就接受多张上游图(images[0]/[1]
+        // 分别当首尾帧)，所以不必改任何卡片逻辑。
+        selectionOnDrag
+        // Shift 点击可加选,与常见软件一致
+        multiSelectionKeyCode={['Shift']}
         zoomActivationKeyCode={null}
         defaultViewport={{ x: 60, y: 60, zoom: 0.9 }}
         edgeTypes={edgeTypes}
