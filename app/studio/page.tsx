@@ -10,6 +10,7 @@ import {
 import { refImageMax } from '../canvas-v2/imagePresets';
 import { generateImage, uploadImageToStorage } from '../canvas-v2/lib/api';
 import { RecipePicker, buildRecipePrompt } from './RecipePicker';
+import { IdleBuddies, BusyBuddy } from './StudioBuddies';
 import { DoodleModal } from '../canvas-v2/nodes/DoodleModal';
 import { ImageStudio } from '../canvas-v2/nodes/ImageStudio';
 
@@ -569,9 +570,9 @@ export default function StudioPage() {
 
             </>
           ) : pending.length > 0 ? (
-            <div style={emptyStyle}>生成中</div>
+            <div style={emptyStyle}><BusyBuddy label={pending[0]?.prompt} /></div>
           ) : (
-            <div style={emptyStyle}>{loadingHistory ? '' : '开始你的第一张作品'}</div>
+            <div style={emptyStyle}>{loadingHistory ? null : <IdleBuddies />}</div>
           )}
         </main>
 

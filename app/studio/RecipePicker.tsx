@@ -164,7 +164,9 @@ function SelectedCard({ recipe, onClear }: { recipe: Recipe; onClear: () => void
       {detail && (
         <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(0,0,0,.07)' }}>
           <div style={{ fontSize: 11, color: '#6e6e73', lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>
-            {recipe.prompt}
+            {/* 把占位符显示成中文 —— {{subject}} 用户看不懂，
+                换成【你填的主体】一眼就明白这里会替换成自己的内容 */}
+            {recipe.prompt.replaceAll(DATA.placeholder, '【你填的主体】')}
           </div>
           {recipe.attribution && (
             <div style={{ fontSize: 10, color: '#a1a1a6', marginTop: 8, lineHeight: 1.6 }}>
@@ -207,10 +209,12 @@ const rowBtn: React.CSSProperties = {
   display: 'flex', alignItems: 'center', gap: 10, padding: '7px 8px', borderRadius: 9,
   border: 'none', background: 'transparent', cursor: 'pointer', transition: 'background .15s ease',
 };
+/** 比例标签。原来是等封面图的虚线占位框，但不做封面了 ——
+ *  改成实心小标签显示建议比例，信息密度反而更高。 */
 const coverBox: React.CSSProperties = {
-  width: 40, height: 40, flexShrink: 0, borderRadius: 7, background: '#f5f5f7',
-  border: '1px dashed rgba(0,0,0,.12)', display: 'flex', alignItems: 'center',
-  justifyContent: 'center', fontSize: 9, color: '#a1a1a6',
+  minWidth: 34, height: 22, flexShrink: 0, borderRadius: 6, background: '#f5f5f7',
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  fontSize: 10, color: '#6e6e73', padding: '0 6px',
 };
 const expTag: React.CSSProperties = {
   fontSize: 10, color: '#7c2d12', background: '#fff7ed', border: '1px solid #fed7aa',
