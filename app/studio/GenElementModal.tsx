@@ -16,7 +16,9 @@ import { generateImage, getUserId } from '../canvas-v2/lib/api';
 // 对单主体的表现最稳，暴露选项只会让人选错。
 // ============================================================
 
-/** 固定模型。界面上不显示 —— 用户要的是"一个透明元素"，不是选模型。 */
+/** 固定模型。界面上不显示 —— 用户要的是"一个透明元素"，不是选模型。
+ *  价格与普通生图完全一致(lib/pricing.ts 里 2K 档 ¥0.437)——
+ *  透明只是多传一个 background 参数，Kie 不额外收费。 */
 const MODEL = 'gpt-image-2-5-sunburst';
 
 /** 内置约束:让出图尽量好抠。纯色背景比白色更保险 —— 白色主体会与白底融在一起。 */
@@ -104,7 +106,7 @@ export function GenElementModal({
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: 11, color: '#a1a1a6' }}>
-            {step || '生成一次约 ¥0.3~0.63，直接输出透明 PNG'}
+            {step || '本次扣 ¥0.437，直接输出透明 PNG'}
           </span>
           <button onClick={onClose} disabled={!!step} style={{ ...btn, marginLeft: 'auto' }}>取消</button>
           <button

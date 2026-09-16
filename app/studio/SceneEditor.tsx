@@ -33,6 +33,7 @@ export type SceneElement = {
   text?: string;
   fontSize?: number;
   color?: string;
+  fontFamily?: string;
   x: number;
   y: number;
   width: number;
@@ -53,19 +54,56 @@ const BASE = 720;
 const SAFE = 0.06;
 /** 吸附阈值(像素):离中线或边距这么近就贴上去 */
 const SNAP = 8;
+/** 背景的固定 id。让它和普通元素共用选中/变换/删除那套逻辑，
+ *  不必为背景单独写一份。 */
+const BG_ID = '__bg__';
+
+/** 字体模板。用系统字体栈而不是加载 Web Font ——
+ *  Konva 导出时若字体还没加载完会退回默认字体，成品与预览不一致。
+ *  系统字体没有这个风险。 */
+const FONTS = [
+  { label: '黑体', value: '"PingFang SC","Microsoft YaHei",sans-serif' },
+  { label: '宋体', value: '"Songti SC","SimSun",serif' },
+  { label: '楷体', value: '"Kaiti SC","KaiTi",serif' },
+  { label: '圆体', value: '"Yuanti SC","YouYuan",sans-serif' },
+  { label: '等宽', value: '"SF Mono",Consolas,monospace' },
+];
+
+/** 常用文字色。黑白为主 —— 商业海报上的文字极少用鲜艳色。 */
+const COLORS = ['#ffffff', '#000000', '#f5f5f7', '#1d1d1f', '#f97316', '#dc2626', '#0ea5e9', '#facc15'];
+
+/** 场景状态。由父层持有 —— 切到生图标签再切回来时内容不能丢。 */
+export type SceneState = {
+  ratio: string;
+  bg: string | null;
+  els: SceneElement[];
+};
+
+export const EMPTY_SCENE: SceneState = { ratio: '4:5', bg: null, els: [] };
 
 export function SceneEditor({
+  state,
+  setState,
   onExport,
   onFuse,
+  assets,
+  onNewAsset,
 }: {
+  state: SceneState;
+  setState: (patch: Partial<SceneState>) => void;
   /** 导出 PNG（blob URL 已上传后的地址） */
   onExport?: (url: string) => void;
   /** AI 融合：把合成图当参考图交出去 */
   onFuse?: (url: string, note: string) => void;
+  /** 生成过的透明素材，供重复使用 */
+  assets?: string[];
+  onNewAsset?: (url: string) => void;
 }) {
-  const [ratio, setRatio] = useState('4:5');
-  const [bg, setBg] = useState<string | null>(null);
-  const [els, setEls] = useState<SceneElement[]>([]);
+  const { ratio, bg, els } = state;
+  const setRatio = (v: string) => setState({ ratio: v });
+  const setBg = (v: string | null) => setState({ bg: v });
+  const setEls = (fn: SceneElement[] | ((cur: SceneElement[]) => SceneElement[])) =>
+    setState({ els: typeof fn === 'function' ? fn(els) : fn });
   const [sel, setSel] = useState<string | null>(null);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState('');
@@ -152,6 +190,7 @@ export function SceneEditor({
       text: '双击编辑文字',
       fontSize: Math.round(W * 0.06),
       color: '#ffffff',
+      fontFamily: FONTS[0].value,
       x: W * 0.2, y: H * 0.5,
       width: W * 0.6, height: Math.round(W * 0.06) * 1.4,
       rotation: 0,
@@ -193,6 +232,14 @@ export function SceneEditor({
     setGuides({ v: false, h: false });
   };
 
+  /** 改选中文字的样式 */
+  const patchSel = (patch: Partial<SceneElement>) => {
+    if (!sel) return;
+    setEls((cur) => cur.map((e) => e.id === sel ? { ...e, ...patch } : e));
+  };
+
+  const selEl = els.find((e) => e.id === sel);
+
   // ── 层级 ──
   const move = (dir: -1 | 1) => {
     if (!sel) return;
@@ -230,6 +277,7 @@ export function SceneEditor({
 
   const remove = () => {
     if (!sel) return;
+    if (sel === BG_ID) { setBg(null); setSel(null); return; }
     setEls((cur) => cur.filter((e) => e.id !== sel));
     setSel(null);
   };
@@ -282,9 +330,12 @@ export function SceneEditor({
   };
 
   return (
-    <div style={{ display: 'flex', gap: 18, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-      {/* 左:素材与操作 */}
-      <div style={{ width: 210, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div style={{ display: 'flex', gap: 20, alignItems: 'stretch', minHeight: 0, height: '100%' }}>
+      {/* 左:素材与操作。占一半宽 —— 原先固定 210px，右边留一大片空白浪费。 */}
+      <div style={{
+        flex: 1, minWidth: 240, display: 'flex', flexDirection: 'column', gap: 13,
+        overflowY: 'auto', paddingRight: 4,
+      }}>
         <Row
           label="背景"
           hint="整张铺满的底图"
@@ -307,7 +358,7 @@ export function SceneEditor({
         <div>
           <div style={label}>文字</div>
           <button onClick={addText} style={{ ...uploadBtn, width: '100%' }}>添加文字</button>
-          <div style={{ fontSize: 10, color: '#a1a1a6', marginTop: 4 }}>双击画布上的文字可改内容</div>
+          <div style={{ fontSize: 10, color: '#8b8b90', marginTop: 4 }}>双击画布上的文字可改内容</div>
         </div>
 
         <div>
@@ -332,25 +383,90 @@ export function SceneEditor({
               <button onClick={remove} style={chip}>删除</button>
             </div>
           ) : (
-            <div style={{ fontSize: 11, color: '#a1a1a6' }}>点画布上的元素来选中</div>
+            <div style={{ fontSize: 11, color: '#8b8b90' }}>点画布上的元素来选中</div>
           )}
         </div>
+
+        {/* 文字样式。只在选中文字时出现 —— 图片没有字体颜色可调。 */}
+        {selEl?.kind === 'text' && (
+          <>
+            <div>
+              <div style={label}>字体</div>
+              <select
+                value={selEl.fontFamily ?? FONTS[0].value}
+                onChange={(e) => patchSel({ fontFamily: e.target.value })}
+                style={selectSm}
+              >
+                {FONTS.map((f) => <option key={f.label} value={f.value}>{f.label}</option>)}
+              </select>
+            </div>
+
+            <div>
+              <div style={label}>字号 {selEl.fontSize ?? 32}</div>
+              <input
+                type="range" min={12} max={Math.round(W * 0.2)} step={1}
+                value={selEl.fontSize ?? 32}
+                onChange={(e) => patchSel({ fontSize: Number(e.target.value) })}
+                style={{ width: '100%', accentColor: '#fff' }}
+              />
+            </div>
+
+            <div>
+              <div style={label}>颜色</div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {COLORS.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => patchSel({ color: c })}
+                    title={c}
+                    style={{
+                      width: 22, height: 22, borderRadius: 6, cursor: 'pointer', background: c,
+                      border: (selEl.color ?? '#ffffff') === c
+                        ? '2px solid #f97316'
+                        : '1px solid rgba(255,255,255,.25)',
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
-      {/* 中:画布 */}
-      <div style={{ flexShrink: 0 }}>
+      {/* 右:画布。与左栏各占一半。 */}
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <Stage
           ref={stageRef}
           width={W}
           height={H}
-          style={{ borderRadius: 10, overflow: 'hidden', background: '#f5f5f7', border: '1px solid rgba(0,0,0,.08)' }}
+          style={{
+            borderRadius: 10, overflow: 'hidden',
+            border: '1px solid rgba(255,255,255,.12)',
+            // 棋盘格:透明元素在纯色底上看不出哪里是透明的，这是图像软件的通用做法
+            backgroundColor: '#2a2a2e',
+            backgroundImage:
+              'linear-gradient(45deg, #35353a 25%, transparent 25%),' +
+              'linear-gradient(-45deg, #35353a 25%, transparent 25%),' +
+              'linear-gradient(45deg, transparent 75%, #35353a 75%),' +
+              'linear-gradient(-45deg, transparent 75%, #35353a 75%)',
+            backgroundSize: '18px 18px',
+            backgroundPosition: '0 0, 0 9px, 9px -9px, -9px 0',
+          }}
           onMouseDown={(e) => {
             // 点空白取消选中 —— 点到 Stage 本身说明没命中任何图形
             if (e.target === e.target.getStage()) setSel(null);
           }}
         >
           <Layer>
-            {bg && <BgImage src={bg} w={W} h={H} />}
+            {bg && (
+              <BgImage
+                src={bg} w={W} h={H}
+                onRef={(n) => { shapeRefs.current[BG_ID] = n; }}
+                onSelect={() => setSel(BG_ID)}
+                onDragMove={onDragMove(BG_ID)}
+                onCommit={() => { /* 背景不写回 els，位置由用户自由拖动即可 */ }}
+              />
+            )}
 
             {els.map((el) => el.kind === 'text' ? (
               <ElText
@@ -392,8 +508,10 @@ export function SceneEditor({
             <Transformer
               ref={trRef}
               rotateEnabled
-              keepRatio
-              anchorSize={8}
+              // 默认自由缩放，按住 Shift 锁比例 —— 与设计软件习惯一致。
+              // 原先写死 keepRatio，道具没法拉扁或拉长。
+              keepRatio={false}
+              anchorSize={9}
               borderStroke="#1d1d1f"
               anchorStroke="#1d1d1f"
               boundBoxFunc={(_, box) => (box.width < 20 || box.height < 20 ? _ : box)}
@@ -408,9 +526,9 @@ export function SceneEditor({
             placeholder="AI 融合时的补充说明，如:统一为暖色调影棚光，产品保持原样"
             rows={2}
             style={{
-              flex: 1, padding: '9px 11px', borderRadius: 10, background: '#f5f5f7',
-              border: '1px solid transparent', fontSize: 12, color: '#1d1d1f',
-              outline: 'none', resize: 'none', lineHeight: 1.6,
+              flex: 1, padding: '9px 11px', borderRadius: 10,
+              background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.14)',
+              fontSize: 12, color: '#f5f5f7', outline: 'none', resize: 'none', lineHeight: 1.6,
             }}
           />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 7, flexShrink: 0 }}>
@@ -423,19 +541,64 @@ export function SceneEditor({
           </div>
         </div>
 
-        <div style={{ marginTop: 8, fontSize: 10.5, color: '#a1a1a6', lineHeight: 1.6 }}>
+        <div style={{ marginTop: 8, fontSize: 10.5, color: '#8b8b90', lineHeight: 1.6 }}>
           直接导出在浏览器合成，产品外形与文字不会被改动，不消耗额度。
           AI 融合会把合成图交给模型统一光影，消耗额度且可能改变产品细节。
         </div>
 
-        {busy && <div style={{ marginTop: 6, fontSize: 11.5, color: '#6e6e73' }}>{busy}</div>}
+        {busy && <div style={{ marginTop: 6, fontSize: 11.5, color: '#d4d4d8' }}>{busy}</div>}
+      </div>
+
+      {/* 最右:素材历史。生成一个透明元素要花 ¥0.3~0.63，只用一次太浪费 ——
+          存起来能反复摆进不同场景。窄栏可滑动，不占主视野。 */}
+      <div style={{
+        width: 76, flexShrink: 0, overflowY: 'auto',
+        borderLeft: '1px solid rgba(255,255,255,.1)', paddingLeft: 10,
+      }}>
+        <div style={{ fontSize: 10.5, color: '#8b8b90', marginBottom: 8 }}>素材</div>
+        {(assets ?? []).length === 0 ? (
+          <div style={{ fontSize: 10, color: '#6b6b70', lineHeight: 1.6 }}>
+            生成过的透明元素会留在这里
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+            {(assets ?? []).map((u) => (
+              <button
+                key={u}
+                onClick={() => addUrl(u)}
+                title="点击加入画布"
+                style={{
+                  width: '100%', aspectRatio: '1', padding: 0, cursor: 'pointer',
+                  borderRadius: 7, border: '1px solid rgba(255,255,255,.14)',
+                  overflow: 'hidden',
+                  // 缩略图也用棋盘格 —— 否则透明素材在深色底上看不清边界
+                  backgroundColor: '#2a2a2e',
+                  backgroundImage:
+                    'linear-gradient(45deg, #3a3a40 25%, transparent 25%),' +
+                    'linear-gradient(-45deg, #3a3a40 25%, transparent 25%),' +
+                    'linear-gradient(45deg, transparent 75%, #3a3a40 75%),' +
+                    'linear-gradient(-45deg, transparent 75%, #3a3a40 75%)',
+                  backgroundSize: '10px 10px',
+                  backgroundPosition: '0 0, 0 5px, 5px -5px, -5px 0',
+                }}
+              >
+                <img src={u} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 生成透明元素。target 决定结果放哪 —— 背景铺满，元素可摆放。 */}
       {genFor && (
         <GenElementModal
           onClose={() => setGenFor(null)}
-          onDone={(url) => { if (genFor === 'bg') setBg(url); else addUrl(url); }}
+          onDone={(url) => {
+            if (genFor === 'bg') setBg(url);
+            else addUrl(url);
+            // 无论用作背景还是元素都记进素材库 —— 花过钱的东西不该用一次就丢
+            onNewAsset?.(url);
+          }}
         />
       )}
     </div>
@@ -459,20 +622,41 @@ function Row({
         </label>
         <button onClick={onGen} style={{ ...uploadBtn, flex: 1.4 }}>生成透明元素</button>
       </div>
-      <div style={{ fontSize: 10, color: '#a1a1a6', marginTop: 4 }}>{hint}</div>
+      <div style={{ fontSize: 10, color: '#8b8b90', marginTop: 4 }}>{hint}</div>
     </div>
   );
 }
 
-function BgImage({ src, w, h }: { src: string; w: number; h: number }) {
+function BgImage({
+  src, w, h, onRef, onSelect, onDragMove, onCommit,
+}: {
+  src: string; w: number; h: number;
+  onRef: (n: Konva.Image | null) => void;
+  onSelect: () => void;
+  onDragMove: (e: Konva.KonvaEventObject<DragEvent>) => void;
+  onCommit: (e: Konva.KonvaEventObject<Event>) => void;
+}) {
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   useEffect(() => { loadImage(src).then(setImg).catch(() => {}); }, [src]);
   if (!img) return null;
-  // 铺满画布并保持比例，超出部分裁掉 —— 与 CSS 的 object-fit: cover 同理
+  // 默认铺满并保持比例(等同 CSS object-fit: cover)，但可以被选中后自由调整 ——
+  // 原先 listening={false} 让用户既点不到也删不掉，是个明显的缺陷。
   const s = Math.max(w / img.naturalWidth, h / img.naturalHeight);
   const dw = img.naturalWidth * s;
   const dh = img.naturalHeight * s;
-  return <KImage image={img} x={(w - dw) / 2} y={(h - dh) / 2} width={dw} height={dh} listening={false} />;
+  return (
+    <KImage
+      ref={onRef}
+      image={img}
+      x={(w - dw) / 2} y={(h - dh) / 2} width={dw} height={dh}
+      draggable
+      onClick={onSelect}
+      onTap={onSelect}
+      onDragMove={onDragMove}
+      onDragEnd={onCommit}
+      onTransformEnd={onCommit}
+    />
+  );
 }
 
 function ElImage({
@@ -519,6 +703,7 @@ function ElText({
       x={el.x} y={el.y} width={el.width} rotation={el.rotation}
       fontSize={el.fontSize ?? 32}
       fill={el.color ?? '#ffffff'}
+      fontFamily={el.fontFamily ?? FONTS[0].value}
       fontStyle="bold"
       align="center"
       // 描边让文字在任何底色上都读得清 —— 白字压在浅色背景上会看不见
@@ -547,22 +732,31 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-const label: React.CSSProperties = { fontSize: 11.5, color: '#6e6e73', marginBottom: 6 };
+const label: React.CSSProperties = { fontSize: 11.5, color: '#a1a1aa', marginBottom: 6 };
+const selectSm: React.CSSProperties = {
+  width: '100%', padding: '7px 9px', borderRadius: 8, fontSize: 11.5,
+  background: 'rgba(255,255,255,.08)', border: '1px solid rgba(255,255,255,.14)',
+  color: '#f5f5f7', outline: 'none',
+};
+
 const uploadBtn: React.CSSProperties = {
   display: 'block', padding: '9px 8px', borderRadius: 9, cursor: 'pointer',
-  border: '1px solid rgba(0,0,0,.12)', background: '#fff', textAlign: 'center',
-  fontSize: 11.5, color: '#1d1d1f', whiteSpace: 'nowrap',
+  border: '1px solid rgba(255,255,255,.16)', background: 'rgba(255,255,255,.06)',
+  textAlign: 'center', fontSize: 11.5, color: '#f5f5f7', whiteSpace: 'nowrap',
 };
 const chip: React.CSSProperties = {
-  padding: '6px 11px', borderRadius: 999, border: 'none', cursor: 'pointer',
-  background: '#f5f5f7', color: '#424245', fontSize: 11.5, whiteSpace: 'nowrap',
+  padding: '6px 11px', borderRadius: 999, border: '1px solid rgba(255,255,255,.14)',
+  cursor: 'pointer', background: 'rgba(255,255,255,.06)', color: '#d4d4d8',
+  fontSize: 11.5, whiteSpace: 'nowrap',
 };
-const chipOn: React.CSSProperties = { ...chip, background: '#1d1d1f', color: '#fff' };
+const chipOn: React.CSSProperties = { ...chip, background: '#fff', color: '#1d1d1f', borderColor: '#fff' };
 const btnGhost: React.CSSProperties = {
-  padding: '9px 16px', borderRadius: 999, border: '1px solid rgba(0,0,0,.14)',
-  background: '#fff', color: '#1d1d1f', fontSize: 12.5, fontWeight: 500, cursor: 'pointer', whiteSpace: 'nowrap',
+  padding: '9px 16px', borderRadius: 999, border: '1px solid rgba(255,255,255,.2)',
+  background: 'transparent', color: '#f5f5f7', fontSize: 12.5, fontWeight: 500,
+  cursor: 'pointer', whiteSpace: 'nowrap',
 };
 const btnSolid: React.CSSProperties = {
   padding: '9px 16px', borderRadius: 999, border: 'none',
-  background: '#1d1d1f', color: '#fff', fontSize: 12.5, fontWeight: 500, cursor: 'pointer', whiteSpace: 'nowrap',
+  background: '#fff', color: '#1d1d1f', fontSize: 12.5, fontWeight: 600,
+  cursor: 'pointer', whiteSpace: 'nowrap',
 };

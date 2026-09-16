@@ -84,6 +84,14 @@ export default function StudioPage() {
   // 共用顶栏的余额与充值入口，切换不丢左栏已填的参数。
   const [tab, setTab] = useState<'gen' | 'scene'>('gen');
 
+  // 场景内容与素材列表由本页持有 —— 原先放在 SceneEditor 内部，
+  // 切到生图标签时组件卸载，摆好的图层全丢了。
+  const [scene, setScene] = useState<{ ratio: string; bg: string | null; els: any[] }>({
+    ratio: '4:5', bg: null, els: [],
+  });
+  // 生成过的透明素材。一个要花 ¥0.3~0.63，留着能反复用。
+  const [sceneAssets, setSceneAssets] = useState<string[]>([]);
+
   // 配方模板。选中后提示词框换成"具体需求 + 短文案"两个字段 ——
   // 配方本身已经写好了画面描述，用户只需填主体，不必再写整段提示词。
   // 不选则完全是原来的自由输入模式，一行逻辑都不变。
@@ -343,8 +351,16 @@ export default function StudioPage() {
       </div>
 
       {tab === 'scene' ? (
-        <div style={{ flex: 1, overflow: 'auto', padding: '22px 26px' }}>
+        <div style={{
+          flex: 1, minHeight: 0, padding: '20px 24px',
+          // 深色底 —— 编排时要判断成品效果，白底会干扰对画面明暗的判断
+          background: '#1c1c1f',
+        }}>
           <SceneEditor
+            state={scene}
+            setState={(patch) => setScene((cur) => ({ ...cur, ...patch }))}
+            assets={sceneAssets}
+            onNewAsset={(u) => setSceneAssets((cur) => (cur.includes(u) ? cur : [u, ...cur]))}
             onFuse={(url, note) => {
               // 融合就是"把合成图当参考图走一次生图" —— 复用现有链路，
               // 不新建生成通道。切回生图页让用户确认模型与参数再点生成。
